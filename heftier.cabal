@@ -55,8 +55,10 @@ library
     exposed-modules:
         Control.Hefty
         Control.Hefty.Final
+        Control.Hefty.Final.Naked
         Control.Hefty.Class
         Control.Hefty.Trans.Final
+        Control.Hefty.Trans.Final.Naked
         Control.Free
         Control.Free.Class
         Control.Monad.Heftier.Final
