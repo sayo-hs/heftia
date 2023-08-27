@@ -59,6 +59,8 @@ library
         Control.Hefty.Trans.Final
         Control.Free
         Control.Free.Class
+        Control.Free.Trans.Freer
+        Control.Free.Trans.Tree
         Control.Monad.Heftier.Final
         Control.Monad.Trans.Heftier
         Control.Monad.Trans.Heftier.Tree
