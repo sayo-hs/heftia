@@ -12,7 +12,7 @@ import Data.Hefty.Union (Member, Union, decomp, inject, project, weakenL, weaken
 import Data.Kind (Type)
 
 class Interpret i where
-    {-# MINIMAL send, interpret, reinterpret, translate, interpose, intercept, raise #-}
+    {-# MINIMAL send, interpret, translate, interpose, raise #-}
 
     type Anycast i (e :: Signature) (es :: [Signature]) :: Constraint
     type Surface i (e :: Signature) :: Constraint
@@ -31,6 +31,13 @@ class Interpret i where
         (e (i (e ': es)) ~> i (e ': es)) ->
         i (e ': es) a ->
         i (e ': es) a
+    default reinterpret ::
+        (Surface i e, Bulk i (e ': e ': es), Bulk i (e ': es)) =>
+        (e (i (e ': es)) ~> i (e ': es)) ->
+        i (e ': es) a ->
+        i (e ': es) a
+    reinterpret i = interpret i . raise
+    {-# INLINE reinterpret #-}
 
     translate ::
         (Surface i e, Surface i e', Bulk i (e ': es), Bulk i (e' ': es)) =>
@@ -49,8 +56,10 @@ class Interpret i where
         (e (i es) ~> e (i es)) ->
         i es a ->
         i es a
+    intercept f = interpose $ send . f
+    {-# INLINE intercept #-}
 
-    raise :: forall e es a. (Bulk i es, Bulk i (e ': es)) => i es a -> i (e ': es) a
+    raise :: forall e es a. (Surface i e, Bulk i es, Bulk i (e ': es)) => i es a -> i (e ': es) a
 
     subsume ::
         (Anycast i e es, Surface i e, Bulk i es, Bulk i (e ': es)) =>
@@ -58,6 +67,9 @@ class Interpret i where
         i es a
     subsume = interpret send
     {-# INLINE subsume #-}
+
+raiseUnder :: Interpret i => i (e ': es) a -> i (e ': e' ': es) a
+raiseUnder = undefined
 
 newtype ViaHeftiaUnion h (u :: [Signature] -> Signature) es (a :: Type) = ViaHeftiaUnion
     {runViaHeftiaUnion :: h (u es) a}
@@ -90,14 +102,16 @@ instance (Heftia c h, Union u) => Interpret (ViaHeftiaUnion h u) where
 
     interpose (f :: e (ViaHeftiaUnion h u es) ~> ViaHeftiaUnion h u es) (ViaHeftiaUnion m) =
         ViaHeftiaUnion $ (`reinterpretH` m) \u ->
-            case project @_ @e u of
-                Just e -> runViaHeftiaUnion . f $ hmap ViaHeftiaUnion e
-                Nothing -> liftSig u
+            let u' = hmap (interpose f . ViaHeftiaUnion) u
+             in case project @_ @e u' of
+                    Just e -> runViaHeftiaUnion $ f e
+                    Nothing -> liftSig $ hmap runViaHeftiaUnion u'
 
     intercept (f :: e (ViaHeftiaUnion h u es) ~> e (ViaHeftiaUnion h u es)) (ViaHeftiaUnion m) =
         ViaHeftiaUnion $ (`translateH` m) \u ->
-            case project @_ @e u of
-                Just e -> inject $ hmap runViaHeftiaUnion $ f $ hmap ViaHeftiaUnion e
-                Nothing -> u
+            let u' = hmap (intercept f . ViaHeftiaUnion) u
+             in case project @_ @e u' of
+                    Just e -> inject $ hmap runViaHeftiaUnion $ f e
+                    Nothing -> hmap runViaHeftiaUnion u'
 
     raise = ViaHeftiaUnion . translateH weakenR . runViaHeftiaUnion
