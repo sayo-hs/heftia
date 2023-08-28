@@ -1,4 +1,4 @@
-module Control.Monad.Trans.Heftier.Tree where
+module Control.Monad.Trans.Heftia.Tree where
 
 import Data.Functor.Coyoneda (Coyoneda)
 

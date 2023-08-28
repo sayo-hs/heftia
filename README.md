@@ -1,5 +1,5 @@
-# Heftier
-Heftier, a composition of hefty trees and co-Yoneda, is a higher-order effects
+# Heftia
+Heftia, a composition of hefty trees and co-Yoneda, is a higher-order effects
 version of Freer.
 
 The paper
@@ -11,7 +11,7 @@ inspires this library.
 Hefty trees, proposed by the above paper, are extensions of free monads,
 allowing for a straightforward treatment of higher-order effects.
 
-This library provides Heftier monads and Freer monads, encoded into data
+This library provides Heftia monads and Freer monads, encoded into data
 types in several ways to enable tuning in pursuit of high performance.
 
 ## Your contributions are welcome!

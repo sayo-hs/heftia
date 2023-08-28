@@ -1,5 +1,5 @@
 cabal-version:      2.4
-name:               heftier
+name:               heftia
 version:            0.1.0.0
 
 -- A short (one-line) description of the package.
@@ -7,7 +7,7 @@ synopsis: Higher-order version of Freer.
 
 -- A longer description of the package.
 description:
-    Heftier, a composition of hefty trees and co-Yoneda, is a higher-order
+    Heftia, a composition of hefty trees and co-Yoneda, is a higher-order
     effects version of Freer.
     .
     The paper
@@ -20,12 +20,12 @@ description:
     Hefty trees, proposed by the above paper, are extensions of free monads,
     allowing for a straightforward treatment of higher-order effects.
     .
-    This library provides Heftier monads and Freer monads, encoded into data
+    This library provides Heftia monads and Freer monads, encoded into data
     types in several ways to enable tuning in pursuit of high performance.
     .
 
 -- A URL where users can report bugs.
-bug-reports: https://github.com/sayo-hs/heftier
+bug-reports: https://github.com/sayo-hs/heftia
 
 -- The license under which the package is released.
 license:            LGPL-3.0-or-later
@@ -49,22 +49,22 @@ tested-with:
 
 source-repository head
     type: git
-    location: https://github.com/sayo-hs/heftier
+    location: https://github.com/sayo-hs/heftia
 
 library
     exposed-modules:
         Control.Hefty
-        Control.Heftier
-        Control.Heftier.Final
-        Control.Heftier.Final.Naked
-        Control.Heftier.Trans
-        Control.Heftier.Trans.Final
-        Control.Heftier.Trans.Final.Naked
+        Control.Heftia
+        Control.Heftia.Final
+        Control.Heftia.Final.Naked
+        Control.Heftia.Trans
+        Control.Heftia.Trans.Final
+        Control.Heftia.Trans.Final.Naked
         Control.Free
         Control.Freer
         Control.Freer.Trans
-        Control.Monad.Trans.Heftier
-        Control.Monad.Trans.Heftier.Tree
+        Control.Monad.Trans.Heftia
+        Control.Monad.Trans.Heftia.Tree
         Control.Monad.Trans.Hefty
         Control.Monad.Trans.Freer.Tree
         Data.Hefty.Sum

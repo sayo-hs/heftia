@@ -1,6 +1,6 @@
-module Control.Monad.Trans.Heftier where
+module Control.Monad.Trans.Heftia where
 
-import Control.Heftier.Trans (TransHeftier, hoistHeftier, interpretT, liftLower)
+import Control.Heftia.Trans (TransHeftia, hoistHeftia, interpretT, liftLower)
 import Control.Hefty (HFunctor, Signature)
 import Control.Monad.Cont (ContT)
 import Control.Monad.Trans (MonadTrans, lift)
@@ -8,7 +8,7 @@ import Control.Natural (type (~>))
 import Data.Coerce (Coercible, coerce)
 import Data.Kind (Type)
 
-class TransHeftier Monad h => MonadTransHeftier h where
+class TransHeftia Monad h => MonadTransHeftia h where
     interpretK ::
         (Monad m, HFunctor sig) =>
         (sig (ContT b m) ~> ContT b m) ->
@@ -39,12 +39,12 @@ class TransHeftier Monad h => MonadTransHeftier h where
         (sig (t n) ~> t n) ->
         h m sig a ->
         t n a
-    reinterpretTT f = interpretTT f . hoistHeftier (coerce . liftLower @Monad @h @sig)
+    reinterpretTT f = interpretTT f . hoistHeftia (coerce . liftLower @Monad @h @sig)
     {-# INLINE reinterpretTT #-}
 
 reinterpretTTViaFinal ::
     forall h m t n sig a.
-    ( MonadTransHeftier h
+    ( MonadTransHeftia h
     , Monad m
     , MonadTrans t
     , Coercible n (h m sig)
@@ -58,10 +58,10 @@ reinterpretTTViaFinal ::
 reinterpretTTViaFinal = interpretT $ lift . coerce . liftLower @Monad @h @sig
 {-# INLINE reinterpretTTViaFinal #-}
 
-newtype HeftierT (h :: (Type -> Type) -> Signature -> Type -> Type) sig m a = HeftierT
-    {runHeftierT :: h m sig a}
+newtype HeftiaT (h :: (Type -> Type) -> Signature -> Type -> Type) sig m a = HeftiaT
+    {runHeftiaT :: h m sig a}
     deriving newtype (Functor, Applicative, Monad)
     deriving stock (Foldable, Traversable)
 
-instance (MonadTransHeftier h, HFunctor sig) => MonadTrans (HeftierT h sig) where
-    lift = HeftierT . liftLower
+instance (MonadTransHeftia h, HFunctor sig) => MonadTrans (HeftiaT h sig) where
+    lift = HeftiaT . liftLower
