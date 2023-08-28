@@ -4,7 +4,7 @@ module Data.Hefty.Sum where
 
 import Control.Hefty (HFunctor, LiftIns, Signature, hmap)
 import Control.Hefty.Class (liftSig, translateH)
-import Control.Monad.Trans.Heftier (MonadTransHeftier, interpretT)
+import Control.Hefty.Trans.Class (TransHeftier, interpretT)
 import Data.Free.Sum (NopF)
 import Data.Hefty.Union (HFunctorUnion, Union, type (<:))
 import Data.Hefty.Union qualified as U
@@ -23,10 +23,11 @@ instance (HFunctor h1, HFunctor h2) => HFunctor (h1 + h2) where
 type Nop = LiftIns NopF
 
 mergeHeftier ::
-    (HFunctor sig, HFunctor sig', MonadTransHeftier h, Monad m) =>
+    forall h m sig sig' a c.
+    (HFunctor sig, HFunctor sig', TransHeftier c h, c m) =>
     h (h m sig') sig a ->
     h m (sig + sig') a
-mergeHeftier = interpretT (translateH @Monad R) (liftSig @Monad . L)
+mergeHeftier = interpretT (translateH @c R) (liftSig @c . L)
 
 swapSum :: (h1 + h2) f a -> (h2 + h1) f a
 swapSum = \case

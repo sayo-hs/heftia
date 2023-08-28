@@ -57,6 +57,7 @@ library
         Control.Hefty.Final
         Control.Hefty.Final.Naked
         Control.Hefty.Class
+        Control.Hefty.Trans.Class
         Control.Hefty.Trans.Final
         Control.Hefty.Trans.Final.Naked
         Control.Free
@@ -97,7 +98,8 @@ library
         TypeFamilies,
         BlockArguments,
         FunctionalDependencies,
-        RecordWildCards
+        RecordWildCards,
+        DefaultSignatures
 
 
 test-suite test
@@ -123,4 +125,5 @@ test-suite test
         TypeFamilies,
         BlockArguments,
         FunctionalDependencies,
-        RecordWildCards
+        RecordWildCards,
+        DefaultSignatures
