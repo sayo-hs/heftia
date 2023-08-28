@@ -18,7 +18,7 @@ class (forall sig. HFunctor sig => c (h sig)) => Heftia c h | h -> c where
     -- | Translate /signature/s embedded in a Heftia monad.
     translateH ::
         (HFunctor sig, HFunctor sig') =>
-        (forall m. sig m ~> sig' m) ->
+        (sig (h sig') ~> sig' (h sig')) ->
         h sig a ->
         h sig' a
     translateH phi = interpretH $ liftSig . phi

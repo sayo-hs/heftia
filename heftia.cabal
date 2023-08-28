@@ -55,6 +55,7 @@ library
     exposed-modules:
         Control.Hefty
         Control.Heftia
+        Control.Heftia.Interpret
         Control.Heftia.Final
         Control.Heftia.Final.Naked
         Control.Heftia.Trans
