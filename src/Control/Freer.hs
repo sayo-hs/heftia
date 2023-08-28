@@ -45,6 +45,6 @@ instance Freer Applicative Ap where
     {-# INLINE liftIns #-}
     {-# INLINE interpretFF #-}
 
-sendF :: (i <:: j, Freer c f) => i a -> f j a
-sendF = liftIns . weakenIns
-{-# INLINE sendF #-}
+sendFF :: (i <:: j, Freer c f) => i a -> f j a
+sendFF = liftIns . weakenIns
+{-# INLINE sendFF #-}

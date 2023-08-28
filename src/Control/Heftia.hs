@@ -28,8 +28,8 @@ class (forall sig. HFunctor sig => c (h sig)) => Heftia c h | h -> c where
     reinterpretH = interpretH
     {-# INLINE reinterpretH #-}
 
-send :: (s <: t, Heftia c h, HFunctor s, HFunctor t) => s (h s) a -> h t a
-send = liftSig . weakenSig . hmap (translateH weakenSig)
+sendH :: (s <: t, Heftia c h, HFunctor s, HFunctor t) => s (h s) a -> h t a
+sendH = liftSig . weakenSig . hmap (translateH weakenSig)
 
 retract :: (Heftia c h, c m) => h (LiftIns m) a -> m a
 retract = interpretH unliftIns

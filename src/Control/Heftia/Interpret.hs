@@ -2,17 +2,23 @@
 
 module Control.Heftia.Interpret where
 
+import Control.Applicative (Alternative)
 import Control.Heftia (Heftia, interpretH, liftSig, reinterpretH, translateH)
 import Control.Hefty (HFunctor, Signature, hmap)
+import Control.Monad (MonadPlus)
 import Control.Natural (type (~>))
 import Data.Constraint (Constraint)
 import Data.Hefty.Union (Member, Union, decomp, inject, project, weakenL, weakenR)
 import Data.Kind (Type)
 
 class Interpret i where
+    {-# MINIMAL send, interpret, reinterpret, translate, interpose, intercept, raise #-}
+
     type Anycast i (e :: Signature) (es :: [Signature]) :: Constraint
     type Surface i (e :: Signature) :: Constraint
     type Bulk i (es :: [Signature]) :: Constraint
+
+    send :: (Anycast i e es, Surface i e, Bulk i es) => e (i es) a -> i es a
 
     interpret ::
         (Surface i e, Bulk i es, Bulk i (e ': es)) =>
@@ -44,14 +50,25 @@ class Interpret i where
         i es a ->
         i es a
 
+    raise :: forall e es a. (Bulk i es, Bulk i (e ': es)) => i es a -> i (e ': es) a
+
+    subsume ::
+        (Anycast i e es, Surface i e, Bulk i es, Bulk i (e ': es)) =>
+        i (e ': es) a ->
+        i es a
+    subsume = interpret send
+    {-# INLINE subsume #-}
+
 newtype ViaHeftiaUnion h (u :: [Signature] -> Signature) es (a :: Type) = ViaHeftiaUnion
     {runViaHeftiaUnion :: h (u es) a}
-    deriving newtype (Functor, Applicative, Monad)
+    deriving newtype (Functor, Applicative, Alternative, Monad, MonadPlus)
 
 instance (Heftia c h, Union u) => Interpret (ViaHeftiaUnion h u) where
     type Anycast (ViaHeftiaUnion _ u) e es = Member u e es
     type Surface _ e = HFunctor e
     type Bulk (ViaHeftiaUnion _ u) es = HFunctor (u es)
+
+    send = ViaHeftiaUnion . liftSig . inject . hmap runViaHeftiaUnion
 
     interpret i (ViaHeftiaUnion m) =
         ViaHeftiaUnion $ (`interpretH` m) \u ->
@@ -82,3 +99,5 @@ instance (Heftia c h, Union u) => Interpret (ViaHeftiaUnion h u) where
             case project @_ @e u of
                 Just e -> inject $ hmap runViaHeftiaUnion $ f $ hmap ViaHeftiaUnion e
                 Nothing -> u
+
+    raise = ViaHeftiaUnion . translateH weakenR . runViaHeftiaUnion
