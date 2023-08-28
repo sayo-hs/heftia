@@ -4,10 +4,12 @@
 module Control.Hefty.Trans.Final where
 
 import Control.Applicative (Alternative, empty, (<|>))
-import Control.Hefty (HFunctor, hmap)
+import Control.Hefty (HFunctor, LiftIns (LiftIns), hmap)
+import Control.Hefty.Final (HeftierFinal (HeftierFinal))
 import Control.Monad (MonadPlus, mplus, mzero)
 import Control.Natural (type (~>))
 import Data.Constraint (Class, cls, (\\))
+import Data.Hefty.Sum (type (+) (L, R))
 
 newtype HeftierFinalT c h f a = HeftierFinalT
     {unHeftierFinalT :: forall g. c g => InterpreterT h f g -> g a}
@@ -64,3 +66,13 @@ instance
 
     HeftierFinalT f `mplus` HeftierFinalT g =
         HeftierFinalT \(i :: InterpreterT h m n) -> f i `mplus` g i \\ cls @(MonadPlus n) @(c n)
+
+cisHeftierFinal :: HeftierFinalT c h f a -> HeftierFinal c (h + LiftIns f) a
+cisHeftierFinal (HeftierFinalT f) =
+    HeftierFinal \i -> f $ InterpreterT (i . R . LiftIns) (i . L)
+
+transHeftierFinal :: HeftierFinal c (h + LiftIns f) a -> HeftierFinalT c h f a
+transHeftierFinal (HeftierFinal f) =
+    HeftierFinalT \InterpreterT{..} -> f \case
+        L e -> interpreter e
+        R (LiftIns a) -> interpretLower a

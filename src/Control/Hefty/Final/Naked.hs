@@ -14,18 +14,18 @@ runHeftierFinalN i (HeftierFinalN f) = f i
 liftSigFinalN :: HFunctor h => h (HeftierFinalN h) a -> HeftierFinalN h a
 liftSigFinalN e = HeftierFinalN \i -> i $ hmap (runHeftierFinalN i) e
 
-toHeftierFinal :: HeftierFinalN h a -> HeftierFinal Noop h a
-toHeftierFinal (HeftierFinalN f) = HeftierFinal f
+wearHeftierFinal :: HeftierFinalN h a -> HeftierFinal Noop h a
+wearHeftierFinal (HeftierFinalN f) = HeftierFinal f
 
-fromHeftierFinal :: HeftierFinal Noop h a -> HeftierFinalN h a
-fromHeftierFinal (HeftierFinal f) = HeftierFinalN f
+nakeHeftierFinal :: HeftierFinal Noop h a -> HeftierFinalN h a
+nakeHeftierFinal (HeftierFinal f) = HeftierFinalN f
 
-toHeftierFinalF :: Freer c f => HeftierFinalN (f + h) a -> HeftierFinal c h a
-toHeftierFinalF (HeftierFinalN f) =
+wearHeftierFinalF :: Freer c f => HeftierFinalN (f + h) a -> HeftierFinal c h a
+wearHeftierFinalF (HeftierFinalN f) =
     HeftierFinal \i -> f \case
         L m -> retractF m
         R e -> i e
 
-fromHeftierFinalF :: (Freer c f, HFunctor h) => HeftierFinal c h a -> HeftierFinalN (f + h) a
-fromHeftierFinalF (HeftierFinal f) =
+nakeHeftierFinalF :: (Freer c f, HFunctor h) => HeftierFinal c h a -> HeftierFinalN (f + h) a
+nakeHeftierFinalF (HeftierFinal f) =
     HeftierFinalN \i -> i . L $ f $ liftIns . i . R . hmap (i . L)
