@@ -1,7 +1,7 @@
 module Control.Monad.Trans.Heftier where
 
+import Control.Heftier.Trans (TransHeftier, hoistHeftier, interpretT, liftLower)
 import Control.Hefty (HFunctor, Signature)
-import Control.Hefty.Trans.Class (TransHeftier, hoistHeftier, interpretT, liftLower)
 import Control.Monad.Cont (ContT)
 import Control.Monad.Trans (MonadTrans, lift)
 import Control.Natural (type (~>))

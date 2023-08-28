@@ -1,8 +1,8 @@
-module Control.Hefty.Final.Naked where
+module Control.Heftier.Final.Naked where
 
-import Control.Free.Class (Freer, liftIns, retractF)
+import Control.Freer (Freer, liftIns, retractF)
+import Control.Heftier.Final (HeftierFinal (HeftierFinal), Noop)
 import Control.Hefty (HFunctor, Signature, hmap)
-import Control.Hefty.Final (HeftierFinal (HeftierFinal), Noop)
 import Control.Natural (type (~>))
 import Data.Hefty.Sum (type (+) (L, R))
 

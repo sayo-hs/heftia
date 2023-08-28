@@ -1,9 +1,9 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 
-module Control.Hefty.Trans.Class where
+module Control.Heftier.Trans where
 
+import Control.Heftier (Heftier, liftSig)
 import Control.Hefty (HFunctor, hmap)
-import Control.Hefty.Class (Heftier, liftSig)
 import Control.Monad.Identity (IdentityT (IdentityT), runIdentityT)
 import Control.Natural (type (~>))
 

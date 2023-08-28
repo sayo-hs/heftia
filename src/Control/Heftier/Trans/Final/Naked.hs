@@ -1,10 +1,9 @@
-module Control.Hefty.Trans.Final.Naked where
+module Control.Heftier.Trans.Final.Naked where
 
-import Control.Free.Class (Freer, liftIns, retractF)
-import Control.Hefty (HFunctor, LiftIns, Signature, hmap)
-import Control.Hefty.Final (Noop)
-import Control.Hefty.Final.Naked (HeftierFinalN, nakeHeftierFinal, wearHeftierFinal)
-import Control.Hefty.Trans.Final (
+import Control.Freer (Freer, liftIns, retractF)
+import Control.Heftier.Final (Noop)
+import Control.Heftier.Final.Naked (HeftierFinalN, nakeHeftierFinal, wearHeftierFinal)
+import Control.Heftier.Trans.Final (
     HeftierFinalT (HeftierFinalT),
     InterpreterT (InterpreterT),
     heftierFinalT,
@@ -13,6 +12,7 @@ import Control.Hefty.Trans.Final (
     runHeftierFinalT,
     unHeftierFinalT,
  )
+import Control.Hefty (HFunctor, LiftIns, Signature, hmap)
 import Data.Hefty.Sum (type (+) (L, R))
 
 newtype HeftierFinalTN (h :: Signature) f a = HeftierFinalTN

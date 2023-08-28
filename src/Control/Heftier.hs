@@ -1,7 +1,7 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Control.Hefty.Class where
+module Control.Heftier where
 
 import Control.Hefty (HFunctor, LiftIns, hmap, unliftIns)
 import Control.Natural (type (~>))

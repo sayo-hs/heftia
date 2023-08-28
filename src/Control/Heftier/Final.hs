@@ -1,7 +1,7 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Control.Hefty.Final where
+module Control.Heftier.Final where
 
 import Control.Applicative (Alternative, empty, (<|>))
 import Control.Hefty (HFunctor, Signature, hmap)

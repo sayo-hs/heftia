@@ -1,10 +1,10 @@
 {-# LANGUAGE DerivingVia #-}
 
-module Control.Free.Trans.Tree where
+module Control.Monad.Trans.Freer.Tree where
 
 import Control.Applicative (Alternative)
-import Control.Free.Class (Freer, interpretFF, liftIns)
-import Control.Free.Trans.Freer (TransFreer (TransFreer))
+import Control.Freer (Freer, interpretFF, liftIns)
+import Control.Freer.Trans (FreerT (FreerT))
 import Control.Monad (MonadPlus)
 import Control.Monad.Base (MonadBase)
 import Control.Monad.Identity (Identity, runIdentity)
@@ -32,7 +32,7 @@ newtype FreerTreeT m f a = FreerTreeT {unFreerTreeT :: FreeT (Coyoneda f) m a}
         )
     deriving stock (Traversable)
 
-deriving via FreeT (Coyoneda f) instance MonadTrans (TransFreer FreerTreeT f)
+deriving via FreeT (Coyoneda f) instance MonadTrans (FreerT FreerTreeT f)
 
 liftInsTree :: Monad m => f a -> FreerTreeT m f a
 liftInsTree = FreerTreeT . liftF . liftCoyoneda

@@ -2,9 +2,9 @@
 
 module Data.Hefty.Sum where
 
+import Control.Heftier (liftSig, translateH)
+import Control.Heftier.Trans (TransHeftier, interpretT)
 import Control.Hefty (HFunctor, LiftIns, Signature, hmap)
-import Control.Hefty.Class (liftSig, translateH)
-import Control.Hefty.Trans.Class (TransHeftier, interpretT)
 import Data.Free.Sum (NopF)
 import Data.Hefty.Union (HFunctorUnion, Union, type (<:))
 import Data.Hefty.Union qualified as U

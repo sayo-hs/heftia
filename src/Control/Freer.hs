@@ -1,6 +1,6 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 
-module Control.Free.Class where
+module Control.Freer where
 
 import Control.Applicative.Free (Ap, liftAp, runAp)
 import Control.Natural (type (~>))

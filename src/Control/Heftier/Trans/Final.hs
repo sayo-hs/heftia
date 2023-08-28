@@ -1,11 +1,11 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE UndecidableInstances #-}
 
-module Control.Hefty.Trans.Final where
+module Control.Heftier.Trans.Final where
 
 import Control.Applicative (Alternative)
+import Control.Heftier.Final (HeftierFinal (HeftierFinal), liftSigFinal, weakenHeftierFinal)
 import Control.Hefty (HFunctor, LiftIns (LiftIns), hmap)
-import Control.Hefty.Final (HeftierFinal (HeftierFinal), liftSigFinal, weakenHeftierFinal)
 import Control.Monad (MonadPlus)
 import Control.Natural (type (~>))
 import Data.Constraint (Class)

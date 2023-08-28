@@ -54,20 +54,19 @@ source-repository head
 library
     exposed-modules:
         Control.Hefty
-        Control.Hefty.Final
-        Control.Hefty.Final.Naked
-        Control.Hefty.Class
-        Control.Hefty.Trans.Class
-        Control.Hefty.Trans.Final
-        Control.Hefty.Trans.Final.Naked
+        Control.Heftier
+        Control.Heftier.Final
+        Control.Heftier.Final.Naked
+        Control.Heftier.Trans
+        Control.Heftier.Trans.Final
+        Control.Heftier.Trans.Final.Naked
         Control.Free
-        Control.Free.Class
-        Control.Free.Trans.Freer
-        Control.Free.Trans.Tree
-        Control.Monad.Heftier.Final
+        Control.Freer
+        Control.Freer.Trans
         Control.Monad.Trans.Heftier
         Control.Monad.Trans.Heftier.Tree
         Control.Monad.Trans.Hefty
+        Control.Monad.Trans.Freer.Tree
         Data.Hefty.Sum
         Data.Hefty.Union
         Data.Free.Sum
