@@ -24,11 +24,6 @@ weakenHeftierFinal (HeftierFinal f) = HeftierFinal f
 class Noop f
 instance Noop f
 
-deriving stock instance Functor (HeftierFinal Applicative h)
-deriving stock instance Functor (HeftierFinal Alternative h)
-deriving stock instance Functor (HeftierFinal Monad h)
-deriving stock instance Functor (HeftierFinal MonadPlus h)
-
 instance (forall f. Class (Functor f) (c f)) => Functor (HeftierFinal c h) where
     fmap f (HeftierFinal g) =
         HeftierFinal \(i :: h f ~> f) -> f <$> g i \\ cls @(Functor f) @(c f)
