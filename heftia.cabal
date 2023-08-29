@@ -28,7 +28,7 @@ description:
 bug-reports: https://github.com/sayo-hs/heftia
 
 -- The license under which the package is released.
-license:            LGPL-3.0-or-later
+license:            MPL-2.0
 license-file:       LICENSE
 author:             Yamada Ryo <ymdfield@outlook.jp>
 maintainer:         Yamada Ryo <ymdfield@outlook.jp>
@@ -42,7 +42,8 @@ category: Control, Monads
 extra-source-files:
     ChangeLog.md
     README.md
-    CONTRIBUTORS
+    CONTRIBUTING.md
+    CLA
 
 tested-with:
     GHC == 9.2.8
