@@ -2,7 +2,8 @@
 
 module Data.Hefty.Union where
 
-import Control.Hefty (HFunctor, Signature)
+import Control.Effect.Class (Signature)
+import Control.Effect.Class.HFunctor (HFunctor)
 import Control.Natural (type (~>))
 import Data.Kind (Constraint)
 

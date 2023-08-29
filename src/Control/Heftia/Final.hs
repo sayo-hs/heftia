@@ -4,7 +4,8 @@
 module Control.Heftia.Final where
 
 import Control.Applicative (Alternative, empty, (<|>))
-import Control.Hefty (HFunctor, Signature, hmap)
+import Control.Effect.Class (Signature)
+import Control.Effect.Class.HFunctor (HFunctor, hmap)
 import Control.Monad (MonadPlus (mplus, mzero))
 import Control.Natural (type (~>))
 import Data.Constraint (Class, cls, (\\))

@@ -1,8 +1,9 @@
 module Control.Heftia.Final.Naked where
 
+import Control.Effect.Class (Signature)
+import Control.Effect.Class.HFunctor (HFunctor, hmap)
 import Control.Freer (Freer, liftIns, retractF)
 import Control.Heftia.Final (HeftiaFinal (HeftiaFinal), Noop)
-import Control.Hefty (HFunctor, Signature, hmap)
 import Control.Natural (type (~>))
 import Data.Hefty.Sum (type (+) (L, R))
 

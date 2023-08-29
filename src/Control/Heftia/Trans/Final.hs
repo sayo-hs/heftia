@@ -4,8 +4,9 @@
 module Control.Heftia.Trans.Final where
 
 import Control.Applicative (Alternative)
+import Control.Effect.Class (LiftIns (LiftIns))
+import Control.Effect.Class.HFunctor (HFunctor, hmap)
 import Control.Heftia.Final (HeftiaFinal (HeftiaFinal), liftSigFinal, weakenHeftiaFinal)
-import Control.Hefty (HFunctor, LiftIns (LiftIns), hmap)
 import Control.Monad (MonadPlus)
 import Control.Natural (type (~>))
 import Data.Constraint (Class)

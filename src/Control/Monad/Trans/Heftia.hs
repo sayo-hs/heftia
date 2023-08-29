@@ -1,7 +1,8 @@
 module Control.Monad.Trans.Heftia where
 
+import Control.Effect.Class (Signature)
+import Control.Effect.Class.HFunctor (HFunctor)
 import Control.Heftia.Trans (TransHeftia, hoistHeftia, interpretT, liftLower)
-import Control.Hefty (HFunctor, Signature)
 import Control.Monad.Cont (ContT)
 import Control.Monad.Trans (MonadTrans, lift)
 import Control.Natural (type (~>))

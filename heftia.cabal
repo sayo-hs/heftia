@@ -53,14 +53,12 @@ source-repository head
 
 library
     exposed-modules:
-        Control.Hefty
         Control.Heftia
         Control.Heftia.Final
         Control.Heftia.Final.Naked
         Control.Heftia.Trans
         Control.Heftia.Trans.Final
         Control.Heftia.Trans.Final.Naked
-        Control.Free
         Control.Freer
         Control.Freer.Trans
         Control.Monad.Trans.Heftia
@@ -79,6 +77,7 @@ library
     -- other-extensions:
     build-depends:
         base                          ^>= 4.16.4.0,
+        classy-effects-base           ^>= 0.1,
         mtl,
         free,
         natural-transformation,

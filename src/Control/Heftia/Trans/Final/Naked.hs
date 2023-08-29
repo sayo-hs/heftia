@@ -1,5 +1,7 @@
 module Control.Heftia.Trans.Final.Naked where
 
+import Control.Effect.Class (LiftIns, Signature)
+import Control.Effect.Class.HFunctor (HFunctor, hmap)
 import Control.Freer (Freer, liftIns, retractF)
 import Control.Heftia.Final (Noop)
 import Control.Heftia.Final.Naked (HeftiaFinalN, nakeHeftiaFinal, wearHeftiaFinal)
@@ -12,7 +14,6 @@ import Control.Heftia.Trans.Final (
     runHeftiaFinalT,
     unHeftiaFinalT,
  )
-import Control.Hefty (HFunctor, LiftIns, Signature, hmap)
 import Data.Hefty.Sum (type (+) (L, R))
 
 newtype HeftiaFinalTN (h :: Signature) f a = HeftiaFinalTN

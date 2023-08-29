@@ -1,6 +1,6 @@
 module Control.Freer.Trans where
 
-import Control.Free (Instruction)
+import Control.Effect.Class (Instruction)
 import Data.Kind (Type)
 
 newtype FreerT (f :: (Type -> Type) -> Instruction -> Type -> Type) ins m a = FreerT

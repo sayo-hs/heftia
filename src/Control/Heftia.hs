@@ -3,7 +3,8 @@
 
 module Control.Heftia where
 
-import Control.Hefty (HFunctor, LiftIns, hmap, unliftIns)
+import Control.Effect.Class (LiftIns, unliftIns)
+import Control.Effect.Class.HFunctor (HFunctor, hmap)
 import Control.Natural (type (~>))
 import Data.Hefty.Union (Member, Union, decomp, inject, project, weakenL, weakenR, weakenSig, type (<:))
 

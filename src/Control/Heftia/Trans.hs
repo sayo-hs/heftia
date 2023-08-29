@@ -2,8 +2,8 @@
 
 module Control.Heftia.Trans where
 
+import Control.Effect.Class.HFunctor (HFunctor, hmap)
 import Control.Heftia (Heftia, liftSig)
-import Control.Hefty (HFunctor, hmap)
 import Control.Monad.Identity (IdentityT (IdentityT), runIdentityT)
 import Control.Natural (type (~>))
 
