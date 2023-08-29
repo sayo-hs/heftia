@@ -6,9 +6,8 @@
 
 module Data.Hefty.Union where
 
-import Control.Effect.Class (Signature)
+import Control.Effect.Class (Signature, type (~>))
 import Control.Effect.Class.HFunctor (HFunctor)
-import Control.Natural (type (~>))
 import Data.Kind (Constraint)
 
 class Union (u :: [Signature] -> Signature) where

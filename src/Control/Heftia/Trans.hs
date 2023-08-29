@@ -6,10 +6,10 @@
 
 module Control.Heftia.Trans where
 
-import Control.Effect.Class.HFunctor (HFunctor, hmap)
+import Control.Effect.Class (type (~>))
+import Control.Effect.Class.HFunctor (HFunctor, hfmap)
 import Control.Heftia (Heftia, liftSig)
 import Control.Monad.Identity (IdentityT (IdentityT), runIdentityT)
-import Control.Natural (type (~>))
 
 class (forall m. c m => Heftia c (h m)) => TransHeftia c h | h -> c where
     {-# MINIMAL liftLower, (hoistHeftia, interpretR | interpretT) #-}
@@ -23,7 +23,7 @@ class (forall m. c m => Heftia c (h m)) => TransHeftia c h | h -> c where
 
     interpretR :: (c m, HFunctor sig) => (sig m ~> m) -> h m sig a -> m a
     default interpretR :: (c m, c (IdentityT m), HFunctor sig) => (sig m ~> m) -> h m sig a -> m a
-    interpretR f = runIdentityT . interpretT IdentityT (IdentityT . f . hmap runIdentityT)
+    interpretR f = runIdentityT . interpretT IdentityT (IdentityT . f . hfmap runIdentityT)
     {-# INLINE interpretR #-}
 
     interpretT :: (c m, c n, HFunctor sig) => (m ~> n) -> (sig n ~> n) -> h m sig a -> n a

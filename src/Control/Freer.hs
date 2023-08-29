@@ -7,7 +7,7 @@
 module Control.Freer where
 
 import Control.Applicative.Free (Ap, liftAp, runAp)
-import Control.Natural (type (~>))
+import Control.Effect.Class (type (~>))
 import Data.Free.Union (weakenIns, type (<::))
 import Data.Functor.Coyoneda (Coyoneda, hoistCoyoneda, liftCoyoneda, lowerCoyoneda)
 

@@ -8,10 +8,9 @@
 module Control.Heftia.Final where
 
 import Control.Applicative (Alternative, empty, (<|>))
-import Control.Effect.Class (Signature)
-import Control.Effect.Class.HFunctor (HFunctor, hmap)
+import Control.Effect.Class (Signature, type (~>))
+import Control.Effect.Class.HFunctor (HFunctor, hfmap)
 import Control.Monad (MonadPlus (mplus, mzero))
-import Control.Natural (type (~>))
 import Data.Constraint (Class, cls, (\\))
 
 newtype HeftiaFinal c (h :: Signature) a = HeftiaFinal
@@ -21,7 +20,7 @@ runHeftiaFinal :: c f => (h f ~> f) -> HeftiaFinal c h a -> f a
 runHeftiaFinal i (HeftiaFinal f) = f i
 
 liftSigFinal :: HFunctor h => h (HeftiaFinal c h) a -> HeftiaFinal c h a
-liftSigFinal e = HeftiaFinal \i -> i $ hmap (runHeftiaFinal i) e
+liftSigFinal e = HeftiaFinal \i -> i $ hfmap (runHeftiaFinal i) e
 
 weakenHeftiaFinal :: (forall f. c' f => c f) => HeftiaFinal c h a -> HeftiaFinal c' h a
 weakenHeftiaFinal (HeftiaFinal f) = HeftiaFinal f

@@ -81,7 +81,6 @@ library
         classy-effects-base           ^>= 0.1,
         mtl,
         free,
-        natural-transformation,
         kan-extensions,
         constraints,
         transformers-base,

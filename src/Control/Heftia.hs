@@ -7,9 +7,8 @@
 
 module Control.Heftia where
 
-import Control.Effect.Class (LiftIns, unliftIns)
-import Control.Effect.Class.HFunctor (HFunctor, hmap)
-import Control.Natural (type (~>))
+import Control.Effect.Class (LiftIns, unliftIns, type (~>))
+import Control.Effect.Class.HFunctor (HFunctor, hfmap)
 import Data.Hefty.Union (Member, Union, decomp, inject, project, weakenL, weakenR, weakenSig, type (<:))
 
 class (forall sig. HFunctor sig => c (h sig)) => Heftia c h | h -> c where
@@ -72,7 +71,7 @@ interpose ::
     (e (h (u es)) ~> h (u es)) ->
     h (u es) ~> h (u es)
 interpose f = reinterpretH \u ->
-    let u' = hmap (interpose f) u
+    let u' = hfmap (interpose f) u
      in case project @_ @e u' of
             Just e -> f e
             Nothing -> liftSig u'
@@ -83,7 +82,7 @@ intercept ::
     (e (h (u es)) ~> e (h (u es))) ->
     h (u es) ~> h (u es)
 intercept f = translateH \u ->
-    let u' = hmap (intercept f) u
+    let u' = hfmap (intercept f) u
      in case project @_ @e u' of
             Just e -> inject $ f e
             Nothing -> u'
@@ -92,4 +91,4 @@ retract :: (Heftia c h, c m) => h (LiftIns m) a -> m a
 retract = interpretH unliftIns
 
 sendH :: (s <: t, Heftia c h, HFunctor s, HFunctor t) => s (h s) a -> h t a
-sendH = liftSig . weakenSig . hmap (translateH weakenSig)
+sendH = liftSig . weakenSig . hfmap (translateH weakenSig)

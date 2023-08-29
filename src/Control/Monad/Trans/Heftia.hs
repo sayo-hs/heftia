@@ -4,12 +4,11 @@
 
 module Control.Monad.Trans.Heftia where
 
-import Control.Effect.Class (Signature)
+import Control.Effect.Class (Signature, type (~>))
 import Control.Effect.Class.HFunctor (HFunctor)
 import Control.Heftia.Trans (TransHeftia, hoistHeftia, interpretT, liftLower)
 import Control.Monad.Cont (ContT)
 import Control.Monad.Trans (MonadTrans, lift)
-import Control.Natural (type (~>))
 import Data.Coerce (Coercible, coerce)
 import Data.Kind (Type)
 

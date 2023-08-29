@@ -5,7 +5,7 @@
 module Control.Heftia.Trans.Final.Naked where
 
 import Control.Effect.Class (LiftIns, Signature)
-import Control.Effect.Class.HFunctor (HFunctor, hmap)
+import Control.Effect.Class.HFunctor (HFunctor, hfmap)
 import Control.Freer (Freer, liftIns, retractF)
 import Control.Heftia.Final (Noop)
 import Control.Heftia.Final.Naked (HeftiaFinalN, nakeHeftiaFinal, wearHeftiaFinal)
@@ -27,7 +27,7 @@ runHeftiaFinalTN :: InterpreterT h f g -> HeftiaFinalTN h f a -> g a
 runHeftiaFinalTN i (HeftiaFinalTN f) = f i
 
 liftSigFinalTN :: HFunctor h => h (HeftiaFinalTN h f) a -> HeftiaFinalTN h f a
-liftSigFinalTN e = HeftiaFinalTN \i -> interpreter i $ hmap (runHeftiaFinalTN i) e
+liftSigFinalTN e = HeftiaFinalTN \i -> interpreter i $ hfmap (runHeftiaFinalTN i) e
 
 wearHeftiaFinalT :: HeftiaFinalTN h f a -> HeftiaFinalT Noop h f a
 wearHeftiaFinalT (HeftiaFinalTN f) = heftiaFinalT f
@@ -47,7 +47,7 @@ nakeHeftiaFinalTF m =
         interpreter i . L . (`runHeftiaFinalT` m) $
             InterpreterT
                 (liftIns . interpretLower i)
-                (liftIns . interpreter i . R . hmap (interpreter i . L))
+                (liftIns . interpreter i . R . hfmap (interpreter i . L))
 
 cisHeftiaFinalN :: HeftiaFinalTN h f a -> HeftiaFinalN (h + LiftIns f) a
 cisHeftiaFinalN = nakeHeftiaFinal . unHeftiaFinalT . wearHeftiaFinalT

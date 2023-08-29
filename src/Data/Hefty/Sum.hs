@@ -7,7 +7,7 @@
 module Data.Hefty.Sum where
 
 import Control.Effect.Class (LiftIns, Signature)
-import Control.Effect.Class.HFunctor (HFunctor, hmap)
+import Control.Effect.Class.HFunctor (HFunctor, hfmap)
 import Control.Heftia (liftSig, translateH)
 import Control.Heftia.Trans (TransHeftia, interpretT)
 import Data.Free.Sum (NopF)
@@ -21,9 +21,9 @@ data (h1 + h2) (f :: Type -> Type) a = L (h1 f a) | R (h2 f a)
     deriving (Functor, Foldable, Traversable)
 
 instance (HFunctor h1, HFunctor h2) => HFunctor (h1 + h2) where
-    hmap f = \case
-        L l -> L $ hmap f l
-        R r -> R $ hmap f r
+    hfmap f = \case
+        L l -> L $ hfmap f l
+        R r -> R $ hfmap f r
 
 type Nop = LiftIns NopF
 

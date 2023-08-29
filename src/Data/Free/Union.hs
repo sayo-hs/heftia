@@ -4,7 +4,7 @@
 
 module Data.Free.Union where
 
-import Control.Natural (type (~>))
+import Control.Effect.Class (type (~>))
 
 class s <:: t where
     weakenIns :: s ~> t

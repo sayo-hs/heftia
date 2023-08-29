@@ -8,11 +8,10 @@
 module Control.Heftia.Trans.Final where
 
 import Control.Applicative (Alternative)
-import Control.Effect.Class (LiftIns (LiftIns))
-import Control.Effect.Class.HFunctor (HFunctor, hmap)
+import Control.Effect.Class (LiftIns (LiftIns), type (~>))
+import Control.Effect.Class.HFunctor (HFunctor, hfmap)
 import Control.Heftia.Final (HeftiaFinal (HeftiaFinal), liftSigFinal, weakenHeftiaFinal)
 import Control.Monad (MonadPlus)
-import Control.Natural (type (~>))
 import Data.Constraint (Class)
 import Data.Hefty.Sum (type (+) (L, R))
 
@@ -33,7 +32,7 @@ heftiaFinalT :: (forall g. c g => InterpreterT h f g -> g a) -> HeftiaFinalT c h
 heftiaFinalT f = HeftiaFinalT $ HeftiaFinal \i -> f $ InterpreterT (i . R . LiftIns) (i . L)
 
 liftSigFinalT :: HFunctor h => h (HeftiaFinalT c h f) a -> HeftiaFinalT c h f a
-liftSigFinalT = HeftiaFinalT . liftSigFinal . L . hmap unHeftiaFinalT
+liftSigFinalT = HeftiaFinalT . liftSigFinal . L . hfmap unHeftiaFinalT
 
 weakenHeftiaFinalT :: (forall g. c' g => c g) => HeftiaFinalT c h f a -> HeftiaFinalT c' h f a
 weakenHeftiaFinalT = HeftiaFinalT . weakenHeftiaFinal . unHeftiaFinalT

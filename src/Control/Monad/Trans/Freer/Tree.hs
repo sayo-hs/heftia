@@ -7,6 +7,7 @@
 module Control.Monad.Trans.Freer.Tree where
 
 import Control.Applicative (Alternative)
+import Control.Effect.Class (type (~>))
 import Control.Freer (Freer, interpretFF, liftIns)
 import Control.Freer.Trans (FreerT (FreerT))
 import Control.Monad (MonadPlus)
@@ -14,7 +15,6 @@ import Control.Monad.Base (MonadBase)
 import Control.Monad.Identity (Identity, runIdentity)
 import Control.Monad.Trans (MonadIO, MonadTrans)
 import Control.Monad.Trans.Free (FreeF (Free, Pure), FreeT (FreeT), MonadFree, liftF)
-import Control.Natural (type (~>))
 import Data.Functor.Coyoneda (Coyoneda (Coyoneda), liftCoyoneda)
 
 newtype FreerTreeT m f a = FreerTreeT {unFreerTreeT :: FreeT (Coyoneda f) m a}
