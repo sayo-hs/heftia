@@ -6,10 +6,12 @@ module Control.Monad.Trans.Heftia where
 
 import Control.Effect.Class (Signature, type (~>))
 import Control.Effect.Class.HFunctor (HFunctor)
+import Control.Heftia (liftSig, translateH)
 import Control.Heftia.Trans (TransHeftia, hoistHeftia, interpretT, liftLower)
 import Control.Monad.Cont (ContT)
 import Control.Monad.Trans (MonadTrans, lift)
 import Data.Coerce (Coercible, coerce)
+import Data.Hefty.Sum (type (+) (L, R))
 import Data.Kind (Type)
 
 class TransHeftia Monad h => MonadTransHeftia h where
@@ -45,6 +47,13 @@ class TransHeftia Monad h => MonadTransHeftia h where
         t n a
     reinterpretTT f = interpretTT f . hoistHeftia (coerce . liftLower @Monad @h @sig)
     {-# INLINE reinterpretTT #-}
+
+mergeHeftia ::
+    forall h m sig sig' a c.
+    (HFunctor sig, HFunctor sig', TransHeftia c h, c m) =>
+    h (h m sig') sig a ->
+    h m (sig + sig') a
+mergeHeftia = interpretT (translateH @c R) (liftSig @c . L)
 
 reinterpretTTViaFinal ::
     forall h m t n sig a.

@@ -8,8 +8,6 @@ module Data.Hefty.Sum where
 
 import Control.Effect.Class (LiftIns, Signature)
 import Control.Effect.Class.HFunctor (HFunctor, hfmap)
-import Control.Heftia (liftSig, translateH)
-import Control.Heftia.Trans (TransHeftia, interpretT)
 import Data.Free.Sum (NopF)
 import Data.Hefty.Union (HFunctorUnion, Union, type (<:))
 import Data.Hefty.Union qualified as U
@@ -26,13 +24,6 @@ instance (HFunctor h1, HFunctor h2) => HFunctor (h1 + h2) where
         R r -> R $ hfmap f r
 
 type Nop = LiftIns NopF
-
-mergeHeftia ::
-    forall h m sig sig' a c.
-    (HFunctor sig, HFunctor sig', TransHeftia c h, c m) =>
-    h (h m sig') sig a ->
-    h m (sig + sig') a
-mergeHeftia = interpretT (translateH @c R) (liftSig @c . L)
 
 swapSum :: (h1 + h2) f a -> (h2 + h1) f a
 swapSum = \case
