@@ -1,4 +1,4 @@
-# Revision history for <library-name>
+# Revision history for heftia
 
 ## 0.1.0.0 -- YYYY-mm-dd
 
