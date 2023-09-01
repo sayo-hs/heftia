@@ -10,7 +10,7 @@ module Control.Heftia.Final where
 import Control.Applicative (Alternative, empty, (<|>))
 import Control.Effect.Class (Signature, type (~>))
 import Control.Effect.Class.HFunctor (HFunctor, hfmap)
-import Control.Heftia (Heftia, HeftiaEffects, HeftiaUnion, interpretH, liftSig)
+import Control.Heftia (Heftia, HeftiaEffects, interpretH, liftSig)
 import Control.Monad (MonadPlus (mplus, mzero))
 import Data.Hefty.Sum (SumUnion)
 
