@@ -10,8 +10,9 @@ module Control.Heftia.Final where
 import Control.Applicative (Alternative, empty, (<|>))
 import Control.Effect.Class (Signature, type (~>))
 import Control.Effect.Class.HFunctor (HFunctor, hfmap)
+import Control.Heftia (Heftia, HeftiaEffects, HeftiaUnion, interpretH, liftSig)
 import Control.Monad (MonadPlus (mplus, mzero))
-import Data.Constraint (Class, cls, (\\))
+import Data.Hefty.Sum (SumUnion)
 
 newtype HeftiaFinal c (h :: Signature) a = HeftiaFinal
     {unHeftiaFinal :: forall f. c f => (h f ~> f) -> f a}
@@ -28,41 +29,45 @@ weakenHeftiaFinal (HeftiaFinal f) = HeftiaFinal f
 class Noop f
 instance Noop f
 
-instance (forall f. Class (Functor f) (c f)) => Functor (HeftiaFinal c h) where
+instance (forall f. c f => Functor f, c (HeftiaFinal c h)) => Functor (HeftiaFinal c h) where
     fmap f (HeftiaFinal g) =
-        HeftiaFinal \(i :: h f ~> f) -> f <$> g i \\ cls @(Functor f) @(c f)
+        HeftiaFinal \(i :: h f ~> f) -> f <$> g i
 
 instance
-    (forall f. Class (Applicative f) (c f), Functor (HeftiaFinal c h)) =>
+    (forall f. c f => Applicative f, c (HeftiaFinal c h)) =>
     Applicative (HeftiaFinal c h)
     where
-    pure x = HeftiaFinal \(_ :: h f ~> f) -> pure x \\ cls @(Applicative f) @(c f)
+    pure x = HeftiaFinal \(_ :: h f ~> f) -> pure x
 
     HeftiaFinal f <*> HeftiaFinal g =
-        HeftiaFinal \(i :: h f ~> f) -> f i <*> g i \\ cls @(Applicative f) @(c f)
+        HeftiaFinal \(i :: h f ~> f) -> f i <*> g i
 
 instance
-    (forall f. Class (Alternative f) (c f), Applicative (HeftiaFinal c h)) =>
+    (forall f. c f => Alternative f, c (HeftiaFinal c h)) =>
     Alternative (HeftiaFinal c h)
     where
-    empty = HeftiaFinal \(_ :: h f ~> f) -> empty \\ cls @(Alternative f) @(c f)
+    empty = HeftiaFinal \(_ :: h f ~> f) -> empty
 
     HeftiaFinal f <|> HeftiaFinal g =
-        HeftiaFinal \(i :: h f ~> f) -> f i <|> g i \\ cls @(Alternative f) @(c f)
+        HeftiaFinal \(i :: h f ~> f) -> f i <|> g i
 
-instance
-    (forall m. Class (Monad m) (c m), Applicative (HeftiaFinal c h)) =>
-    Monad (HeftiaFinal c h)
-    where
+instance (forall m. c m => Monad m, c (HeftiaFinal c h)) => Monad (HeftiaFinal c h) where
     HeftiaFinal f >>= k =
         HeftiaFinal \(i :: h m ~> m) ->
-            f i >>= runHeftiaFinal i . k \\ cls @(Monad m) @(c m)
+            f i >>= runHeftiaFinal i . k
 
 instance
-    (forall m. Class (MonadPlus m) (c m), Alternative (HeftiaFinal c h), Monad (HeftiaFinal c h)) =>
+    (forall m. c m => MonadPlus m, Alternative (HeftiaFinal c h), Monad (HeftiaFinal c h)) =>
     MonadPlus (HeftiaFinal c h)
     where
-    mzero = HeftiaFinal \(_ :: h m ~> m) -> mzero \\ cls @(MonadPlus m) @(c m)
+    mzero = HeftiaFinal \(_ :: h m ~> m) -> mzero
 
     HeftiaFinal f `mplus` HeftiaFinal g =
-        HeftiaFinal \(i :: h m ~> m) -> f i `mplus` g i \\ cls @(MonadPlus m) @(c m)
+        HeftiaFinal \(i :: h m ~> m) -> f i `mplus` g i
+
+instance (forall sig. c (HeftiaFinal c sig)) => Heftia c (HeftiaFinal c) where
+    liftSig = liftSigFinal
+    interpretH = runHeftiaFinal
+
+type Hef es = HeftiaEffects (HeftiaFinal Monad) SumUnion es
+type HefA es = HeftiaEffects (HeftiaFinal Applicative) SumUnion es

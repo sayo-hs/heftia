@@ -12,7 +12,6 @@ import Control.Effect.Class (LiftIns (LiftIns), type (~>))
 import Control.Effect.Class.HFunctor (HFunctor, hfmap)
 import Control.Heftia.Final (HeftiaFinal (HeftiaFinal), liftSigFinal, weakenHeftiaFinal)
 import Control.Monad (MonadPlus)
-import Data.Constraint (Class)
 import Data.Hefty.Sum (type (+) (L, R))
 
 newtype HeftiaFinalT c h f a = HeftiaFinalT
@@ -38,34 +37,33 @@ weakenHeftiaFinalT :: (forall g. c' g => c g) => HeftiaFinalT c h f a -> HeftiaF
 weakenHeftiaFinalT = HeftiaFinalT . weakenHeftiaFinal . unHeftiaFinalT
 
 deriving newtype instance
-    (forall g. Class (Functor g) (c g)) =>
+    (forall g. c g => Functor g, c (HeftiaFinal c (h + LiftIns f))) =>
     Functor (HeftiaFinalT c h f)
 
 deriving newtype instance
-    ( forall g. Class (Applicative g) (c g)
-    , forall g. Class (Functor g) (c g)
+    ( forall g. c g => Applicative g
+    , c (HeftiaFinal c (h + LiftIns f))
+    , c (HeftiaFinalT c h f)
     ) =>
     Applicative (HeftiaFinalT c h f)
 
 deriving newtype instance
-    ( forall g. Class (Alternative g) (c g)
-    , forall g. Class (Applicative g) (c g)
-    , forall g. Class (Functor g) (c g)
+    ( forall g. c g => Alternative g
+    , c (HeftiaFinal c (h + LiftIns f))
+    , c (HeftiaFinalT c h f)
     ) =>
     Alternative (HeftiaFinalT c h f)
 
 deriving newtype instance
-    ( forall n. Class (Monad n) (c n)
-    , forall n. Class (Applicative n) (c n)
-    , forall n. Class (Functor n) (c n)
+    ( forall n. c n => Monad n
+    , c (HeftiaFinal c (h + LiftIns m))
+    , c (HeftiaFinalT c h m)
     ) =>
     Monad (HeftiaFinalT c h m)
 
 deriving newtype instance
-    ( forall n. Class (MonadPlus n) (c n)
-    , forall n. Class (Monad n) (c n)
-    , forall n. Class (Alternative n) (c n)
-    , forall n. Class (Applicative n) (c n)
-    , forall n. Class (Functor n) (c n)
+    ( forall n. c n => MonadPlus n
+    , c (HeftiaFinal c (h + LiftIns m))
+    , c (HeftiaFinalT c h m)
     ) =>
     MonadPlus (HeftiaFinalT c h m)

@@ -36,17 +36,16 @@ type family Sum hs where
 
 newtype SumUnion hs f a = SumUnion {unSumUnion :: Sum hs f a}
 
-deriving instance Functor (SumUnion '[] f)
-deriving instance (Functor (h f), Functor (Sum hs f)) => Functor (SumUnion (h ': hs) f)
+deriving newtype instance Functor (SumUnion '[] f)
+deriving newtype instance (Functor (h f), Functor (Sum hs f)) => Functor (SumUnion (h ': hs) f)
 
-deriving instance Foldable (SumUnion '[] f)
-deriving instance (Foldable (h f), Foldable (Sum hs f)) => Foldable (SumUnion (h ': hs) f)
+deriving newtype instance Foldable (SumUnion '[] f)
+deriving newtype instance (Foldable (h f), Foldable (Sum hs f)) => Foldable (SumUnion (h ': hs) f)
 
-deriving instance Traversable (SumUnion '[] f)
-deriving instance (Traversable (h f), Traversable (Sum hs f)) => Traversable (SumUnion (h ': hs) f)
+deriving stock instance Traversable (SumUnion '[] f)
+deriving stock instance (Traversable (h f), Traversable (Sum hs f)) => Traversable (SumUnion (h ': hs) f)
 
-deriving instance HFunctor (SumUnion '[])
-deriving instance (HFunctor h, HFunctor (Sum hs)) => HFunctor (SumUnion (h ': hs))
+deriving newtype instance HFunctor (Sum hs) => HFunctor (SumUnion hs)
 
 instance Union SumUnion where
     type Member _ h hs = h < Sum hs
@@ -79,16 +78,9 @@ instance h < h where
     injH = id
     projH = Just
 
-instance h1 < (h1 + h2) where
-    injH = L
+instance h1 < h2 => h1 < (h2 + h3) where
+    injH = L . injH
 
     projH = \case
-        L x -> Just x
+        L x -> projH x
         R _ -> Nothing
-
-instance h1 < h3 => h1 < (h2 + h3) where
-    injH = R . injH
-
-    projH = \case
-        L _ -> Nothing
-        R x -> projH x

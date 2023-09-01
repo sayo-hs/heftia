@@ -8,11 +8,20 @@
 module Control.Heftia where
 
 import Control.Applicative (Alternative)
-import Control.Effect.Class (LiftIns, Send, Signature, send, unliftIns, type (~>))
+import Control.Effect.Class (
+    LiftIns (LiftIns),
+    Send,
+    SendF,
+    SendVia (SendVia),
+    Signature,
+    runSendVia,
+    send,
+    sendF,
+    unliftIns,
+    type (~>),
+ )
 import Control.Effect.Class.HFunctor (HFunctor, hfmap)
-import Control.Heftia.Final (HeftiaFinal)
 import Control.Monad (MonadPlus)
-import Data.Hefty.Sum (SumUnion)
 import Data.Hefty.Union (
     Member,
     Union,
@@ -58,8 +67,13 @@ newtype HeftiaUnion (h :: Signature -> Type -> Type) u (es :: [Signature]) a = H
     deriving newtype (Functor, Applicative, Alternative, Monad, MonadPlus)
     deriving stock (Foldable, Traversable)
 
-type Hef = HeftiaUnion (HeftiaFinal Monad) SumUnion
-type HefA = HeftiaUnion (HeftiaFinal Applicative) SumUnion
+type HeftiaEffects h u es = SendVia (HeftiaUnion h u es)
+
+runHeftiaEffects :: HeftiaEffects h u es ~> h (u es)
+runHeftiaEffects = runHeftiaUnion . runSendVia
+
+heftiaEffects :: h (u es) ~> HeftiaEffects h u es
+heftiaEffects = SendVia . HeftiaUnion
 
 instance
     (Heftia c h, Union u, Member u e es, HFunctor (u es)) =>
@@ -67,24 +81,30 @@ instance
     where
     send = HeftiaUnion . liftSig . hfmap runHeftiaUnion . inject
 
+instance
+    (Heftia c h, Union u, Member u (LiftIns e) es, HFunctor (u es)) =>
+    SendF e (HeftiaUnion h u es)
+    where
+    sendF = HeftiaUnion . liftSig . inject . LiftIns
+
 interpret ::
     (Heftia c h, Union u, HFunctor (u es), HFunctor (u (e : es)), HFunctor e) =>
-    (e (HeftiaUnion h u es) ~> HeftiaUnion h u es) ->
-    HeftiaUnion h u (e ': es) ~> HeftiaUnion h u es
-interpret i (HeftiaUnion a) =
-    HeftiaUnion $ ($ a) $ interpretH \u ->
+    (e (HeftiaEffects h u es) ~> HeftiaEffects h u es) ->
+    HeftiaEffects h u (e ': es) ~> HeftiaEffects h u es
+interpret i a =
+    heftiaEffects $ ($ runHeftiaEffects a) $ interpretH \u ->
         case decomp u of
-            Left e -> runHeftiaUnion $ i $ hfmap HeftiaUnion e
+            Left e -> runHeftiaEffects $ i $ hfmap heftiaEffects e
             Right e -> liftSig e
 
 reinterpret ::
     (Heftia c h, Union u, HFunctor (u (e : es)), HFunctor e) =>
-    (e (HeftiaUnion h u (e ': es)) ~> HeftiaUnion h u (e ': es)) ->
-    HeftiaUnion h u (e ': es) ~> HeftiaUnion h u (e ': es)
-reinterpret i (HeftiaUnion a) =
-    HeftiaUnion $ ($ a) $ reinterpretH \u ->
+    (e (HeftiaEffects h u (e ': es)) ~> HeftiaEffects h u (e ': es)) ->
+    HeftiaEffects h u (e ': es) ~> HeftiaEffects h u (e ': es)
+reinterpret i a =
+    heftiaEffects $ ($ runHeftiaEffects a) $ reinterpretH \u ->
         case decomp u of
-            Left e -> runHeftiaUnion $ i $ hfmap HeftiaUnion e
+            Left e -> runHeftiaEffects $ i $ hfmap heftiaEffects e
             Right e -> liftSig $ weakenR e
 
 translate ::
@@ -95,34 +115,34 @@ translate ::
     , HFunctor e
     , HFunctor e'
     ) =>
-    (e (HeftiaUnion h u (e' ': es)) ~> e' (HeftiaUnion h u (e' ': es))) ->
-    HeftiaUnion h u (e ': es) ~> HeftiaUnion h u (e' ': es)
-translate f (HeftiaUnion a) =
-    HeftiaUnion $ ($ a) $ translateH \u ->
+    (e (HeftiaEffects h u (e' ': es)) ~> e' (HeftiaEffects h u (e' ': es))) ->
+    HeftiaEffects h u (e ': es) ~> HeftiaEffects h u (e' ': es)
+translate f a =
+    heftiaEffects $ ($ runHeftiaEffects a) $ translateH \u ->
         case decomp u of
-            Left e -> weakenL $ hfmap runHeftiaUnion $ f $ hfmap HeftiaUnion e
+            Left e -> weakenL $ hfmap runHeftiaEffects $ f $ hfmap heftiaEffects e
             Right e -> weakenR e
 
 interpose ::
     forall e h u es c.
     (Heftia c h, Union u, Member u e es, HFunctor (u es)) =>
-    (e (HeftiaUnion h u es) ~> HeftiaUnion h u es) ->
-    HeftiaUnion h u es ~> HeftiaUnion h u es
-interpose f (HeftiaUnion a) =
-    HeftiaUnion $ ($ a) $ reinterpretH \u ->
-        let u' = hfmap (interpose f . HeftiaUnion) u
+    (e (HeftiaEffects h u es) ~> HeftiaEffects h u es) ->
+    HeftiaEffects h u es ~> HeftiaEffects h u es
+interpose f a =
+    heftiaEffects $ ($ runHeftiaEffects a) $ reinterpretH \u ->
+        let u' = hfmap (interpose f . heftiaEffects) u
          in case project @_ @e u' of
-                Just e -> runHeftiaUnion $ f e
-                Nothing -> liftSig $ hfmap runHeftiaUnion u'
+                Just e -> runHeftiaEffects $ f e
+                Nothing -> liftSig $ hfmap runHeftiaEffects u'
 
 intercept ::
     forall e h u es c.
     (Heftia c h, Union u, Member u e es, HFunctor (u es), HFunctor e) =>
-    (e (HeftiaUnion h u es) ~> e (HeftiaUnion h u es)) ->
-    HeftiaUnion h u es ~> HeftiaUnion h u es
-intercept f (HeftiaUnion a) =
-    HeftiaUnion $ ($ a) $ translateH \u ->
-        let u' = hfmap (intercept f . HeftiaUnion) u
+    (e (HeftiaEffects h u es) ~> e (HeftiaEffects h u es)) ->
+    HeftiaEffects h u es ~> HeftiaEffects h u es
+intercept f a =
+    heftiaEffects $ ($ runHeftiaEffects a) $ translateH \u ->
+        let u' = hfmap (intercept f . heftiaEffects) u
          in case project @_ @e u' of
-                Just e -> inject $ hfmap runHeftiaUnion $ f e
-                Nothing -> hfmap runHeftiaUnion u'
+                Just e -> inject $ hfmap runHeftiaEffects $ f e
+                Nothing -> hfmap runHeftiaEffects u'
