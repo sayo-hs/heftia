@@ -1,0 +1,91 @@
+cabal-version:      2.4
+name:               heftia-effects
+version:            0.1.0.0
+
+-- A short (one-line) description of the package.
+synopsis: <synopsis>
+
+-- A longer description of the package.
+description: <description>
+
+-- A URL where users can report bugs.
+bug-reports: https://github.com/ymdryo/heftia-effects
+
+-- The license under which the package is released.
+license:            MPL-2.0
+license-file:       LICENSE
+author:             Yamada Ryo <ymdfield@outlook.jp>
+maintainer:         Yamada Ryo <ymdfield@outlook.jp>
+
+-- A copyright notice.
+copyright: 2023 Yamada Ryo
+category: Control, Effect, Monads
+
+extra-source-files:
+    ChangeLog.md
+    README.md
+    CONTRIBUTING.md
+    CLA
+
+tested-with:
+    GHC == 9.2.8
+
+source-repository head
+    type: git
+    location: https://github.com/ymdryo/heftia-effects
+
+library
+    exposed-modules:
+        Control.Effect.Handler.Heftia
+        Control.Effect.Handler.Heftia.Reader
+
+    -- Modules included in this executable, other than Main.
+    -- other-modules:
+
+    -- LANGUAGE extensions used by modules in this package.
+    -- other-extensions:
+    build-depends:
+        base                          ^>= 4.16.4.0,
+        heftia                        ^>= 0.1,
+        classy-effects                ^>= 0.1,
+
+    hs-source-dirs:   src
+    ghc-options:      -Wall
+    default-language: GHC2021
+
+    default-extensions:
+        LambdaCase,
+        DerivingStrategies,
+        DataKinds,
+        TypeFamilies,
+        BlockArguments,
+        FunctionalDependencies,
+        RecordWildCards,
+        DefaultSignatures
+
+
+test-suite test
+    main-is: Driver.hs
+    hs-source-dirs: test
+    build-depends:
+        heftia-effects,
+        base,
+        tasty                         ^>= 1.4,
+        tasty-hunit                   ^>= 0.10,
+
+    type: exitcode-stdio-1.0
+
+    build-tool-depends:
+        tasty-discover:tasty-discover
+
+    default-language: GHC2021
+
+    default-extensions:
+        LambdaCase,
+        DerivingStrategies,
+        DataKinds,
+        TypeFamilies,
+        BlockArguments,
+        FunctionalDependencies,
+        RecordWildCards,
+        DefaultSignatures
