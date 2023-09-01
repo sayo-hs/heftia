@@ -41,9 +41,7 @@ category: Control, Monads
 
 extra-source-files:
     ChangeLog.md
-    README.md
-    CONTRIBUTING.md
-    CLA
+    NOTICE
 
 tested-with:
     GHC == 9.2.8
