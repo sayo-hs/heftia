@@ -5,7 +5,7 @@
 module Control.Heftia.Final.Naked where
 
 import Control.Effect.Class (Signature, type (~>))
-import Control.Effect.Class.HFunctor (HFunctor, hfmap)
+import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap)
 import Control.Freer (Freer, liftIns, retractF)
 import Control.Heftia.Final (HeftiaFinal (HeftiaFinal), Noop)
 import Data.Hefty.Sum (type (+) (L, R))

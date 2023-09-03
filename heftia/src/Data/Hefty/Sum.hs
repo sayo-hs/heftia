@@ -7,7 +7,7 @@
 module Data.Hefty.Sum where
 
 import Control.Effect.Class (LiftIns, Signature)
-import Control.Effect.Class.HFunctor (HFunctor, hfmap)
+import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap)
 import Data.Free.Sum (NopF)
 import Data.Hefty.Union (HFunctorUnion, Union, type (<:))
 import Data.Hefty.Union qualified as U

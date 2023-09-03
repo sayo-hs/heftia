@@ -9,7 +9,7 @@ module Control.Heftia.Final where
 
 import Control.Applicative (Alternative, empty, (<|>))
 import Control.Effect.Class (Signature, type (~>))
-import Control.Effect.Class.HFunctor (HFunctor, hfmap)
+import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap)
 import Control.Heftia (Heftia, HeftiaEffects, interpretH, liftSig)
 import Control.Monad (MonadPlus (mplus, mzero))
 import Data.Hefty.Sum (SumUnion)
@@ -25,6 +25,19 @@ liftSigFinal e = HeftiaFinal \i -> i $ hfmap (runHeftiaFinal i) e
 
 weakenHeftiaFinal :: (forall f. c' f => c f) => HeftiaFinal c h a -> HeftiaFinal c' h a
 weakenHeftiaFinal (HeftiaFinal f) = HeftiaFinal f
+
+transformHeftiaFinal ::
+    (forall f. h f ~> i f) ->
+    HeftiaFinal c h a ->
+    HeftiaFinal c i a
+transformHeftiaFinal phi (HeftiaFinal f) = HeftiaFinal \i -> f $ i . phi
+
+translateHeftiaFinal ::
+    (c (HeftiaFinal c i), HFunctor i) =>
+    (h (HeftiaFinal c i) ~> i (HeftiaFinal c i)) ->
+    HeftiaFinal c h a ->
+    HeftiaFinal c i a
+translateHeftiaFinal f = runHeftiaFinal $ liftSigFinal . f
 
 class Noop f
 instance Noop f

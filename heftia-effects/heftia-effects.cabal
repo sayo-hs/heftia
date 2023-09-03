@@ -46,6 +46,7 @@ library
         base                          ^>= 4.16.4.0,
         heftia                        ^>= 0.1,
         classy-effects                ^>= 0.1,
+        mtl,
 
     hs-source-dirs:   src
     ghc-options:      -Wall
@@ -59,7 +60,8 @@ library
         BlockArguments,
         FunctionalDependencies,
         RecordWildCards,
-        DefaultSignatures
+        DefaultSignatures,
+        PatternSynonyms
 
 
 test-suite test

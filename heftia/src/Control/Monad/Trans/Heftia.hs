@@ -5,9 +5,8 @@
 module Control.Monad.Trans.Heftia where
 
 import Control.Effect.Class (Signature, type (~>))
-import Control.Effect.Class.HFunctor (HFunctor)
-import Control.Heftia (liftSig, translateH)
-import Control.Heftia.Trans (TransHeftia, hoistHeftia, interpretT, liftLower)
+import Control.Effect.Class.Machinery.HFunctor (HFunctor)
+import Control.Heftia.Trans (TransHeftia, hoistHeftia, interpretHT, liftLower, liftSigT, translateT)
 import Control.Monad.Cont (ContT)
 import Control.Monad.Trans (MonadTrans, lift)
 import Data.Coerce (Coercible, coerce)
@@ -36,7 +35,7 @@ class TransHeftia Monad h => MonadTransHeftia h where
         (sig (t m) ~> t m) ->
         h m sig a ->
         t m a
-    interpretTT = interpretT lift
+    interpretTT = interpretHT lift
     {-# INLINE interpretTT #-}
 
     reinterpretTT ::
@@ -53,7 +52,7 @@ mergeHeftia ::
     (HFunctor sig, HFunctor sig', TransHeftia c h, c m) =>
     h (h m sig') sig a ->
     h m (sig + sig') a
-mergeHeftia = interpretT (translateH @c R) (liftSig @c . L)
+mergeHeftia = interpretHT (translateT @c R) (liftSigT @c . L)
 
 reinterpretTTViaFinal ::
     forall h m t n sig a.
@@ -68,7 +67,7 @@ reinterpretTTViaFinal ::
     (sig (t n) ~> t n) ->
     h m sig a ->
     t n a
-reinterpretTTViaFinal = interpretT $ lift . coerce . liftLower @Monad @h @sig
+reinterpretTTViaFinal = interpretHT $ lift . coerce . liftLower @Monad @h @sig
 {-# INLINE reinterpretTTViaFinal #-}
 
 newtype HeftiaT (h :: (Type -> Type) -> Signature -> Type -> Type) sig m a = HeftiaT
