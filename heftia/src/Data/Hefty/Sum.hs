@@ -7,35 +7,23 @@
 module Data.Hefty.Sum where
 
 import Control.Effect.Class (LiftIns, Signature)
-import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap)
+import Control.Effect.Class.Machinery.HFunctor (HFunctor, caseH, (:+:) (Inl, Inr))
 import Data.Free.Sum (NopF)
 import Data.Hefty.Union (HFunctorUnion, Union, type (<:))
 import Data.Hefty.Union qualified as U
-import Data.Kind (Type)
-
-infixr 6 +
-
-data (h1 + h2) (f :: Type -> Type) a = L (h1 f a) | R (h2 f a)
-    deriving (Functor, Foldable, Traversable)
-
-instance (HFunctor h1, HFunctor h2) => HFunctor (h1 + h2) where
-    hfmap f = \case
-        L l -> L $ hfmap f l
-        R r -> R $ hfmap f r
 
 type Nop = LiftIns NopF
 
-swapSum :: (h1 + h2) f a -> (h2 + h1) f a
-swapSum = \case
-    L x -> R x
-    R x -> L x
+swapSum :: (h1 :+: h2) f a -> (h2 :+: h1) f a
+swapSum = caseH Inr Inl
 
 type family Sum hs where
     Sum '[] = Nop
-    Sum (h ': hs) = h + Sum hs
+    Sum (h ': hs) = h :+: Sum hs
 
 newtype SumUnion hs f a = SumUnion {unSumUnion :: Sum hs f a}
 
+{-
 deriving newtype instance Functor (SumUnion '[] f)
 deriving newtype instance (Functor (h f), Functor (Sum hs f)) => Functor (SumUnion (h ': hs) f)
 
@@ -44,6 +32,7 @@ deriving newtype instance (Foldable (h f), Foldable (Sum hs f)) => Foldable (Sum
 
 deriving stock instance Traversable (SumUnion '[] f)
 deriving stock instance (Traversable (h f), Traversable (Sum hs f)) => Traversable (SumUnion (h ': hs) f)
+-}
 
 deriving newtype instance HFunctor (Sum hs) => HFunctor (SumUnion hs)
 
@@ -55,12 +44,12 @@ instance Union SumUnion where
 
     comp =
         SumUnion . \case
-            Left x -> L x
-            Right (SumUnion x) -> R x
+            Left x -> Inl x
+            Right (SumUnion x) -> Inr x
 
     decomp (SumUnion sig) = case sig of
-        L x -> Left x
-        R x -> Right (SumUnion x)
+        Inl x -> Left x
+        Inr x -> Right (SumUnion x)
 
 instance HFunctor (SumUnion hs) => HFunctorUnion SumUnion hs
 
@@ -78,9 +67,9 @@ instance h < h where
     injH = id
     projH = Just
 
-instance h1 < h2 => h1 < (h2 + h3) where
-    injH = L . injH
+instance h1 < h2 => h1 < (h2 :+: h3) where
+    injH = Inl . injH
 
     projH = \case
-        L x -> projH x
-        R _ -> Nothing
+        Inl x -> projH x
+        Inr _ -> Nothing
