@@ -21,31 +21,31 @@ import Control.Heftia.Final (
 import Control.Heftia.Trans (TransHeftia (..))
 import Control.Monad (MonadPlus)
 import Control.Monad.Trans (MonadTrans)
-import Control.Monad.Trans.Heftia (MonadTransHeftia, ViaLiftLower (ViaLiftLower))
+import Control.Monad.Trans.Heftia (MonadTransHeftia, ViaLiftLowerH (ViaLiftLowerH))
 
 newtype HeftiaFinalT c h f a = HeftiaFinalT
     {unHeftiaFinalT :: HeftiaFinal c (h :+: LiftIns f) a}
 
-data InterpreterT h f g = InterpreterT
-    { interpretLower :: f ~> g
-    , interpreter :: h g ~> g
+data FinalTElaborator h f g = FinalTElaborator
+    { elaborateFinalTLower :: f ~> g
+    , elaborateFinalT :: h g ~> g
     }
 
-runHeftiaFinalT :: c g => InterpreterT h f g -> HeftiaFinalT c h f a -> g a
-runHeftiaFinalT InterpreterT{..} (HeftiaFinalT (HeftiaFinal h)) = h \case
-    Inl e -> interpreter e
-    Inr (LiftIns a) -> interpretLower a
+runHeftiaFinalT :: c g => FinalTElaborator h f g -> HeftiaFinalT c h f a -> g a
+runHeftiaFinalT FinalTElaborator{..} (HeftiaFinalT (HeftiaFinal h)) = h \case
+    Inl e -> elaborateFinalT e
+    Inr (LiftIns a) -> elaborateFinalTLower a
 
-heftiaFinalT :: (forall g. c g => InterpreterT h f g -> g a) -> HeftiaFinalT c h f a
-heftiaFinalT f = HeftiaFinalT $ HeftiaFinal \i -> f $ InterpreterT (i . Inr . LiftIns) (i . Inl)
+heftiaFinalT :: (forall g. c g => FinalTElaborator h f g -> g a) -> HeftiaFinalT c h f a
+heftiaFinalT f = HeftiaFinalT $ HeftiaFinal \i -> f $ FinalTElaborator (i . Inr . LiftIns) (i . Inl)
 
 liftSigFinalT :: HFunctor h => h (HeftiaFinalT c h f) a -> HeftiaFinalT c h f a
 liftSigFinalT = HeftiaFinalT . liftSigFinal . Inl . hfmap unHeftiaFinalT
 {-# INLINE liftSigFinalT #-}
 
-liftLowerFinal :: HFunctor h => f a -> HeftiaFinalT c h f a
-liftLowerFinal = HeftiaFinalT . liftSigFinal . Inr . LiftIns
-{-# INLINE liftLowerFinal #-}
+liftLowerHFinal :: HFunctor h => f a -> HeftiaFinalT c h f a
+liftLowerHFinal = HeftiaFinalT . liftSigFinal . Inr . LiftIns
+{-# INLINE liftLowerHFinal #-}
 
 weakenHeftiaFinalT :: (forall g. c' g => c g) => HeftiaFinalT c h f a -> HeftiaFinalT c' h f a
 weakenHeftiaFinalT = HeftiaFinalT . weakenHeftiaFinal . unHeftiaFinalT
@@ -53,8 +53,7 @@ weakenHeftiaFinalT = HeftiaFinalT . weakenHeftiaFinal . unHeftiaFinalT
 
 hoistHeftiaFinal ::
     (f ~> g) ->
-    HeftiaFinalT c h f a ->
-    HeftiaFinalT c h g a
+    HeftiaFinalT c h f ~> HeftiaFinalT c h g
 hoistHeftiaFinal phi (HeftiaFinalT a) =
     HeftiaFinalT $ ($ a) $ transformHeftiaFinal \case
         Inl e -> Inl e
@@ -99,33 +98,33 @@ instance (forall h f. c f => c (HeftiaFinalT c h f)) => TransHeftia c (HeftiaFin
     translateT f (HeftiaFinalT a) =
         ($ a) $ runHeftiaFinal \case
             Inl e -> liftSigFinalT $ f e
-            Inr (LiftIns a') -> liftLower a'
+            Inr (LiftIns a') -> liftLowerH a'
 
-    liftLower = liftLowerFinal
-    {-# INLINE liftLower #-}
+    liftLowerH = liftLowerHFinal
+    {-# INLINE liftLowerH #-}
 
-    interpretR i = runHeftiaFinalT $ InterpreterT id i
-    {-# INLINE interpretR #-}
+    runElaborateH i = runHeftiaFinalT $ FinalTElaborator id i
+    {-# INLINE runElaborateH #-}
 
     hoistHeftia = hoistHeftiaFinal
     {-# INLINE hoistHeftia #-}
 
 deriving via
-    ViaLiftLower (HeftiaFinalT Monad) h
+    ViaLiftLowerH (HeftiaFinalT Monad) h
     instance
         HFunctor h => MonadTrans (HeftiaFinalT Monad h)
 
 instance MonadTransHeftia (HeftiaFinalT Monad)
 
-joinHeftiaFinalT ::
+subsumeHeftiaFinal ::
     (c (HeftiaFinalT c h f), HFunctor h) =>
     HeftiaFinalT c h (HeftiaFinalT c h f) a ->
     HeftiaFinalT c h f a
-joinHeftiaFinalT (HeftiaFinalT (HeftiaFinal f)) =
+subsumeHeftiaFinal (HeftiaFinalT (HeftiaFinal f)) =
     f \case
         Inl e -> liftSigFinalT e
         Inr (LiftIns e) -> e
 
-dupHeftiaFinalT :: HFunctor h => HeftiaFinalT c h f a -> HeftiaFinalT c h (HeftiaFinalT c h f) a
-dupHeftiaFinalT = hoistHeftiaFinal liftLowerFinal
-{-# INLINE dupHeftiaFinalT #-}
+dupHeftiaFinal :: HFunctor h => HeftiaFinalT c h f a -> HeftiaFinalT c h (HeftiaFinalT c h f) a
+dupHeftiaFinal = hoistHeftiaFinal liftLowerHFinal
+{-# INLINE dupHeftiaFinal #-}

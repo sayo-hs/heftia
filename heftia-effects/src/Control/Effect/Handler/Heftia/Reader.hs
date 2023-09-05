@@ -6,19 +6,32 @@ module Control.Effect.Handler.Heftia.Reader where
 
 import Control.Effect.Class (type (~>))
 import Control.Effect.Class.Machinery.HFunctor (HFunctor)
-import Control.Effect.Class.Reader (AskS, LocalS (Local), ask, pattern AskS)
-import Control.Heftia (interpret, reinterpret)
-import Control.Heftia.Final (Hef)
-import Data.Hefty.Sum (Sum)
+import Control.Effect.Class.Reader (AskI (Ask), LocalS (Local), ask)
+import Control.Effect.Freer (Fre, interpose, interpret)
+import Control.Effect.Heftia (Hef, hoistHeftiaEffects, hoistInterpose, interpretH)
+import Data.Free.Sum (Sum, type (<))
+import Data.Hefty.Sum (SumH)
 
-interpretReader :: HFunctor (Sum es) => r -> Hef (LocalS r ': AskS r ': es) ~> Hef es
-interpretReader r = interpretAsk r . elaborateReader
+interpretReader ::
+    (HFunctor (SumH es), Monad m) =>
+    r ->
+    Hef (LocalS r ': es) (Fre (AskI r ': es') m) ~> Hef es (Fre es' m)
+interpretReader r = hoistHeftiaEffects (interpretAsk r) . interpretReaderH
+{-# INLINE interpretReader #-}
+
+interpretReaderH ::
+    (AskI r < Sum es', HFunctor (SumH es), Monad m) =>
+    Hef (LocalS r ': es) (Fre es' m) ~> Hef es (Fre es' m)
+interpretReaderH =
+    interpretH \(Local (f :: r -> r) a) ->
+        ($ a) $ hoistInterpose @(AskI r) \Ask -> f <$> ask
 
 elaborateReader ::
-    HFunctor (Sum es) =>
-    Hef (LocalS r ': AskS r ': es) ~> Hef (AskS r ': es)
-elaborateReader = interpret \(Local f a) ->
-    ($ a) $ reinterpret \AskS -> f <$> ask
+    (AskI r < Sum es, Monad m) =>
+    LocalS r (Fre es m) ~> Fre es m
+elaborateReader (Local (f :: r -> r) a) =
+    ($ a) $ interpose @(AskI r) \Ask -> f <$> ask
 
-interpretAsk :: HFunctor (Sum es) => r -> Hef (AskS r ': es) ~> Hef es
-interpretAsk r = interpret \AskS -> pure r
+interpretAsk :: Monad m => r -> Fre (AskI r ': es) m ~> Fre es m
+interpretAsk r = interpret \Ask -> pure r
+{-# INLINE interpretAsk #-}

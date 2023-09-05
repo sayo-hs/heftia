@@ -6,7 +6,7 @@ module Control.Heftia.Final.Naked where
 
 import Control.Effect.Class (Signature, type (~>))
 import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap, (:+:) (Inl, Inr))
-import Control.Freer (Freer, liftIns, retractF)
+import Control.Freer (Freer, liftIns, retract)
 import Control.Heftia.Final (HeftiaFinal (HeftiaFinal), Noop)
 
 newtype HeftiaFinalN (h :: Signature) a = HeftiaFinalN {unHeftiaFinalN :: forall f. (h f ~> f) -> f a}
@@ -30,7 +30,7 @@ nakeHeftiaFinal (HeftiaFinal f) = HeftiaFinalN f
 wearHeftiaFinalF :: Freer c f => HeftiaFinalN (f :+: h) a -> HeftiaFinal c h a
 wearHeftiaFinalF (HeftiaFinalN f) =
     HeftiaFinal \i -> f \case
-        Inl m -> retractF m
+        Inl m -> retract m
         Inr e -> i e
 
 nakeHeftiaFinalF :: (Freer c f, HFunctor h) => HeftiaFinal c h a -> HeftiaFinalN (f :+: h) a

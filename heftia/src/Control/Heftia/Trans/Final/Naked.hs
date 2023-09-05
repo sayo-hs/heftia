@@ -6,50 +6,56 @@ module Control.Heftia.Trans.Final.Naked where
 
 import Control.Effect.Class (LiftIns, Signature)
 import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap, (:+:) (Inl, Inr))
-import Control.Freer (Freer, liftIns, retractF)
+import Control.Freer (Freer, liftIns, retract)
 import Control.Heftia.Final (Noop)
 import Control.Heftia.Final.Naked (HeftiaFinalN, nakeHeftiaFinal, wearHeftiaFinal)
 import Control.Heftia.Trans.Final (
+    FinalTElaborator (FinalTElaborator),
     HeftiaFinalT (HeftiaFinalT),
-    InterpreterT (InterpreterT),
+    elaborateFinalT,
+    elaborateFinalTLower,
     heftiaFinalT,
-    interpretLower,
-    interpreter,
     runHeftiaFinalT,
     unHeftiaFinalT,
  )
 
 newtype HeftiaFinalTN (h :: Signature) f a = HeftiaFinalTN
-    {unHeftiaFinalTN :: forall g. InterpreterT h f g -> g a}
+    {unHeftiaFinalTN :: forall g. FinalTElaborator h f g -> g a}
 
-runHeftiaFinalTN :: InterpreterT h f g -> HeftiaFinalTN h f a -> g a
+runHeftiaFinalTN :: FinalTElaborator h f g -> HeftiaFinalTN h f a -> g a
 runHeftiaFinalTN i (HeftiaFinalTN f) = f i
+{-# INLINE runHeftiaFinalTN #-}
 
 liftSigFinalTN :: HFunctor h => h (HeftiaFinalTN h f) a -> HeftiaFinalTN h f a
-liftSigFinalTN e = HeftiaFinalTN \i -> interpreter i $ hfmap (runHeftiaFinalTN i) e
+liftSigFinalTN e = HeftiaFinalTN \i -> elaborateFinalT i $ hfmap (runHeftiaFinalTN i) e
+{-# INLINE liftSigFinalTN #-}
 
 wearHeftiaFinalT :: HeftiaFinalTN h f a -> HeftiaFinalT Noop h f a
 wearHeftiaFinalT (HeftiaFinalTN f) = heftiaFinalT f
+{-# INLINE wearHeftiaFinalT #-}
 
 nakeHeftiaFinalT :: HeftiaFinalT Noop h f a -> HeftiaFinalTN h f a
 nakeHeftiaFinalT m = HeftiaFinalTN (`runHeftiaFinalT` m)
+{-# INLINE nakeHeftiaFinalT #-}
 
 wearHeftiaFinalTF :: Freer c fr => HeftiaFinalTN (fr :+: h) f a -> HeftiaFinalT c h f a
 wearHeftiaFinalTF (HeftiaFinalTN f) =
-    heftiaFinalT \i -> f $ InterpreterT (interpretLower i) \case
-        Inl m -> retractF m
-        Inr e -> interpreter i e
+    heftiaFinalT \i -> f $ FinalTElaborator (elaborateFinalTLower i) \case
+        Inl m -> retract m
+        Inr e -> elaborateFinalT i e
 
 nakeHeftiaFinalTF :: (Freer c fr, HFunctor h) => HeftiaFinalT c h f a -> HeftiaFinalTN (fr :+: h) f a
 nakeHeftiaFinalTF m =
     HeftiaFinalTN \i ->
-        interpreter i . Inl . (`runHeftiaFinalT` m) $
-            InterpreterT
-                (liftIns . interpretLower i)
-                (liftIns . interpreter i . Inr . hfmap (interpreter i . Inl))
+        elaborateFinalT i . Inl . (`runHeftiaFinalT` m) $
+            FinalTElaborator
+                (liftIns . elaborateFinalTLower i)
+                (liftIns . elaborateFinalT i . Inr . hfmap (elaborateFinalT i . Inl))
 
 cisHeftiaFinalN :: HeftiaFinalTN h f a -> HeftiaFinalN (h :+: LiftIns f) a
 cisHeftiaFinalN = nakeHeftiaFinal . unHeftiaFinalT . wearHeftiaFinalT
+{-# INLINE cisHeftiaFinalN #-}
 
 transHeftiaFinalN :: HeftiaFinalN (h :+: LiftIns f) a -> HeftiaFinalTN h f a
 transHeftiaFinalN = nakeHeftiaFinalT . HeftiaFinalT . wearHeftiaFinal
+{-# INLINE transHeftiaFinalN #-}

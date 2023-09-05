@@ -8,7 +8,7 @@ module Control.Monad.Trans.Heftia where
 
 import Control.Effect.Class (Signature, type (~>))
 import Control.Effect.Class.Machinery.HFunctor (HFunctor, (:+:) (Inl, Inr))
-import Control.Heftia.Trans (TransHeftia, hoistHeftia, interpretHT, liftLower, liftSigT, translateT)
+import Control.Heftia.Trans (TransHeftia, elaborateHT, hoistHeftia, liftLowerH, liftSigT, translateT)
 import Control.Monad.Cont (ContT)
 import Control.Monad.Trans (MonadTrans, lift)
 import Data.Coerce (Coercible, coerce)
@@ -18,48 +18,48 @@ class
     (TransHeftia Monad h, forall sig. HFunctor sig => MonadTrans (h sig)) =>
     MonadTransHeftia h
     where
-    interpretK ::
+    elaborateMK ::
         (Monad m, HFunctor sig) =>
-        (sig (ContT b m) ~> ContT b m) ->
-        h sig m a ->
-        ContT b m a
-    interpretK = interpretTT
-    {-# INLINE interpretK #-}
-
-    reinterpretK ::
+        (sig (ContT r m) ~> ContT r m) ->
+        h sig m ~> ContT r m
+    default elaborateMK ::
         (Monad m, HFunctor sig) =>
-        (sig (ContT b (h sig m)) ~> ContT b (h sig m)) ->
-        h sig m a ->
-        ContT b (h sig m) a
-    reinterpretK = reinterpretTT
-    {-# INLINE reinterpretK #-}
+        (sig (ContT r m) ~> ContT r m) ->
+        h sig m ~> ContT r m
+    elaborateMK = elaborateMT
+    {-# INLINE elaborateMK #-}
 
-    interpretTT ::
+    reelaborateMK ::
+        (Monad m, HFunctor sig) =>
+        (sig (ContT r (h sig m)) ~> ContT r (h sig m)) ->
+        h sig m ~> ContT r (h sig m)
+    reelaborateMK = reelaborateMT
+    {-# INLINE reelaborateMK #-}
+
+    elaborateMT ::
         (Monad m, MonadTrans t, Monad (t m), HFunctor sig) =>
         (sig (t m) ~> t m) ->
-        h sig m a ->
-        t m a
-    interpretTT = interpretHT lift
-    {-# INLINE interpretTT #-}
+        h sig m ~> t m
+    elaborateMT = elaborateHT lift
+    {-# INLINE elaborateMT #-}
 
-    reinterpretTT ::
-        forall m t n sig a.
+    reelaborateMT ::
+        forall m t n sig.
         (Monad m, MonadTrans t, Coercible n (h sig m), Monad (t n), Monad n, HFunctor sig) =>
         (sig (t n) ~> t n) ->
-        h sig m a ->
-        t n a
-    reinterpretTT f = interpretTT f . hoistHeftia (coerce . liftLower @Monad @h @sig)
-    {-# INLINE reinterpretTT #-}
+        h sig m ~> t n
+    reelaborateMT f = elaborateMT f . hoistHeftia (coerce . liftLowerH @Monad @h @sig)
+    {-# INLINE reelaborateMT #-}
 
 mergeHeftia ::
     forall h m sig sig' a c.
     (HFunctor sig, HFunctor sig', TransHeftia c h, c m) =>
     h sig (h sig' m) a ->
     h (sig :+: sig') m a
-mergeHeftia = interpretHT (translateT @c Inr) (liftSigT @c . Inl)
+mergeHeftia = elaborateHT (translateT @c Inr) (liftSigT @c . Inl)
 
-reinterpretTTViaFinal ::
-    forall h m t n sig a.
+reinterpretHTTViaFinal ::
+    forall h m t n sig.
     ( MonadTransHeftia h
     , Monad m
     , MonadTrans t
@@ -69,16 +69,15 @@ reinterpretTTViaFinal ::
     , HFunctor sig
     ) =>
     (sig (t n) ~> t n) ->
-    h sig m a ->
-    t n a
-reinterpretTTViaFinal = interpretHT $ lift . coerce . liftLower @Monad @h @sig
-{-# INLINE reinterpretTTViaFinal #-}
+    h sig m ~> t n
+reinterpretHTTViaFinal = elaborateHT $ lift . coerce . liftLowerH @Monad @h @sig
+{-# INLINE reinterpretHTTViaFinal #-}
 
-newtype ViaLiftLower (h :: Signature -> (Type -> Type) -> Type -> Type) sig m a = ViaLiftLower
-    {runViaLiftLower :: h sig m a}
+newtype ViaLiftLowerH (h :: Signature -> (Type -> Type) -> Type -> Type) sig m a = ViaLiftLowerH
+    {runViaLiftLowerH :: h sig m a}
     deriving newtype (Functor, Applicative, Monad)
     deriving stock (Foldable, Traversable)
 
-instance (TransHeftia Monad h, HFunctor sig) => MonadTrans (ViaLiftLower h sig) where
-    lift = ViaLiftLower . liftLower
+instance (TransHeftia Monad h, HFunctor sig) => MonadTrans (ViaLiftLowerH h sig) where
+    lift = ViaLiftLowerH . liftLowerH
     {-# INLINE lift #-}

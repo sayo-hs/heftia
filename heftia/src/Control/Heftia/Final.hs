@@ -1,5 +1,9 @@
+{-# LANGUAGE PatternSynonyms #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
+
+{-# HLINT ignore "Use const" #-}
 
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -8,10 +12,11 @@
 module Control.Heftia.Final where
 
 import Control.Applicative (Alternative, empty, (<|>))
-import Control.Effect.Class (Signature, type (~>))
-import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap)
-import Control.Heftia (Heftia, interpretH, liftSig)
+import Control.Effect.Class (LiftIns (LiftIns), Signature, type (~>))
+import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap, (:+:) (Inl, Inr))
+import Control.Heftia (Heftia, interpretHH, liftSig)
 import Control.Monad (MonadPlus (mplus, mzero))
+import Data.Free.Sum (pattern L1, pattern R1, type (+))
 
 newtype HeftiaFinal c (h :: Signature) a = HeftiaFinal
     {unHeftiaFinal :: forall f. c f => (h f ~> f) -> f a}
@@ -55,10 +60,10 @@ instance
     (forall f. c f => Applicative f, c (HeftiaFinal c h)) =>
     Applicative (HeftiaFinal c h)
     where
-    pure x = HeftiaFinal \(_ :: h f ~> f) -> pure x
+    pure x = HeftiaFinal \_ -> pure x
 
     HeftiaFinal f <*> HeftiaFinal g =
-        HeftiaFinal \(i :: h f ~> f) -> f i <*> g i
+        HeftiaFinal \i -> f i <*> g i
 
     {-# INLINE pure #-}
     {-# INLINE (<*>) #-}
@@ -67,17 +72,17 @@ instance
     (forall f. c f => Alternative f, c (HeftiaFinal c h)) =>
     Alternative (HeftiaFinal c h)
     where
-    empty = HeftiaFinal \(_ :: h f ~> f) -> empty
+    empty = HeftiaFinal \_ -> empty
 
     HeftiaFinal f <|> HeftiaFinal g =
-        HeftiaFinal \(i :: h f ~> f) -> f i <|> g i
+        HeftiaFinal \i -> f i <|> g i
 
     {-# INLINE empty #-}
     {-# INLINE (<|>) #-}
 
 instance (forall m. c m => Monad m, c (HeftiaFinal c h)) => Monad (HeftiaFinal c h) where
     HeftiaFinal f >>= k =
-        HeftiaFinal \(i :: h m ~> m) ->
+        HeftiaFinal \i ->
             f i >>= runHeftiaFinal i . k
     {-# INLINE (>>=) #-}
 
@@ -85,16 +90,24 @@ instance
     (forall m. c m => MonadPlus m, Alternative (HeftiaFinal c h), Monad (HeftiaFinal c h)) =>
     MonadPlus (HeftiaFinal c h)
     where
-    mzero = HeftiaFinal \(_ :: h m ~> m) -> mzero
+    mzero = HeftiaFinal \_ -> mzero
 
     HeftiaFinal f `mplus` HeftiaFinal g =
-        HeftiaFinal \(i :: h m ~> m) -> f i `mplus` g i
+        HeftiaFinal \i -> f i `mplus` g i
 
     {-# INLINE mzero #-}
     {-# INLINE mplus #-}
 
 instance (forall sig. c (HeftiaFinal c sig)) => Heftia c (HeftiaFinal c) where
     liftSig = liftSigFinal
-    interpretH = runHeftiaFinal
+    interpretHH = runHeftiaFinal
     {-# INLINE liftSig #-}
-    {-# INLINE interpretH #-}
+    {-# INLINE interpretHH #-}
+
+slipFreer ::
+    (HFunctor h, c (HeftiaFinal c (h :+: LiftIns f))) =>
+    HeftiaFinal c (LiftIns (f + HeftiaFinal c h))
+        ~> HeftiaFinal c (h :+: LiftIns f)
+slipFreer (HeftiaFinal run) = run \(LiftIns a) -> case a of
+    L1 fr -> liftSigFinal $ Inr $ LiftIns fr
+    R1 he -> transformHeftiaFinal Inl he

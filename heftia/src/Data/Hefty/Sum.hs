@@ -9,67 +9,84 @@ module Data.Hefty.Sum where
 import Control.Effect.Class (LiftIns, Signature)
 import Control.Effect.Class.Machinery.HFunctor (HFunctor, caseH, (:+:) (Inl, Inr))
 import Data.Free.Sum (NopF)
-import Data.Hefty.Union (HFunctorUnion, Union, type (<:))
-import Data.Hefty.Union qualified as U
+import Data.Hefty.Union (MemberH, UnionH, absurdUnionH, compH, decompH, injectH, projectH, weakenSig, type (<:))
 
 type Nop = LiftIns NopF
 
-swapSum :: (h1 :+: h2) f a -> (h2 :+: h1) f a
-swapSum = caseH Inr Inl
+swapSumH :: (h1 :+: h2) f a -> (h2 :+: h1) f a
+swapSumH = caseH Inr Inl
+{-# INLINE swapSumH #-}
 
-type family Sum hs where
-    Sum '[] = Nop
-    Sum (h ': hs) = h :+: Sum hs
+type family SumH hs where
+    SumH '[] = Nop
+    SumH (h ': hs) = h :+: SumH hs
 
-newtype SumUnion hs f a = SumUnion {unSumUnion :: Sum hs f a}
+newtype SumUnionH hs f a = SumUnionH {unSumUnionH :: SumH hs f a}
+
+deriving newtype instance Functor (SumUnionH '[] f)
+deriving newtype instance Foldable (SumUnionH '[] f)
+deriving stock instance Traversable (SumUnionH '[] f)
 
 {-
-deriving newtype instance Functor (SumUnion '[] f)
-deriving newtype instance (Functor (h f), Functor (Sum hs f)) => Functor (SumUnion (h ': hs) f)
+deriving newtype instance
+    (Functor (h f), Functor (SumH hs f)) =>
+    Functor (SumUnionH (h ': hs) f)
 
-deriving newtype instance Foldable (SumUnion '[] f)
-deriving newtype instance (Foldable (h f), Foldable (Sum hs f)) => Foldable (SumUnion (h ': hs) f)
+deriving newtype instance
+    (Foldable (h f), Foldable (SumH hs f)) =>
+    Foldable (SumUnionH (h ': hs) f)
 
-deriving stock instance Traversable (SumUnion '[] f)
-deriving stock instance (Traversable (h f), Traversable (Sum hs f)) => Traversable (SumUnion (h ': hs) f)
+deriving stock instance
+    (Traversable (h f), Traversable (SumH hs f)) =>
+    Traversable (SumUnionH (h ': hs) f)
 -}
 
-deriving newtype instance HFunctor (Sum hs) => HFunctor (SumUnion hs)
+deriving newtype instance HFunctor (SumH hs) => HFunctor (SumUnionH hs)
 
-instance Union SumUnion where
-    type Member _ h hs = h < Sum hs
+instance UnionH SumUnionH where
+    type MemberH _ h hs = h << SumH hs
 
-    inject sig = SumUnion $ injH sig
-    project (SumUnion sig) = projH sig
+    injectH sig = SumUnionH $ injH sig
+    projectH (SumUnionH sig) = projH sig
 
-    comp =
-        SumUnion . \case
+    absurdUnionH = \case {}
+
+    compH =
+        SumUnionH . \case
             Left x -> Inl x
-            Right (SumUnion x) -> Inr x
+            Right (SumUnionH x) -> Inr x
 
-    decomp (SumUnion sig) = case sig of
+    decompH (SumUnionH sig) = case sig of
         Inl x -> Left x
-        Inr x -> Right (SumUnion x)
+        Inr x -> Right (SumUnionH x)
 
-instance HFunctor (SumUnion hs) => HFunctorUnion SumUnion hs
+    {-# INLINE injectH #-}
+    {-# INLINE projectH #-}
+    {-# INLINE absurdUnionH #-}
 
 newtype ViaSumH (h :: Signature) f a = ViaSumH {getViaSumH :: h f a}
     deriving stock (Functor, Foldable, Traversable)
 
-instance f < g => ViaSumH f <: g where
+instance f << g => ViaSumH f <: g where
     weakenSig = injH . getViaSumH
 
-class (h1 :: Signature) < h2 where
+class (h1 :: Signature) << h2 where
     injH :: h1 f a -> h2 f a
     projH :: h2 f a -> Maybe (h1 f a)
 
-instance h < h where
+instance h << h where
     injH = id
     projH = Just
 
-instance h1 < h2 => h1 < (h2 :+: h3) where
+    {-# INLINE injH #-}
+    {-# INLINE projH #-}
+
+instance h1 << h2 => h1 << (h2 :+: h3) where
     injH = Inl . injH
 
     projH = \case
         Inl x -> projH x
         Inr _ -> Nothing
+
+    {-# INLINE injH #-}
+    {-# INLINE projH #-}

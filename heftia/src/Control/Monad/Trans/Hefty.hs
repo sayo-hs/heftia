@@ -37,6 +37,9 @@ instance (Monad m, Functor (h (HeftyT h m))) => Applicative (HeftyT h m) where
     pure = HeftyT . pure . Pure
     (<*>) = ap
 
+    {-# INLINE pure #-}
+    {-# INLINE (<*>) #-}
+
 instance (Monad m, Functor (h (HeftyT h m))) => Monad (HeftyT h m) where
     HeftyT m >>= k =
         HeftyT $
@@ -46,6 +49,7 @@ instance (Monad m, Functor (h (HeftyT h m))) => Monad (HeftyT h m) where
 
 instance MonadTrans (HeftyT h) where
     lift = liftHefty
+    {-# INLINE lift #-}
 
 {- | Lift a computation to a hefty monad.
 
@@ -54,12 +58,15 @@ instance MonadTrans (HeftyT h) where
 -}
 liftHefty :: Functor m => m a -> HeftyT h m a
 liftHefty = HeftyT . fmap Pure
+{-# INLINE liftHefty #-}
 
 -- | A hefty monad.
 type Hefty h = HeftyT h Identity
 
 hefty :: FreeF (h (Hefty h)) a (Hefty h a) -> Hefty h a
 hefty = HeftyT . Identity
+{-# INLINE hefty #-}
 
 runHefty :: Hefty h a -> FreeF (h (Hefty h)) a (Hefty h a)
 runHefty = runIdentity . runHeftyT
+{-# INLINE runHefty #-}

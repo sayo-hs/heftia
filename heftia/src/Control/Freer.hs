@@ -12,43 +12,43 @@ import Data.Free.Union (weakenIns, type (<::))
 import Data.Functor.Coyoneda (Coyoneda, hoistCoyoneda, liftCoyoneda, lowerCoyoneda)
 
 class (forall ins. c (f ins)) => Freer c f | f -> c where
-    {-# MINIMAL liftIns, (interpretFF | retractF, translateFF) #-}
+    {-# MINIMAL liftIns, (interpretF | retract, transformF) #-}
 
     -- | Lift a /instruction/ into a Freer monad.
     liftIns :: ins a -> f ins a
 
-    interpretFF :: c m => (ins ~> m) -> f ins a -> m a
-    interpretFF i = retractF . translateFF i
-    {-# INLINE interpretFF #-}
+    interpretF :: c m => (ins ~> m) -> f ins a -> m a
+    interpretF i = retract . transformF i
+    {-# INLINE interpretF #-}
 
-    retractF :: c m => f m a -> m a
-    retractF = interpretFF id
-    {-# INLINE retractF #-}
+    retract :: c m => f m a -> m a
+    retract = interpretF id
+    {-# INLINE retract #-}
 
     -- | Translate /instruction/s embedded in a Freer monad.
-    translateFF ::
+    transformF ::
         (ins ~> ins') ->
         f ins a ->
         f ins' a
-    translateFF phi = interpretFF $ liftIns . phi
-    {-# INLINE translateFF #-}
+    transformF phi = interpretF $ liftIns . phi
+    {-# INLINE transformF #-}
 
     reinterpretF :: (ins ~> f ins) -> f ins a -> f ins a
-    reinterpretF = interpretFF
+    reinterpretF = interpretF
     {-# INLINE reinterpretF #-}
 
 instance Freer Functor Coyoneda where
     liftIns = liftCoyoneda
-    interpretFF i = lowerCoyoneda . hoistCoyoneda i
+    interpretF i = lowerCoyoneda . hoistCoyoneda i
     {-# INLINE liftIns #-}
-    {-# INLINE interpretFF #-}
+    {-# INLINE interpretF #-}
 
 instance Freer Applicative Ap where
     liftIns = liftAp
-    interpretFF = runAp
+    interpretF = runAp
     {-# INLINE liftIns #-}
-    {-# INLINE interpretFF #-}
+    {-# INLINE interpretF #-}
 
-sendFF :: (i <:: j, Freer c f) => i a -> f j a
-sendFF = liftIns . weakenIns
-{-# INLINE sendFF #-}
+sendFreer :: (i <:: j, Freer c f) => i a -> f j a
+sendFreer = liftIns . weakenIns
+{-# INLINE sendFreer #-}

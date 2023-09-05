@@ -52,22 +52,26 @@ source-repository head
 
 library
     exposed-modules:
+        Control.Freer
+        Control.Freer.Trans
+        Control.Freer.Trans.Final
         Control.Heftia
         Control.Heftia.Final
         Control.Heftia.Final.Naked
         Control.Heftia.Trans
         Control.Heftia.Trans.Final
         Control.Heftia.Trans.Final.Naked
-        Control.Freer
-        Control.Freer.Trans
+        Control.Monad.Trans.Freer
+        Control.Monad.Trans.Freer.Tree
         Control.Monad.Trans.Heftia
         Control.Monad.Trans.Heftia.Tree
         Control.Monad.Trans.Hefty
-        Control.Monad.Trans.Freer.Tree
-        Data.Hefty.Sum
-        Data.Hefty.Union
+        Control.Effect.Freer
+        Control.Effect.Heftia
         Data.Free.Sum
         Data.Free.Union
+        Data.Hefty.Sum
+        Data.Hefty.Union
 
     -- Modules included in this executable, other than Main.
     -- other-modules:
@@ -82,6 +86,7 @@ library
         kan-extensions,
         constraints,
         transformers-base,
+        transformers,
 
     hs-source-dirs:   src
     ghc-options:      -Wall
@@ -95,7 +100,8 @@ library
         BlockArguments,
         FunctionalDependencies,
         RecordWildCards,
-        DefaultSignatures
+        DefaultSignatures,
+        PatternSynonyms
 
 
 test-suite test
@@ -122,4 +128,5 @@ test-suite test
         BlockArguments,
         FunctionalDependencies,
         RecordWildCards,
-        DefaultSignatures
+        DefaultSignatures,
+        PatternSynonyms

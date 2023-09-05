@@ -11,28 +11,30 @@ import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap)
 import Data.Hefty.Union (weakenSig, type (<:))
 
 class (forall sig. HFunctor sig => c (h sig)) => Heftia c h | h -> c where
-    {-# MINIMAL liftSig, interpretH #-}
+    {-# MINIMAL liftSig, interpretHH #-}
 
     -- | Lift a /signature/ into a Heftia monad.
     liftSig :: HFunctor sig => sig (h sig) a -> h sig a
 
-    interpretH :: (c m, HFunctor sig) => (sig m ~> m) -> h sig a -> m a
+    interpretHH :: (c m, HFunctor sig) => (sig m ~> m) -> h sig a -> m a
 
     -- | Translate /signature/s embedded in a Heftia monad.
-    translateH ::
+    translateHH ::
         (HFunctor sig, HFunctor sig') =>
         (sig (h sig') ~> sig' (h sig')) ->
         h sig a ->
         h sig' a
-    translateH phi = interpretH $ liftSig . phi
-    {-# INLINE translateH #-}
+    translateHH phi = interpretHH $ liftSig . phi
+    {-# INLINE translateHH #-}
 
-    reinterpretH :: HFunctor sig => (sig (h sig) ~> h sig) -> h sig a -> h sig a
-    reinterpretH = interpretH
-    {-# INLINE reinterpretH #-}
+    reinterpretHH :: HFunctor sig => (sig (h sig) ~> h sig) -> h sig a -> h sig a
+    reinterpretHH = interpretHH
+    {-# INLINE reinterpretHH #-}
 
-retract :: (Heftia c h, c m) => h (LiftIns m) a -> m a
-retract = interpretH unliftIns
+retractH :: (Heftia c h, c m) => h (LiftIns m) a -> m a
+retractH = interpretHH unliftIns
+{-# INLINE retractH #-}
 
-sendH :: (s <: t, Heftia c h, HFunctor s, HFunctor t) => s (h s) a -> h t a
-sendH = liftSig . weakenSig . hfmap (translateH weakenSig)
+sendHeftia :: (s <: t, Heftia c h, HFunctor s, HFunctor t) => s (h s) a -> h t a
+sendHeftia = liftSig . weakenSig . hfmap (translateHH weakenSig)
+{-# INLINE sendHeftia #-}

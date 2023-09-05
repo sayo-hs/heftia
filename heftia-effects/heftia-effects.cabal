@@ -37,6 +37,7 @@ library
         Control.Effect.Handler.Heftia
         Control.Effect.Handler.Heftia.Reader
         Control.Effect.Handler.Heftia.State
+        Control.Effect.Handler.Heftia.Except
 
     -- Modules included in this executable, other than Main.
     -- other-modules:
@@ -48,6 +49,7 @@ library
         heftia                        ^>= 0.1,
         classy-effects                ^>= 0.1,
         mtl,
+        transformers
 
     hs-source-dirs:   src
     ghc-options:      -Wall

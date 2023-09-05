@@ -7,37 +7,53 @@
 module Data.Hefty.Union where
 
 import Control.Effect.Class (Signature, type (~>))
-import Control.Effect.Class.Machinery.HFunctor (HFunctor)
 import Data.Kind (Constraint)
 
-class Union (u :: [Signature] -> Signature) where
-    type Member u (h :: Signature) (hs :: [Signature]) :: Constraint
+class UnionH (u :: [Signature] -> Signature) where
+    type MemberH u (h :: Signature) (hs :: [Signature]) :: Constraint
 
-    inject :: Member u h hs => h f a -> u hs f a
-    project :: Member u h hs => u hs f a -> Maybe (h f a)
+    injectH :: MemberH u h hs => h f a -> u hs f a
+    projectH :: MemberH u h hs => u hs f a -> Maybe (h f a)
 
-    comp :: Either (h f a) (u hs f a) -> u (h ': hs) f a
-    decomp :: u (h ': hs) f a -> Either (h f a) (u hs f a)
+    compH :: Either (h f a) (u hs f a) -> u (h ': hs) f a
+    decompH :: u (h ': hs) f a -> Either (h f a) (u hs f a)
 
-    weakenL :: h f a -> u (h ': hs) f a
-    weakenL = comp . Left
+    absurdUnionH :: u '[] f a -> x
 
-    weakenR :: u hs f a -> u (h ': hs) f a
-    weakenR = comp . Right
+    infixr 5 |+:
+    (|+:) :: (h f a -> r) -> (u hs f a -> r) -> u (h ': hs) f a -> r
+    (f |+: g) u = case decompH u of
+        Left x -> f x
+        Right x -> g x
 
-class (Union u, HFunctor (u hs)) => HFunctorUnion u hs
+    weakenLH :: h f a -> u (h ': hs) f a
+    weakenLH = compH . Left
+
+    weakenRH :: u hs f a -> u (h ': hs) f a
+    weakenRH = compH . Right
+
+    {-# INLINE (|+:) #-}
+    {-# INLINE weakenLH #-}
+    {-# INLINE weakenRH #-}
+
+type family IsMemberH (h :: Signature) hs where
+    IsMemberH h (h ': hs) = 'True
+    IsMemberH h (_ ': hs) = IsMemberH h hs
+    IsMemberH _ '[] = 'False
 
 class s <: t where
     weakenSig :: s m ~> t m
 
-newtype ViaUnion (u :: [Signature] -> Signature) (h :: Signature) f a = ViaUnion {getViaUnion :: h f a}
+newtype ViaUnionH (u :: [Signature] -> Signature) (h :: Signature) f a = ViaUnionH {getViaUnionH :: h f a}
     deriving stock (Functor, Foldable, Traversable)
 
-instance (Union u, Member u h hs) => ViaUnion u h <: u hs where
-    weakenSig = inject . getViaUnion
+instance (UnionH u, MemberH u h hs) => ViaUnionH u h <: u hs where
+    weakenSig = injectH . getViaUnionH
+    {-# INLINE weakenSig #-}
 
 newtype ViaSingleton (h :: Signature) f a = ViaSingleton {getViaSingleton :: h f a}
     deriving stock (Functor, Foldable, Traversable)
 
 instance ViaSingleton h <: h where
     weakenSig = getViaSingleton
+    {-# INLINE weakenSig #-}
