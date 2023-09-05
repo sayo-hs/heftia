@@ -36,6 +36,7 @@ library
     exposed-modules:
         Control.Effect.Handler.Heftia
         Control.Effect.Handler.Heftia.Reader
+        Control.Effect.Handler.Heftia.Writer
         Control.Effect.Handler.Heftia.State
         Control.Effect.Handler.Heftia.Except
 

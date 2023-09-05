@@ -13,7 +13,7 @@ import Data.Free.Sum (Sum, type (<))
 -- | Elaborate the 'Catch' effect using the 'ExceptT' monad transformer.
 elaborateExceptT ::
     (ThrowI e < Sum es, Monad m) =>
-    (CatchS e) (Fre es m) ~> Fre es m
+    CatchS e (Fre es m) ~> Fre es m
 elaborateExceptT (Catch action (hdl :: e -> Fre es m a)) = do
     r <- runExceptT $ ($ action) $ interposeT \(Throw (e :: e)) -> throwE e
     case r of
@@ -23,7 +23,7 @@ elaborateExceptT (Catch action (hdl :: e -> Fre es m a)) = do
 -- | Elaborate the 'Catch' effect using the 'ContT' continuation monad transformer.
 elaborateExceptK ::
     (ThrowI e < Sum es, Monad m) =>
-    (CatchS e) (Fre es m) ~> Fre es m
+    CatchS e (Fre es m) ~> Fre es m
 elaborateExceptK (Catch action (hdl :: e -> Fre es m a)) =
     ($ action) $ interposeK pure \_ (Throw (e :: e)) -> hdl e
 
