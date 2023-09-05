@@ -28,7 +28,7 @@ import Control.Freer.Trans (
  )
 import Control.Freer.Trans.Final (FreerFinalT)
 import Control.Monad (MonadPlus)
-import Control.Monad.Cont (ContT (ContT))
+import Control.Monad.Cont (ContT (ContT), runContT)
 import Control.Monad.Trans (MonadTrans, lift)
 import Control.Monad.Trans.Freer (MonadTransFreer, interpretMK, interpretMT, reinterpretMK, reinterpretMT)
 import Data.Coerce (Coercible, coerce)
@@ -82,14 +82,6 @@ interpret i a =
             Left e -> runFreerEffects $ i e
             Right e -> liftInsT e
 
-interpretK ::
-    forall r fr u e es f.
-    (MonadTransFreer fr, Union u, Monad f) =>
-    (e ~> ContT r (FreerEffects fr u es f)) ->
-    FreerEffects fr u (e ': es) f ~> ContT r (FreerEffects fr u es f)
-interpretK i = interpretMK i . splitFreerEffects @_ @fr
-{-# INLINE interpretK #-}
-
 interpretT ::
     forall t fr u e es f.
     (MonadTransFreer fr, Union u, MonadTrans t, Monad f, Monad (t (FreerEffects fr u es f))) =>
@@ -97,6 +89,23 @@ interpretT ::
     FreerEffects fr u (e ': es) f ~> t (FreerEffects fr u es f)
 interpretT i = interpretMT i . splitFreerEffects @_ @fr
 {-# INLINE interpretT #-}
+
+interpretK ::
+    (MonadTransFreer fr, Union u, Monad f) =>
+    (a -> FreerEffects fr u es f r) ->
+    (forall x. (x -> FreerEffects fr u es f r) -> e x -> FreerEffects fr u es f r) ->
+    FreerEffects fr u (e ': es) f a ->
+    FreerEffects fr u es f r
+interpretK k i = (`runContT` k) . interpretContT \e -> ContT (`i` e)
+{-# INLINE interpretK #-}
+
+interpretContT ::
+    forall r fr u e es f.
+    (MonadTransFreer fr, Union u, Monad f) =>
+    (e ~> ContT r (FreerEffects fr u es f)) ->
+    FreerEffects fr u (e ': es) f ~> ContT r (FreerEffects fr u es f)
+interpretContT i = interpretMK i . splitFreerEffects @_ @fr
+{-# INLINE interpretContT #-}
 
 reinterpret ::
     (TransFreer c fr, Union u, c f) =>
@@ -129,20 +138,6 @@ interpose f a =
             Just e -> runFreerEffects $ f e
             Nothing -> liftInsT u
 
-interposeK ::
-    forall e r fr u es m.
-    (MonadTransFreer fr, Union u, Member u e es, Monad m) =>
-    (e ~> ContT r (FreerEffects fr u es m)) ->
-    FreerEffects fr u es m ~> ContT r (FreerEffects fr u es m)
-interposeK f a =
-    hoistContT $ ($ runFreerEffects a) $ reinterpretMK \u ->
-        case project @_ @e u of
-            Just e -> hoistContT $ f e
-            Nothing -> lift $ liftInsT u
-  where
-    hoistContT :: Coercible m1 m2 => ContT r m1 a -> ContT r m2 a
-    hoistContT = coerce
-
 interposeT ::
     forall e t fr u es m.
     ( MonadTransFreer fr
@@ -163,6 +158,31 @@ interposeT f a =
   where
     hoistT :: Coercible (t m1 a) (t m2 a) => t m1 a -> t m2 a
     hoistT = coerce
+    {-# INLINE hoistT #-}
+
+interposeK ::
+    (MonadTransFreer fr, Union u, Member u e es, Monad m) =>
+    (a -> FreerEffects fr u es m r) ->
+    (forall x. (x -> FreerEffects fr u es m r) -> e x -> FreerEffects fr u es m r) ->
+    FreerEffects fr u es m a ->
+    FreerEffects fr u es m r
+interposeK k i = (`runContT` k) . interposeContT \e -> ContT (`i` e)
+{-# INLINE interposeK #-}
+
+interposeContT ::
+    forall e r fr u es m.
+    (MonadTransFreer fr, Union u, Member u e es, Monad m) =>
+    (e ~> ContT r (FreerEffects fr u es m)) ->
+    FreerEffects fr u es m ~> ContT r (FreerEffects fr u es m)
+interposeContT f a =
+    hoistContT $ ($ runFreerEffects a) $ reinterpretMK \u ->
+        case project @_ @e u of
+            Just e -> hoistContT $ f e
+            Nothing -> lift $ liftInsT u
+  where
+    hoistContT :: Coercible m1 m2 => ContT r m1 a -> ContT r m2 a
+    hoistContT = coerce
+    {-# INLINE hoistContT #-}
 
 intercept ::
     forall e fr u es f c.

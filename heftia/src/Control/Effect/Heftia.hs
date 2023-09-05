@@ -36,7 +36,7 @@ import Control.Heftia.Trans (
  )
 import Control.Heftia.Trans.Final (HeftiaFinalT)
 import Control.Monad (MonadPlus)
-import Control.Monad.Cont (ContT, MonadTrans)
+import Control.Monad.Cont (ContT (ContT), MonadTrans, runContT)
 import Control.Monad.Trans.Heftia (MonadTransHeftia, elaborateMK, elaborateMT)
 import Data.Free.Union (Member, Union, project)
 import Data.Hefty.Sum (SumUnionH)
@@ -94,10 +94,19 @@ runElaborate f = runElaborateH f . runHeftiaEffects
 
 runElaborateK ::
     (MonadTransHeftia h, HFunctor (u es), UnionH u, Monad m) =>
+    (a -> m r) ->
+    (forall x. (x -> m r) -> u es (ContT r m) x -> m r) ->
+    HeftiaEffects h u es m a ->
+    m r
+runElaborateK k f = (`runContT` k) . runElaborateContT \e -> ContT (`f` e)
+{-# INLINE runElaborateK #-}
+
+runElaborateContT ::
+    (MonadTransHeftia h, HFunctor (u es), UnionH u, Monad m) =>
     (u es (ContT r m) ~> ContT r m) ->
     HeftiaEffects h u es m ~> ContT r m
-runElaborateK f = elaborateMK f . runHeftiaEffects
-{-# INLINE runElaborateK #-}
+runElaborateContT f = elaborateMK f . runHeftiaEffects
+{-# INLINE runElaborateContT #-}
 
 runElaborateT ::
     (MonadTransHeftia h, HFunctor (u es), UnionH u, MonadTrans t, Monad m, Monad (t m)) =>
