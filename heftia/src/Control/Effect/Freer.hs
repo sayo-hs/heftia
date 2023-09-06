@@ -10,10 +10,11 @@ module Control.Effect.Freer where
 
 import Control.Applicative (Alternative)
 import Control.Effect.Class (
+    EffectDataHandler,
+    EffectsVia (EffectsVia),
     Instruction,
     SendIns,
-    SendVia (SendVia),
-    runSendVia,
+    runEffectsVia,
     sendIns,
     type (~>),
  )
@@ -55,14 +56,14 @@ newtype
     deriving newtype (Functor, Applicative, Alternative, Monad, MonadPlus)
     deriving stock (Foldable, Traversable)
 
-type FreerEffects fr u es f = SendVia (FreerUnion fr u es f)
+type FreerEffects fr u es f = EffectsVia EffectDataHandler (FreerUnion fr u es f)
 
 runFreerEffects :: FreerEffects fr u es f ~> fr (u es) f
-runFreerEffects = runFreerUnion . runSendVia
+runFreerEffects = runFreerUnion . runEffectsVia
 {-# INLINE runFreerEffects #-}
 
 freerEffects :: fr (u es) f ~> FreerEffects fr u es f
-freerEffects = SendVia . FreerUnion
+freerEffects = EffectsVia . FreerUnion
 {-# INLINE freerEffects #-}
 
 instance

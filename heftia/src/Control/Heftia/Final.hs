@@ -48,9 +48,6 @@ translateHeftiaFinal ::
 translateHeftiaFinal f = runHeftiaFinal $ liftSigFinal . f
 {-# INLINE translateHeftiaFinal #-}
 
-class Noop f
-instance Noop f
-
 instance (forall f. c f => Functor f, c (HeftiaFinal c h)) => Functor (HeftiaFinal c h) where
     fmap f (HeftiaFinal g) =
         HeftiaFinal \(i :: h f ~> f) -> f <$> g i

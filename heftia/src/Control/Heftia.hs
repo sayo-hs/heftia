@@ -7,8 +7,7 @@
 module Control.Heftia where
 
 import Control.Effect.Class (LiftIns, unliftIns, type (~>))
-import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap)
-import Data.Hefty.Union (weakenSig, type (<:))
+import Control.Effect.Class.Machinery.HFunctor (HFunctor)
 
 class (forall sig. HFunctor sig => c (h sig)) => Heftia c h | h -> c where
     {-# MINIMAL liftSig, interpretHH #-}
@@ -34,7 +33,3 @@ class (forall sig. HFunctor sig => c (h sig)) => Heftia c h | h -> c where
 retractH :: (Heftia c h, c m) => h (LiftIns m) a -> m a
 retractH = interpretHH unliftIns
 {-# INLINE retractH #-}
-
-sendHeftia :: (s <: t, Heftia c h, HFunctor s, HFunctor t) => s (h s) a -> h t a
-sendHeftia = liftSig . weakenSig . hfmap (translateHH weakenSig)
-{-# INLINE sendHeftia #-}

@@ -4,21 +4,20 @@
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+-- The code before modification is MIT licensed; (c) 2023 Casper Bach Poulsen and Cas van der Rest.
+
 module Data.Hefty.Sum where
 
-import Control.Effect.Class (LiftIns, Signature)
+import Control.Effect.Class (NopS, Signature, type (~>))
 import Control.Effect.Class.Machinery.HFunctor (HFunctor, caseH, (:+:) (Inl, Inr))
-import Data.Free.Sum (NopF)
-import Data.Hefty.Union (MemberH, UnionH, absurdUnionH, compH, decompH, injectH, projectH, weakenSig, type (<:))
-
-type Nop = LiftIns NopF
+import Data.Hefty.Union (MemberH, UnionH, absurdUnionH, compH, decompH, injectH, projectH)
 
 swapSumH :: (h1 :+: h2) f a -> (h2 :+: h1) f a
 swapSumH = caseH Inr Inl
 {-# INLINE swapSumH #-}
 
 type family SumH hs where
-    SumH '[] = Nop
+    SumH '[] = NopS
     SumH (h ': hs) = h :+: SumH hs
 
 newtype SumUnionH hs f a = SumUnionH {unSumUnionH :: SumH hs f a}
@@ -27,6 +26,9 @@ deriving newtype instance Functor (SumUnionH '[] f)
 deriving newtype instance Foldable (SumUnionH '[] f)
 deriving stock instance Traversable (SumUnionH '[] f)
 
+{- Lack of instances of 'Data.Comp.Multi.Ops.:+:'.
+ - Should we create a pullreq on the datacomp package side?
+ -}
 {-
 deriving newtype instance
     (Functor (h f), Functor (SumH hs f)) =>
@@ -64,29 +66,37 @@ instance UnionH SumUnionH where
     {-# INLINE projectH #-}
     {-# INLINE absurdUnionH #-}
 
-newtype ViaSumH (h :: Signature) f a = ViaSumH {getViaSumH :: h f a}
-    deriving stock (Functor, Foldable, Traversable)
+class isHead ~ h1 `IsHeadSigOf` h2 => SumMemberH isHead (h1 :: Signature) h2 where
+    injSumH :: h1 f a -> h2 f a
+    projSumH :: h2 f a -> Maybe (h1 f a)
 
-instance f << g => ViaSumH f <: g where
-    weakenSig = injH . getViaSumH
+type family h1 `IsHeadSigOf` h2 where
+    f `IsHeadSigOf` f :+: g = 'True
+    _ `IsHeadSigOf` _ = 'False
 
-class (h1 :: Signature) << h2 where
-    injH :: h1 f a -> h2 f a
-    projH :: h2 f a -> Maybe (h1 f a)
+type h1 << h2 = SumMemberH (IsHeadSigOf h1 h2) h1 h2
 
-instance h << h where
-    injH = id
-    projH = Just
+injH :: forall h1 h2 f. h1 << h2 => h1 f ~> h2 f
+injH = injSumH @(IsHeadSigOf h1 h2)
 
-    {-# INLINE injH #-}
-    {-# INLINE projH #-}
+projH :: forall h1 h2 f a. h1 << h2 => h2 f a -> Maybe (h1 f a)
+projH = projSumH
 
-instance h1 << h2 => h1 << (h2 :+: h3) where
-    injH = Inl . injH
+instance SumMemberH 'True f (f :+: g) where
+    injSumH = Inl
 
-    projH = \case
-        Inl x -> projH x
+    projSumH = \case
+        Inl x -> Just x
         Inr _ -> Nothing
 
-    {-# INLINE injH #-}
-    {-# INLINE projH #-}
+    {-# INLINE injSumH #-}
+    {-# INLINE projSumH #-}
+
+instance (f `IsHeadSigOf` (g :+: h) ~ 'False, f << h) => SumMemberH 'False f (g :+: h) where
+    injSumH = Inr . injH
+    projSumH = \case
+        Inl _ -> Nothing
+        Inr x -> projSumH x
+
+    {-# INLINE injSumH #-}
+    {-# INLINE projSumH #-}

@@ -5,12 +5,13 @@
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+-- The code before modification is MIT licensed; (c) 2023 Casper Bach Poulsen and Cas van der Rest.
+
 module Data.Free.Sum (module Data.Free.Sum, pattern L1, pattern R1)
 where
 
-import Control.Effect.Class (Instruction)
+import Control.Effect.Class (Instruction, NopI, type (~>))
 import Data.Free.Union (Member, Union, absurdUnion, comp, decomp, inject, project)
-import Data.Kind (Type)
 import GHC.Generics (type (:+:) (L1, R1))
 
 infixr 6 +
@@ -18,17 +19,14 @@ infixr 6 +
 -- | A type synonym for disambiguation to the sum on the higher-order side.
 type (+) = (:+:)
 
-data NopF (a :: Type)
-    deriving (Functor, Foldable, Traversable)
-
-swapSum :: (f :+: g) a -> (g :+: f) a
+swapSum :: (f + g) a -> (g + f) a
 swapSum = \case
     L1 x -> R1 x
     R1 x -> L1 x
 {-# INLINE swapSum #-}
 
 type family Sum fs where
-    Sum '[] = NopF
+    Sum '[] = NopI
     Sum (f ': fs) = f :+: Sum fs
 
 newtype SumUnion fs a = SumUnion {unSumUnion :: Sum fs a}
@@ -63,26 +61,37 @@ instance Union SumUnion where
     {-# INLINE project #-}
     {-# INLINE absurdUnion #-}
 
-newtype ViaSum (f :: Instruction) a = ViaSum {getViaSum :: f a}
-    deriving stock (Functor, Foldable, Traversable)
+class isHead ~ f `IsHeadInsOf` g => SumMember isHead (f :: Instruction) g where
+    injSum :: f a -> g a
+    projSum :: g a -> Maybe (f a)
 
-class (f :: Instruction) < g where
-    inj :: f a -> g a
-    proj :: g a -> Maybe (f a)
+type family f `IsHeadInsOf` g where
+    f `IsHeadInsOf` f + g = 'True
+    _ `IsHeadInsOf` _ = 'False
 
-instance h < h where
-    inj = id
-    proj = Just
+type f < g = SumMember (IsHeadInsOf f g) f g
 
-    {-# INLINE inj #-}
-    {-# INLINE proj #-}
+inj :: forall f g. f < g => f ~> g
+inj = injSum @(IsHeadInsOf f g)
 
-instance h1 < h2 => h1 < (h2 :+: h3) where
-    inj = L1 . inj
+proj :: forall f g a. f < g => g a -> Maybe (f a)
+proj = projSum
 
-    proj = \case
-        L1 x -> proj x
+instance SumMember 'True f (f + g) where
+    injSum = L1
+
+    projSum = \case
+        L1 x -> Just x
         R1 _ -> Nothing
 
-    {-# INLINE inj #-}
-    {-# INLINE proj #-}
+    {-# INLINE injSum #-}
+    {-# INLINE projSum #-}
+
+instance (f `IsHeadInsOf` (g + h) ~ 'False, f < h) => SumMember 'False f (g + h) where
+    injSum = R1 . inj
+    projSum = \case
+        L1 _ -> Nothing
+        R1 x -> projSum x
+
+    {-# INLINE injSum #-}
+    {-# INLINE projSum #-}

@@ -63,33 +63,18 @@ deriving newtype instance
     (forall g. c g => Functor g, c (HeftiaFinal c (h :+: LiftIns f))) =>
     Functor (HeftiaFinalT c h f)
 
-deriving newtype instance
-    ( forall g. c g => Applicative g
-    , c (HeftiaFinal c (h :+: LiftIns f))
-    , c (HeftiaFinalT c h f)
-    ) =>
-    Applicative (HeftiaFinalT c h f)
+deriving newtype instance Applicative (HeftiaFinalT Applicative h f)
 
-deriving newtype instance
-    ( forall g. c g => Alternative g
-    , c (HeftiaFinal c (h :+: LiftIns f))
-    , c (HeftiaFinalT c h f)
-    ) =>
-    Alternative (HeftiaFinalT c h f)
+deriving newtype instance Applicative (HeftiaFinalT Alternative h f)
+deriving newtype instance Alternative (HeftiaFinalT Alternative h f)
 
-deriving newtype instance
-    ( forall n. c n => Monad n
-    , c (HeftiaFinal c (h :+: LiftIns m))
-    , c (HeftiaFinalT c h m)
-    ) =>
-    Monad (HeftiaFinalT c h m)
+deriving newtype instance Applicative (HeftiaFinalT Monad h m)
+deriving newtype instance Monad (HeftiaFinalT Monad h m)
 
-deriving newtype instance
-    ( forall n. c n => MonadPlus n
-    , c (HeftiaFinal c (h :+: LiftIns m))
-    , c (HeftiaFinalT c h m)
-    ) =>
-    MonadPlus (HeftiaFinalT c h m)
+deriving newtype instance Applicative (HeftiaFinalT MonadPlus h m)
+deriving newtype instance Alternative (HeftiaFinalT MonadPlus h m)
+deriving newtype instance Monad (HeftiaFinalT MonadPlus h m)
+deriving newtype instance MonadPlus (HeftiaFinalT MonadPlus h m)
 
 instance (forall h f. c f => c (HeftiaFinalT c h f)) => TransHeftia c (HeftiaFinalT c) where
     liftSigT = liftSigFinalT

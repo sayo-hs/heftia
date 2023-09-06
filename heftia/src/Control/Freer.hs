@@ -8,7 +8,6 @@ module Control.Freer where
 
 import Control.Applicative.Free (Ap, liftAp, runAp)
 import Control.Effect.Class (type (~>))
-import Data.Free.Union (weakenIns, type (<::))
 import Data.Functor.Coyoneda (Coyoneda, hoistCoyoneda, liftCoyoneda, lowerCoyoneda)
 
 class (forall ins. c (f ins)) => Freer c f | f -> c where
@@ -48,7 +47,3 @@ instance Freer Applicative Ap where
     interpretF = runAp
     {-# INLINE liftIns #-}
     {-# INLINE interpretF #-}
-
-sendFreer :: (i <:: j, Freer c f) => i a -> f j a
-sendFreer = liftIns . weakenIns
-{-# INLINE sendFreer #-}

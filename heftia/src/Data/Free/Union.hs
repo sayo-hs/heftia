@@ -4,7 +4,7 @@
 
 module Data.Free.Union where
 
-import Control.Effect.Class (Instruction, type (~>))
+import Control.Effect.Class (Instruction)
 import Data.Kind (Constraint)
 
 class Union (u :: [Instruction] -> Instruction) where
@@ -38,6 +38,3 @@ type family IsMember (f :: Instruction) fs where
     IsMember f (f ': fs) = 'True
     IsMember f (_ ': fs) = IsMember f fs
     IsMember _ '[] = 'False
-
-class s <:: t where
-    weakenIns :: s ~> t

@@ -4,10 +4,10 @@
 
 module Control.Heftia.Final.Naked where
 
-import Control.Effect.Class (Signature, type (~>))
+import Control.Effect.Class (Signature, type (~>), Nop)
 import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap, (:+:) (Inl, Inr))
 import Control.Freer (Freer, liftIns, retract)
-import Control.Heftia.Final (HeftiaFinal (HeftiaFinal), Noop)
+import Control.Heftia.Final (HeftiaFinal (HeftiaFinal))
 
 newtype HeftiaFinalN (h :: Signature) a = HeftiaFinalN {unHeftiaFinalN :: forall f. (h f ~> f) -> f a}
 
@@ -19,11 +19,11 @@ liftSigFinalN :: HFunctor h => h (HeftiaFinalN h) a -> HeftiaFinalN h a
 liftSigFinalN e = HeftiaFinalN \i -> i $ hfmap (runHeftiaFinalN i) e
 {-# INLINE liftSigFinalN #-}
 
-wearHeftiaFinal :: HeftiaFinalN h a -> HeftiaFinal Noop h a
+wearHeftiaFinal :: HeftiaFinalN h a -> HeftiaFinal Nop h a
 wearHeftiaFinal (HeftiaFinalN f) = HeftiaFinal f
 {-# INLINE wearHeftiaFinal #-}
 
-nakeHeftiaFinal :: HeftiaFinal Noop h a -> HeftiaFinalN h a
+nakeHeftiaFinal :: HeftiaFinal Nop h a -> HeftiaFinalN h a
 nakeHeftiaFinal (HeftiaFinal f) = HeftiaFinalN f
 {-# INLINE nakeHeftiaFinal #-}
 

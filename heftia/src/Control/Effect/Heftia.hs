@@ -10,12 +10,13 @@ module Control.Effect.Heftia where
 import Control.Applicative (Alternative)
 import Control.Arrow ((>>>))
 import Control.Effect.Class (
+    EffectDataHandler,
+    EffectsVia (EffectsVia),
     LiftIns (LiftIns),
     SendIns,
     SendSig,
-    SendVia (SendVia),
     Signature,
-    runSendVia,
+    runEffectsVia,
     sendIns,
     sendSig,
     type (~>),
@@ -61,14 +62,14 @@ newtype
     deriving newtype (Functor, Applicative, Alternative, Monad, MonadPlus)
     deriving stock (Foldable, Traversable)
 
-type HeftiaEffects h u es f = SendVia (HeftiaUnion h u es f)
+type HeftiaEffects h u es f = EffectsVia EffectDataHandler (HeftiaUnion h u es f)
 
 runHeftiaEffects :: HeftiaEffects h u es f ~> h (u es) f
-runHeftiaEffects = runHeftiaUnion . runSendVia
+runHeftiaEffects = runHeftiaUnion . runEffectsVia
 {-# INLINE runHeftiaEffects #-}
 
 heftiaEffects :: h (u es) f ~> HeftiaEffects h u es f
-heftiaEffects = SendVia . HeftiaUnion
+heftiaEffects = EffectsVia . HeftiaUnion
 {-# INLINE heftiaEffects #-}
 
 instance

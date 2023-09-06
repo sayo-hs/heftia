@@ -6,7 +6,7 @@
 
 module Data.Hefty.Union where
 
-import Control.Effect.Class (Signature, type (~>))
+import Control.Effect.Class (Signature)
 import Data.Kind (Constraint)
 
 class UnionH (u :: [Signature] -> Signature) where
@@ -40,20 +40,3 @@ type family IsMemberH (h :: Signature) hs where
     IsMemberH h (h ': hs) = 'True
     IsMemberH h (_ ': hs) = IsMemberH h hs
     IsMemberH _ '[] = 'False
-
-class s <: t where
-    weakenSig :: s m ~> t m
-
-newtype ViaUnionH (u :: [Signature] -> Signature) (h :: Signature) f a = ViaUnionH {getViaUnionH :: h f a}
-    deriving stock (Functor, Foldable, Traversable)
-
-instance (UnionH u, MemberH u h hs) => ViaUnionH u h <: u hs where
-    weakenSig = injectH . getViaUnionH
-    {-# INLINE weakenSig #-}
-
-newtype ViaSingleton (h :: Signature) f a = ViaSingleton {getViaSingleton :: h f a}
-    deriving stock (Functor, Foldable, Traversable)
-
-instance ViaSingleton h <: h where
-    weakenSig = getViaSingleton
-    {-# INLINE weakenSig #-}

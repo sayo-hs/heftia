@@ -32,7 +32,24 @@ source-repository head
     type: git
     location: https://github.com/ymdryo/heftia-effects
 
+common common-base
+    ghc-options:      -Wall
+    default-language: GHC2021
+
+    default-extensions:
+        LambdaCase,
+        DerivingStrategies,
+        DataKinds,
+        TypeFamilies,
+        BlockArguments,
+        FunctionalDependencies,
+        RecordWildCards,
+        DefaultSignatures,
+        PatternSynonyms
+
 library
+    import: common-base
+
     exposed-modules:
         Control.Effect.Handler.Heftia
         Control.Effect.Handler.Heftia.Reader
@@ -54,43 +71,45 @@ library
         transformers
 
     hs-source-dirs:   src
-    ghc-options:      -Wall
-    default-language: GHC2021
-
-    default-extensions:
-        LambdaCase,
-        DerivingStrategies,
-        DataKinds,
-        TypeFamilies,
-        BlockArguments,
-        FunctionalDependencies,
-        RecordWildCards,
-        DefaultSignatures,
-        PatternSynonyms
-
 
 test-suite test
+    import: common-base
+
     main-is: Driver.hs
     hs-source-dirs: test
     build-depends:
         heftia-effects,
+        classy-effects,
+        heftia,
         base,
         tasty                         ^>= 1.4,
         tasty-hunit                   ^>= 0.10,
 
-    type: exitcode-stdio-1.0
-
     build-tool-depends:
         tasty-discover:tasty-discover
 
-    default-language: GHC2021
+    type: exitcode-stdio-1.0
 
-    default-extensions:
-        LambdaCase,
-        DerivingStrategies,
-        DataKinds,
-        TypeFamilies,
-        BlockArguments,
-        FunctionalDependencies,
-        RecordWildCards,
-        DefaultSignatures
+
+executable Teletype
+    import: common-base
+
+    main-is: Main.hs
+    hs-source-dirs: Example/Teletype
+    build-depends:
+        classy-effects,
+        heftia,
+        heftia-effects,
+        base,
+
+executable VFS
+    import: common-base
+
+    main-is: Main.hs
+    hs-source-dirs: Example/VFS
+    build-depends:
+        classy-effects,
+        heftia,
+        heftia-effects,
+        base,
+        vector,
