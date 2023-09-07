@@ -36,12 +36,9 @@ class UnionH (u :: [Signature] -> Signature) where
     {-# INLINE weakenLH #-}
     {-# INLINE weakenRH #-}
 
--- So far, this seems unnecessary.
-{-
 type family IsMemberH (h :: Signature) hs where
     IsMemberH h (h ': hs) = 'True
     IsMemberH h (_ ': hs) = IsMemberH h hs
     IsMemberH _ '[] = 'False
--}
 
-type MemberH u h hs = ({-IsMemberH h hs ~ 'True, -} HasMembershipH u h hs)
+type MemberH u h hs = (IsMemberH h hs ~ 'True, HasMembershipH u h hs)

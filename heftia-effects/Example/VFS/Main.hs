@@ -17,7 +17,6 @@ import Control.Effect.Class.State (State, StateI, get, gets, modify, put)
 import Control.Effect.Freer
 import Control.Effect.Handler.Heftia.Provider (elaborateProvider)
 import Data.Effect.Class.TH
-import Data.Free.Sum
 import Data.Function ((&))
 import Data.Functor.Identity (Identity, runIdentity)
 import Data.Vector (Vector)
@@ -77,7 +76,7 @@ interpretBlockAccess = interpret \case
         cursor <- get @Int & tag @"cursor"
         gets @(Vector block) (V.take n . V.drop cursor) & tag @"storage"
 
-elaborateWithObject :: BlockAccessI block < Sum es => WithObjectS block (Fre es m) ~> Fre es m
+elaborateWithObject :: BlockAccessI block <: es => WithObjectS block (Fre es m) ~> Fre es m
 elaborateWithObject (ProvideBlockAccess p) = elaborateProvider undefined p
 
 test :: forall block m a. Monad m => Fre '[BlockAccessI block, StateI (Vector block) # "storage", StateI Int # "cursor"] m a -> ()

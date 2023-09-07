@@ -35,15 +35,17 @@ import Control.Heftia.Trans (
     runElaborateH,
     translateT,
  )
-import Control.Heftia.Trans.Final (HeftiaFinalT)
 import Control.Monad (MonadPlus)
 import Control.Monad.Cont (ContT (ContT), MonadTrans, runContT)
 import Control.Monad.Trans.Heftia (MonadTransHeftia, elaborateMK, elaborateMT)
+import Control.Monad.Trans.Heftia.Church (HeftiaChurchT)
 import Data.Free.Union (Member, Union, project)
 import Data.Hefty.Sum (SumUnionH)
 import Data.Hefty.Union (
+    IsMemberH,
     MemberH,
     UnionH,
+    absurdUnionH,
     decompH,
     injectH,
     projectH,
@@ -72,11 +74,30 @@ heftiaEffects :: h (u es) f ~> HeftiaEffects h u es f
 heftiaEffects = EffectsVia . HeftiaUnion
 {-# INLINE heftiaEffects #-}
 
+newtype HeftiaUnionForSendIns handleHere h u es f a = HeftiaUnionForSendIns
+    {runHeftiaUnionForSendIns :: HeftiaUnion h u es f a}
+    deriving newtype (Functor, Applicative, Alternative, Monad, MonadPlus)
+    deriving stock (Foldable, Traversable)
+
 instance
-    (TransHeftia c h, UnionH u, MemberH u (LiftIns e) es, HFunctor (u es)) =>
+    SendIns e (HeftiaUnionForSendIns (LiftIns e `IsMemberH` es) h u es f) =>
     SendIns e (HeftiaUnion h u es f)
     where
-    sendIns = HeftiaUnion . liftSigT . injectH . LiftIns
+    sendIns = runHeftiaUnionForSendIns @(LiftIns e `IsMemberH` es) . sendIns
+    {-# INLINE sendIns #-}
+
+instance
+    (TransHeftia c h, UnionH u, MemberH u (LiftIns e) es, HFunctor (u es)) =>
+    SendIns e (HeftiaUnionForSendIns 'True h u es f)
+    where
+    sendIns = HeftiaUnionForSendIns . HeftiaUnion . liftSigT . injectH . LiftIns
+    {-# INLINE sendIns #-}
+
+instance
+    (TransHeftia c h, SendIns e f, c f, HFunctor (u es)) =>
+    SendIns e (HeftiaUnionForSendIns 'False h u es f)
+    where
+    sendIns = HeftiaUnionForSendIns . HeftiaUnion . liftLowerHT . sendIns
     {-# INLINE sendIns #-}
 
 instance
@@ -247,7 +268,12 @@ interposeIns f a =
 liftLowerH :: (TransHeftia c h, c f, HFunctor (u es)) => f ~> HeftiaEffects h u es f
 liftLowerH = heftiaEffects . liftLowerHT
 
-type Hef es f = HeftiaEffects (HeftiaFinalT Monad) SumUnionH es f
-type HefA es f = HeftiaEffects (HeftiaFinalT Applicative) SumUnionH es f
+elaborated :: (TransHeftia c h, UnionH u, HFunctor (u '[]), c f) => HeftiaEffects h u '[] f ~> f
+elaborated = runElaborateH absurdUnionH . runHeftiaEffects
+{-# INLINE elaborated #-}
+
+type Hef es f = HeftiaEffects HeftiaChurchT SumUnionH es f
+
+-- type HefA es f = HeftiaEffects (HeftiaFinalT Applicative) SumUnionH es f
 
 type e <<: es = MemberH SumUnionH e es

@@ -13,12 +13,20 @@ import Control.Monad.Trans.State qualified as T
 import Data.Tuple (swap)
 
 -- | Interpret the 'Get'/'Put' effects using the 'StateT' monad transformer.
-interpretState :: Monad m => s -> Fre (StateI s ': es) m a -> Fre es m (s, a)
+interpretState :: forall s es m a. Monad m => s -> Fre (StateI s ': es) m a -> Fre es m (s, a)
 interpretState s a = swap <$> runStateT (interpretStateT a) s
 {-# INLINE interpretState #-}
 
+evalState :: forall s es m a. Monad m => s -> Fre (StateI s ': es) m a -> Fre es m a
+evalState s a = snd <$> interpretState s a
+{-# INLINE evalState #-}
+
+execState :: forall s es m a. Monad m => s -> Fre (StateI s ': es) m a -> Fre es m s
+execState s a = fst <$> interpretState s a
+{-# INLINE execState #-}
+
 -- | Interpret the 'Get'/'Put' effects using the 'StateT' monad transformer.
-interpretStateT :: Monad m => Fre (StateI s ': es) m ~> StateT s (Fre es m)
+interpretStateT :: forall s es m. Monad m => Fre (StateI s ': es) m ~> StateT s (Fre es m)
 interpretStateT = interpretT \case
     Get -> T.get
     Put s -> T.put s

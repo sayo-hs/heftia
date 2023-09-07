@@ -57,6 +57,7 @@ library
         Control.Effect.Handler.Heftia.State
         Control.Effect.Handler.Heftia.Except
         Control.Effect.Handler.Heftia.Provider
+        Control.Effect.Handler.Heftia.Embed
 
     -- Modules included in this executable, other than Main.
     -- other-modules:
@@ -113,3 +114,18 @@ executable VFS
         heftia-effects,
         base,
         vector,
+
+executable Logging
+    import: common-base
+
+    main-is: Main.hs
+    hs-source-dirs: Example/Logging
+    build-depends:
+        classy-effects,
+        heftia,
+        heftia-effects,
+        base,
+        text,
+        time,
+        loglevel,
+        extra

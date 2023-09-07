@@ -27,11 +27,11 @@ import Control.Freer.Trans (
     runInterpretF,
     transformT,
  )
-import Control.Freer.Trans.Final (FreerFinalT)
 import Control.Monad (MonadPlus)
 import Control.Monad.Cont (ContT (ContT), runContT)
 import Control.Monad.Trans (MonadTrans, lift)
 import Control.Monad.Trans.Freer (MonadTransFreer, interpretMK, interpretMT, reinterpretMK, reinterpretMT)
+import Control.Monad.Trans.Freer.Church (FreerChurchT)
 import Data.Coerce (Coercible, coerce)
 import Data.Free.Sum (SumUnion)
 import Data.Free.Union (
@@ -72,7 +72,10 @@ newtype FreerUnionForSend handleHere fr u es f a = FreerUnionForSend
     deriving newtype (Functor, Applicative, Alternative, Monad, MonadPlus)
     deriving stock (Foldable, Traversable)
 
-instance SendIns e (FreerUnionForSend (e `IsMember` es) fr u es f) => SendIns e (FreerUnion fr u es f) where
+instance
+    SendIns e (FreerUnionForSend (e `IsMember` es) fr u es f) =>
+    SendIns e (FreerUnion fr u es f)
+    where
     sendIns = runFreerUnionForSend @(e `IsMember` es) . sendIns
     {-# INLINE sendIns #-}
 
@@ -221,7 +224,14 @@ raiseUnder a =
             Left e -> weakenL e
             Right e -> weakenR $ weakenR e
 
-interpreted :: (TransFreer c h, c f, Union u) => FreerEffects h u '[] f ~> f
+raise ::
+    forall e es fr u f c.
+    (TransFreer c fr, Union u, c f) =>
+    FreerEffects fr u es f ~> FreerEffects fr u (e ': es) f
+raise a = freerEffects . ($ runFreerEffects a) $ transformT weakenR
+{-# INLINE raise #-}
+
+interpreted :: (TransFreer c fr, c f, Union u) => FreerEffects fr u '[] f ~> f
 interpreted = runInterpretF absurdUnion . runFreerEffects
 {-# INLINE interpreted #-}
 
@@ -237,7 +247,8 @@ splitFreerEffects a =
 liftLower :: (TransFreer c fr, c f) => f ~> FreerEffects fr u es f
 liftLower = freerEffects . liftLowerFT
 
-type Fre es f = FreerEffects (FreerFinalT Monad) SumUnion es f
-type FreA es f = FreerEffects (FreerFinalT Applicative) SumUnion es f
+type Fre es f = FreerEffects FreerChurchT SumUnion es f
+
+-- type FreA es f = FreerEffects (FreerFinalT Applicative) SumUnion es f
 
 type e <: es = Member SumUnion e es
