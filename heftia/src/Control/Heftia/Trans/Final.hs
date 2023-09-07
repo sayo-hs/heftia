@@ -59,18 +59,20 @@ hoistHeftiaFinal phi (HeftiaFinalT a) =
         Inl e -> Inl e
         Inr (LiftIns a') -> Inr $ LiftIns $ phi a'
 
-deriving newtype instance
-    (forall g. c g => Functor g, c (HeftiaFinal c (h :+: LiftIns f))) =>
-    Functor (HeftiaFinalT c h f)
+deriving newtype instance Functor (HeftiaFinalT Functor h f)
 
+deriving newtype instance Functor (HeftiaFinalT Applicative h f)
 deriving newtype instance Applicative (HeftiaFinalT Applicative h f)
 
+deriving newtype instance Functor (HeftiaFinalT Alternative h f)
 deriving newtype instance Applicative (HeftiaFinalT Alternative h f)
 deriving newtype instance Alternative (HeftiaFinalT Alternative h f)
 
+deriving newtype instance Functor (HeftiaFinalT Monad h m)
 deriving newtype instance Applicative (HeftiaFinalT Monad h m)
 deriving newtype instance Monad (HeftiaFinalT Monad h m)
 
+deriving newtype instance Functor (HeftiaFinalT MonadPlus h m)
 deriving newtype instance Applicative (HeftiaFinalT MonadPlus h m)
 deriving newtype instance Alternative (HeftiaFinalT MonadPlus h m)
 deriving newtype instance Monad (HeftiaFinalT MonadPlus h m)

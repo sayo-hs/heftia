@@ -1,3 +1,4 @@
+{-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 -- This Source Code Form is subject to the terms of the Mozilla Public
@@ -9,9 +10,10 @@ module Main where
 import Control.Effect.Class (type (~>))
 import Control.Effect.Class.Embed (Embed, EmbedI (Embed), embed)
 import Control.Effect.Class.Machinery.TH (makeEffectF)
-import Control.Effect.Freer (Fre, freerEffects, interpret, interpreted)
+import Control.Effect.Freer (Fre, freerEffects, interpose, interpret, interpreted)
 import Control.Freer.Trans (liftLower)
 import Control.Monad.IO.Class (MonadIO (liftIO))
+import Data.Free.Sum (Sum, type (<))
 
 class Teletype f where
     readTTY :: f String
@@ -34,7 +36,13 @@ echo = do
         "" -> pure ()
         _ -> writeTTY i >> echo
 
+strong :: (TeletypeI < Sum es, Monad m) => Fre es m ~> Fre es m
+strong =
+    interpose \case
+        ReadTTY -> readTTY
+        WriteTTY msg -> writeTTY $ msg <> "!"
+
 main :: IO ()
 main = interpreted . runEmbedIO $ do
     embed $ putStrLn "Please enter something..."
-    teletypeToIO echo
+    teletypeToIO $ strong . strong $ echo

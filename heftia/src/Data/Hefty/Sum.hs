@@ -27,7 +27,7 @@ deriving newtype instance Foldable (SumUnionH '[] f)
 deriving stock instance Traversable (SumUnionH '[] f)
 
 {- Lack of instances of 'Data.Comp.Multi.Ops.:+:'.
- - Should we create a pullreq on the datacomp package side?
+ - Should we create a pullreq on the compdata package side?
  -}
 {-
 deriving newtype instance

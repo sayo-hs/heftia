@@ -63,18 +63,20 @@ hoistFreerFinal :: (f ~> g) -> FreerFinalT c ins f ~> FreerFinalT c ins g
 hoistFreerFinal phi = FreerFinalT . hoistHeftiaFinal phi . unFreerFinalT
 {-# INLINE hoistFreerFinal #-}
 
-deriving newtype instance
-    (forall g. c g => Functor g, c (HeftiaFinalT c (LiftIns ins) f)) =>
-    Functor (FreerFinalT c ins f)
+deriving newtype instance Functor (FreerFinalT Functor ins f)
 
+deriving newtype instance Functor (FreerFinalT Applicative ins f)
 deriving newtype instance Applicative (FreerFinalT Applicative ins f)
 
+deriving newtype instance Functor (FreerFinalT Alternative ins f)
 deriving newtype instance Applicative (FreerFinalT Alternative ins f)
 deriving newtype instance Alternative (FreerFinalT Alternative ins f)
 
+deriving newtype instance Functor (FreerFinalT Monad ins m)
 deriving newtype instance Applicative (FreerFinalT Monad ins m)
 deriving newtype instance Monad (FreerFinalT Monad ins m)
 
+deriving newtype instance Functor (FreerFinalT MonadPlus ins m)
 deriving newtype instance Applicative (FreerFinalT MonadPlus ins m)
 deriving newtype instance Alternative (FreerFinalT MonadPlus ins m)
 deriving newtype instance Monad (FreerFinalT MonadPlus ins m)

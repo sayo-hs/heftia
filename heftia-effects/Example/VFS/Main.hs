@@ -13,14 +13,13 @@ import Control.Effect.Class
 import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap)
 import Control.Effect.Class.Machinery.TH
 import Control.Effect.Class.Provider (ProviderS (Provide))
-import Control.Effect.Class.State (StateI, get, gets, modify, put)
+import Control.Effect.Class.State (State, StateI, get, gets, modify, put)
 import Control.Effect.Freer
 import Control.Effect.Handler.Heftia.Provider (elaborateProvider)
 import Data.Effect.Class.TH
 import Data.Free.Sum
 import Data.Function ((&))
 import Data.Functor.Identity (Identity, runIdentity)
-import Data.Proxy (Proxy (Proxy))
 import Data.Vector (Vector)
 import Data.Vector qualified as V
 
@@ -44,7 +43,7 @@ withObject path m =
 
 class BlockAccess block f where
     appendBlock :: Vector block -> f ()
-    seekBlock :: Proxy block -> Int -> f ()
+    seekBlock :: Int -> f ()
     writeBlock :: Vector block -> f ()
     readBlock :: Int -> f (Vector block)
 
@@ -58,15 +57,15 @@ makeEffectF ''BlockAccess
 
 interpretBlockAccess ::
     forall block es m.
-    ( StateI (Vector block) # "storage" < Sum es
-    , StateI Int # "cursor" < Sum es
+    ( State (Vector block) (Fre es m @# "storage")
+    , State Int (Fre es m @# "cursor")
     , Monad m
     ) =>
     Fre (BlockAccessI block ': es) m ~> Fre es m
 interpretBlockAccess = interpret \case
     AppendBlock bs ->
         modify @(Vector block) (<> bs) & tag @"storage"
-    SeekBlock Proxy cursor ->
+    SeekBlock cursor ->
         put cursor & tag @"cursor"
     WriteBlock bs -> do
         cursor <- get @Int & tag @"cursor"
