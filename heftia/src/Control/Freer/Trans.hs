@@ -10,21 +10,21 @@ import Control.Effect.Class (type (~>))
 import Control.Monad.Identity (IdentityT (IdentityT), runIdentityT)
 
 class (forall ins f. c f => c (fr ins f)) => TransFreer c fr | fr -> c where
-    {-# MINIMAL liftInsT, liftLower, (hoistFreer, runInterpretF | interpretFT) #-}
+    {-# MINIMAL liftInsT, liftLowerFT, (hoistFreer, runInterpretF | interpretFT) #-}
 
     -- | Lift a /instruction/ into a Freer monad transformer.
     liftInsT :: ins ~> fr ins f
 
-    liftLower :: forall ins f. c f => f ~> fr ins f
+    liftLowerFT :: forall ins f. c f => f ~> fr ins f
 
     -- | Translate /instruction/s embedded in a Freer monad transformer.
     transformT :: c f => (ins ~> ins') -> fr ins f ~> fr ins' f
-    transformT f = interpretFT liftLower (liftInsT . f)
+    transformT f = interpretFT liftLowerFT (liftInsT . f)
     {-# INLINE transformT #-}
 
     -- | Translate an underlying monad.
     hoistFreer :: (c f, c g) => (f ~> g) -> fr ins f ~> fr ins g
-    hoistFreer f = interpretFT (liftLower . f) liftInsT
+    hoistFreer f = interpretFT (liftLowerFT . f) liftInsT
     {-# INLINE hoistFreer #-}
 
     interposeLower :: (c f, c g) => (f ~> fr ins g) -> fr ins f ~> fr ins g
@@ -41,5 +41,5 @@ class (forall ins f. c f => c (fr ins f)) => TransFreer c fr | fr -> c where
     {-# INLINE interpretFT #-}
 
     reinterpretFT :: c f => (ins ~> fr ins f) -> fr ins f ~> fr ins f
-    reinterpretFT = interpretFT liftLower
+    reinterpretFT = interpretFT liftLowerFT
     {-# INLINE reinterpretFT #-}

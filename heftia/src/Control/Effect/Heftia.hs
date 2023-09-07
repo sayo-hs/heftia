@@ -23,13 +23,13 @@ import Control.Effect.Class (
  )
 import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap)
 import Control.Effect.Freer (FreerEffects, freerEffects, interpose, runFreerEffects)
-import Control.Freer.Trans (TransFreer, interpretFT, liftInsT, liftLower)
+import Control.Freer.Trans (TransFreer, interpretFT, liftInsT, liftLowerFT)
 import Control.Heftia.Trans (
     TransHeftia,
     elaborateHT,
     hoistHeftia,
     interpretLowerH,
-    liftLowerH,
+    liftLowerHT,
     liftSigT,
     reelaborateHT,
     runElaborateH,
@@ -129,7 +129,7 @@ interpretH ::
     (e (HeftiaEffects h u es f) ~> HeftiaEffects h u es f) ->
     HeftiaEffects h u (e ': es) f ~> HeftiaEffects h u es f
 interpretH i a =
-    heftiaEffects $ ($ runHeftiaEffects a) $ elaborateHT liftLowerH \u ->
+    heftiaEffects $ ($ runHeftiaEffects a) $ elaborateHT liftLowerHT \u ->
         case decompH u of
             Left e -> runHeftiaEffects $ i $ hfmap heftiaEffects e
             Right e -> liftSigT e
@@ -239,10 +239,13 @@ interposeIns f a =
         $ interpretLowerH
         $ runFreerEffects
             >>> interpretFT
-                (liftLowerH . freerEffects . liftLower)
+                (liftLowerHT . freerEffects . liftLowerFT)
                 \u -> case project @_ @e u of
                     Just e -> runHeftiaEffects $ f e
-                    Nothing -> liftLowerH $ freerEffects $ liftInsT u
+                    Nothing -> liftLowerHT $ freerEffects $ liftInsT u
+
+liftLowerH :: (TransHeftia c h, c f, HFunctor (u es)) => f ~> HeftiaEffects h u es f
+liftLowerH = heftiaEffects . liftLowerHT
 
 type Hef es f = HeftiaEffects (HeftiaFinalT Monad) SumUnionH es f
 type HefA es f = HeftiaEffects (HeftiaFinalT Applicative) SumUnionH es f

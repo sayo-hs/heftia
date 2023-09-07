@@ -7,7 +7,7 @@
 module Control.Monad.Trans.Freer where
 
 import Control.Effect.Class (Instruction, type (~>))
-import Control.Freer.Trans (TransFreer, hoistFreer, interpretFT, liftInsT, liftLower, transformT)
+import Control.Freer.Trans (TransFreer, hoistFreer, interpretFT, liftInsT, liftLowerFT, transformT)
 import Control.Monad.Cont (ContT)
 import Control.Monad.Trans (MonadTrans, lift)
 import Data.Coerce (Coercible, coerce)
@@ -35,7 +35,7 @@ class
         (Monad m, MonadTrans t, Coercible n (fr ins m), Monad (t n), Monad n) =>
         (ins ~> t n) ->
         fr ins m ~> t n
-    reinterpretMT f = interpretMT f . hoistFreer (coerce . liftLower @Monad @fr @ins)
+    reinterpretMT f = interpretMT f . hoistFreer (coerce . liftLowerFT @Monad @fr @ins)
     {-# INLINE reinterpretMT #-}
 
 mergeFreer ::
@@ -48,9 +48,9 @@ splitFreer ::
     forall fr m ins ins' c.
     (TransFreer c fr, c m) =>
     fr (ins + ins') m ~> fr ins (fr ins' m)
-splitFreer = interpretFT (liftLower . liftLower) \case
+splitFreer = interpretFT (liftLowerFT . liftLowerFT) \case
     L1 e -> liftInsT e
-    R1 e -> liftLower $ liftInsT e
+    R1 e -> liftLowerFT $ liftInsT e
 
 reinterpretTTViaFinal ::
     forall fr m t n ins.
@@ -63,7 +63,7 @@ reinterpretTTViaFinal ::
     ) =>
     (ins ~> t n) ->
     fr ins m ~> t n
-reinterpretTTViaFinal = interpretFT $ lift . coerce . liftLower @Monad @fr @ins
+reinterpretTTViaFinal = interpretFT $ lift . coerce . liftLowerFT @Monad @fr @ins
 {-# INLINE reinterpretTTViaFinal #-}
 
 newtype ViaLiftLower (fr :: Instruction -> (Type -> Type) -> Type -> Type) ins m a = ViaLiftLower
@@ -72,5 +72,5 @@ newtype ViaLiftLower (fr :: Instruction -> (Type -> Type) -> Type -> Type) ins m
     deriving stock (Foldable, Traversable)
 
 instance TransFreer Monad h => MonadTrans (ViaLiftLower h ins) where
-    lift = ViaLiftLower . liftLower
+    lift = ViaLiftLower . liftLowerFT
     {-# INLINE lift #-}

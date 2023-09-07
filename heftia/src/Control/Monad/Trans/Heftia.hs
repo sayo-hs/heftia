@@ -8,7 +8,7 @@ module Control.Monad.Trans.Heftia where
 
 import Control.Effect.Class (Signature, type (~>))
 import Control.Effect.Class.Machinery.HFunctor (HFunctor, (:+:) (Inl, Inr))
-import Control.Heftia.Trans (TransHeftia, elaborateHT, hoistHeftia, liftLowerH, liftSigT, translateT)
+import Control.Heftia.Trans (TransHeftia, elaborateHT, hoistHeftia, liftLowerHT, liftSigT, translateT)
 import Control.Monad.Cont (ContT)
 import Control.Monad.Trans (MonadTrans, lift)
 import Data.Coerce (Coercible, coerce)
@@ -48,7 +48,7 @@ class
         (Monad m, MonadTrans t, Coercible n (h sig m), Monad (t n), Monad n, HFunctor sig) =>
         (sig (t n) ~> t n) ->
         h sig m ~> t n
-    reelaborateMT f = elaborateMT f . hoistHeftia (coerce . liftLowerH @Monad @h @sig)
+    reelaborateMT f = elaborateMT f . hoistHeftia (coerce . liftLowerHT @Monad @h @sig)
     {-# INLINE reelaborateMT #-}
 
 mergeHeftia ::
@@ -70,7 +70,7 @@ reinterpretHTTViaFinal ::
     ) =>
     (sig (t n) ~> t n) ->
     h sig m ~> t n
-reinterpretHTTViaFinal = elaborateHT $ lift . coerce . liftLowerH @Monad @h @sig
+reinterpretHTTViaFinal = elaborateHT $ lift . coerce . liftLowerHT @Monad @h @sig
 {-# INLINE reinterpretHTTViaFinal #-}
 
 newtype ViaLiftLowerH (h :: Signature -> (Type -> Type) -> Type -> Type) sig m a = ViaLiftLowerH
@@ -79,5 +79,5 @@ newtype ViaLiftLowerH (h :: Signature -> (Type -> Type) -> Type -> Type) sig m a
     deriving stock (Foldable, Traversable)
 
 instance (TransHeftia Monad h, HFunctor sig) => MonadTrans (ViaLiftLowerH h sig) where
-    lift = ViaLiftLowerH . liftLowerH
+    lift = ViaLiftLowerH . liftLowerHT
     {-# INLINE lift #-}

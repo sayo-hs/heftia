@@ -43,9 +43,9 @@ liftSigFinalT :: HFunctor h => h (HeftiaFinalT c h f) a -> HeftiaFinalT c h f a
 liftSigFinalT = HeftiaFinalT . liftSigFinal . Inl . hfmap unHeftiaFinalT
 {-# INLINE liftSigFinalT #-}
 
-liftLowerHFinal :: HFunctor h => f a -> HeftiaFinalT c h f a
-liftLowerHFinal = HeftiaFinalT . liftSigFinal . Inr . LiftIns
-{-# INLINE liftLowerHFinal #-}
+liftLowerHTFinal :: HFunctor h => f a -> HeftiaFinalT c h f a
+liftLowerHTFinal = HeftiaFinalT . liftSigFinal . Inr . LiftIns
+{-# INLINE liftLowerHTFinal #-}
 
 weakenHeftiaFinalT :: (forall g. c' g => c g) => HeftiaFinalT c h f a -> HeftiaFinalT c' h f a
 weakenHeftiaFinalT = HeftiaFinalT . weakenHeftiaFinal . unHeftiaFinalT
@@ -85,10 +85,10 @@ instance (forall h f. c f => c (HeftiaFinalT c h f)) => TransHeftia c (HeftiaFin
     translateT f (HeftiaFinalT a) =
         ($ a) $ runHeftiaFinal \case
             Inl e -> liftSigFinalT $ f e
-            Inr (LiftIns a') -> liftLowerH a'
+            Inr (LiftIns a') -> liftLowerHT a'
 
-    liftLowerH = liftLowerHFinal
-    {-# INLINE liftLowerH #-}
+    liftLowerHT = liftLowerHTFinal
+    {-# INLINE liftLowerHT #-}
 
     runElaborateH i = runHeftiaFinalT $ FinalTElaborator id i
     {-# INLINE runElaborateH #-}
@@ -113,5 +113,5 @@ subsumeHeftiaFinal (HeftiaFinalT (HeftiaFinal f)) =
         Inr (LiftIns e) -> e
 
 dupHeftiaFinal :: HFunctor h => HeftiaFinalT c h f a -> HeftiaFinalT c h (HeftiaFinalT c h f) a
-dupHeftiaFinal = hoistHeftiaFinal liftLowerHFinal
+dupHeftiaFinal = hoistHeftiaFinal liftLowerHTFinal
 {-# INLINE dupHeftiaFinal #-}

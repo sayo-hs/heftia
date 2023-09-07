@@ -22,7 +22,7 @@ import Control.Freer.Trans (
     TransFreer,
     interpretFT,
     liftInsT,
-    liftLower,
+    liftLowerFT,
     reinterpretFT,
     runInterpretF,
     transformT,
@@ -84,7 +84,7 @@ instance
     {-# INLINE sendIns #-}
 
 instance (TransFreer c fr, SendIns e f, c f) => SendIns e (FreerUnionForSend 'False fr u es f) where
-    sendIns = FreerUnionForSend . FreerUnion . liftLower . sendIns
+    sendIns = FreerUnionForSend . FreerUnion . liftLowerFT . sendIns
     {-# INLINE sendIns #-}
 
 interpret ::
@@ -92,7 +92,7 @@ interpret ::
     (e ~> FreerEffects fr u es f) ->
     FreerEffects fr u (e ': es) f ~> FreerEffects fr u es f
 interpret i a =
-    freerEffects $ ($ runFreerEffects a) $ interpretFT liftLower \u ->
+    freerEffects $ ($ runFreerEffects a) $ interpretFT liftLowerFT \u ->
         case decomp u of
             Left e -> runFreerEffects $ i e
             Right e -> liftInsT e
@@ -229,10 +229,13 @@ splitFreerEffects ::
     (TransFreer c fr', TransFreer c fr, c f, c (FreerEffects fr u es f), Union u) =>
     FreerEffects fr u (e ': es) f ~> fr' e (FreerEffects fr u es f)
 splitFreerEffects a =
-    ($ runFreerEffects a) $ interpretFT (liftLower . freerEffects . liftLower) \u ->
+    ($ runFreerEffects a) $ interpretFT (liftLowerFT . freerEffects . liftLowerFT) \u ->
         case decomp u of
             Left e -> liftInsT e
-            Right e -> liftLower $ freerEffects $ liftInsT e
+            Right e -> liftLowerFT $ freerEffects $ liftInsT e
+
+liftLower :: (TransFreer c fr, c f) => f ~> FreerEffects fr u es f
+liftLower = freerEffects . liftLowerFT
 
 type Fre es f = FreerEffects (FreerFinalT Monad) SumUnion es f
 type FreA es f = FreerEffects (FreerFinalT Applicative) SumUnion es f

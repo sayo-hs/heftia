@@ -5,14 +5,17 @@
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+{- |
+The original of this example can be found at polysemy.
+<https://hackage.haskell.org/package/polysemy>
+-}
 module Main where
 
 import Control.Effect.Class (type (~>))
-import Control.Effect.Class.Embed (Embed, EmbedI (Embed), embed)
+import Control.Effect.Class.Embed (Embed, embed)
 import Control.Effect.Class.Machinery.TH (makeEffectF)
-import Control.Effect.Freer (Fre, freerEffects, interpose, interpret, interpreted, type (<:))
-import Control.Freer.Trans (liftLower)
-import Control.Monad.IO.Class (MonadIO (liftIO))
+import Control.Effect.Freer (Fre, interpose, interpret, interpreted, type (<:))
+import Control.Effect.Handler.Heftia.Embed (runEmbedIO)
 
 class Teletype f where
     readTTY :: f String
@@ -24,9 +27,6 @@ teletypeToIO :: (Embed IO (Fre es m), Monad m) => Fre (TeletypeI ': es) m ~> Fre
 teletypeToIO = interpret \case
     ReadTTY -> embed getLine
     WriteTTY msg -> embed $ putStrLn msg
-
-runEmbedIO :: MonadIO m => Fre (EmbedI IO ': es) m ~> Fre es m
-runEmbedIO = interpret \(Embed m) -> freerEffects $ liftLower $ liftIO m
 
 echo :: (Teletype m, Monad m) => m ()
 echo = do

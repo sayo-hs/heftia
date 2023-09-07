@@ -18,7 +18,7 @@ import Control.Heftia.Trans.Final (
     elaborateFinalTLower,
     heftiaFinalT,
     hoistHeftiaFinal,
-    liftLowerHFinal,
+    liftLowerHTFinal,
     liftSigFinalT,
     runHeftiaFinalT,
     subsumeHeftiaFinal,
@@ -51,9 +51,9 @@ liftInsFinalT :: ins ~> FreerFinalT c ins f
 liftInsFinalT = FreerFinalT . liftSigFinalT . LiftIns
 {-# INLINE liftInsFinalT #-}
 
-liftLowerFinal :: f ~> FreerFinalT c ins f
-liftLowerFinal = FreerFinalT . liftLowerHFinal
-{-# INLINE liftLowerFinal #-}
+liftLowerFTFinal :: f ~> FreerFinalT c ins f
+liftLowerFTFinal = FreerFinalT . liftLowerHTFinal
+{-# INLINE liftLowerFTFinal #-}
 
 weakenFreerFinalT :: (forall g. c' g => c g) => FreerFinalT c ins f ~> FreerFinalT c' ins f
 weakenFreerFinalT = FreerFinalT . weakenHeftiaFinalT . unFreerFinalT
@@ -86,8 +86,8 @@ instance (forall h f. c f => c (FreerFinalT c h f)) => TransFreer c (FreerFinalT
     liftInsT = liftInsFinalT
     {-# INLINE liftInsT #-}
 
-    liftLower = liftLowerFinal
-    {-# INLINE liftLower #-}
+    liftLowerFT = liftLowerFTFinal
+    {-# INLINE liftLowerFT #-}
 
     runInterpretF i = runFreerFinalT $ FinalTInterpreter id i
     {-# INLINE runInterpretF #-}
@@ -110,5 +110,5 @@ subsumeFreerFinal =
 {-# INLINE subsumeFreerFinal #-}
 
 dupFreerFinal :: FreerFinalT c ins f ~> FreerFinalT c ins (FreerFinalT c ins f)
-dupFreerFinal = hoistFreerFinal liftLowerFinal
+dupFreerFinal = hoistFreerFinal liftLowerFTFinal
 {-# INLINE dupFreerFinal #-}
