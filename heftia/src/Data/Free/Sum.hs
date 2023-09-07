@@ -11,7 +11,7 @@ module Data.Free.Sum (module Data.Free.Sum, pattern L1, pattern R1)
 where
 
 import Control.Effect.Class (Instruction, NopI, type (~>))
-import Data.Free.Union (Member, Union, absurdUnion, comp, decomp, inject, project)
+import Data.Free.Union (HasMembership, Union, absurdUnion, comp, decomp, inject, project)
 import GHC.Generics (type (:+:) (L1, R1))
 
 infixr 6 +
@@ -41,7 +41,7 @@ deriving stock instance Traversable (SumUnion '[])
 deriving stock instance (Traversable f, Traversable (Sum fs)) => Traversable (SumUnion (f ': fs))
 
 instance Union SumUnion where
-    type Member _ f fs = f < Sum fs
+    type HasMembership _ f fs = f < Sum fs
 
     inject sig = SumUnion $ inj sig
     project (SumUnion sig) = proj sig
@@ -65,7 +65,7 @@ class isHead ~ f `IsHeadInsOf` g => SumMember isHead (f :: Instruction) g where
     injSum :: f a -> g a
     projSum :: g a -> Maybe (f a)
 
-type family f `IsHeadInsOf` g where
+type family (f :: Instruction) `IsHeadInsOf` g where
     f `IsHeadInsOf` f + g = 'True
     _ `IsHeadInsOf` _ = 'False
 

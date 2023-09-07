@@ -35,6 +35,7 @@ import Control.Monad.Trans.Freer (MonadTransFreer, interpretMK, interpretMT, rei
 import Data.Coerce (Coercible, coerce)
 import Data.Free.Sum (SumUnion)
 import Data.Free.Union (
+    IsMember,
     Member,
     Union,
     absurdUnion,
@@ -66,11 +67,24 @@ freerEffects :: fr (u es) f ~> FreerEffects fr u es f
 freerEffects = EffectsVia . FreerUnion
 {-# INLINE freerEffects #-}
 
+newtype FreerUnionForSend handleHere fr u es f a = FreerUnionForSend
+    {runFreerUnionForSend :: FreerUnion fr u es f a}
+    deriving newtype (Functor, Applicative, Alternative, Monad, MonadPlus)
+    deriving stock (Foldable, Traversable)
+
+instance SendIns e (FreerUnionForSend (e `IsMember` es) fr u es f) => SendIns e (FreerUnion fr u es f) where
+    sendIns = runFreerUnionForSend @(e `IsMember` es) . sendIns
+    {-# INLINE sendIns #-}
+
 instance
-    (TransFreer c h, Union u, Member u e es) =>
-    SendIns e (FreerUnion h u es f)
+    (TransFreer c fr, Union u, Member u e es) =>
+    SendIns e (FreerUnionForSend 'True fr u es f)
     where
-    sendIns = FreerUnion . liftInsT . inject
+    sendIns = FreerUnionForSend . FreerUnion . liftInsT . inject
+    {-# INLINE sendIns #-}
+
+instance (TransFreer c fr, SendIns e f, c f) => SendIns e (FreerUnionForSend 'False fr u es f) where
+    sendIns = FreerUnionForSend . FreerUnion . liftLower . sendIns
     {-# INLINE sendIns #-}
 
 interpret ::
@@ -222,3 +236,5 @@ splitFreerEffects a =
 
 type Fre es f = FreerEffects (FreerFinalT Monad) SumUnion es f
 type FreA es f = FreerEffects (FreerFinalT Applicative) SumUnion es f
+
+type e <: es = Member SumUnion e es

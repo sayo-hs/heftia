@@ -246,3 +246,5 @@ interposeIns f a =
 
 type Hef es f = HeftiaEffects (HeftiaFinalT Monad) SumUnionH es f
 type HefA es f = HeftiaEffects (HeftiaFinalT Applicative) SumUnionH es f
+
+type e <<: es = MemberH SumUnionH e es

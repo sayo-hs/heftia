@@ -10,10 +10,10 @@ import Control.Effect.Class (Signature)
 import Data.Kind (Constraint)
 
 class UnionH (u :: [Signature] -> Signature) where
-    type MemberH u (h :: Signature) (hs :: [Signature]) :: Constraint
+    type HasMembershipH u (h :: Signature) (hs :: [Signature]) :: Constraint
 
-    injectH :: MemberH u h hs => h f a -> u hs f a
-    projectH :: MemberH u h hs => u hs f a -> Maybe (h f a)
+    injectH :: HasMembershipH u h hs => h f a -> u hs f a
+    projectH :: HasMembershipH u h hs => u hs f a -> Maybe (h f a)
 
     compH :: Either (h f a) (u hs f a) -> u (h ': hs) f a
     decompH :: u (h ': hs) f a -> Either (h f a) (u hs f a)
@@ -36,7 +36,12 @@ class UnionH (u :: [Signature] -> Signature) where
     {-# INLINE weakenLH #-}
     {-# INLINE weakenRH #-}
 
+-- So far, this seems unnecessary.
+{-
 type family IsMemberH (h :: Signature) hs where
     IsMemberH h (h ': hs) = 'True
     IsMemberH h (_ ': hs) = IsMemberH h hs
     IsMemberH _ '[] = 'False
+-}
+
+type MemberH u h hs = ({-IsMemberH h hs ~ 'True, -} HasMembershipH u h hs)

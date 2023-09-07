@@ -10,10 +10,9 @@ module Main where
 import Control.Effect.Class (type (~>))
 import Control.Effect.Class.Embed (Embed, EmbedI (Embed), embed)
 import Control.Effect.Class.Machinery.TH (makeEffectF)
-import Control.Effect.Freer (Fre, freerEffects, interpose, interpret, interpreted)
+import Control.Effect.Freer (Fre, freerEffects, interpose, interpret, interpreted, type (<:))
 import Control.Freer.Trans (liftLower)
 import Control.Monad.IO.Class (MonadIO (liftIO))
-import Data.Free.Sum (Sum, type (<))
 
 class Teletype f where
     readTTY :: f String
@@ -36,7 +35,7 @@ echo = do
         "" -> pure ()
         _ -> writeTTY i >> echo
 
-strong :: (TeletypeI < Sum es, Monad m) => Fre es m ~> Fre es m
+strong :: (TeletypeI <: es, Monad m) => Fre es m ~> Fre es m
 strong =
     interpose \case
         ReadTTY -> readTTY

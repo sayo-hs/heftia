@@ -10,7 +10,7 @@ module Data.Hefty.Sum where
 
 import Control.Effect.Class (NopS, Signature, type (~>))
 import Control.Effect.Class.Machinery.HFunctor (HFunctor, caseH, (:+:) (Inl, Inr))
-import Data.Hefty.Union (MemberH, UnionH, absurdUnionH, compH, decompH, injectH, projectH)
+import Data.Hefty.Union (HasMembershipH, UnionH, absurdUnionH, compH, decompH, injectH, projectH)
 
 swapSumH :: (h1 :+: h2) f a -> (h2 :+: h1) f a
 swapSumH = caseH Inr Inl
@@ -46,7 +46,7 @@ deriving stock instance
 deriving newtype instance HFunctor (SumH hs) => HFunctor (SumUnionH hs)
 
 instance UnionH SumUnionH where
-    type MemberH _ h hs = h << SumH hs
+    type HasMembershipH _ h hs = h << SumH hs
 
     injectH sig = SumUnionH $ injH sig
     projectH (SumUnionH sig) = projH sig
@@ -70,7 +70,7 @@ class isHead ~ h1 `IsHeadSigOf` h2 => SumMemberH isHead (h1 :: Signature) h2 whe
     injSumH :: h1 f a -> h2 f a
     projSumH :: h2 f a -> Maybe (h1 f a)
 
-type family h1 `IsHeadSigOf` h2 where
+type family (h1 :: Signature) `IsHeadSigOf` h2 where
     f `IsHeadSigOf` f :+: g = 'True
     _ `IsHeadSigOf` _ = 'False
 

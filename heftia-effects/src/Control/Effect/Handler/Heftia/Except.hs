@@ -6,13 +6,12 @@ module Control.Effect.Handler.Heftia.Except where
 
 import Control.Effect.Class (type (~>))
 import Control.Effect.Class.Except (CatchS (Catch), ThrowI (Throw))
-import Control.Effect.Freer (Fre, interposeK, interposeT, interpretK, interpretT)
+import Control.Effect.Freer (Fre, interposeK, interposeT, interpretK, interpretT, type (<:))
 import Control.Monad.Trans.Except (ExceptT (ExceptT), runExceptT, throwE)
-import Data.Free.Sum (Sum, type (<))
 
 -- | Elaborate the 'Catch' effect using the 'ExceptT' monad transformer.
 elaborateExceptT ::
-    (ThrowI e < Sum es, Monad m) =>
+    (ThrowI e <: es, Monad m) =>
     CatchS e (Fre es m) ~> Fre es m
 elaborateExceptT (Catch action (hdl :: e -> Fre es m a)) = do
     r <- runExceptT $ ($ action) $ interposeT \(Throw (e :: e)) -> throwE e
@@ -22,7 +21,7 @@ elaborateExceptT (Catch action (hdl :: e -> Fre es m a)) = do
 
 -- | Elaborate the 'Catch' effect using the 'ContT' continuation monad transformer.
 elaborateExceptK ::
-    (ThrowI e < Sum es, Monad m) =>
+    (ThrowI e <: es, Monad m) =>
     CatchS e (Fre es m) ~> Fre es m
 elaborateExceptK (Catch action (hdl :: e -> Fre es m a)) =
     ($ action) $ interposeK pure \_ (Throw (e :: e)) -> hdl e

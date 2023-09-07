@@ -8,10 +8,10 @@ import Control.Effect.Class (Instruction)
 import Data.Kind (Constraint)
 
 class Union (u :: [Instruction] -> Instruction) where
-    type Member u (f :: Instruction) (fs :: [Instruction]) :: Constraint
+    type HasMembership u (f :: Instruction) (fs :: [Instruction]) :: Constraint
 
-    inject :: Member u f fs => f a -> u fs a
-    project :: Member u f fs => u fs a -> Maybe (f a)
+    inject :: HasMembership u f fs => f a -> u fs a
+    project :: HasMembership u f fs => u fs a -> Maybe (f a)
 
     comp :: Either (f a) (u fs a) -> u (f ': fs) a
     decomp :: u (f ': fs) a -> Either (f a) (u fs a)
@@ -38,3 +38,5 @@ type family IsMember (f :: Instruction) fs where
     IsMember f (f ': fs) = 'True
     IsMember f (_ ': fs) = IsMember f fs
     IsMember _ '[] = 'False
+
+type Member u f fs = (IsMember f fs ~ 'True, HasMembership u f fs)
