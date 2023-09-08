@@ -19,11 +19,9 @@ import Control.Effect.Handler.Heftia.Reader (interpretAsk)
 import Control.Effect.Handler.Heftia.State (evalState)
 import Control.Effect.Heftia (Hef, interpretH, runElaborate)
 import Control.Monad (when)
-import Control.Monad.Extra (whenM)
 import Control.Monad.Trans.Heftia.Church (HeftiaChurchT)
-import Data.Functor ((<&>))
 import Data.Hefty.Sum (SumH, SumUnionH)
-import Data.Hefty.Union
+import Data.Hefty.Union (UnionH (absurdUnionH, (|+:)))
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
@@ -57,22 +55,29 @@ logWithMetadata = interpose \(Log level msg) -> do
     t <- currentTime
     log level $ "[" <> T.pack (show level) <> " " <> T.pack (show t) <> "] " <> msg
 
+-- | An effect that introduces a scope that represents a chunk of logs.
 class LogChunk f where
     logChunk :: f a -> f a
+
 makeEffectH ''LogChunk
 
+-- | Output logs in log chunks as they are.
 passthroughLogChunk ::
     HFunctor (SumH r) =>
     Hef (LogChunkS ': r) (Fre r' m) ~> Hef r (Fre r' m)
 passthroughLogChunk = interpretH \(LogChunk m) -> m
 
+-- | Limit the number of logs in a log chunk to the first @n@ logs.
 limitLogChunk :: (LogI <: es, Monad m) => Int -> LogChunkS (Fre es m) ~> Fre es m
 limitLogChunk n (LogChunk m) =
     evalState @Int 0
         . ($ raise m)
-        $ interpose \(Log level msg) ->
-            whenM (get <&> (< n)) do
-                log level msg
+        $ interpose \(Log level msg) -> do
+            count <- get
+            when (count <= n) do
+                if count == n
+                    then log Info "LOG OMITTED..."
+                    else log level msg
                 modify @Int (+ 1)
 
 main :: IO ()
@@ -81,7 +86,7 @@ main = runEmbed
     . logToIO
     . timeToIO
     . logWithMetadata
-    . runElaborate @Monad @HeftiaChurchT
+    . runElaborate @_ @HeftiaChurchT
         (limitLogChunk 2 |+: absurdUnionH @SumUnionH)
     $ do
         logChunk do
