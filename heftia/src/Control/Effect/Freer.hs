@@ -37,13 +37,34 @@ import Data.Free.Sum (SumUnion)
 import Data.Free.Union (
     IsMember,
     Member,
-    Union,
-    absurdUnion,
-    decomp,
-    inject,
-    project,
-    weakenL,
-    weakenR,
+    Union (
+        absurdUnion,
+        bundleUnion2,
+        bundleUnion3,
+        bundleUnion4,
+        decomp,
+        flipUnion,
+        flipUnion3,
+        flipUnionUnder,
+        inject,
+        inject0,
+        project,
+        rot3,
+        rot3',
+        unbundleUnion2,
+        unbundleUnion3,
+        unbundleUnion4,
+        weaken,
+        weaken2,
+        weaken2Under,
+        weaken2Under2,
+        weaken3,
+        weaken3Under,
+        weaken4,
+        weakenUnder,
+        weakenUnder2,
+        weakenUnder3
+    ),
  )
 import Data.Kind (Type)
 
@@ -133,7 +154,14 @@ reinterpret i a =
     freerEffects $ ($ runFreerEffects a) $ reinterpretFT \u ->
         case decomp u of
             Left e -> runFreerEffects $ i e
-            Right e -> liftInsT $ weakenR e
+            Right e -> liftInsT $ weaken e
+
+transformAll ::
+    (TransFreer c fr, Union u, Union u', c f) =>
+    (u es ~> u' es') ->
+    FreerEffects fr u es f ~> FreerEffects fr u' es' f
+transformAll f = overFreerEffects $ transformT f
+{-# INLINE transformAll #-}
 
 transform ::
     (TransFreer c fr, Union u, c f) =>
@@ -142,8 +170,8 @@ transform ::
 transform f a =
     freerEffects $ ($ runFreerEffects a) $ transformT \u ->
         case decomp u of
-            Left e -> weakenL $ f e
-            Right e -> weakenR e
+            Left e -> inject0 $ f e
+            Right e -> weaken e
 
 interpose ::
     forall e fr u es f c.
@@ -213,23 +241,159 @@ intercept f a =
             Just e -> inject $ f e
             Nothing -> u
 
-raiseUnder ::
-    forall e' e es fr u f c.
-    (TransFreer c fr, Union u, c f) =>
-    FreerEffects fr u (e ': es) f ~> FreerEffects fr u (e ': e' ': es) f
-raiseUnder a =
-    freerEffects
-        . ($ runFreerEffects a)
-        $ transformT \u -> case decomp u of
-            Left e -> weakenL e
-            Right e -> weakenR $ weakenR e
-
 raise ::
     forall e es fr u f c.
     (TransFreer c fr, Union u, c f) =>
     FreerEffects fr u es f ~> FreerEffects fr u (e ': es) f
-raise a = freerEffects . ($ runFreerEffects a) $ transformT weakenR
+raise = transformAll weaken
 {-# INLINE raise #-}
+
+raise2 ::
+    forall e1 e2 es fr u f c.
+    (TransFreer c fr, Union u, c f) =>
+    FreerEffects fr u es f ~> FreerEffects fr u (e1 ': e2 ': es) f
+raise2 = transformAll weaken2
+{-# INLINE raise2 #-}
+
+raise3 ::
+    forall e1 e2 e3 es fr u f c.
+    (TransFreer c fr, Union u, c f) =>
+    FreerEffects fr u es f ~> FreerEffects fr u (e1 ': e2 ': e3 ': es) f
+raise3 = transformAll weaken3
+{-# INLINE raise3 #-}
+
+raise4 ::
+    forall e1 e2 e3 e4 es fr u f c.
+    (TransFreer c fr, Union u, c f) =>
+    FreerEffects fr u es f ~> FreerEffects fr u (e1 ': e2 ': e3 ': e4 ': es) f
+raise4 = transformAll weaken4
+{-# INLINE raise4 #-}
+
+raiseUnder ::
+    forall e1 e2 es fr u f c.
+    (TransFreer c fr, Union u, c f) =>
+    FreerEffects fr u (e1 ': es) f ~> FreerEffects fr u (e1 ': e2 ': es) f
+raiseUnder = transformAll weakenUnder
+{-# INLINE raiseUnder #-}
+
+raiseUnder2 ::
+    forall e1 e2 e3 es fr u f c.
+    (TransFreer c fr, Union u, c f) =>
+    FreerEffects fr u (e1 ': e2 ': es) f ~> FreerEffects fr u (e1 ': e2 ': e3 ': es) f
+raiseUnder2 = transformAll weakenUnder2
+{-# INLINE raiseUnder2 #-}
+
+raiseUnder3 ::
+    forall e1 e2 e3 e4 es fr u f c.
+    (TransFreer c fr, Union u, c f) =>
+    FreerEffects fr u (e1 ': e2 ': e3 ': es) f ~> FreerEffects fr u (e1 ': e2 ': e3 ': e4 ': es) f
+raiseUnder3 = transformAll weakenUnder3
+{-# INLINE raiseUnder3 #-}
+
+raise2Under ::
+    forall e1 e2 e3 es fr u f c.
+    (TransFreer c fr, Union u, c f) =>
+    FreerEffects fr u (e1 ': es) f ~> FreerEffects fr u (e1 ': e2 ': e3 ': es) f
+raise2Under = transformAll weaken2Under
+{-# INLINE raise2Under #-}
+
+raise2Under2 ::
+    forall e1 e2 e3 e4 es fr u f c.
+    (TransFreer c fr, Union u, c f) =>
+    FreerEffects fr u (e1 ': e2 ': es) f ~> FreerEffects fr u (e1 ': e2 ': e3 ': e4 ': es) f
+raise2Under2 = transformAll weaken2Under2
+{-# INLINE raise2Under2 #-}
+
+raise3Under ::
+    forall e1 e2 e3 e4 es fr u f c.
+    (TransFreer c fr, Union u, c f) =>
+    FreerEffects fr u (e1 ': es) f ~> FreerEffects fr u (e1 ': e2 ': e3 ': e4 ': es) f
+raise3Under = transformAll weaken3Under
+{-# INLINE raise3Under #-}
+
+flipFreer ::
+    forall e1 e2 es fr u f c.
+    (TransFreer c fr, Union u, c f) =>
+    FreerEffects fr u (e1 ': e2 ': es) f ~> FreerEffects fr u (e2 ': e1 ': es) f
+flipFreer = transformAll flipUnion
+{-# INLINE flipFreer #-}
+
+flipFreer3 ::
+    forall e1 e2 e3 es fr u f c.
+    (TransFreer c fr, Union u, c f) =>
+    FreerEffects fr u (e1 ': e2 ': e3 ': es) f ~> FreerEffects fr u (e3 ': e2 ': e1 ': es) f
+flipFreer3 = transformAll flipUnion3
+{-# INLINE flipFreer3 #-}
+
+flipFreerUnder ::
+    forall e1 e2 e3 es fr u f c.
+    (TransFreer c fr, Union u, c f) =>
+    FreerEffects fr u (e1 ': e2 ': e3 ': es) f ~> FreerEffects fr u (e1 ': e3 ': e2 ': es) f
+flipFreerUnder = transformAll flipUnionUnder
+{-# INLINE flipFreerUnder #-}
+
+rotate3 ::
+    forall e1 e2 e3 es fr u f c.
+    (TransFreer c fr, Union u, c f) =>
+    FreerEffects fr u (e1 ': e2 ': e3 ': es) f ~> FreerEffects fr u (e2 ': e3 ': e1 ': es) f
+rotate3 = transformAll rot3
+{-# INLINE rotate3 #-}
+
+rotate3' ::
+    forall e1 e2 e3 es fr u f c.
+    (TransFreer c fr, Union u, c f) =>
+    FreerEffects fr u (e1 ': e2 ': e3 ': es) f ~> FreerEffects fr u (e3 ': e1 ': e2 ': es) f
+rotate3' = transformAll rot3'
+{-# INLINE rotate3' #-}
+
+bundle2 ::
+    forall e1 e2 es fr u f c u'.
+    (TransFreer c fr, Union u, Union u', c f) =>
+    FreerEffects fr u (e1 ': e2 ': es) f ~> FreerEffects fr u (u' '[e1, e2] ': es) f
+bundle2 = transformAll bundleUnion2
+{-# INLINE bundle2 #-}
+
+bundle3 ::
+    forall e1 e2 e3 es fr u f c u'.
+    (TransFreer c fr, Union u, Union u', c f) =>
+    FreerEffects fr u (e1 ': e2 ': e3 ': es) f ~> FreerEffects fr u (u' '[e1, e2, e3] ': es) f
+bundle3 = transformAll bundleUnion3
+{-# INLINE bundle3 #-}
+
+bundle4 ::
+    forall e1 e2 e3 e4 es fr u f c u'.
+    (TransFreer c fr, Union u, Union u', c f) =>
+    FreerEffects fr u (e1 ': e2 ': e3 ': e4 ': es) f ~> FreerEffects fr u (u' '[e1, e2, e3, e4] ': es) f
+bundle4 = transformAll bundleUnion4
+{-# INLINE bundle4 #-}
+
+unbundle2 ::
+    forall e1 e2 es fr u f c u'.
+    (TransFreer c fr, Union u, Union u', c f) =>
+    FreerEffects fr u (u' '[e1, e2] ': es) f ~> FreerEffects fr u (e1 ': e2 ': es) f
+unbundle2 = transformAll unbundleUnion2
+{-# INLINE unbundle2 #-}
+
+unbundle3 ::
+    forall e1 e2 e3 es fr u f c u'.
+    (TransFreer c fr, Union u, Union u', c f) =>
+    FreerEffects fr u (u' '[e1, e2, e3] ': es) f ~> FreerEffects fr u (e1 ': e2 ': e3 ': es) f
+unbundle3 = transformAll unbundleUnion3
+{-# INLINE unbundle3 #-}
+
+unbundle4 ::
+    forall e1 e2 e3 e4 es fr u f c u'.
+    (TransFreer c fr, Union u, Union u', c f) =>
+    FreerEffects fr u (u' '[e1, e2, e3, e4] ': es) f ~> FreerEffects fr u (e1 ': e2 ': e3 ': e4 ': es) f
+unbundle4 = transformAll unbundleUnion4
+{-# INLINE unbundle4 #-}
+
+overFreerEffects ::
+    (fr (u es) f a -> fr' (u' es') g b) ->
+    FreerEffects fr u es f a ->
+    FreerEffects fr' u' es' g b
+overFreerEffects f = freerEffects . f . runFreerEffects
+{-# INLINE overFreerEffects #-}
 
 interpreted :: (TransFreer c fr, c f, Union u) => FreerEffects fr u '[] f ~> f
 interpreted = runInterpretF absurdUnion . runFreerEffects

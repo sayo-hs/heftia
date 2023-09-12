@@ -33,6 +33,7 @@ import Control.Heftia.Trans (
     liftSigT,
     reelaborateHT,
     runElaborateH,
+    transformHT,
     translateT,
  )
 import Control.Monad (MonadPlus)
@@ -44,13 +45,34 @@ import Data.Hefty.Sum (SumUnionH)
 import Data.Hefty.Union (
     IsMemberH,
     MemberH,
-    UnionH,
-    absurdUnionH,
-    decompH,
-    injectH,
-    projectH,
-    weakenLH,
-    weakenRH,
+    UnionH (
+        absurdUnionH,
+        bundleUnion2H,
+        bundleUnion3H,
+        bundleUnion4H,
+        decompH,
+        flipUnion3H,
+        flipUnionH,
+        flipUnionUnderH,
+        inject0H,
+        injectH,
+        projectH,
+        rot3H,
+        rot3H',
+        unbundleUnion2H,
+        unbundleUnion3H,
+        unbundleUnion4H,
+        weaken2H,
+        weaken2Under2H,
+        weaken2UnderH,
+        weaken3H,
+        weaken3UnderH,
+        weaken4H,
+        weakenH,
+        weakenUnder2H,
+        weakenUnder3H,
+        weakenUnderH
+    ),
  )
 import Data.Kind (Type)
 
@@ -163,7 +185,20 @@ reinterpretH i a =
     heftiaEffects $ ($ runHeftiaEffects a) $ reelaborateHT \u ->
         case decompH u of
             Left e -> runHeftiaEffects $ i $ hfmap heftiaEffects e
-            Right e -> liftSigT $ weakenRH e
+            Right e -> liftSigT $ weakenH e
+
+transformAllH ::
+    ( TransHeftia c h
+    , UnionH u
+    , UnionH u'
+    , HFunctor (u es)
+    , HFunctor (u' es')
+    , c f
+    ) =>
+    (forall g. u es g ~> u' es' g) ->
+    HeftiaEffects h u es f ~> HeftiaEffects h u' es' f
+transformAllH f = overHeftiaEffects $ transformHT f
+{-# INLINE transformAllH #-}
 
 translate ::
     ( TransHeftia c h
@@ -179,8 +214,22 @@ translate ::
 translate f a =
     heftiaEffects $ ($ runHeftiaEffects a) $ translateT \u ->
         case decompH u of
-            Left e -> weakenLH $ hfmap runHeftiaEffects $ f $ hfmap heftiaEffects e
-            Right e -> weakenRH e
+            Left e -> inject0H $ hfmap runHeftiaEffects $ f $ hfmap heftiaEffects e
+            Right e -> weakenH e
+
+translateAll ::
+    ( TransHeftia c h
+    , UnionH u
+    , UnionH u'
+    , HFunctor (u es)
+    , HFunctor (u' es')
+    , c f
+    ) =>
+    (u es (HeftiaEffects h u' es' f) ~> u' es' (HeftiaEffects h u' es' f)) ->
+    HeftiaEffects h u es f ~> HeftiaEffects h u' es' f
+translateAll f =
+    overHeftiaEffects $ translateT (hfmap runHeftiaEffects . f . hfmap heftiaEffects)
+{-# INLINE translateAll #-}
 
 interposeH ::
     forall e h u es f c.
@@ -206,23 +255,279 @@ interceptH f a =
                 Just e -> injectH $ hfmap runHeftiaEffects $ f e
                 Nothing -> hfmap runHeftiaEffects u'
 
+raiseH ::
+    forall e hs h u f c.
+    ( TransHeftia c h
+    , HFunctor (u hs)
+    , HFunctor (u (e ': hs))
+    , c f
+    , UnionH u
+    ) =>
+    HeftiaEffects h u hs f ~> HeftiaEffects h u (e ': hs) f
+raiseH = transformAllH weakenH
+{-# INLINE raiseH #-}
+
+raise2H ::
+    forall e1 e2 hs h u f c.
+    ( TransHeftia c h
+    , HFunctor (u hs)
+    , HFunctor (u (e1 ': e2 ': hs))
+    , c f
+    , UnionH u
+    ) =>
+    HeftiaEffects h u hs f ~> HeftiaEffects h u (e1 ': e2 ': hs) f
+raise2H = transformAllH weaken2H
+{-# INLINE raise2H #-}
+
+raise3H ::
+    forall e1 e2 e3 hs h u f c.
+    ( TransHeftia c h
+    , HFunctor (u hs)
+    , HFunctor (u (e1 ': e2 ': e3 ': hs))
+    , c f
+    , UnionH u
+    ) =>
+    HeftiaEffects h u hs f ~> HeftiaEffects h u (e1 ': e2 ': e3 ': hs) f
+raise3H = transformAllH weaken3H
+{-# INLINE raise3H #-}
+
+raise4H ::
+    forall e1 e2 e3 e4 hs h u f c.
+    ( TransHeftia c h
+    , HFunctor (u hs)
+    , HFunctor (u (e1 ': e2 ': e3 ': e4 ': hs))
+    , c f
+    , UnionH u
+    ) =>
+    HeftiaEffects h u hs f ~> HeftiaEffects h u (e1 ': e2 ': e3 ': e4 ': hs) f
+raise4H = transformAllH weaken4H
+{-# INLINE raise4H #-}
+
 raiseUnderH ::
-    forall e' e es h u f c.
-    (TransHeftia c h, HFunctor (u (e : es)), HFunctor (u (e : e' : es)), UnionH u, c f) =>
-    HeftiaEffects h u (e ': es) f ~> HeftiaEffects h u (e ': e' ': es) f
-raiseUnderH a =
-    heftiaEffects
-        . ($ runHeftiaEffects a)
-        $ translateT \u -> case decompH u of
-            Left e -> weakenLH e
-            Right e -> weakenRH $ weakenRH e
+    forall e1 e2 hs h u f c.
+    ( TransHeftia c h
+    , HFunctor (u (e1 ': hs))
+    , HFunctor (u (e1 ': e2 ': hs))
+    , c f
+    , UnionH u
+    ) =>
+    HeftiaEffects h u (e1 ': hs) f ~> HeftiaEffects h u (e1 ': e2 ': hs) f
+raiseUnderH = transformAllH weakenUnderH
+{-# INLINE raiseUnderH #-}
+
+raiseUnder2H ::
+    forall e1 e2 e3 hs h u f c.
+    ( TransHeftia c h
+    , HFunctor (u (e1 ': e2 ': hs))
+    , HFunctor (u (e1 ': e2 ': e3 ': hs))
+    , c f
+    , UnionH u
+    ) =>
+    HeftiaEffects h u (e1 ': e2 ': hs) f ~> HeftiaEffects h u (e1 ': e2 ': e3 ': hs) f
+raiseUnder2H = transformAllH weakenUnder2H
+{-# INLINE raiseUnder2H #-}
+
+raiseUnder3H ::
+    forall e1 e2 e3 e4 hs h u f c.
+    ( TransHeftia c h
+    , HFunctor (u (e1 ': e2 ': e3 ': hs))
+    , HFunctor (u (e1 ': e2 ': e3 ': e4 ': hs))
+    , c f
+    , UnionH u
+    ) =>
+    HeftiaEffects h u (e1 ': e2 ': e3 ': hs) f ~> HeftiaEffects h u (e1 ': e2 ': e3 ': e4 ': hs) f
+raiseUnder3H = transformAllH weakenUnder3H
+{-# INLINE raiseUnder3H #-}
+
+raise2UnderH ::
+    forall e1 e2 e3 hs h u f c.
+    ( TransHeftia c h
+    , HFunctor (u (e1 ': hs))
+    , HFunctor (u (e1 ': e2 ': e3 ': hs))
+    , c f
+    , UnionH u
+    ) =>
+    HeftiaEffects h u (e1 ': hs) f ~> HeftiaEffects h u (e1 ': e2 ': e3 ': hs) f
+raise2UnderH = transformAllH weaken2UnderH
+{-# INLINE raise2UnderH #-}
+
+raise2Under2H ::
+    forall e1 e2 e3 e4 hs h u f c.
+    ( TransHeftia c h
+    , HFunctor (u (e1 ': e2 ': hs))
+    , HFunctor (u (e1 ': e2 ': e3 ': e4 ': hs))
+    , c f
+    , UnionH u
+    ) =>
+    HeftiaEffects h u (e1 ': e2 ': hs) f ~> HeftiaEffects h u (e1 ': e2 ': e3 ': e4 ': hs) f
+raise2Under2H = transformAllH weaken2Under2H
+{-# INLINE raise2Under2H #-}
+
+raise3UnderH ::
+    forall e1 e2 e3 e4 hs h u f c.
+    ( TransHeftia c h
+    , HFunctor (u (e1 ': hs))
+    , HFunctor (u (e1 ': e2 ': e3 ': e4 ': hs))
+    , c f
+    , UnionH u
+    ) =>
+    HeftiaEffects h u (e1 ': hs) f ~> HeftiaEffects h u (e1 ': e2 ': e3 ': e4 ': hs) f
+raise3UnderH = transformAllH weaken3UnderH
+{-# INLINE raise3UnderH #-}
+
+flipHeftia ::
+    forall e1 e2 hs h u f c.
+    ( TransHeftia c h
+    , HFunctor (u (e1 ': e2 ': hs))
+    , HFunctor (u (e2 ': e1 ': hs))
+    , c f
+    , UnionH u
+    ) =>
+    HeftiaEffects h u (e1 ': e2 ': hs) f ~> HeftiaEffects h u (e2 ': e1 ': hs) f
+flipHeftia = transformAllH flipUnionH
+{-# INLINE flipHeftia #-}
+
+flipHeftia3 ::
+    forall e1 e2 e3 es h u f c.
+    ( TransHeftia c h
+    , HFunctor (u (e1 ': e2 ': e3 ': es))
+    , HFunctor (u (e3 : e2 : e1 : es))
+    , c f
+    , UnionH u
+    ) =>
+    HeftiaEffects h u (e1 ': e2 ': e3 ': es) f ~> HeftiaEffects h u (e3 ': e2 ': e1 ': es) f
+flipHeftia3 = transformAllH flipUnion3H
+{-# INLINE flipHeftia3 #-}
+
+flipHeftiaUnder ::
+    forall e1 e2 e3 es h u f c.
+    ( TransHeftia c h
+    , HFunctor (u (e1 ': e2 ': e3 ': es))
+    , HFunctor (u (e1 : e3 : e2 : es))
+    , c f
+    , UnionH u
+    ) =>
+    HeftiaEffects h u (e1 ': e2 ': e3 ': es) f ~> HeftiaEffects h u (e1 ': e3 ': e2 ': es) f
+flipHeftiaUnder = transformAllH flipUnionUnderH
+{-# INLINE flipHeftiaUnder #-}
+
+rotate3H ::
+    forall e1 e2 e3 es h u f c.
+    ( TransHeftia c h
+    , HFunctor (u (e1 ': e2 ': e3 ': es))
+    , HFunctor (u (e2 : e3 : e1 : es))
+    , c f
+    , UnionH u
+    ) =>
+    HeftiaEffects h u (e1 ': e2 ': e3 ': es) f ~> HeftiaEffects h u (e2 ': e3 ': e1 ': es) f
+rotate3H = transformAllH rot3H
+{-# INLINE rotate3H #-}
+
+rotate3H' ::
+    forall e1 e2 e3 es h u f c.
+    ( TransHeftia c h
+    , HFunctor (u (e1 ': e2 ': e3 ': es))
+    , HFunctor (u (e3 : e1 : e2 : es))
+    , c f
+    , UnionH u
+    ) =>
+    HeftiaEffects h u (e1 ': e2 ': e3 ': es) f ~> HeftiaEffects h u (e3 ': e1 ': e2 ': es) f
+rotate3H' = transformAllH rot3H'
+{-# INLINE rotate3H' #-}
+
+bundle2H ::
+    forall u' e1 e2 es h u f c.
+    ( TransHeftia c h
+    , HFunctor (u (e1 ': e2 ': es))
+    , HFunctor (u (u' '[e1, e2] ': es))
+    , c f
+    , UnionH u
+    , UnionH u'
+    ) =>
+    HeftiaEffects h u (e1 ': e2 ': es) f ~> HeftiaEffects h u (u' '[e1, e2] ': es) f
+bundle2H = transformAllH bundleUnion2H
+{-# INLINE bundle2H #-}
+
+bundle3H ::
+    forall u' e1 e2 e3 es h u f c.
+    ( TransHeftia c h
+    , HFunctor (u (e1 ': e2 ': e3 ': es))
+    , HFunctor (u (u' '[e1, e2, e3] : es))
+    , c f
+    , UnionH u
+    , UnionH u'
+    ) =>
+    HeftiaEffects h u (e1 ': e2 ': e3 ': es) f ~> HeftiaEffects h u (u' '[e1, e2, e3] ': es) f
+bundle3H = transformAllH bundleUnion3H
+{-# INLINE bundle3H #-}
+
+bundle4H ::
+    forall u' e1 e2 e3 e4 es h u f c.
+    ( TransHeftia c h
+    , HFunctor (u (e1 ': e2 ': e3 ': e4 ': es))
+    , HFunctor (u (u' '[e1, e2, e3, e4] : es))
+    , c f
+    , UnionH u
+    , UnionH u'
+    ) =>
+    HeftiaEffects h u (e1 ': e2 ': e3 ': e4 ': es) f
+        ~> HeftiaEffects h u (u' '[e1, e2, e3, e4] ': es) f
+bundle4H = transformAllH bundleUnion4H
+{-# INLINE bundle4H #-}
+
+unbundle2H ::
+    forall e1 e2 es h u u' f c.
+    ( TransHeftia c h
+    , HFunctor (u (e1 ': e2 ': es))
+    , HFunctor (u (u' '[e1, e2] ': es))
+    , c f
+    , UnionH u
+    , UnionH u'
+    ) =>
+    HeftiaEffects h u (u' '[e1, e2] ': es) f ~> HeftiaEffects h u (e1 ': e2 ': es) f
+unbundle2H = transformAllH unbundleUnion2H
+{-# INLINE unbundle2H #-}
+
+unbundle3H ::
+    forall e1 e2 e3 es h u u' f c.
+    ( TransHeftia c h
+    , HFunctor (u (e1 ': e2 ': e3 ': es))
+    , HFunctor (u (u' '[e1, e2, e3] ': es))
+    , c f
+    , UnionH u
+    , UnionH u'
+    ) =>
+    HeftiaEffects h u (u' '[e1, e2, e3] ': es) f ~> HeftiaEffects h u (e1 ': e2 ': e3 ': es) f
+unbundle3H = transformAllH unbundleUnion3H
+{-# INLINE unbundle3H #-}
+
+unbundle4H ::
+    forall e1 e2 e3 e4 es h u u' f c.
+    ( TransHeftia c h
+    , HFunctor (u (e1 ': e2 ': e3 ': e4 ': es))
+    , HFunctor (u (u' '[e1, e2, e3, e4] ': es))
+    , c f
+    , UnionH u
+    , UnionH u'
+    ) =>
+    HeftiaEffects h u (u' '[e1, e2, e3, e4] ': es) f
+        ~> HeftiaEffects h u (e1 ': e2 ': e3 ': e4 ': es) f
+unbundle4H = transformAllH unbundleUnion4H
+{-# INLINE unbundle4H #-}
 
 hoistHeftiaEffects ::
     (TransHeftia c h, HFunctor (u es), c f, c g) =>
     (f ~> g) ->
     HeftiaEffects h u es f ~> HeftiaEffects h u es g
-hoistHeftiaEffects f = heftiaEffects . hoistHeftia f . runHeftiaEffects
+hoistHeftiaEffects f = overHeftiaEffects $ hoistHeftia f
 {-# INLINE hoistHeftiaEffects #-}
+
+overHeftiaEffects ::
+    (h (u es) f a -> h' (u' es') g b) ->
+    HeftiaEffects h u es f a ->
+    HeftiaEffects h' u' es' g b
+overHeftiaEffects f = heftiaEffects . f . runHeftiaEffects
+{-# INLINE overHeftiaEffects #-}
 
 hoistInterpose ::
     forall e h u es fr u' es' f c c'.
