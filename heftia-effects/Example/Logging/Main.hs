@@ -11,21 +11,37 @@ import Control.Effect.Class (type (~>))
 import Control.Effect.Class.Embed (Embed, embed)
 import Control.Effect.Class.Machinery.HFunctor (HFunctor)
 import Control.Effect.Class.Machinery.TH (makeEffectF, makeEffectH)
-import Control.Effect.Class.Reader (Ask, ask)
-import Control.Effect.Class.State (State (..), modify)
-import Control.Effect.Freer (Fre, interpose, interpret, raise, type (<:))
+import Control.Effect.Class.Reader (Ask, AskI, LocalS, ask, local)
+import Control.Effect.Class.State (State (..), StateI, modify)
+import Control.Effect.Freer (
+    Fre,
+    interpose,
+    interpret,
+    raise,
+    type (<:),
+ )
 import Control.Effect.Handler.Heftia.Embed (runEmbed)
-import Control.Effect.Handler.Heftia.Reader (interpretAsk)
+import Control.Effect.Handler.Heftia.Reader (interpretAsk, interpretReader, liftReader)
 import Control.Effect.Handler.Heftia.State (evalState)
-import Control.Effect.Heftia (Hef, interpretH, runElaborate)
+import Control.Effect.Heftia (
+    Hef,
+    elaborated,
+    hoistHeftiaEffects,
+    hoistInterpose,
+    interposeH,
+    interposeIns,
+    interpretH,
+    liftLowerH,
+    type (<<:),
+ )
 import Control.Monad (when)
-import Control.Monad.Trans.Heftia.Church (HeftiaChurchT)
-import Data.Hefty.Sum (SumH, SumUnionH)
-import Data.Hefty.Union (UnionH (absurdUnionH, (|+:)))
+import Data.Function ((&))
+import Data.Hefty.Sum (SumH)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
 import Data.Time (UTCTime, getCurrentTime)
+import Data.Time.Format.ISO8601 (iso8601Show)
 import System.LogLevel (LogLevel (..))
 import Prelude hiding (log)
 
@@ -68,17 +84,69 @@ passthroughLogChunk ::
 passthroughLogChunk = interpretH \(LogChunk m) -> m
 
 -- | Limit the number of logs in a log chunk to the first @n@ logs.
-limitLogChunk :: (LogI <: es, Monad m) => Int -> LogChunkS (Fre es m) ~> Fre es m
-limitLogChunk n (LogChunk m) =
-    evalState @Int 0
-        . ($ raise m)
-        $ interpose \(Log level msg) -> do
-            count <- get
-            when (count <= n) do
-                if count == n
-                    then log Info "LOG OMITTED..."
-                    else log level msg
-                modify @Int (+ 1)
+limitLogChunk ::
+    forall es es' m.
+    (LogChunkS <<: es, LogI <: es', Monad m, HFunctor (SumH es)) =>
+    Int ->
+    Hef es (Fre es' m) ~> Hef es (Fre es' m)
+limitLogChunk n =
+    hoistHeftiaEffects (evalState 0)
+        . interposeLogChunk
+        . hoistHeftiaEffects raise
+  where
+    interposeLogChunk ::
+        Hef es (Fre (StateI Int ': es') m)
+            ~> Hef es (Fre (StateI Int ': es') m)
+    interposeLogChunk = interposeH \(LogChunk a) ->
+        logChunk $
+            a & interposeIns \(Log level msg) -> liftLowerH do
+                count <- get
+                when (count <= n) do
+                    if count == n
+                        then log Info "LOG OMITTED..."
+                        else log level msg
+                    modify @Int (+ 1)
+
+class FileSystem f where
+    mkdir :: FilePath -> f ()
+    writeFS :: FilePath -> String -> f ()
+
+makeEffectF ''FileSystem
+
+runDummyFS :: (Embed IO (Fre r m), Monad m) => Fre (FileSystemI ': r) m ~> Fre r m
+runDummyFS = interpret \case
+    Mkdir path -> embed $ putStrLn $ "<runDummyFS> mkdir " <> path
+    WriteFS path content -> embed $ putStrLn $ "<runDummyFS> writeFS " <> path <> " : " <> content
+
+saveLogChunk ::
+    forall es es' m.
+    ( LogChunkS <<: es
+    , LogI <: es'
+    , FileSystemI <: es'
+    , TimeI <: es'
+    , Monad m
+    , HFunctor (SumH es)
+    ) =>
+    Hef es (Fre es' m) ~> Hef es (Fre es' m)
+saveLogChunk =
+    interpretReader ("./log_chunks/" :: FilePath)
+        . interposeLogChunk
+        . liftReader
+  where
+    interposeLogChunk ::
+        Hef (LocalS FilePath ': es) (Fre (AskI FilePath ': es') m)
+            ~> Hef (LocalS FilePath ': es) (Fre (AskI FilePath ': es') m)
+    interposeLogChunk =
+        interposeH \(LogChunk a) -> logChunk do
+            chunkBeginAt <- liftLowerH currentTime
+            local @FilePath (++ iso8601Show chunkBeginAt ++ "/") do
+                newLogChunkDir <- liftLowerH ask
+                liftLowerH $ mkdir newLogChunkDir
+                a & hoistInterpose \(Log level msg) -> do
+                    logAt <- currentTime
+                    saveDir <- ask
+                    writeFS (saveDir ++ iso8601Show logAt ++ ".log") $ show (level, msg)
+                    log level msg
 
 main :: IO ()
 main = runEmbed
@@ -86,8 +154,11 @@ main = runEmbed
     . logToIO
     . timeToIO
     . logWithMetadata
-    . runElaborate @_ @HeftiaChurchT
-        (limitLogChunk 2 |+: absurdUnionH @SumUnionH)
+    . runDummyFS
+    . elaborated
+    . passthroughLogChunk
+    . saveLogChunk
+    . limitLogChunk 2
     $ do
         logChunk do
             log Warn "WARNING!!"

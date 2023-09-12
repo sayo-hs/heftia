@@ -7,8 +7,9 @@ module Control.Effect.Handler.Heftia.Reader where
 import Control.Effect.Class (type (~>))
 import Control.Effect.Class.Machinery.HFunctor (HFunctor)
 import Control.Effect.Class.Reader (AskI (Ask), LocalS (Local), ask)
-import Control.Effect.Freer (Fre, interpose, interpret, type (<:))
-import Control.Effect.Heftia (Hef, hoistHeftiaEffects, hoistInterpose, interpretH)
+import Control.Effect.Freer (Fre, interpose, interpret, raise, type (<:))
+import Control.Effect.Heftia (Hef, hoistHeftiaEffects, hoistInterpose, interpretH, raiseH)
+import Data.Function ((&))
 import Data.Hefty.Sum (SumH)
 
 interpretReader ::
@@ -23,14 +24,20 @@ interpretReaderH ::
     Hef (LocalS r ': es) (Fre es' m) ~> Hef es (Fre es' m)
 interpretReaderH =
     interpretH \(Local (f :: r -> r) a) ->
-        ($ a) $ hoistInterpose @(AskI r) \Ask -> f <$> ask
+        a & hoistInterpose @(AskI r) \Ask -> f <$> ask
 
 elaborateReader ::
     (AskI r <: es, Monad m) =>
     LocalS r (Fre es m) ~> Fre es m
 elaborateReader (Local (f :: r -> r) a) =
-    ($ a) $ interpose @(AskI r) \Ask -> f <$> ask
+    a & interpose @(AskI r) \Ask -> f <$> ask
 
 interpretAsk :: Monad m => r -> Fre (AskI r ': es) m ~> Fre es m
 interpretAsk r = interpret \Ask -> pure r
 {-# INLINE interpretAsk #-}
+
+liftReader ::
+    (HFunctor (SumH es), Monad m) =>
+    Hef es (Fre es' m) ~> Hef (LocalS FilePath ': es) (Fre (AskI FilePath ': es') m)
+liftReader = raiseH . hoistHeftiaEffects raise
+{-# INLINE liftReader #-}

@@ -77,11 +77,6 @@ interpretBlockAccess = interpret \case
         gets @(Vector block) (V.take n . V.drop cursor) & tag @"storage"
 
 elaborateWithObject :: BlockAccessI block <: es => WithObjectS block (Fre es m) ~> Fre es m
-elaborateWithObject (ProvideBlockAccess p) = elaborateProvider undefined p
+elaborateWithObject (ProvideBlockAccess p) = undefined
 
-test :: forall block m a. Monad m => Fre '[BlockAccessI block, StateI (Vector block) # "storage", StateI Int # "cursor"] m a -> ()
-test m = ()
-  where
-    m' = interpretBlockAccess @block m
-
-main = pure ()
+main = undefined

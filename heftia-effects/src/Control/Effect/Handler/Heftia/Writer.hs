@@ -11,6 +11,7 @@ import Control.Effect.Class.Writer (Tell (tell), TellI (Tell), WriterS (Cencor, 
 import Control.Effect.Freer (Fre, intercept, interposeT, interpretK, interpretT, type (<:))
 import Control.Monad.Trans.Writer.CPS (WriterT, runWriterT)
 import Control.Monad.Trans.Writer.CPS qualified as T
+import Data.Function ((&))
 import Data.Tuple (swap)
 
 elaborateWriterT ::
@@ -19,7 +20,7 @@ elaborateWriterT ::
     WriterS w (Fre es m) ~> Fre es m
 elaborateWriterT = \case
     Listen m -> listenT m
-    Cencor f m -> ($ m) $ intercept @(TellI w) \(Tell w) -> Tell $ f w
+    Cencor f m -> m & intercept @(TellI w) \(Tell w) -> Tell $ f w
 
 elaborateWriterTransactionalT ::
     forall w m es.

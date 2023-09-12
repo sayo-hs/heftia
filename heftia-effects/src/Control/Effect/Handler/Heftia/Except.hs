@@ -8,13 +8,14 @@ import Control.Effect.Class (type (~>))
 import Control.Effect.Class.Except (CatchS (Catch), ThrowI (Throw))
 import Control.Effect.Freer (Fre, interposeK, interposeT, interpretK, interpretT, type (<:))
 import Control.Monad.Trans.Except (ExceptT (ExceptT), runExceptT, throwE)
+import Data.Function ((&))
 
 -- | Elaborate the 'Catch' effect using the 'ExceptT' monad transformer.
 elaborateExceptT ::
     (ThrowI e <: es, Monad m) =>
     CatchS e (Fre es m) ~> Fre es m
 elaborateExceptT (Catch action (hdl :: e -> Fre es m a)) = do
-    r <- runExceptT $ ($ action) $ interposeT \(Throw (e :: e)) -> throwE e
+    r <- runExceptT $ action & interposeT \(Throw (e :: e)) -> throwE e
     case r of
         Left e -> hdl e
         Right a -> pure a
@@ -24,7 +25,7 @@ elaborateExceptK ::
     (ThrowI e <: es, Monad m) =>
     CatchS e (Fre es m) ~> Fre es m
 elaborateExceptK (Catch action (hdl :: e -> Fre es m a)) =
-    ($ action) $ interposeK pure \_ (Throw (e :: e)) -> hdl e
+    action & interposeK pure \_ (Throw (e :: e)) -> hdl e
 
 -- | Interpret the 'Throw' effect using the 'ExceptT' monad transformer.
 interpretThrowT :: Monad m => Fre (ThrowI e ': es) m ~> ExceptT e (Fre es m)

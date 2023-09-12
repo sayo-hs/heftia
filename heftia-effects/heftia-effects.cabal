@@ -128,4 +128,4 @@ executable Logging
         text,
         time,
         loglevel,
-        extra
+        extra,
