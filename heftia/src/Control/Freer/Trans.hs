@@ -27,9 +27,9 @@ class (forall ins f. c f => c (fr ins f)) => TransFreer c fr | fr -> c where
     hoistFreer f = interpretFT (liftLowerFT . f) liftInsT
     {-# INLINE hoistFreer #-}
 
-    interposeLower :: (c f, c g) => (f ~> fr ins g) -> fr ins f ~> fr ins g
-    interposeLower f = interpretFT f liftInsT
-    {-# INLINE interposeLower #-}
+    interposeLowerT :: (c f, c g) => (f ~> fr ins g) -> fr ins f ~> fr ins g
+    interposeLowerT f = interpretFT f liftInsT
+    {-# INLINE interposeLowerT #-}
 
     runInterpretF :: c f => (ins ~> f) -> fr ins f a -> f a
     default runInterpretF :: (c f, c (IdentityT f)) => (ins ~> f) -> fr ins f a -> f a

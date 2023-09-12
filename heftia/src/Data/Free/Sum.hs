@@ -19,10 +19,22 @@ infixr 6 +
 -- | A type synonym for disambiguation to the sum on the higher-order side.
 type (+) = (:+:)
 
+caseF :: (f a -> r) -> (g a -> r) -> (f + g) a -> r
+caseF f g = \case
+    L1 x -> f x
+    R1 x -> g x
+{-# INLINE caseF #-}
+
+absurdL :: (NopI + f) ~> f
+absurdL = caseF \case {} id
+{-# INLINE absurdL #-}
+
+absurdR :: (f + NopI) ~> f
+absurdR = caseF id \case {}
+{-# INLINE absurdR #-}
+
 swapSum :: (f + g) a -> (g + f) a
-swapSum = \case
-    L1 x -> R1 x
-    R1 x -> L1 x
+swapSum = caseF R1 L1
 {-# INLINE swapSum #-}
 
 type family Sum fs where

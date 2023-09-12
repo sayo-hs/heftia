@@ -20,6 +20,8 @@ import Control.Effect.Class (
  )
 import Control.Freer.Trans (
     TransFreer,
+    hoistFreer,
+    interposeLowerT,
     interpretFT,
     liftInsT,
     liftLowerFT,
@@ -33,7 +35,7 @@ import Control.Monad.Trans (MonadTrans, lift)
 import Control.Monad.Trans.Freer (MonadTransFreer, interpretMK, interpretMT, reinterpretMK, reinterpretMT)
 import Control.Monad.Trans.Freer.Church (FreerChurchT)
 import Data.Coerce (Coercible, coerce)
-import Data.Free.Sum (SumUnion)
+import Data.Free.Sum (SumUnion, caseF, pattern L1, pattern R1, type (+))
 import Data.Free.Union (
     IsMember,
     Member,
@@ -65,7 +67,9 @@ import Data.Free.Union (
         weakenUnder2,
         weakenUnder3
     ),
+    (|+|:),
  )
+import Data.Function ((&))
 import Data.Kind (Type)
 
 newtype
@@ -115,8 +119,8 @@ interpret ::
     (TransFreer c fr, Union u, c f) =>
     (e ~> FreerEffects fr u es f) ->
     FreerEffects fr u (e ': es) f ~> FreerEffects fr u es f
-interpret i a =
-    freerEffects $ ($ runFreerEffects a) $ interpretFT liftLowerFT \u ->
+interpret i =
+    overFreerEffects $ interpretFT liftLowerFT \u ->
         case decomp u of
             Left e -> runFreerEffects $ i e
             Right e -> liftInsT e
@@ -150,8 +154,8 @@ reinterpret ::
     (TransFreer c fr, Union u, c f) =>
     (e ~> FreerEffects fr u (e ': es) f) ->
     FreerEffects fr u (e ': es) f ~> FreerEffects fr u (e ': es) f
-reinterpret i a =
-    freerEffects $ ($ runFreerEffects a) $ reinterpretFT \u ->
+reinterpret i =
+    overFreerEffects $ reinterpretFT \u ->
         case decomp u of
             Left e -> runFreerEffects $ i e
             Right e -> liftInsT $ weaken e
@@ -167,8 +171,8 @@ transform ::
     (TransFreer c fr, Union u, c f) =>
     (e ~> e') ->
     FreerEffects fr u (e ': es) f ~> FreerEffects fr u (e' ': es) f
-transform f a =
-    freerEffects $ ($ runFreerEffects a) $ transformT \u ->
+transform f =
+    overFreerEffects $ transformT \u ->
         case decomp u of
             Left e -> inject0 $ f e
             Right e -> weaken e
@@ -178,8 +182,8 @@ interpose ::
     (TransFreer c fr, Union u, Member u e es, c f) =>
     (e ~> FreerEffects fr u es f) ->
     FreerEffects fr u es f ~> FreerEffects fr u es f
-interpose f a =
-    freerEffects $ ($ runFreerEffects a) $ reinterpretFT \u ->
+interpose f =
+    overFreerEffects $ reinterpretFT \u ->
         case project @_ @e u of
             Just e -> runFreerEffects $ f e
             Nothing -> liftInsT u
@@ -197,14 +201,33 @@ interposeT ::
     (e ~> t (FreerEffects fr u es m)) ->
     FreerEffects fr u es m ~> t (FreerEffects fr u es m)
 interposeT f a =
-    hoistT @(fr (u es) m) $ ($ runFreerEffects a) $ reinterpretMT \u ->
-        case project @_ @e u of
-            Just e -> hoistT $ f e
-            Nothing -> lift $ liftInsT u
+    hoistT @(fr (u es) m) $
+        runFreerEffects a & reinterpretMT \u ->
+            case project @_ @e u of
+                Just e -> hoistT $ f e
+                Nothing -> lift $ liftInsT u
   where
     hoistT :: Coercible (t m1 a) (t m2 a) => t m1 a -> t m2 a
     hoistT = coerce
     {-# INLINE hoistT #-}
+
+interposeF ::
+    forall e g fr u es f c.
+    ( TransFreer c fr
+    , Union u
+    , Member u e es
+    , c f
+    , c g
+    ) =>
+    (f ~> g) ->
+    (u es ~> g) ->
+    (e ~> g) ->
+    FreerEffects fr u es f ~> g
+interposeF iLower iOther iTarget a =
+    runFreerEffects a & interpretFT iLower \u ->
+        case project @_ @e u of
+            Just e -> iTarget e
+            Nothing -> iOther u
 
 interposeK ::
     (MonadTransFreer fr, Union u, Member u e es, Monad m) =>
@@ -221,10 +244,11 @@ interposeContT ::
     (e ~> ContT r (FreerEffects fr u es m)) ->
     FreerEffects fr u es m ~> ContT r (FreerEffects fr u es m)
 interposeContT f a =
-    hoistContT $ ($ runFreerEffects a) $ reinterpretMK \u ->
-        case project @_ @e u of
-            Just e -> hoistContT $ f e
-            Nothing -> lift $ liftInsT u
+    hoistContT $
+        runFreerEffects a & reinterpretMK \u ->
+            case project @_ @e u of
+                Just e -> hoistContT $ f e
+                Nothing -> lift $ liftInsT u
   where
     hoistContT :: Coercible m1 m2 => ContT r m1 a -> ContT r m2 a
     hoistContT = coerce
@@ -235,8 +259,8 @@ intercept ::
     (TransFreer c fr, Union u, Member u e es, c f) =>
     (e ~> e) ->
     FreerEffects fr u es f ~> FreerEffects fr u es f
-intercept f a =
-    freerEffects $ ($ runFreerEffects a) $ transformT \u ->
+intercept f =
+    overFreerEffects $ transformT \u ->
         case project @_ @e u of
             Just e -> inject $ f e
             Nothing -> u
@@ -388,6 +412,34 @@ unbundle4 ::
 unbundle4 = transformAll unbundleUnion4
 {-# INLINE unbundle4 #-}
 
+hoistFreerEffects ::
+    (TransFreer c fr, c f, c g) => (f ~> g) -> FreerEffects fr u es f ~> FreerEffects fr u es g
+hoistFreerEffects f = overFreerEffects $ hoistFreer f
+{-# INLINE hoistFreerEffects #-}
+
+lowerToIns ::
+    (TransFreer c fr, c g, c (f + g), Union u) =>
+    FreerEffects fr u es (f + g) ~> FreerEffects fr u (f ': es) g
+lowerToIns =
+    overFreerEffects $
+        interpretFT
+            (caseF (liftInsT . inject0) liftLowerFT)
+            (liftInsT . weaken)
+{-# INLINE lowerToIns #-}
+
+insToLower ::
+    (TransFreer c fr, c (f + g), c g, Union u) =>
+    FreerEffects fr u (f ': es) g ~> FreerEffects fr u es (f + g)
+insToLower = overFreerEffects $ interpretFT (liftLowerFT . R1) (liftLowerFT . L1 |+|: liftInsT)
+{-# INLINE insToLower #-}
+
+interposeLower ::
+    (TransFreer c fr, c f, c g) =>
+    (f ~> FreerEffects fr u es g) ->
+    FreerEffects fr u es f ~> FreerEffects fr u es g
+interposeLower f = overFreerEffects $ interposeLowerT (runFreerEffects . f)
+{-# INLINE interposeLower #-}
+
 overFreerEffects ::
     (fr (u es) f a -> fr' (u' es') g b) ->
     FreerEffects fr u es f a ->
@@ -403,13 +455,14 @@ splitFreerEffects ::
     (TransFreer c fr', TransFreer c fr, c f, c (FreerEffects fr u es f), Union u) =>
     FreerEffects fr u (e ': es) f ~> fr' e (FreerEffects fr u es f)
 splitFreerEffects a =
-    ($ runFreerEffects a) $ interpretFT (liftLowerFT . freerEffects . liftLowerFT) \u ->
+    runFreerEffects a & interpretFT (liftLowerFT . freerEffects . liftLowerFT) \u ->
         case decomp u of
             Left e -> liftInsT e
             Right e -> liftLowerFT $ freerEffects $ liftInsT e
 
 liftLower :: (TransFreer c fr, c f) => f ~> FreerEffects fr u es f
 liftLower = freerEffects . liftLowerFT
+{-# INLINE liftLower #-}
 
 type Fre es f = FreerEffects FreerChurchT SumUnion es f
 

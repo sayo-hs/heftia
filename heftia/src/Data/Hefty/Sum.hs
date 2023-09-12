@@ -12,6 +12,14 @@ import Control.Effect.Class (NopS, Signature, type (~>))
 import Control.Effect.Class.Machinery.HFunctor (HFunctor, caseH, (:+:) (Inl, Inr))
 import Data.Hefty.Union (HasMembershipH, UnionH, absurdUnionH, compH, decompH, injectH, projectH)
 
+absurdLH :: (NopS :+: h) f ~> h f
+absurdLH = caseH \case {} id
+{-# INLINE absurdLH #-}
+
+absurdRH :: (h :+: NopS) f ~> h f
+absurdRH = caseH id \case {}
+{-# INLINE absurdRH #-}
+
 swapSumH :: (h1 :+: h2) f a -> (h2 :+: h1) f a
 swapSumH = caseH Inr Inl
 {-# INLINE swapSumH #-}

@@ -62,11 +62,11 @@ class (forall sig f. c f => c (h sig f)) => TransHeftia c h | h -> c where
 heftiaToFreer ::
     (TransHeftia c h, TransFreer c' fr, c f, c (fr ins f), c' f) =>
     h (LiftIns ins) f ~> fr ins f
-heftiaToFreer a = ($ a) $ elaborateHT liftLowerFT (liftInsT . unliftIns)
+heftiaToFreer = elaborateHT liftLowerFT (liftInsT . unliftIns)
 {-# INLINE heftiaToFreer #-}
 
 freerToHeftia ::
     (TransHeftia c h, TransFreer c' fr, c' f, c' (fr ins f), c' (h (LiftIns ins) f), c f) =>
     fr ins f ~> h (LiftIns ins) f
-freerToHeftia a = ($ a) $ interpretFT liftLowerHT (liftSigT . LiftIns)
+freerToHeftia = interpretFT liftLowerHT (liftSigT . LiftIns)
 {-# INLINE freerToHeftia #-}

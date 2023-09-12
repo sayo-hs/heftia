@@ -27,6 +27,7 @@ import Control.Heftia.Trans (TransHeftia (..))
 import Control.Monad (MonadPlus)
 import Control.Monad.Trans (MonadTrans)
 import Control.Monad.Trans.Heftia (MonadTransHeftia, ViaLiftLowerH (ViaLiftLowerH))
+import Data.Function ((&))
 
 newtype HeftiaFinalT c h f a = HeftiaFinalT
     {unHeftiaFinalT :: HeftiaFinal c (h :+: LiftIns f) a}
@@ -60,9 +61,10 @@ hoistHeftiaFinal ::
     (f ~> g) ->
     HeftiaFinalT c h f ~> HeftiaFinalT c h g
 hoistHeftiaFinal phi (HeftiaFinalT a) =
-    HeftiaFinalT $ ($ a) $ transformHeftiaFinal \case
-        Inl e -> Inl e
-        Inr (LiftIns a') -> Inr $ LiftIns $ phi a'
+    HeftiaFinalT $
+        a & transformHeftiaFinal \case
+            Inl e -> Inl e
+            Inr (LiftIns a') -> Inr $ LiftIns $ phi a'
 
 deriving newtype instance Functor (HeftiaFinalT Functor h f)
 
@@ -88,7 +90,7 @@ instance (forall h f. c f => c (HeftiaFinalT c h f)) => TransHeftia c (HeftiaFin
     {-# INLINE liftSigT #-}
 
     translateT f (HeftiaFinalT a) =
-        ($ a) $ runHeftiaFinal \case
+        a & runHeftiaFinal \case
             Inl e -> liftSigFinalT $ f e
             Inr (LiftIns a') -> liftLowerHT a'
 

@@ -171,8 +171,8 @@ interpretH ::
     (TransHeftia c h, UnionH u, HFunctor (u es), HFunctor (u (e : es)), HFunctor e, c f) =>
     (e (HeftiaEffects h u es f) ~> HeftiaEffects h u es f) ->
     HeftiaEffects h u (e ': es) f ~> HeftiaEffects h u es f
-interpretH i a =
-    heftiaEffects $ ($ runHeftiaEffects a) $ elaborateHT liftLowerHT \u ->
+interpretH i =
+    overHeftiaEffects $ elaborateHT liftLowerHT \u ->
         case decompH u of
             Left e -> runHeftiaEffects $ i $ hfmap heftiaEffects e
             Right e -> liftSigT e
@@ -181,8 +181,8 @@ reinterpretH ::
     (TransHeftia c h, UnionH u, HFunctor (u (e : es)), HFunctor e, c f) =>
     (e (HeftiaEffects h u (e ': es) f) ~> HeftiaEffects h u (e ': es) f) ->
     HeftiaEffects h u (e ': es) f ~> HeftiaEffects h u (e ': es) f
-reinterpretH i a =
-    heftiaEffects $ ($ runHeftiaEffects a) $ reelaborateHT \u ->
+reinterpretH i =
+    overHeftiaEffects $ reelaborateHT \u ->
         case decompH u of
             Left e -> runHeftiaEffects $ i $ hfmap heftiaEffects e
             Right e -> liftSigT $ weakenH e
@@ -211,8 +211,8 @@ translate ::
     ) =>
     (e (HeftiaEffects h u (e' ': es) f) ~> e' (HeftiaEffects h u (e' ': es) f)) ->
     HeftiaEffects h u (e ': es) f ~> HeftiaEffects h u (e' ': es) f
-translate f a =
-    heftiaEffects $ ($ runHeftiaEffects a) $ translateT \u ->
+translate f =
+    overHeftiaEffects $ translateT \u ->
         case decompH u of
             Left e -> inject0H $ hfmap runHeftiaEffects $ f $ hfmap heftiaEffects e
             Right e -> weakenH e
@@ -236,8 +236,8 @@ interposeH ::
     (TransHeftia c h, UnionH u, MemberH u e es, HFunctor (u es), c f) =>
     (e (HeftiaEffects h u es f) ~> HeftiaEffects h u es f) ->
     HeftiaEffects h u es f ~> HeftiaEffects h u es f
-interposeH f a =
-    heftiaEffects $ ($ runHeftiaEffects a) $ reelaborateHT \u ->
+interposeH f =
+    overHeftiaEffects $ reelaborateHT \u ->
         let u' = hfmap (interposeH f . heftiaEffects) u
          in case projectH @_ @e u' of
                 Just e -> runHeftiaEffects $ f e
@@ -248,8 +248,8 @@ interceptH ::
     (TransHeftia c h, UnionH u, MemberH u e es, HFunctor (u es), HFunctor e, c f) =>
     (e (HeftiaEffects h u es f) ~> e (HeftiaEffects h u es f)) ->
     HeftiaEffects h u es f ~> HeftiaEffects h u es f
-interceptH f a =
-    heftiaEffects $ ($ runHeftiaEffects a) $ translateT \u ->
+interceptH f =
+    overHeftiaEffects $ translateT \u ->
         let u' = hfmap (interceptH f . heftiaEffects) u
          in case projectH @_ @e u' of
                 Just e -> injectH $ hfmap runHeftiaEffects $ f e
@@ -559,16 +559,15 @@ interposeIns ::
     (e ~> HeftiaEffects h u es (FreerEffects fr u' es' f)) ->
     HeftiaEffects h u es (FreerEffects fr u' es' f)
         ~> HeftiaEffects h u es (FreerEffects fr u' es' f)
-interposeIns f a =
-    heftiaEffects
-        . ($ runHeftiaEffects a)
-        $ interpretLowerH
-        $ runFreerEffects
-            >>> interpretFT
-                (liftLowerHT . freerEffects . liftLowerFT)
-                \u -> case project @_ @e u of
-                    Just e -> runHeftiaEffects $ f e
-                    Nothing -> liftLowerHT $ freerEffects $ liftInsT u
+interposeIns f =
+    overHeftiaEffects $
+        interpretLowerH $
+            runFreerEffects
+                >>> interpretFT
+                    (liftLowerHT . freerEffects . liftLowerFT)
+                    \u -> case project @_ @e u of
+                        Just e -> runHeftiaEffects $ f e
+                        Nothing -> liftLowerHT $ freerEffects $ liftInsT u
 
 liftLowerH :: (TransHeftia c h, c f, HFunctor (u es)) => f ~> HeftiaEffects h u es f
 liftLowerH = heftiaEffects . liftLowerHT
@@ -582,3 +581,5 @@ type Hef es f = HeftiaEffects HeftiaChurchT SumUnionH es f
 -- type HefA es f = HeftiaEffects (HeftiaFinalT Applicative) SumUnionH es f
 
 type e <<: es = MemberH SumUnionH e es
+
+type Elaborator e f = e f ~> f
