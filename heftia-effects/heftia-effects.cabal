@@ -103,18 +103,6 @@ executable Teletype
         heftia-effects,
         base,
 
-executable VFS
-    import: common-base
-
-    main-is: Main.hs
-    hs-source-dirs: Example/VFS
-    build-depends:
-        classy-effects,
-        heftia,
-        heftia-effects,
-        base,
-        vector,
-
 executable Logging
     import: common-base
 
@@ -129,3 +117,36 @@ executable Logging
         time,
         loglevel,
         extra,
+
+executable Continuation
+    import: common-base
+
+    main-is: Main.hs
+    hs-source-dirs: Example/Continuation
+    build-depends:
+        classy-effects,
+        heftia,
+        heftia-effects,
+        base,
+
+executable ContinuationFetchImage
+    import: common-base
+
+    main-is: Main.hs
+    hs-source-dirs: Example/ContinuationFetchImage
+    build-depends:
+        classy-effects,
+        heftia,
+        heftia-effects,
+        base,
+
+executable Tagged
+    import: common-base
+
+    main-is: Main.hs
+    hs-source-dirs: Example/Tagged
+    build-depends:
+        classy-effects,
+        heftia,
+        heftia-effects,
+        base,

@@ -19,8 +19,6 @@ import Control.Effect.Handler.Heftia.Provider (elaborateProvider)
 import Data.Effect.Class.TH
 import Data.Function ((&))
 import Data.Functor.Identity (Identity, runIdentity)
-import Data.Vector (Vector)
-import Data.Vector qualified as V
 
 type Path = [String]
 
