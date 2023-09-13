@@ -10,11 +10,9 @@ The original of this example can be found at polysemy.
 -}
 module Main where
 
-import Control.Effect.Class (type (~>))
-import Control.Effect.Class.Embed (Embed, embed)
+import Control.Effect.Class (sendIns, type (~>))
 import Control.Effect.Class.Machinery.TH (makeEffectF)
-import Control.Effect.Freer (Fre, interpose, interpret, interpreted, type (<:))
-import Control.Effect.Handler.Heftia.Embed (runEmbedIO)
+import Control.Effect.Freer (Fre, interpose, interpret, runFreerEffects, type (<:))
 
 class Teletype f where
     readTTY :: f String
@@ -22,10 +20,10 @@ class Teletype f where
 
 makeEffectF ''Teletype
 
-teletypeToIO :: (Embed IO (Fre es m), Monad m) => Fre (TeletypeI ': es) m ~> Fre es m
+teletypeToIO :: (IO <: es, Monad m) => Fre (TeletypeI ': es) m ~> Fre es m
 teletypeToIO = interpret \case
-    ReadTTY -> embed getLine
-    WriteTTY msg -> embed $ putStrLn msg
+    ReadTTY -> sendIns getLine
+    WriteTTY msg -> sendIns $ putStrLn msg
 
 echo :: (Teletype m, Monad m) => m ()
 echo = do
@@ -41,6 +39,6 @@ strong =
         WriteTTY msg -> writeTTY $ msg <> "!"
 
 main :: IO ()
-main = interpreted . runEmbedIO $ do
-    embed $ putStrLn "Please enter something..."
+main = runFreerEffects $ do
+    sendIns $ putStrLn "Please enter something..."
     teletypeToIO $ strong . strong $ echo

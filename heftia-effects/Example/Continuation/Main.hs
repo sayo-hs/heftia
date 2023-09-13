@@ -6,11 +6,9 @@
 
 module Main where
 
-import Control.Effect.Class (type (~>))
-import Control.Effect.Class.Embed (embed)
+import Control.Effect.Class (sendIns, type (~>))
 import Control.Effect.Class.Machinery.TH (makeEffectF, makeEffectH)
-import Control.Effect.Freer (Fre, interposeK, interpret, type (<:))
-import Control.Effect.Handler.Heftia.Embed (runEmbed)
+import Control.Effect.Freer (Fre, interposeK, interpret, runFreerEffects, type (<:))
 import Control.Effect.Heftia (Elaborator, runElaborate)
 import Control.Monad.Trans.Heftia.Church (HeftiaChurchT)
 import Data.Function ((&))
@@ -57,14 +55,14 @@ runDelimitFork numberOfFork =
 
 main :: IO ()
 main =
-    runEmbed
+    runFreerEffects
         . runFork
         . runElaborate @_ @HeftiaChurchT @SumUnionH (applyDelimitFork 4 |+: absurdUnionH)
         $ do
-            embed . putStrLn . (("[out of scope] " ++) . show) =<< fork
+            sendIns . putStrLn . (("[out of scope] " ++) . show) =<< fork
             s <- delimitFork do
                 wid1 <- fork
                 wid2 <- fork
-                embed $ putStrLn $ "[delimited continuation of `fork`] Fork ID: " ++ show (wid1, wid2)
+                sendIns $ putStrLn $ "[delimited continuation of `fork`] Fork ID: " ++ show (wid1, wid2)
                 pure $ show (wid1, wid2)
-            embed $ putStrLn $ "scope exited. result: " ++ s
+            sendIns $ putStrLn $ "scope exited. result: " ++ s

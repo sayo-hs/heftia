@@ -7,8 +7,7 @@
 
 module Main where
 
-import Control.Effect.Class (type (~>))
-import Control.Effect.Class.Embed (Embed, embed)
+import Control.Effect.Class (sendIns, type (~>))
 import Control.Effect.Class.Machinery.HFunctor (HFunctor)
 import Control.Effect.Class.Machinery.TH (makeEffectF, makeEffectH)
 import Control.Effect.Class.Reader (Ask, AskI, LocalS, ask, local)
@@ -18,9 +17,9 @@ import Control.Effect.Freer (
     interpose,
     interpret,
     raise,
+    runFreerEffects,
     type (<:),
  )
-import Control.Effect.Handler.Heftia.Embed (runEmbed)
 import Control.Effect.Handler.Heftia.Reader (interpretAsk, interpretReader, liftReader)
 import Control.Effect.Handler.Heftia.State (evalState)
 import Control.Effect.Heftia (
@@ -50,21 +49,21 @@ class Log f where
 makeEffectF ''Log
 
 logToIO ::
-    (Embed IO (Fre r m), Ask LogLevel (Fre r m), Monad m) =>
+    (IO <: r, Ask LogLevel (Fre r m), Monad m) =>
     Fre (LogI ': r) m ~> Fre r m
 logToIO = interpret \case
     Log level msg -> do
         currentLevel <- ask
         when (level <= currentLevel) do
-            embed $ T.putStrLn msg
+            sendIns $ T.putStrLn msg
 
 class Time f where
     currentTime :: f UTCTime
 makeEffectF ''Time
 
-timeToIO :: (Embed IO (Fre r m), Monad m) => Fre (TimeI ': r) m ~> Fre r m
+timeToIO :: (IO <: r, Monad m) => Fre (TimeI ': r) m ~> Fre r m
 timeToIO = interpret \case
-    CurrentTime -> embed getCurrentTime
+    CurrentTime -> sendIns getCurrentTime
 
 logWithMetadata :: (LogI <: es, Time (Fre es m), Monad m) => Fre es m ~> Fre es m
 logWithMetadata = interpose \(Log level msg) -> do
@@ -113,10 +112,10 @@ class FileSystem f where
 
 makeEffectF ''FileSystem
 
-runDummyFS :: (Embed IO (Fre r m), Monad m) => Fre (FileSystemI ': r) m ~> Fre r m
+runDummyFS :: (IO <: r, Monad m) => Fre (FileSystemI ': r) m ~> Fre r m
 runDummyFS = interpret \case
-    Mkdir path -> embed $ putStrLn $ "<runDummyFS> mkdir " <> path
-    WriteFS path content -> embed $ putStrLn $ "<runDummyFS> writeFS " <> path <> " : " <> content
+    Mkdir path -> sendIns $ putStrLn $ "<runDummyFS> mkdir " <> path
+    WriteFS path content -> sendIns $ putStrLn $ "<runDummyFS> writeFS " <> path <> " : " <> content
 
 saveLogChunk ::
     forall es es' m.
@@ -149,7 +148,7 @@ saveLogChunk =
                     log level msg
 
 main :: IO ()
-main = runEmbed
+main = runFreerEffects
     . interpretAsk Debug
     . logToIO
     . timeToIO
