@@ -28,7 +28,7 @@ import Control.Heftia.Trans (
     TransHeftia,
     elaborateHT,
     hoistHeftia,
-    interpretLowerH,
+    interpretLowerHT,
     liftLowerHT,
     liftSigT,
     reelaborateHT,
@@ -554,20 +554,26 @@ interposeIns ::
     , Member u' e es'
     , c (FreerEffects fr u' es' f)
     , c' f
-    , c' (h (u es) (FreerEffects fr u' es' f))
+    , c' (HeftiaEffects h u es (FreerEffects fr u' es' f))
     ) =>
     (e ~> HeftiaEffects h u es (FreerEffects fr u' es' f)) ->
     HeftiaEffects h u es (FreerEffects fr u' es' f)
         ~> HeftiaEffects h u es (FreerEffects fr u' es' f)
 interposeIns f =
-    overHeftiaEffects $
-        interpretLowerH $
-            runFreerEffects
-                >>> interpretFT
-                    (liftLowerHT . freerEffects . liftLowerFT)
-                    \u -> case project @_ @e u of
-                        Just e -> runHeftiaEffects $ f e
-                        Nothing -> liftLowerHT $ freerEffects $ liftInsT u
+    interpretLowerH $
+        runFreerEffects
+            >>> interpretFT
+                (liftLowerH . freerEffects . liftLowerFT)
+                \u -> case project @_ @e u of
+                    Just e -> f e
+                    Nothing -> liftLowerH $ freerEffects $ liftInsT u
+
+interpretLowerH ::
+    (c f, c g, TransHeftia c h, HFunctor (u es)) =>
+    (f ~> HeftiaEffects h u es g) ->
+    HeftiaEffects h u es f ~> HeftiaEffects h u es g
+interpretLowerH f = overHeftiaEffects $ interpretLowerHT (runHeftiaEffects . f)
+{-# INLINE interpretLowerH #-}
 
 liftLowerH :: (TransHeftia c h, c f, HFunctor (u es)) => f ~> HeftiaEffects h u es f
 liftLowerH = heftiaEffects . liftLowerHT

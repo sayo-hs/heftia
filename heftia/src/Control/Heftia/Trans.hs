@@ -42,9 +42,9 @@ class (forall sig f. c f => c (h sig f)) => TransHeftia c h | h -> c where
     hoistHeftia phi = elaborateHT (liftLowerHT . phi) liftSigT
     {-# INLINE hoistHeftia #-}
 
-    interpretLowerH :: (HFunctor sig, c f, c g) => (f ~> h sig g) -> h sig f ~> h sig g
-    interpretLowerH f = elaborateHT f liftSigT
-    {-# INLINE interpretLowerH #-}
+    interpretLowerHT :: (HFunctor sig, c f, c g) => (f ~> h sig g) -> h sig f ~> h sig g
+    interpretLowerHT f = elaborateHT f liftSigT
+    {-# INLINE interpretLowerHT #-}
 
     runElaborateH :: (c f, HFunctor sig) => (sig f ~> f) -> h sig f ~> f
     default runElaborateH :: (c f, c (IdentityT f), HFunctor sig) => (sig f ~> f) -> h sig f ~> f

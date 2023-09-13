@@ -150,6 +150,18 @@ interpretContT ::
 interpretContT i = interpretMK i . splitFreerEffects @_ @fr
 {-# INLINE interpretContT #-}
 
+interpretAll ::
+    (TransFreer c fr, Union u, c f, c g) =>
+    (f ~> g) ->
+    (u es ~> g) ->
+    (e ~> g) ->
+    FreerEffects fr u (e ': es) f ~> g
+interpretAll iLower iOther iTarget a =
+    runFreerEffects a & interpretFT iLower \u ->
+        case decomp u of
+            Left e -> iTarget e
+            Right e -> iOther e
+
 reinterpret ::
     (TransFreer c fr, Union u, c f) =>
     (e ~> FreerEffects fr u (e ': es) f) ->
@@ -211,7 +223,7 @@ interposeT f a =
     hoistT = coerce
     {-# INLINE hoistT #-}
 
-interposeF ::
+interposeAll ::
     forall e g fr u es f c.
     ( TransFreer c fr
     , Union u
@@ -223,7 +235,7 @@ interposeF ::
     (u es ~> g) ->
     (e ~> g) ->
     FreerEffects fr u es f ~> g
-interposeF iLower iOther iTarget a =
+interposeAll iLower iOther iTarget a =
     runFreerEffects a & interpretFT iLower \u ->
         case project @_ @e u of
             Just e -> iTarget e
