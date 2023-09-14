@@ -8,7 +8,7 @@ module Main where
 
 import Control.Effect.Class (sendIns, type (~>))
 import Control.Effect.Class.Machinery.TH (makeEffectF, makeEffectH)
-import Control.Effect.Freer (Fre, interposeK, interpret, runFreerEffects, type (<:))
+import Control.Effect.Freer (Fre, interposeK, interpret, runFreerEffects, type (<|))
 import Control.Effect.Heftia (Elaborator, runElaborate)
 import Control.Monad.Trans.Heftia.Church (HeftiaChurchT)
 import Data.Function ((&))
@@ -29,7 +29,7 @@ class DelimitFork f where
 makeEffectH ''DelimitFork
 
 applyDelimitFork ::
-    (ForkI <: es, Monad m) =>
+    (ForkI <| es, Monad m) =>
     Int ->
     Elaborator DelimitForkS (Fre es m)
 applyDelimitFork numberOfFork (DelimitFork m) =
@@ -43,7 +43,7 @@ applyDelimitFork numberOfFork (DelimitFork m) =
 -- it being a `Monoid`. Thus, writing it this way results in a type error.
 
 runDelimitFork ::
-    (ForkI <: es, HFunctor (SumH r), Monad m) =>
+    (ForkI <| es, HFunctor (SumH r), Monad m) =>
     Int ->
     Hef (DelimitForkS ': r) (Fre es m) ~> Hef r (Fre es m)
 runDelimitFork numberOfFork =

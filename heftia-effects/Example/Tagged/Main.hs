@@ -74,7 +74,7 @@ interpretBlockAccess = interpret \case
         cursor <- get @Int & tag @"cursor"
         gets @(Vector block) (V.take n . V.drop cursor) & tag @"storage"
 
-elaborateWithObject :: BlockAccessI block <: es => WithObjectS block (Fre es m) ~> Fre es m
+elaborateWithObject :: BlockAccessI block <| es => WithObjectS block (Fre es m) ~> Fre es m
 elaborateWithObject (ProvideBlockAccess p) = undefined
 
 main = undefined

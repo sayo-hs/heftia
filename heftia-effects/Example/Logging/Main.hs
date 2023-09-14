@@ -18,7 +18,7 @@ import Control.Effect.Freer (
     interpret,
     raise,
     runFreerEffects,
-    type (<:),
+    type (<|),
  )
 import Control.Effect.Handler.Heftia.Reader (interpretAsk, interpretReader, liftReader)
 import Control.Effect.Handler.Heftia.State (evalState)
@@ -31,7 +31,7 @@ import Control.Effect.Heftia (
     interposeIns,
     interpretH,
     liftLowerH,
-    type (<<:),
+    type (<<|),
  )
 import Control.Monad (when)
 import Data.Function ((&))
@@ -49,7 +49,7 @@ class Log f where
 makeEffectF ''Log
 
 logToIO ::
-    (IO <: r, Ask LogLevel (Fre r m), Monad m) =>
+    (IO <| r, Ask LogLevel (Fre r m), Monad m) =>
     Fre (LogI ': r) m ~> Fre r m
 logToIO = interpret \case
     Log level msg -> do
@@ -61,11 +61,11 @@ class Time f where
     currentTime :: f UTCTime
 makeEffectF ''Time
 
-timeToIO :: (IO <: r, Monad m) => Fre (TimeI ': r) m ~> Fre r m
+timeToIO :: (IO <| r, Monad m) => Fre (TimeI ': r) m ~> Fre r m
 timeToIO = interpret \case
     CurrentTime -> sendIns getCurrentTime
 
-logWithMetadata :: (LogI <: es, Time (Fre es m), Monad m) => Fre es m ~> Fre es m
+logWithMetadata :: (LogI <| es, Time (Fre es m), Monad m) => Fre es m ~> Fre es m
 logWithMetadata = interpose \(Log level msg) -> do
     t <- currentTime
     log level $ "[" <> T.pack (show level) <> " " <> T.pack (show t) <> "] " <> msg
@@ -85,7 +85,7 @@ passthroughLogChunk = interpretH \(LogChunk m) -> m
 -- | Limit the number of logs in a log chunk to the first @n@ logs.
 limitLogChunk ::
     forall es es' m.
-    (LogChunkS <<: es, LogI <: es', Monad m, HFunctor (SumH es)) =>
+    (LogChunkS <<| es, LogI <| es', Monad m, HFunctor (SumH es)) =>
     Int ->
     Hef es (Fre es' m) ~> Hef es (Fre es' m)
 limitLogChunk n =
@@ -112,17 +112,17 @@ class FileSystem f where
 
 makeEffectF ''FileSystem
 
-runDummyFS :: (IO <: r, Monad m) => Fre (FileSystemI ': r) m ~> Fre r m
+runDummyFS :: (IO <| r, Monad m) => Fre (FileSystemI ': r) m ~> Fre r m
 runDummyFS = interpret \case
     Mkdir path -> sendIns $ putStrLn $ "<runDummyFS> mkdir " <> path
     WriteFS path content -> sendIns $ putStrLn $ "<runDummyFS> writeFS " <> path <> " : " <> content
 
 saveLogChunk ::
     forall es es' m.
-    ( LogChunkS <<: es
-    , LogI <: es'
-    , FileSystemI <: es'
-    , TimeI <: es'
+    ( LogChunkS <<| es
+    , LogI <| es'
+    , FileSystemI <| es'
+    , TimeI <| es'
     , Monad m
     , HFunctor (SumH es)
     ) =>

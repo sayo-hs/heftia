@@ -495,4 +495,4 @@ type Fre es f = FreerEffects FreerChurchT SumUnion es f
 
 -- type FreA es f = FreerEffects (FreerFinalT Applicative) SumUnion es f
 
-type e <: es = Member SumUnion e es
+type e <| es = Member SumUnion e es

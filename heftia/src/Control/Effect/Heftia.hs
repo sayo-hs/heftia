@@ -595,6 +595,6 @@ type Hef es f = HeftiaEffects HeftiaChurchT SumUnionH es f
 
 -- type HefA es f = HeftiaEffects (HeftiaFinalT Applicative) SumUnionH es f
 
-type e <<: es = MemberH SumUnionH e es
+type e <<| es = MemberH SumUnionH e es
 
 type Elaborator e f = e f ~> f

@@ -11,9 +11,9 @@ import Control.Effect.Class.Embed (Embed, EmbedI, embed)
 import Control.Effect.Class.Except (ThrowI, throw)
 import Control.Effect.Class.Machinery.HFunctor (HFunctor)
 import Control.Effect.Class.Machinery.TH (makeEffectF, makeEffectH)
-import Control.Effect.Freer (Fre, interposeK, interpret, type (<:))
+import Control.Effect.Freer (Fre, interposeK, interpret, type (<|))
 import Control.Effect.Handler.Heftia.Embed (runEmbed)
-import Control.Effect.Heftia (Hef, hoistHeftiaEffects, interposeH, interpretH, liftLowerH, type (<<:))
+import Control.Effect.Heftia (Hef, hoistHeftiaEffects, interposeH, interpretH, liftLowerH, type (<<|))
 import Data.Hefty.Sum (SumH)
 import Data.Word (Word8)
 
@@ -32,7 +32,7 @@ class FetchURL f where
     fetchURL :: URL -> f ByteString
 makeEffectF ''FetchURL
 
-runDummyFetchURL :: (EmbedI IO <: r, Monad m) => Fre (FetchURLI ': r) m ~> Fre r m
+runDummyFetchURL :: (EmbedI IO <| r, Monad m) => Fre (FetchURLI ': r) m ~> Fre r m
 runDummyFetchURL = interpret \case
     FetchURL uri -> do
         embed $ putStrLn $ "<runDummyFetchURL> " <> uri
@@ -58,7 +58,7 @@ passthroughFetchImageProc :: (HFunctor (SumH r), Monad m) => Hef (FetchImageProc
 passthroughFetchImageProc = interpretH \(FetchImageProc m) -> m
 
 tryFetchForCandidateImageURLs ::
-    (ImageURLI <: es', FetchImageProcS <<: es, HFunctor (SumH es), ThrowI FetchFailed <: es', Monad m) =>
+    (ImageURLI <| es', FetchImageProcS <<| es, HFunctor (SumH es), ThrowI FetchFailed <| es', Monad m) =>
     [URL] ->
     Hef es (Fre es' m) ~> Hef es (Fre es' m)
 tryFetchForCandidateImageURLs candidates =
