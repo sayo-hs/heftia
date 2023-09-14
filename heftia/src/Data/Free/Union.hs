@@ -124,4 +124,4 @@ type family IsMember (f :: Instruction) fs where
     IsMember f (_ ': fs) = IsMember f fs
     IsMember _ '[] = 'False
 
-type Member u f fs = (IsMember f fs ~ 'True, HasMembership u f fs)
+type Member u f fs = (HasMembership u f fs, IsMember f fs ~ 'True)
