@@ -41,21 +41,15 @@ import Data.Text qualified as T
 import Data.Text.IO qualified as T
 import Data.Time (UTCTime, getCurrentTime)
 import Data.Time.Format.ISO8601 (iso8601Show)
-import System.LogLevel (LogLevel (..))
+import Debug.Trace (trace)
 import Prelude hiding (log)
 
 class Log f where
-    log :: LogLevel -> Text -> f ()
+    log :: Text -> f ()
 makeEffectF ''Log
 
-logToIO ::
-    (IO <: Fre r m, Ask LogLevel (Fre r m), Monad m) =>
-    Fre (LogI ': r) m ~> Fre r m
-logToIO =
-    interpret \(Log level msg) -> do
-        currentLevel <- ask
-        when (level <= currentLevel) do
-            sendIns $ T.putStrLn msg
+logToIO :: (IO <: Fre r m, Monad m) => Fre (LogI ': r) m ~> Fre r m
+logToIO = interpret \(Log msg) -> sendIns $ T.putStrLn msg
 
 class Time f where
     currentTime :: f UTCTime
@@ -65,10 +59,10 @@ timeToIO :: (IO <: Fre r m, Monad m) => Fre (TimeI ': r) m ~> Fre r m
 timeToIO = interpret \case
     CurrentTime -> sendIns getCurrentTime
 
-logWithMetadata :: (LogI <| es, Time (Fre es m), Monad m) => Fre es m ~> Fre es m
-logWithMetadata = interpose \(Log level msg) -> do
+logWithTime :: (LogI <| es, Time (Fre es m), Monad m) => Fre es m ~> Fre es m
+logWithTime = interpose \(Log msg) -> do
     t <- currentTime
-    log level $ "[" <> T.pack (show level) <> " " <> T.pack (show t) <> "] " <> msg
+    log $ "[" <> T.pack (show t) <> "] " <> msg
 
 -- | An effect that introduces a scope that represents a chunk of logs.
 class LogChunk f where
@@ -78,8 +72,8 @@ makeEffectH ''LogChunk
 
 -- | Output logs in log chunks as they are.
 passthroughLogChunk ::
-    HFunctor (SumH r) =>
-    Hef (LogChunkS ': r) (Fre r' m) ~> Hef r (Fre r' m)
+    (Monad m, HFunctor (SumH r)) =>
+    Hef (LogChunkS ': r) m ~> Hef r m
 passthroughLogChunk = interpretH \(LogChunk m) -> m
 
 -- | Limit the number of logs in a log chunk to the first @n@ logs.
@@ -98,12 +92,12 @@ limitLogChunk n =
             ~> Hef es (Fre (StateI Int ': es') m)
     interposeLogChunk = interposeH \(LogChunk a) ->
         logChunk $
-            a & interposeIns \(Log level msg) -> liftLowerH do
+            a & interposeIns \(Log msg) -> liftLowerH do
                 count <- get
                 when (count <= n) do
                     if count == n
-                        then log Info "LOG OMITTED..."
-                        else log level msg
+                        then log "LOG OMITTED..."
+                        else log msg
                     modify @Int (+ 1)
 
 class FileSystem f where
@@ -141,26 +135,35 @@ saveLogChunk =
             local @FilePath (++ iso8601Show chunkBeginAt ++ "/") do
                 newLogChunkDir <- ask & liftLowerH
                 mkdir newLogChunkDir & raise & liftLowerH
-                a & hoistInterpose \(Log level msg) -> do
+                a & hoistInterpose \(Log msg) -> do
                     logAt <- currentTime & raise
                     saveDir <- ask
-                    writeFS (saveDir ++ iso8601Show logAt ++ ".log") (show (level, msg)) & raise
-                    log level msg
+                    writeFS (saveDir ++ iso8601Show logAt ++ ".log") (show msg) & raise
+                    log msg
 
 main :: IO ()
 main = runFreerEffects
-    . interpretAsk Debug
     . logToIO
     . timeToIO
-    . logWithMetadata
-    . runDummyFS
+    . logWithTime
     . elaborated
     . passthroughLogChunk
-    . saveLogChunk
     . limitLogChunk 2
-    $ do
+    $ logChunk do
+        log "foo"
+        log "bar"
+        log "baz"
+        log "qux"
+
+        sendIns $ putStrLn "------"
+
         logChunk do
-            log Warn "WARNING!!"
-            log Error "ERROR!!"
-            log Info "HELLO"
-            log Debug "Would you like some coffee?"
+            log "hoge"
+            log "piyo"
+            log "fuga"
+            log "hogera"
+
+        sendIns $ putStrLn "------"
+
+        log "quux"
+        log "foobar"
