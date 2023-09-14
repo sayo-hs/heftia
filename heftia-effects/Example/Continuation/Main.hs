@@ -21,8 +21,8 @@ class Fork f where
     fork :: f ForkID
 makeEffectF ''Fork
 
-runFork :: Monad m => Fre (ForkI ': r) m ~> Fre r m
-runFork = interpret \Fork -> pure 0
+runForkSingle :: Monad m => Fre (ForkI ': r) m ~> Fre r m
+runForkSingle = interpret \Fork -> pure 0
 
 class DelimitFork f where
     delimitFork :: Monoid w => f w -> f w
@@ -56,7 +56,7 @@ runDelimitFork numberOfFork =
 main :: IO ()
 main =
     runFreerEffects
-        . runFork
+        . runForkSingle
         . runElaborate @_ @HeftiaChurchT @SumUnionH (applyDelimitFork 4 |+: absurdUnionH)
         $ do
             sendIns . putStrLn . (("[out of scope] " ++) . show) =<< fork

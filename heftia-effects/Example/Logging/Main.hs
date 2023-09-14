@@ -7,7 +7,7 @@
 
 module Main where
 
-import Control.Effect.Class (sendIns, type (~>))
+import Control.Effect.Class (sendIns, type (<:), type (~>))
 import Control.Effect.Class.Machinery.HFunctor (HFunctor)
 import Control.Effect.Class.Machinery.TH (makeEffectF, makeEffectH)
 import Control.Effect.Class.Reader (Ask, AskI, LocalS, ask, local)
@@ -49,7 +49,7 @@ class Log f where
 makeEffectF ''Log
 
 logToIO ::
-    (IO <| r, Ask LogLevel (Fre r m), Monad m) =>
+    (IO <: Fre r m, Ask LogLevel (Fre r m), Monad m) =>
     Fre (LogI ': r) m ~> Fre r m
 logToIO = interpret \case
     Log level msg -> do
@@ -61,7 +61,7 @@ class Time f where
     currentTime :: f UTCTime
 makeEffectF ''Time
 
-timeToIO :: (IO <| r, Monad m) => Fre (TimeI ': r) m ~> Fre r m
+timeToIO :: (IO <: Fre r m, Monad m) => Fre (TimeI ': r) m ~> Fre r m
 timeToIO = interpret \case
     CurrentTime -> sendIns getCurrentTime
 
@@ -112,7 +112,7 @@ class FileSystem f where
 
 makeEffectF ''FileSystem
 
-runDummyFS :: (IO <| r, Monad m) => Fre (FileSystemI ': r) m ~> Fre r m
+runDummyFS :: (IO <: Fre r m, Monad m) => Fre (FileSystemI ': r) m ~> Fre r m
 runDummyFS = interpret \case
     Mkdir path -> sendIns $ putStrLn $ "<runDummyFS> mkdir " <> path
     WriteFS path content -> sendIns $ putStrLn $ "<runDummyFS> writeFS " <> path <> " : " <> content
@@ -121,8 +121,8 @@ saveLogChunk ::
     forall es es' m.
     ( LogChunkS <<| es
     , LogI <| es'
-    , FileSystemI <| es'
-    , TimeI <| es'
+    , FileSystem (Fre es' m)
+    , Time (Fre es' m)
     , Monad m
     , HFunctor (SumH es)
     ) =>
@@ -137,14 +137,14 @@ saveLogChunk =
             ~> Hef (LocalS FilePath ': es) (Fre (AskI FilePath ': es') m)
     interposeLogChunk =
         interposeH \(LogChunk a) -> logChunk do
-            chunkBeginAt <- liftLowerH currentTime
+            chunkBeginAt <- currentTime & raise & liftLowerH
             local @FilePath (++ iso8601Show chunkBeginAt ++ "/") do
-                newLogChunkDir <- liftLowerH ask
-                liftLowerH $ mkdir newLogChunkDir
+                newLogChunkDir <- ask & liftLowerH
+                mkdir newLogChunkDir & raise & liftLowerH
                 a & hoistInterpose \(Log level msg) -> do
-                    logAt <- currentTime
+                    logAt <- currentTime & raise
                     saveDir <- ask
-                    writeFS (saveDir ++ iso8601Show logAt ++ ".log") $ show (level, msg)
+                    writeFS (saveDir ++ iso8601Show logAt ++ ".log") (show (level, msg)) & raise
                     log level msg
 
 main :: IO ()

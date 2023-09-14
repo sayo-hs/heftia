@@ -10,7 +10,7 @@ The original of this example can be found at polysemy.
 -}
 module Main where
 
-import Control.Effect.Class (SendIns, sendIns, type (~>))
+import Control.Effect.Class (sendIns, type (<:), type (~>))
 import Control.Effect.Class.Machinery.TH (makeEffectF)
 import Control.Effect.Freer (Fre, interpose, interpret, runFreerEffects, type (<|))
 
@@ -20,7 +20,7 @@ class Teletype f where
 
 makeEffectF ''Teletype
 
-teletypeToIO :: (SendIns IO (Fre es m), Monad m) => Fre (TeletypeI ': es) m ~> Fre es m
+teletypeToIO :: (IO <: Fre es m, Monad m) => Fre (TeletypeI ': es) m ~> Fre es m
 teletypeToIO = interpret \case
     ReadTTY -> sendIns getLine
     WriteTTY msg -> sendIns $ putStrLn msg
