@@ -51,8 +51,8 @@ makeEffectF ''Log
 logToIO ::
     (IO <: Fre r m, Ask LogLevel (Fre r m), Monad m) =>
     Fre (LogI ': r) m ~> Fre r m
-logToIO = interpret \case
-    Log level msg -> do
+logToIO =
+    interpret \(Log level msg) -> do
         currentLevel <- ask
         when (level <= currentLevel) do
             sendIns $ T.putStrLn msg
