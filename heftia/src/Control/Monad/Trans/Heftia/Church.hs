@@ -7,15 +7,15 @@ module Control.Monad.Trans.Heftia.Church where
 import Control.Effect.Class (type (~>))
 import Control.Effect.Class.Machinery.HFunctor (hfmap)
 import Control.Heftia.Trans (TransHeftia (..))
-import Control.Monad (join)
-import Control.Monad.Trans (lift)
-import Control.Monad.Trans.Cont (ContT (ContT), runContT)
+import Control.Monad.Trans.Cont (Cont, ContT (ContT), runCont)
+import Data.Free.Sum (caseF, pattern L1, pattern R1, type (+))
+import Data.Functor.Identity (Identity (Identity), runIdentity)
 
 newtype HeftiaChurchT h f a = HeftiaChurchT
-    {unHeftiaChurchT :: forall r. (h (HeftiaChurchT h f) ~> ContT r f) -> ContT r f a}
+    {unHeftiaChurchT :: forall r. ((h (HeftiaChurchT h f) + f) ~> Cont r) -> Cont r a}
     deriving stock (Functor)
 
-runHeftiaChurchT :: (h (HeftiaChurchT h f) ~> ContT r f) -> HeftiaChurchT h f b -> ContT r f b
+runHeftiaChurchT :: ((h (HeftiaChurchT h f) + f) ~> Cont r) -> HeftiaChurchT h f b -> Cont r b
 runHeftiaChurchT i (HeftiaChurchT f) = f i
 
 instance Applicative (HeftiaChurchT h f) where
@@ -31,25 +31,20 @@ instance Monad (HeftiaChurchT h f) where
     {-# INLINE (>>=) #-}
 
 instance TransHeftia Monad HeftiaChurchT where
-    liftSigT e = HeftiaChurchT \i -> i e
+    liftSigT e = HeftiaChurchT \i -> i $ L1 e
     {-# INLINE liftSigT #-}
 
     translateT phi (HeftiaChurchT f) =
         HeftiaChurchT \i ->
-            f $ i . phi . hfmap (translateT phi)
+            f $ i . caseF (L1 . phi . hfmap (translateT phi)) R1
 
-    liftLowerHT a = HeftiaChurchT \_ -> lift a
+    liftLowerHT a = HeftiaChurchT \i -> i $ R1 a
     {-# INLINE liftLowerHT #-}
 
     hoistHeftia phi (HeftiaChurchT f) =
         HeftiaChurchT \i ->
-            ContT \k ->
-                join . phi $
-                    runContT
-                        ( f \e -> ContT \k' ->
-                            pure $ runContT (i $ hfmap (hoistHeftia phi) e) (join . phi . k')
-                        )
-                        (pure . k)
+            f $ i . caseF (L1 . hfmap (hoistHeftia phi)) (R1 . phi)
 
     runElaborateH g (HeftiaChurchT f) =
-        runContT (f $ lift . g . hfmap (runElaborateH g)) pure
+        let run m = ContT \k -> Identity $ m >>= runIdentity . k
+         in runCont (f $ caseF (run . g . hfmap (runElaborateH g)) run) pure
