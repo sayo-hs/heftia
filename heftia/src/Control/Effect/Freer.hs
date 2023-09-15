@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE PartialTypeSignatures #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE UndecidableInstances #-}
@@ -14,6 +15,8 @@ import Control.Effect.Class (
     EffectsVia (EffectsVia),
     Instruction,
     SendIns,
+    Tag,
+    getTag,
     runEffectsVia,
     sendIns,
     type (~>),
@@ -181,14 +184,21 @@ transformAll f = overFreerEffects $ transformT f
 {-# INLINE transformAll #-}
 
 transform ::
+    forall e' e fr u r f c.
     (TransFreer c fr, Union u, c f) =>
     (e ~> e') ->
-    FreerEffects fr u (e ': es) f ~> FreerEffects fr u (e' ': es) f
+    FreerEffects fr u (e ': r) f ~> FreerEffects fr u (e' ': r) f
 transform f =
     overFreerEffects $ transformT \u ->
         case decomp u of
             Left e -> inject0 $ f e
             Right e -> weaken e
+
+untag ::
+    forall tag e fr u r f c.
+    (TransFreer c fr, Union u, c f) =>
+    FreerEffects fr u (Tag e tag ': r) f ~> FreerEffects fr u (e ': r) f
+untag = transform getTag
 
 interpose ::
     forall e fr u es f c.

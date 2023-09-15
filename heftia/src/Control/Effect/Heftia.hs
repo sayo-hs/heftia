@@ -16,6 +16,8 @@ import Control.Effect.Class (
     SendIns,
     SendSig,
     Signature,
+    TagH,
+    getTagH,
     runEffectsVia,
     sendIns,
     sendSig,
@@ -202,17 +204,44 @@ transformAllH ::
 transformAllH f = overHeftiaEffects $ transformHT f
 {-# INLINE transformAllH #-}
 
-translate ::
+transformH ::
+    forall e' e h u r f c.
     ( TransHeftia c h
     , UnionH u
-    , HFunctor (u (e : es))
-    , HFunctor (u (e' : es))
+    , c f
+    , HFunctor (u (e : r))
+    , HFunctor (u (e' : r))
+    ) =>
+    (forall g. e g ~> e' g) ->
+    HeftiaEffects h u (e ': r) f ~> HeftiaEffects h u (e' ': r) f
+transformH f = overHeftiaEffects $ translateT \u ->
+    case decompH u of
+        Left e -> inject0H $ f e
+        Right e -> weakenH e
+
+untagH ::
+    forall tag e h u r f c.
+    ( TransHeftia c h
+    , UnionH u
+    , c f
+    , HFunctor (u (e : r))
+    , HFunctor (u (TagH e tag : r))
+    ) =>
+    HeftiaEffects h u (TagH e tag ': r) f ~> HeftiaEffects h u (e ': r) f
+untagH = transformH getTagH
+
+translate ::
+    forall e' e h u r f c.
+    ( TransHeftia c h
+    , UnionH u
+    , HFunctor (u (e : r))
+    , HFunctor (u (e' : r))
     , HFunctor e
     , HFunctor e'
     , c f
     ) =>
-    (e (HeftiaEffects h u (e' ': es) f) ~> e' (HeftiaEffects h u (e' ': es) f)) ->
-    HeftiaEffects h u (e ': es) f ~> HeftiaEffects h u (e' ': es) f
+    (e (HeftiaEffects h u (e' ': r) f) ~> e' (HeftiaEffects h u (e' ': r) f)) ->
+    HeftiaEffects h u (e ': r) f ~> HeftiaEffects h u (e' ': r) f
 translate f =
     overHeftiaEffects $ translateT \u ->
         case decompH u of

@@ -7,45 +7,51 @@
 
 module Main where
 
-import Control.Effect.Class (sendIns, type (<:), type (~>))
+import Control.Effect.Class (SendIns (sendIns), type (<:), type (~>))
 import Control.Effect.Class.Machinery.HFunctor (HFunctor)
 import Control.Effect.Class.Machinery.TH (makeEffectF, makeEffectH)
-import Control.Effect.Class.Reader (Ask, AskI, LocalS, ask, local)
-import Control.Effect.Class.State (State (..), StateI, modify)
+import Control.Effect.Class.Reader (Ask (ask), AskI, Local (local), LocalS)
+import Control.Effect.Class.State (State (get), StateI, modify)
 import Control.Effect.Freer (
     Fre,
+    flipFreer,
     interpose,
     interpret,
+    interpreted,
+    liftLower,
     raise,
+    raise2,
     runFreerEffects,
     type (<|),
  )
-import Control.Effect.Handler.Heftia.Reader (interpretAsk, interpretReader, liftReader)
+import Control.Effect.Handler.Heftia.Reader (interpretReader, liftReader)
 import Control.Effect.Handler.Heftia.State (evalState)
 import Control.Effect.Heftia (
     Hef,
     elaborated,
+    flipHeftia,
     hoistHeftiaEffects,
     hoistInterpose,
-    interposeH,
-    interposeIns,
     interpretH,
     liftLowerH,
+    runElaborate,
     type (<<|),
  )
 import Control.Monad (when)
+import Control.Monad.Trans.Heftia.Church (HeftiaChurchT)
 import Data.Function ((&))
-import Data.Hefty.Sum (SumH)
+import Data.Hefty.Sum (SumH, SumUnionH)
+import Data.Hefty.Union (absurdUnionH, (|+:))
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T
 import Data.Time (UTCTime, getCurrentTime)
 import Data.Time.Format.ISO8601 (iso8601Show)
-import Debug.Trace (trace)
 import Prelude hiding (log)
 
 class Log f where
     log :: Text -> f ()
+
 makeEffectF ''Log
 
 logToIO :: (IO <: Fre r m, Monad m) => Fre (LogI ': r) m ~> Fre r m
@@ -53,6 +59,7 @@ logToIO = interpret \(Log msg) -> sendIns $ T.putStrLn msg
 
 class Time f where
     currentTime :: f UTCTime
+
 makeEffectF ''Time
 
 timeToIO :: (IO <: Fre r m, Monad m) => Fre (TimeI ': r) m ~> Fre r m
@@ -78,27 +85,30 @@ passthroughLogChunk = interpretH \(LogChunk m) -> m
 
 -- | Limit the number of logs in a log chunk to the first @n@ logs.
 limitLogChunk ::
-    forall es es' m.
-    (LogChunkS <<| es, LogI <| es', Monad m, HFunctor (SumH es)) =>
+    forall m.
+    (LogChunk m, Log m, Monad m) =>
     Int ->
-    Hef es (Fre es' m) ~> Hef es (Fre es' m)
-limitLogChunk n =
-    hoistHeftiaEffects (evalState 0)
-        . interposeLogChunk
-        . hoistHeftiaEffects raise
+    LogChunkS (Fre '[LogI] m) ~> m
+limitLogChunk n (LogChunk a) =
+    logChunk
+        . interpreted
+        . evalState 0
+        . interpretLog
+        . flipFreer
+        . raise
+        $ a
   where
-    interposeLogChunk ::
-        Hef es (Fre (StateI Int ': es') m)
-            ~> Hef es (Fre (StateI Int ': es') m)
-    interposeLogChunk = interposeH \(LogChunk a) ->
-        logChunk $
-            a & interposeIns \(Log msg) -> liftLowerH do
-                count <- get
-                when (count <= n) do
+    interpretLog :: Fre '[LogI, StateI Int] m ~> Fre '[StateI Int] m
+    interpretLog =
+        interpret \(Log msg) -> do
+            count <- get
+            when (count <= n) do
+                liftLower $
                     if count == n
                         then log "LOG OMITTED..."
                         else log msg
-                    modify @Int (+ 1)
+
+                modify @Int (+ 1)
 
 class FileSystem f where
     mkdir :: FilePath -> f ()
@@ -111,6 +121,7 @@ runDummyFS = interpret \case
     Mkdir path -> sendIns $ putStrLn $ "<runDummyFS> mkdir " <> path
     WriteFS path content -> sendIns $ putStrLn $ "<runDummyFS> writeFS " <> path <> " : " <> content
 
+-- | Create directories according to the log-chunk structure and save one log in one file.
 saveLogChunk ::
     forall es es' m.
     ( LogChunkS <<| es
@@ -120,36 +131,33 @@ saveLogChunk ::
     , Monad m
     , HFunctor (SumH es)
     ) =>
-    Hef es (Fre es' m) ~> Hef es (Fre es' m)
+    Hef (LogChunkS ': es) (Fre (LogI ': es') m) ~> Hef es (Fre (LogI ': es') m)
 saveLogChunk =
     interpretReader ("./log_chunks/" :: FilePath)
-        . interposeLogChunk
+        . hoistHeftiaEffects flipFreer
+        . interpretLogChunk
+        . hoistHeftiaEffects flipFreer
+        . flipHeftia
         . liftReader
   where
-    interposeLogChunk ::
-        Hef (LocalS FilePath ': es) (Fre (AskI FilePath ': es') m)
-            ~> Hef (LocalS FilePath ': es) (Fre (AskI FilePath ': es') m)
-    interposeLogChunk =
-        interposeH \(LogChunk a) -> logChunk do
-            chunkBeginAt <- currentTime & raise & liftLowerH
+    interpretLogChunk ::
+        Hef (LogChunkS ': LocalS FilePath ': es) (Fre (LogI ': AskI FilePath ': es') m)
+            ~> Hef (LocalS FilePath ': es) (Fre (LogI ': AskI FilePath ': es') m)
+    interpretLogChunk =
+        interpretH \(LogChunk a) -> logChunk do
+            chunkBeginAt <- currentTime & raise2 & liftLowerH
             local @FilePath (++ iso8601Show chunkBeginAt ++ "/") do
                 newLogChunkDir <- ask & liftLowerH
-                mkdir newLogChunkDir & raise & liftLowerH
+                mkdir newLogChunkDir & raise2 & liftLowerH
                 a & hoistInterpose \(Log msg) -> do
-                    logAt <- currentTime & raise
+                    logAt <- currentTime & raise2
                     saveDir <- ask
-                    writeFS (saveDir ++ iso8601Show logAt ++ ".log") (show msg) & raise
-                    log msg
+                    log msg & raise2
+                    writeFS (saveDir ++ iso8601Show logAt ++ ".log") (show msg) & raise2
 
-main :: IO ()
-main = runFreerEffects
-    . logToIO
-    . timeToIO
-    . logWithTime
-    . elaborated
-    . passthroughLogChunk
-    . limitLogChunk 2
-    $ logChunk do
+logs :: (LogChunk m, Log m, IO <: m, Monad m) => m ()
+logs =
+    logChunk do
         log "foo"
         log "bar"
         log "baz"
@@ -167,3 +175,20 @@ main = runFreerEffects
 
         log "quux"
         log "foobar"
+
+main :: IO ()
+main =
+    runFreerEffects
+        . logToIO
+        . timeToIO
+        . logWithTime
+        . runDummyFS
+        . interpret (\(Log m) -> log m)
+        . elaborated
+        . passthroughLogChunk
+        . saveLogChunk
+        . interpreted
+        . interpret (\(Log m) -> log m)
+        . runElaborate @_ @HeftiaChurchT @SumUnionH
+            (liftLower . limitLogChunk 2 |+: absurdUnionH)
+        $ logs
