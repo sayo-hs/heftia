@@ -58,6 +58,8 @@ applyDelimitFork numberOfFork (DelimitFork m) =
         pure $ mconcat r
 ```
 
+ここで、`Elaborator`は単に`type Elaborator e f = e f ~> f`で定義される型シノニムだ。
+
 限定継続の取り出しには、例えば`interposeK`関数を使う。他にも`K`系統の関数はいくつかあるので、用途に応じて使い分けよう。
 ここでは取り出された限定継続`k`を`1`から`numberOfFork`にかけて呼び出し、最後に各々の継続の結果を`mconcat`で集計している。
 
@@ -114,4 +116,5 @@ scope exited. result: (1,1)(1,2)(1,3)(1,4)(2,1)(2,2)(2,3)(2,4)(3,1)(3,2)(3,3)(3,
 
 Haskell上でEffect Systemを実現するライブラリは数多くあるが、
 有名な「Algebraic Effects and Handlers」で可能なこと（例えば限定継続の取り出しとそれを用いたモジュラーなエフェクトのハンドリング）をほぼフルでエミュレートできるのは、
-筆者の知る限りではいまのところhefty algebraに基づくこの方式のみのはずである。
+筆者の知る限りではいまのところHefty Algebrasに基づくこの方式のみのはずである。
+

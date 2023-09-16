@@ -10,9 +10,10 @@ The original of this example can be found at polysemy.
 -}
 module Main where
 
-import Control.Effect.Class (sendIns, type (<:), type (~>))
+import Control.Effect.Class (Taggable, getTag, sendIns, tag, type (#), type (<:), type (@#), type (~>))
 import Control.Effect.Class.Machinery.TH (makeEffectF)
-import Control.Effect.Freer (Fre, interpose, interpret, runFreerEffects, type (<|))
+import Control.Effect.Freer (Fre, interpose, interpret, runFreerEffects, untag, type (<|))
+import Data.Function ((&))
 
 class Teletype f where
     readTTY :: f String
@@ -25,20 +26,22 @@ teletypeToIO = interpret \case
     ReadTTY -> sendIns getLine
     WriteTTY msg -> sendIns $ putStrLn msg
 
-echo :: (Teletype m, Monad m) => m ()
+data TTY1
+
+echo :: (Teletype (m @# TTY1), Monad m, Taggable m) => m ()
 echo = do
-    i <- readTTY
+    i <- readTTY & tag @TTY1
     case i of
         "" -> pure ()
-        _ -> writeTTY i >> echo
+        _ -> (writeTTY i & tag @TTY1) >> echo
 
-strong :: (TeletypeI <| es, Monad m) => Fre es m ~> Fre es m
+strong :: (TeletypeI # TTY1 <| es, Monad m) => Fre es m ~> Fre es m
 strong =
-    interpose \case
-        ReadTTY -> readTTY
-        WriteTTY msg -> writeTTY $ msg <> "!"
+    interpose @(_ # TTY1) \e -> case getTag e of
+        ReadTTY -> readTTY & tag @TTY1
+        WriteTTY msg -> writeTTY (msg <> "!") & tag @TTY1
 
 main :: IO ()
 main = runFreerEffects $ do
     sendIns $ putStrLn "Please enter something..."
-    teletypeToIO $ strong . strong $ echo
+    teletypeToIO . untag @TTY1 . strong . strong $ echo

@@ -5,7 +5,7 @@ heftia-effectsにおける一階のエフェクトの取り扱い方を説明し
 heftia-effectsにおける一階のエフェクトの扱われ方は、基本的に
 Freerそのものであり、一階のエフェクトのみをサポートしている`freer-simple`系のライブラリとほとんど一緒です。
 
----
+## エフェクトクラスの定義
 
 まず、Teletype用のエフェクトを定義しよう。
 
@@ -32,7 +32,7 @@ data TeletypeI a where
     WriteTTY :: String -> TeletypeI ()
 ```
 
----
+## インタプリタの実装
 
 次に、この`Teletype`エフェクトクラスのインタプリタを実装しよう。
 
@@ -59,7 +59,7 @@ teletypeToIO = interpret \case
 しかし、`Fre`はモナディックなエフェクト用のFreerであるため、ここでは下位のキャリアは`Monad`に制約されなければならない。
 モナディック・エフェクト以外へと一般化した書き方は可能だが（実際heftiaライブラリが提供する関数はこのように一般化されている）、少し冗長であるため、ここでは解説しないものとする。
 
----
+## エフェクトフルなプログラムの作成
 
 次に、定義したエフェクトを使用するプログラムを書いてみよう。
 
@@ -81,7 +81,7 @@ GADTsに基づかないエフェクトシステム・バックエンド（例え
 より一般化・多相化されているのだ。
 この話の詳細はCEP-01の"Recommendation on Interface Independence from the Effect System Backend"の節を参照のこと。
 
----
+## エフェクトフル・プログラムとハンドラの合成
 
 エフェクトフルなプログラムである`echo`と、先程定義した`teletypeToIO`インタプリタを組み合わせて、実際に動くmain関数を構成してみよう。
 
@@ -108,7 +108,7 @@ baz
 ↵
 ```
 
----
+## 解釈の改変
 
 次に、`interpose`関数を使ったエフェクトの再解釈について見ていこう。
 heftiaライブラリから提供される`reinterpret`, `interpose`, `intercept`系統の関数を使用すると、
@@ -163,7 +163,47 @@ baz↵
 baz!!
 ↵
 ```
----
+
+## タグ付きエフェクト
+
+また、（実験的ではあるが）classy-effects及びheftia-effectsではタグ付きのエフェクトをサポートしている。
+以下は、ここまでのコードをタグ付けした例である。
+
+```hs
+data TTY1
+
+echo :: (Teletype (m @# TTY1), Monad m, Taggable m) => m ()
+echo = do
+    i <- readTTY & tag @TTY1
+    case i of
+        "" -> pure ()
+        _ -> (writeTTY i & tag @TTY1) >> echo
+
+strong :: (TeletypeI # TTY1 <| es, Monad m) => Fre es m ~> Fre es m
+strong =
+    interpose @(_ # TTY1) \e -> case getTag e of
+        ReadTTY -> readTTY & tag @TTY1
+        WriteTTY msg -> writeTTY (msg <> "!") & tag @TTY1
+
+main :: IO ()
+main = runFreerEffects $ do
+    sendIns $ putStrLn "Please enter something..."
+    teletypeToIO . untag @TTY1 . strong . strong $ echo
+```
+
+まず、型タグとして`TTY1`を定義している[^1]。
+
+[^1]: もちろんタグとして型レベル文字列を使うことも可能だが、タイプミス時に出るエラーを分かりやすくするためにこのように新たにタグ用にデータ型を定義することを推奨する。
+
+キャリアに対するタグ付けは`@#`演算子で行う。これにより、タグ付きのエフェクトクラスの制約を表現できる。
+そして、`tag`関数を使うことでそのスコープ内における
+タグ付けされていないエフェクトをタグ付けされた状態でキャリアへ送信できる。
+
+エフェクトクラスデータ型に対しては、一階の場合は`#`演算子でタグ付けできる。次の章で登場する高階エフェクトクラスのときは`##`演算子を使う。
+
+さらに、ハンドル時はタグを外して素の`TeletypeI`に戻すために、`untag @TTY1`を使用している。
+
+## コード全体
 
 コードの全体は以下のようになる。暗黙的に有効になっているGHC拡張が多いことに注意せよ。
 
@@ -206,3 +246,46 @@ main = runFreerEffects $ do
     teletypeToIO $ strong . strong $ echo
 ```
 
+### タグ付きエフェクトのコード
+
+```hs
+{-# LANGUAGE TemplateHaskell #-}
+
+module Main where
+
+import Control.Effect.Class (Taggable, getTag, sendIns, tag, type (#), type (<:), type (@#), type (~>))
+import Control.Effect.Class.Machinery.TH (makeEffectF)
+import Control.Effect.Freer (Fre, interpose, interpret, runFreerEffects, untag, type (<|))
+import Data.Function ((&))
+
+class Teletype f where
+    readTTY :: f String
+    writeTTY :: String -> f ()
+
+makeEffectF ''Teletype
+
+teletypeToIO :: (IO <: Fre es m, Monad m) => Fre (TeletypeI ': es) m ~> Fre es m
+teletypeToIO = interpret \case
+    ReadTTY -> sendIns getLine
+    WriteTTY msg -> sendIns $ putStrLn msg
+
+data TTY1
+
+echo :: (Teletype (m @# TTY1), Monad m, Taggable m) => m ()
+echo = do
+    i <- readTTY & tag @TTY1
+    case i of
+        "" -> pure ()
+        _ -> (writeTTY i & tag @TTY1) >> echo
+
+strong :: (TeletypeI # TTY1 <| es, Monad m) => Fre es m ~> Fre es m
+strong =
+    interpose @(_ # TTY1) \e -> case getTag e of
+        ReadTTY -> readTTY & tag @TTY1
+        WriteTTY msg -> writeTTY (msg <> "!") & tag @TTY1
+
+main :: IO ()
+main = runFreerEffects $ do
+    sendIns $ putStrLn "Please enter something..."
+    teletypeToIO . untag @TTY1 . strong . strong $ echo
+```
