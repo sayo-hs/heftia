@@ -1,6 +1,6 @@
 # Example 3 - Delimited Continuation
 
-In this section, using an example, we'll demonstrate how `heftia-effects` facilitates the handling of delimited continuations.
+In this chapter, using an example, we'll demonstrate how `heftia-effects` facilitates the handling of delimited continuations.
 
 ## `fork` effect
 

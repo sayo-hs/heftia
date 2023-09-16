@@ -22,7 +22,7 @@ makeEffectF ''Teletype
 Template Haskellの関数で、これにより型クラス`Teletype`は自動的にCEP-01からCEP-04までの
 すべての[CEPs](https://github.com/sayo-hs/classy-effects/blob/master/CEPs/README.md) (0.1.0) に準拠したエフェクトクラスとなる。
 
-特に、[CEP-02]((https://github.com/sayo-hs/classy-effects/blob/master/CEPs/CEP-02.md))に従い、
+特に、[CEP-02](https://github.com/sayo-hs/classy-effects/blob/master/CEPs/CEP-02.md)に従い、
 以下のようなGADTsが自動的に生成される:
 
 ```haskell
@@ -79,7 +79,7 @@ echo = do
 GADTsに基づかないエフェクトシステム・バックエンド（例えばmtlなど）にもこのプログラムをハンドル
 させることが可能になってくる。つまり、特定のエフェクトシステム・バックエンドへの依存という制約が弱められ、
 より一般化・多相化されているのだ。
-この話の詳細はCEP-01の"Recommendation on Interface Independence from the Effect System Backend"の節を参照のこと。
+この話の詳細は[CEP-01](https://github.com/sayo-hs/classy-effects/blob/master/CEPs/CEP-01.md)の"Recommendation on Interface Independence from the Effect System Backend"の節を参照のこと。
 
 ## エフェクトフル・プログラムとハンドラの合成
 
