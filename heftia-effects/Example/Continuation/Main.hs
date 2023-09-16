@@ -19,6 +19,7 @@ type ForkID = Int
 
 class Fork f where
     fork :: f ForkID
+
 makeEffectF ''Fork
 
 runForkSingle :: Monad m => Fre (ForkI ': r) m ~> Fre r m
@@ -26,12 +27,10 @@ runForkSingle = interpret \Fork -> pure 0
 
 class DelimitFork f where
     delimitFork :: Monoid w => f w -> f w
+
 makeEffectH ''DelimitFork
 
-applyDelimitFork ::
-    (ForkI <| es, Monad m) =>
-    Int ->
-    Elaborator DelimitForkS (Fre es m)
+applyDelimitFork :: (ForkI <| es, Monad m) => Int -> Elaborator DelimitForkS (Fre es m)
 applyDelimitFork numberOfFork (DelimitFork m) =
     m & interposeK pure \k Fork -> do
         r <- mapM k [1 .. numberOfFork]
@@ -61,8 +60,8 @@ main =
         $ do
             sendIns . putStrLn . (("[out of scope] " ++) . show) =<< fork
             s <- delimitFork do
-                wid1 <- fork
-                wid2 <- fork
-                sendIns $ putStrLn $ "[delimited continuation of `fork`] Fork ID: " ++ show (wid1, wid2)
-                pure $ show (wid1, wid2)
+                fid1 <- fork
+                fid2 <- fork
+                sendIns $ putStrLn $ "[delimited continuation of `fork`] Fork ID: " ++ show (fid1, fid2)
+                pure $ show (fid1, fid2)
             sendIns $ putStrLn $ "scope exited. result: " ++ s

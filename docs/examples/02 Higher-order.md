@@ -1,4 +1,4 @@
-# Example 2 - Logging
+# Example 2 - Higher-order effects
 
 ここでは、ログ出力のエフェクトを通じて、heftia-effectsにおける高階のエフェクトの取り扱い方を説明します。
 一階エフェクトはほとんど既存のFreerに基づくライブラリと同様であったのに対して、

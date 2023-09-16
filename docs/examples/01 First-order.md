@@ -1,4 +1,4 @@
-# Example 1 - Teletype
+# Example 1 - First-order effects
 
 ここでは、[Polysemy](https://hackage.haskell.org/package/polysemy)ライブラリの例にもある`Teletype`エフェクトクラスを例として、
 heftia-effectsにおける一階のエフェクトの取り扱い方を説明します。
