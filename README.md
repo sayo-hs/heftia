@@ -14,5 +14,8 @@ allowing for a straightforward treatment of higher-order effects.
 This library provides Heftia monads and Freer monads, encoded into data
 types in several ways to enable tuning in pursuit of high performance.
 
+## Examples
+Examples with explanations can be found in the [docs/examples/](docs/examples/) directory.
+
 ## Your contributions are welcome!
-Please see CONTRIBUTING.md.
+Please see [CONTRIBUTING.md](CONTRIBUTING.md).
