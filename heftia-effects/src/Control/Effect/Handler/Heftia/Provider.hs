@@ -11,17 +11,17 @@ import Control.Monad.Trans (MonadTrans, lift)
 
 -- | Elaborate the 'Provider' effect using the given interpreter.
 elaborateProvider ::
-    c h =>
+    (c h, e h) =>
     (f ~> h) ->
     (forall x. i -> h x -> f (g x)) ->
-    Elaborator (ProviderS c i g) f
+    Elaborator (ProviderS c e i g) f
 elaborateProvider iLower run (Provide i a) = run i $ a iLower
 {-# INLINE elaborateProvider #-}
 
 -- | Elaborate the 'Provider' effect using the given interpreter for some monad transformer.
 elaborateProviderT ::
-    (Monad m, MonadTrans t, c (t m)) =>
+    (Monad m, MonadTrans t, c (t m), e (t m)) =>
     (forall x. i -> t m x -> m (g x)) ->
-    Elaborator (ProviderS c i g) m
+    Elaborator (ProviderS c e i g) m
 elaborateProviderT = elaborateProvider lift
 {-# INLINE elaborateProviderT #-}
