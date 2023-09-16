@@ -1,13 +1,10 @@
 # Example 2 - Higher-order effects
 
-ここでは、ログ出力のエフェクトを通じて、heftia-effectsにおける高階のエフェクトの取り扱い方を説明します。
-一階エフェクトはほとんど既存のFreerに基づくライブラリと同様であったのに対して、
-heftia-effectsにおける高階エフェクトの扱われ方は、[Hefty Algebras (Casper et, al. 2023)](https://dl.acm.org/doi/10.1145/3571255)
-に基づく、まったく新しいものです。
+In this section, we explain how to handle higher-order effects in `heftia-effects` using the effect of log output. While first-order effects were quite similar to most existing libraries based on Freer, the treatment of higher-order effects in `heftia-effects` is entirely new and based on [Hefty Algebras (Casper et al., 2023)](https://dl.acm.org/doi/10.1145/3571255).
 
-## ログ出力のエフェクトクラス
+## Log output effect class
 
-まず、ログ出力の一階エフェクトクラスは、例えば以下のように定義できる:
+First, the first-order effect class for log output can be defined as follows:
 
 ```haskell
 class Log f where
@@ -16,7 +13,7 @@ class Log f where
 makeEffectF ''Log
 ```
 
-これに対するインタプリタとしては、例えばこうだ:
+An interpreter for this could be:
 
 ```haskell
 logToIO ::
@@ -29,12 +26,11 @@ logToIO =
             sendIns $ T.putStrLn msg
 ```
 
-`Ask`エフェクトクラスは`Reader`エフェクトクラスのサブクラスで、いわゆる`Reader`モナドの`ask`関数のエフェクト版である。
-このインタプリタは、現在のログレベルを`Reader`の環境から取得し、ログレベルに応じてフィルターされたログを標準出力する[^1]。
+The `Ask` effect class is a subclass of the `Reader` effect class, which can be described as the effect version of the `ask` function of the so-called `Reader` monad. This interpreter fetches the current log level from the `Reader` environment and outputs the logs filtered by the log level[^1].
 
-[^1]: `LogLevel`データ型は`loglevel`パッケージ、`Text`データ型は`text`パッケージより。
+[^1]: The `LogLevel` data type is from the `loglevel` package, and the `Text` data type is from the `text` package.
 
-以上は実用的なログ出力エフェクトの例だが、簡単のために以降はログレベルの要素を排して、単に
+Although this is a practical example of a log output effect, for simplicity, we'll continue our discussion using the following definition:
 
 ```haskell
 class Log f where
@@ -46,11 +42,9 @@ logToIO :: (IO <: Fre r m, Monad m) => Fre (LogI ': r) m ~> Fre r m
 logToIO = interpret \(Log msg) -> sendIns $ T.putStrLn msg
 ```
 
-という定義で話を進める。
+## Timestamp retrieval effect
 
-## 時刻取得エフェクト
-
-まず以下のようにして、現在時刻を取得するエフェクトを導入できる[^2]。
+We can introduce an effect to retrieve the current timestamp as follows[^2]:
 
 ```haskell
 class Time f where
@@ -63,9 +57,9 @@ timeToIO = interpret \case
     CurrentTime -> sendIns getCurrentTime
 ```
 
-[^2]: `getCurrentTime`, `UTCTIme`は`time`パッケージより。
+[^2]: `getCurrentTime` and `UTCTime` are from the `time` package.
 
-そして、以下のようにして、ログに現在時刻を付加する再解釈関数を作ることができる。
+Then, you can create a re-interpretation function that adds the current timestamp to the log as follows:
 
 ```haskell
 logWithTime :: (LogI <| es, Time (Fre es m), Monad m) => Fre es m ~> Fre es m
@@ -74,7 +68,7 @@ logWithTime = interpose \(Log msg) -> do
     log $ "[" <> T.pack (show t) <> "] " <> msg
 ```
 
-試してみよう。
+Let's give it a try.
 
 ```haskell
 main :: IO ()
@@ -91,7 +85,7 @@ main =
             log "qux"
             log "quux"
 
-{- 実行結果:
+{- Execution result:
 [2023-09-14 06:35:14.709968653 UTC] foo
 [2023-09-14 06:35:14.710160875 UTC] bar
 [2023-09-14 06:35:14.710175171 UTC] baz
@@ -101,11 +95,10 @@ main =
 -}
 ```
 
-## ログのスコープ化
-さて、ここからは高階エフェクトの例を見ていこう。
+## Scoping of logs
+Now, let's look at an example of a higher-order effect.
 
-まず、ログを出力するプログラムをスコープで区切って、ひとまとまりのブロックを表現する、
-次のような高階エフェクトクラスを導入してみよう:
+First, let's introduce a higher-order effect class that delimits the program that outputs logs with a scope, representing a block of logs:
 
 ```haskell
 -- | An effect that introduces a scope that represents a chunk of logs.
@@ -115,14 +108,14 @@ class LogChunk f where
 makeEffectH ''LogChunk
 ```
 
-新たに登場した`makeEffectH`は、高階エフェクトクラス用の自動導出THだ。
-特に、以下のようなGADTsを生成する:
+The newly introduced `makeEffectH` is an auto-derivation TH for higher-order effect classes. In particular, it generates the following GADT:
+
 ```hs
 data LogChunkS f a where
     LogChunk :: f a -> LogChunkS f a
 ```
 
-特に何もしない、スコープ内のログをそのまま出力する高階な解釈関数を書いてみよう:
+Let's try writing a higher-order interpretation function that simply outputs the logs in the log chunks as they are:
 
 ```haskell
 -- | Output logs in log chunks as they are.
@@ -132,7 +125,7 @@ passthroughLogChunk ::
 passthroughLogChunk = interpretH \(LogChunk m) -> m
 ```
 
-すると、この`logChunk`エフェクトは例えば、次のようにして使える:
+Then, you can use this `logChunk` effect like this:
 
 ```haskell
 logs :: (LogChunk m, Log m, IO <: m, Monad m) => m ()
@@ -166,7 +159,7 @@ main =
         . passthroughLogChunk
         $ logs
 
-{- 実行結果:
+{- Execution result:
 [2023-09-14 11:22:52.125513923 UTC] foo
 [2023-09-14 11:22:52.125611386 UTC] bar
 [2023-09-14 11:22:52.125627817 UTC] baz
@@ -182,62 +175,44 @@ main =
 -}
 ```
 
-### Heftiaにおける原則
+### Principles in Heftia
 
-`passthroughLogChunk`にて使われているものについて説明しよう。
+Let's explain what's used in `passthroughLogChunk`.
 
-`interpretH`は高階版の`interpret`だ。
-またここで、関数の型が少し珍しいことになっている。
+`interpretH` is a higher-order version of `interpret`.
+Also here, the function type has a slightly unusual structure.
 
-まず、制約の`HFunctor (SumH ...)`だが、これはheftia-effectsにおいて至る所で必要になる、
-エフェクトクラス・リストに掛かる制約だ。
-関数を書いていて`No instance for (HFunctor ...)`が出たら、関数の制約にこれを追加しよう。
+First, the constraint `HFunctor (SumH ...)` is a constraint on the effect class list in `heftia-effects`, required throughout the library. If you encounter a `No instance for (HFunctor ...)` error while writing a function, add this to the function's constraints.
 
-そして`Hef`だが、これは`Fre` (Freer)に対する高階版、その名も**Heftia**（のモナドトランスフォーマー）である。
-FreerがFreeモナドとco-Yonedaの合成であるように、
-Heftiaはhefty treeとco-Yoneda（の高階版）の合成であり、高階エフェクトの取り扱いのために本ライブラリが新たに導入するものだ。
+Then, there's `Hef`, which is a higher-order version of `Fre` (Freer) and is (a monad transformer) called **Heftia**. Just as Freer is a combination of the Free monad and co-Yoneda, Heftia is a combination of a hefty tree and a higher-order co-Yoneda. This is introduced by this library specifically for handling higher-order effects.
 
-heftia-effectsでは、高階エフェクトを取り扱うために、Heftiaトランスフォーマを使う仕組みになっている。
-そして、一階エフェクトのキャリア（すなわちFreer）は、基本的に高階エフェクトのキャリア（すなわちHeftia）の下位のキャリアに
-配置されることになる。
+In `heftia-effects`, the system uses the Heftia transformer to handle higher-order effects. And the carriers for first-order effects (namely, Freer) are usually placed as subordinate carriers under the carriers for higher-order effects (namely, Heftia).
 
-hefty algebraの提唱するエフェクトの取り扱われ方においては原則的に、
-一階エフェクトへと自由にアクセスする（一階エフェクトの解釈・再解釈を好きに行う）ためには、まず「上に覆いかぶさっている」高階エフェクトのハンドリングをすべて終えなければならない。
+In the approach of handling effects as proposed by hefty algebra, to freely access (interpret and reinterpret) first-order effects, one must first complete the handling of "overlaying" higher-order effects.
 
-一階エフェクトをハンドルすることは*interpret*と呼ぶ一方、高階エフェクトをハンドルすることはしばしば*elaborate*と呼ばれる。
-本ライブラリでは高階エフェクトに対するハンドルに関する命名は、*elaborate*、ないし*interpretH*のように一階側の相当物にHを付けることで行われている。
+Handling first-order effects is called *interpret*, while handling higher-order effects is often termed *elaborate*. In this library, naming related to handling higher-order effects is done by adding an H to its first-order counterpart, such as *interpretH*, or *elaborate*.
 
-この用語を使って原則を言い換えるとつまり、「まず`elaborate`せよ、そうすれば`interpret`できるようになる」ということである。
+Using this terminology, the principle can be rephrased as: "First, `elaborate`, then you can `interpret`".
 
-制限が強いと思われるかもしれない。しかし、これは論文中で述べられていることだが、
-この制限は第一に、エフェクトのハンドリングにおけるセマンティクスの正常性の保護のために重要である。
-これにより、ハンドリングの結果の予測性が向上し、シンプルで直感的なものになる。
-第二に、このhefty algebraに基づく方法は、制限と引き換えに自由を引き出す。
-これについては次章で述べる。
+This restriction might seem strong. However, as described in the paper, this restriction is essential, first and foremost, for preserving the semantics of effect handling. It enhances the predictability of handling results, making them straightforward and intuitive. Secondly, methods based on this hefty algebra extract freedom in exchange for these restrictions. This will be elaborated in the next section (Example 3 - Delimited Continuation).
 
-さらに、本ライブラリでは、Heftiaトランスフォーマが上に覆いかぶさっている状態でも、
-特定の状況で使用可能な、下位のキャリア（典型的にはFreer）にアクセスして操作を施すための手段を提供する。
-これはいわゆる`hoist`系の関数である。
-ただし後述するように、これの使用には注意が必要である。
+Moreover, this library provides means to access and operate on subordinate carriers (typically Freer) even when the Heftia transformer is overlaying, using the so-called `hoist` series of functions. However, caution is required when using this, as will be discussed later.
 
 ---
 
-話を戻そう。
+Let's get back to the point.
 
-この`main`関数内で、`elaborated`は、すべての高階エフェクトのハンドリングがすべて完了し、
-高階エフェクトクラスのリストが空になった（`Hef '[]`の形になった）タイミングで、
-`Hef`トランスフォーマをrunして下位のキャリア（ここでは`Fre '[TImeI, LogI, IO]`）へと落とし込むための関数だ[^3]。
+Within this `main` function, `elaborated` is a function that runs the `Hef` transformer when all higher-order effect handling is completed, and the higher-order effect class list becomes empty (taking the form `Hef '[]`), dropping it down to the subordinate carrier (in this case, `Fre '[TimeI, LogI, IO]`) [^3].
 
-[^3]: 一階側にもこれに相当する、`interpreted`という関数が存在する。
+[^3]: There's also a corresponding function on the first-order side called `interpreted`.
 
-### スコープの操作
+### Manipulating Scopes
 
-さて、`logChunk`エフェクトを使って、何か面白いことをしてみよう。
+Now, using the `logChunk` effect, let's do something interesting.
 
-#### ログの出力回数の制限
+#### Limiting the Number of Log Outputs
 
-以下は、スコープ内でログが`n`回以上投げられた場合、`n`回以降は省略し、
-省略されたことをログに出すという挙動への再解釈を行うための関数である。
+Below is a function that reinterprets the behavior to omit logs after the `n`-th log within a scope and logs the fact that they were omitted.
 
 ```haskell
 -- | Limit the number of logs in a log chunk to the first @n@ logs.
@@ -268,35 +243,25 @@ limitLogChunk n (LogChunk a) =
                 modify @Int (+ 1)
 ```
 
-まず、引数で受け取った`logChunk`のスコープを表すアクション
+First, the action that represents the scope of `logChunk` received as an argument
 ```hs
     a :: Fre '[LogI] m
 ```
-は、関数`raise`によって
+is transformed by the `raise` function into
 ```hs
     raise a :: Fre '[StateI Int, LogI] m
 ```
-へと変形される。これにより、状態エフェクトを扱えるようになる。
-関数`raise`は、任意のエフェクトクラスをエフェクトクラスリストの先頭に挿入する関数だ。
-そして、Freerのエフェクトクラスリストを並び替える関数`flipFreer`により
+With this, it becomes possible to handle state effects. The `raise` function is one that inserts any effect class at the beginning of the effect class list. And by the `flipFreer` function which rearranges the effect class list of Freer, it's transformed into
 ```hs
     flipFreer (raise a) :: Fre '[LogI, StateI Int] m
 ```
-と変形される。
-ここからがメインの処理で、`interpretLog`関数により、スコープ内で投げられるすべてのログを解釈する。
-ログが投げられるたびに状態エフェクトが保持している値をインクリメントし、現在のカウントに応じてログを出力したりしなかったり、
-省略されたことを表すログを出したりする。
-最後に、`evalState`でカウンタの初期値を0として状態エフェクトをハンドルする。
-また、`logChunk`エフェクトは`limitLogChunk`の解釈を通じて消費されてしまい、このままではスコープの情報は消失してしまうため、
-引き続きスコープに応じたさらなるフックを可能にするために、最後に全体に`logChunk`を適用することで、スコープの情報を保持している。
+The main process starts from here, where the `interpretLog` function interprets all logs that can be thrown within the scope. Each time a log is thrown, the value held by the state effect is incremented, and depending on the current count, logs may or may not be output, or logs indicating that something has been omitted might be output. Finally, `evalState` handles the state effect with an initial counter value of 0. Also, the `logChunk` effect gets consumed through the interpretation of `limitLogChunk`, and as it stands, the information of the scope would be lost. Therefore, in order to enable further hooks according to the scope, the `logChunk` is applied to the entire process at the end to retain the information of the scope.
 
-また、`interpretLog`関数内で使用されている`liftLower`は、Freerトランスフォーマ用の`lift`関数である。
-Heftiaトランスフォーマー用には`liftLowerH`がある。
+Additionally, the `liftLower` used inside the `interpretLog` function is a `lift` function for the Freer transformer. For the Heftia transformer, there is `liftLowerH`.
 
 ---
 
-`limitLogChunk`関数を使うと、次のようにスコープ内のログの数が制限される。
-ここで、`limitLogChunk`は`runElaborate`関数と組み合わせて使う必要がある。
+When you use the `limitLogChunk` function, the number of logs in the scope is limited as follows. Note that you need to combine `limitLogChunk` with the `runElaborate` function.
 
 ```haskell
 main :: IO ()
@@ -313,7 +278,7 @@ main =
             (liftLower . limitLogChunk 2 |+: absurdUnionH)
         $ logs
 
-{- 実行結果:
+{- Execution result:
 [2023-09-15 09:08:46.157032474 UTC] foo
 [2023-09-15 09:08:46.15713674 UTC] bar
 [2023-09-15 09:08:46.157159723 UTC] LOG OMITTED...
@@ -325,29 +290,51 @@ main =
 -}
 ```
 
-ここで、`runElaborate`の引数の型に合わせるために`liftLower`を使用している。
-`interpret (\(Log m) -> log m)`は、`logChunk`で囲われていないスコープ外において投げられたログを処理するものである。
-この例ではすべて`logChunk`内であるため関係なく、単に型を合わせるためのものである。
-また、`interpreted . logToIO`が追加されており、
-既存のHeftiaの階層の上に新たにHeftiaとFreerの階層が乗っかった形になっている。
-このように、heftia-effectsのトランスフォーマー・スタックは一般に、HeftiaとFreerがミルフィーユのような層を成す形となる。
-この層の構造こそが、高階エフェクトと一階エフェクトの、制御-被制御の関係を型レベルで表現したものであり、
-高階エフェクトを健全なセマンティクスの下で取り扱うためのガードレールの役割を担う。
+Here's the English translation:
 
-ちなみに、`limitLogChunk`と同時に他の高階エフェクトクラスもelaborateしたい場合は、
+```haskell
+main :: IO ()
+main =
+    runFreerEffects
+        . logToIO
+        . timeToIO
+        . logWithTime
+        . elaborated
+        . passthroughLogChunk
+        . interpreted
+        . interpret (\(Log m) -> log m)
+        . runElaborate @_ @HeftiaChurchT @SumUnionH
+            (liftLower . limitLogChunk 2 |+: absurdUnionH)
+        $ logs
+
+{- Execution result:
+[2023-09-15 09:08:46.157032474 UTC] foo
+[2023-09-15 09:08:46.15713674 UTC] bar
+[2023-09-15 09:08:46.157159723 UTC] LOG OMITTED...
+------
+[2023-09-15 09:08:46.157204818 UTC] hoge
+[2023-09-15 09:08:46.157224835 UTC] piyo
+[2023-09-15 09:08:46.157245805 UTC] LOG OMITTED...
+------
+-}
+```
+
+In this case, `liftLower` is used to match the type of the argument for `runElaborate`.
+`interpret (\(Log m) -> log m)` is for handling logs that are thrown outside the scope that isn't surrounded by `logChunk`. In this example, everything is within `logChunk`, so it's merely for type matching. Moreover, `interpreted . logToIO` has been added, and on top of the existing Heftia hierarchy, a new layer of Heftia and Freer is formed. Typically, the transformer stack of heftia-effects takes on a form where Heftia and Freer create layers similar to a mille-feuille pastry. This layered structure embodies the controlled-controlling relationship between first-order effects and higher-order effects at the type level. It serves as a guardrail for handling higher-order effects under sound semantics.
+
+By the way, if you want to elaborate other higher-order effect classes at the same time as `limitLogChunk`, you can use `|+:` like the `:` operator of lists, as shown by:
+
 ```hs
     f1 |+: f2 |+: ... |+: fn |+: absurdUnionH
 ```
-のように、`|+:`をリストの`:`演算子のように使うことで可能である。
 
-`runElaborate`の型適用は、今現在のところ正しく型が推論されるために必要なものだが、
-この構文の冗長さは将来のバージョンで改善される予定である。
+The type application of `runElaborate` is currently necessary for the type to be correctly inferred. However, this syntactical verbosity is expected to be improved in future versions.
 
-#### ログをファイルに保存
+#### Save Logs to a File
 
-次の例に移ろう。
+Let's move on to the next example.
 
-まず準備として、ディレクトリ作成操作、ファイル書き込み操作を表現するエフェクトクラスを定義しよう。
+First, as a preparation, let's define effect classes representing directory creation and file writing operations.
 ```hs
 class FileSystem f where
     mkdir :: FilePath -> f ()
@@ -361,14 +348,11 @@ runDummyFS = interpret \case
     WriteFS path content -> sendIns $ putStrLn $ "<runDummyFS> writeFS " <> path <> " : " <> content
 ```
 
-このインタプリタはダミーで、操作のエフェクトが投げられたら単にその旨を出力するだけのものだ[^4]。
+This interpreter is a dummy. It simply outputs when an operation's effect is thrown[^4].
 
-[^4]: もちろん、実際にIOを行うインタプリタを書くことは容易である。
+[^4]: Of course, writing an interpreter that actually performs IO is easy.
 
-そして以下は、`logChunk`エフェクトのスコープに入るたびに、
-その瞬間の時刻の名前のディレクトリを再帰的に作成し、
-スコープ内において投げられるログをそのディレクトリに保存するように
-`logChunk`の挙動を変更する関数である。
+Next, the following is a function that changes the behavior of `logChunk` such that, every time you enter the scope of a `logChunk` effect, it recursively creates a directory named after the current timestamp and saves the logs thrown within that scope into that directory.
 
 ```haskell
 -- | Create directories according to the log-chunk structure and save one log in one file.
@@ -406,38 +390,31 @@ saveLogChunk =
                     writeFS (saveDir ++ iso8601Show logAt ++ ".log") (show msg) & raise2
 ```
 
-まず、`<<|`型レベル演算子は`<|`の高階版である。
-制約は、高階側では`LogChunk`エフェクトクラスが、一階側では`Log`エフェクトクラスが
-取り扱われていることを表している。
+First, the `<<|` type-level operator is a higher-order version of `<|`. The constraint indicates that the higher-order side deals with the `LogChunk` effect class and the first-order side deals with the `Log` effect class.
 
-`flipHeftia`は`flipFreer`のHeftia版だ。
-`liftReader`は、`Hef ... (Fre ... m)`を`Hef (LocalS ': ...) (Fre (AskI ': ...) m)`の形へとリフトする関数だ。
+`flipHeftia` is the Heftia version of `flipFreer`. `liftReader` is a function that lifts `Hef ... (Fre ... m)` to the form of `Hef (LocalS ': ...) (Fre (AskI ': ...) m)`.
 
-そして`hoistHeftiaEffects`が、前述のhoist系の関数だ。
-これを使うと、上に被さっている`Hef`を貫通して、下位のキャリアになっている一階の`Fre`を操作することができる。
+Then `hoistHeftiaEffects` is the aforementioned hoist family of functions. With this, you can penetrate the overlaying `Hef` and manipulate the underlying first-order `Fre`.
 
-`raise2`は`(raise . raise)`と等価だ。
+`raise2` is equivalent to `(raise . raise)`.
 
-全体の流れはこうだ:
+Here's the overall flow:
 
-まず、`liftReader`関数や`flip`系の関数を使って、
+Using the `liftReader` function and the flip series of functions,
 ```haskell
 Hef (LogChunkS ': es) (Fre (LogI ': es') m)
 ```
-を
+is transformed into
 ```haskell
 Hef (LogChunkS ': LocalS FilePath ': es) (Fre (LogI ': AskI FilePath ': es')
 ```
-へと変形する。
-追加された`Reader`系のエフェクトクラスは、今現在のスコープに対応したディレクトリのパスを保持する。
+The added `Reader` effect classes store the path of the directory corresponding to the current scope.
 
-`interpretLogChunk`は、エフェクトクラスリスト先頭の`LogChunkS`を解釈し、`es`内の`LogChunkS`へと再送信する。
-再解釈されたスコープ内では、現在時刻の名前のディレクトリを作成し、そしてログが投げられるたびにその時刻の名前のファイルを作成し、ログの内容を書き込む。
-最後に、`Reader`のエフェクトを初期ディレクトリのパスを`"./log_chunks/"`としてハンドルしている。
+`interpretLogChunk` interprets the `LogChunkS` at the head of the effect class list and retransmits it to `es`. Within the reinterpreted scope, it creates a directory named after the current time, and every time a log is thrown, it creates a file named after that time and writes the contents of the log. Finally, it handles the `Reader` effect with the initial directory path set to "./log_chunks/".
 
 ---
 
-以上の関数を使うと、例えば以下のようになる:
+Using the above functions, the behavior is as follows:
 
 ```hs
 main :: IO ()
@@ -453,7 +430,7 @@ main =
         . saveLogChunk
         $ logs
 
-{- 実行結果:
+{- Execution result:
 <runDummyFS> mkdir ./log_chunks/2023-09-15T09:43:52.199981569Z/
 [2023-09-15 09:43:52.200115099 UTC] foo
 <runDummyFS> writeFS ./log_chunks/2023-09-15T09:43:52.199981569Z/2023-09-15T09:43:52.200107896Z.log : "foo"
@@ -481,14 +458,11 @@ main =
 -}
 ```
 
-スコープに入るたびに再帰的にディレクトリが作成され、そのスコープに対応したディレクトリにログファイルが保存されるという挙動
-が実現されている。
+Each time it enters a scope, directories are recursively created, and log files are saved in the directory corresponding to that scope.
 
 ---
 
-さらに、この`saveLogChunk`と先程の`limitLogChunk`を組み合わせることも、もちろん可能だ。
-このとき、合成の順番によって振る舞いが変わる。
-`limitLogChunk`が先に適用されるようにすると:
+Furthermore, of course, it's possible to combine this `saveLogChunk` with the earlier `limitLogChunk`. In this case, the behavior changes depending on the order of composition. If `limitLogChunk` is applied first:
 
 ```hs
 main :: IO ()
@@ -508,7 +482,7 @@ main =
             (liftLower . limitLogChunk 2 |+: absurdUnionH)
         $ logs
 
-{- 実行結果:
+{- Execution result:
 <runDummyFS> mkdir ./log_chunks/2023-09-15T10:11:39.696369733Z/
 [2023-09-15 10:11:39.696510378 UTC] foo
 <runDummyFS> writeFS ./log_chunks/2023-09-15T10:11:39.696369733Z/2023-09-15T10:11:39.696502403Z.log : "foo"
@@ -528,8 +502,9 @@ main =
 -}
 ```
 
-ファイルへの保存にも制限が適用される。
-逆に、`saveLogChunk`を先に適用すると
+The limit is also applied to saving files.
+
+On the other hand, when applying `saveLogChunk` first:
 
 ```hs
 main :: IO ()
@@ -549,7 +524,7 @@ main =
         . saveLogChunk
         $ logs
 
-{- 実行結果:
+{- Execution result:
 <runDummyFS> mkdir ./log_chunks/2023-09-15T10:19:16.000887165Z/
 [2023-09-15 10:19:16.00101224 UTC] foo
 <runDummyFS> writeFS ./log_chunks/2023-09-15T10:19:16.000887165Z/2023-09-15T10:19:16.000999395Z.log : "foo"
@@ -573,39 +548,36 @@ main =
 -}
 ```
 
-制限前の生のログがファイルへ出力される。
+The raw logs before the limit are outputted to the file.
 
-型を合わせるためにいくつかの小細工が必要なことに注意してほしい。
-本ライブラリはあたかもRust言語のように、「型によるガードレール」という側面が大きいため、学習曲線が急な傾向にある。
-Haskellに慣れた読者にとって、これはそれほど高い壁ではないであろうことを信じている。
+Note the need for some tricks to match the types. This library has a significant aspect of "guardrails by type," much like the Rust language, which means it tends to have a steep learning curve. I believe that for readers familiar with Haskell, this won't be too high a barrier.
 
-## 高階エフェクト取り扱いの際の諸注意
+Here is the English translation of the provided text:
 
-高階エフェクトを扱う際には、いくつかの落とし穴がある。
+## Precautions When Handling Higher-Order Effects
 
-### hoist系関数の非安全性
-先程、Heftiaの層を貫通してFreerの層を操作することができるhoist系の関数の存在について述べた。
-これらの関数の使用の際には注意が必要である。
-hoistの際に関数に渡す自然変換`phi :: f ~> g`がmonad morphismでない場合、すなわち以下の法則を満たさない場合、操作はill-behavedとなる。
+There are some pitfalls when dealing with higher-order effects.
 
-* 法則1
+### Unsafety of hoist-like functions
+Earlier, I mentioned the existence of hoist-like functions that can penetrate the Heftia layer and operate on the Freer layer. Care is needed when using these functions. If the natural transformation `phi :: f ~> g` passed to the hoist is not a monad morphism, that is, it does not satisfy the following laws, the operation becomes ill-behaved.
+
+* Law 1
 
     ```hs
     forall m f. phi $ do { x <- m; f x } = do { x <- phi m; phi (f x) }
     ```
 
-* 法則2
+* Law 2
 
     ```hs
     forall x. phi (return x) = return x
     ```
 
-monad morphismについての詳細は[mmorphパッケージのドキュメント](https://hackage.haskell.org/package/mmorph-1.2.0/docs/Control-Monad-Morph.html)を参照してほしい。
+For more details on monad morphism, refer to the [mmorph package documentation](https://hackage.haskell.org/package/mmorph-1.2.0/docs/Control-Monad-Morph.html).
 
-ここまでの例においてhoist系関数が使用されている部分で、例えば`interpretReader`はこの法則を満たすため、問題が発生しなかった。
-一方、この法則を満たさない変換の例として `evalState` (`interpretState`) がある。
+In the examples provided so far, there was no problem because functions like `interpretReader` that used hoist-like functions satisfied these laws. On the other hand, `evalState` (or `interpretState`) serves as an example of a transformation that doesn't satisfy these laws.
 
-以下は、`saveLogChunk`と同様の形式で書かれた`limitLogChunk`関数である。
+Below is the `limitLogChunk` function, written in the same format as `saveLogChunk`.
 
 ```hs
 limitLogChunkBroken ::
@@ -639,7 +611,7 @@ limitLogChunkBroken n =
                             modify @Int (+ 1)
 ```
 
-これを使用すると以下のようになり、期待した動作は得られない。
+When using this, the result is as follows, and the expected behavior is not achieved:
 
 ```hs
 [2023-09-15 10:38:36.149857247 UTC] foo
@@ -654,8 +626,8 @@ limitLogChunkBroken n =
 [2023-09-15 10:38:36.15016217 UTC] foobar
 ```
 
-途中までは良いが、`quux`以降は本来出力されないべきである。
-カウンタの状態を見てみると:
+The output should not include the messages after "quux". Looking at the state of the counter:
+
 ```hs
 ...
 
@@ -668,7 +640,7 @@ limitLogChunkBroken n =
 
 ...
 
-{- 実行結果:
+{- Execution result:
 [2023-09-15 10:51:45.798360938 UTC] <0> foo
 [2023-09-15 10:51:45.798464993 UTC] <1> bar
 [2023-09-15 10:51:45.798520367 UTC] LOG OMITTED...
@@ -682,31 +654,22 @@ limitLogChunkBroken n =
 -}
 ```
 
-カウンタの状態がリセットされてしまっている。
-この挙動は、hoistにおいて使用されている`evalState`が法則1を満たさないために起こっていると考えられる。
+The state of the counter has been reset. This behavior is believed to be due to the `evalState` used in hoist not satisfying Law 1.
 
-注意が必要なのは、Freerから下位のキャリアを操作する場合でも同様である（おそらく）。
+Caution is also needed when operating on a lower carrier from Freer (probably).
 
-将来のバージョンでは、この非安全性は修正される予定である。
-おおまかな方針としては、例えばmonad morphismな自然変換を表す以下のような型クラス`MonadMorph`を導入し、
-自然変換を単に型シノニム`type f ~> g = forall x. f x -> g x`と定義するのではなく、
-自然変換を表現するデータ型をいくつか用意し、法則を満たすものに限り`MonadMorph`のインスタンスとなるようにする。
+In future versions, this unsafety is expected to be fixed. The general idea is to introduce a type class like `MonadMorph` that represents monad morphisms:
 ```hs
 class MonadMorph f g a | a -> f g where
     morph :: a -> (forall x. f x -> g x)
 ```
-そして、すべてのモナドに関するhoist系関数には`MonadMorph`を制約として持たせる。
-これにより、well-typedで安全にhoist系関数が扱えるようになるはずである。
-今のところは、法則を満たしていることを確認しつつ注意して使うしかないが、次のバージョンをお待ちいただきたい。
+Instead of simply defining natural transformations as type synonyms, a few data types representing natural transformations would be introduced, becoming instances of `MonadMorph` only if they satisfy the laws. All hoist-like functions related to monads will then have `MonadMorph` as a constraint. This should ensure that hoist-like functions can be used safely and are well-typed. For now, we have to use them carefully while verifying that they satisfy the laws, but the next version is eagerly awaited.
 
-ここまでの事実はすなわち、
-一般にhoist系の操作は「まず先にelaborate、interpretはそのあと」という原則に抵触しているため、
-法則なしには安全でない（制約付きで安全に可能である）、という話として解釈できる。
-このことは、セマンティクス保護のために原則が重要であるということの説得力を増すと言えるだろう。
+This all means that, in general, hoist-like operations violate the principle of "elaborate first, then interpret", so they're not safe without the laws (though they can be safe with constraints). This underscores the importance of the principle for preserving semantics. This fact is likely to strengthen the argument for the importance of the principle.
 
-### エフェクトの干渉
+### Interference of Effects
 
-`saveLogChunk`関数において、`LogChunk`や`Log`を`interpret`する代わりに、`interpose`を使って書くこともできる:
+Within the `saveLogChunk` function, instead of interpreting `LogChunk` and `Log` using `interpret`, we can use `interpose` as follows:
 
 ```hs
 saveLogChunk' ::
@@ -740,7 +703,7 @@ saveLogChunk' =
                     writeFS (saveDir ++ iso8601Show logAt ++ ".log") (show msg) & raise
 ```
 
-これを使うと以下のようになる:
+When used, the behavior becomes:
 
 ```hs
 main :: IO ()
@@ -755,7 +718,7 @@ main =
         . saveLogChunk
         $ logs
 
-{- 実行結果:
+{- Execution result:
 <runDummyFS> mkdir ./log_chunks/2023-09-15T12:06:00.261237746Z/
 [2023-09-15 12:06:00.261369062 UTC] foo
 <runDummyFS> writeFS ./log_chunks/2023-09-15T12:06:00.261237746Z/2023-09-15T12:06:00.261363221Z.log : "foo"
@@ -792,32 +755,24 @@ main =
 -}
 ```
 
-スコープが深くなるにつれて、その深さに応じた回数だけ処理が重複している。
-`logChunk`は、そのスコープの深さ分だけディレクトリを重複して作成し、
-`log`はログをその深さ分だけ重複してファイルを保存する。
+As the scope deepens, the number of duplicate processing increases accordingly. The `logChunk` creates directories repeatedly based on the depth of its scope, and `log` saves files multiple times depending on that same depth.
 
-高階エフェクトのelaborationの際、このように`interpose`（そしておそらく`reinterpret`も）は、素朴に使用すると、
-エフェクトを同一階層内で干渉させてしまい、結果の予想が難しくなる。
-場合によっては、うまいことこの干渉動作を活用してコードを書くことができるかもしれない。
-しかし大抵は、干渉の結果をコードから予想することは難しいだろうし、そうなると可読性に支障が出てくる。
-エフェクトの階層を細かく区切り、再解釈においては`interpret`を使うなどして解釈元の階層と別階層へエフェクトを送信するのが、混乱が避けられてよいだろう。
-もちろん`interpose`を使う場合でもこれは可能だ。`raise`や`liftLower`/`liftLowerH`を上手に使い、解釈元の階層にエフェクトが送られないようにしよう。
+When elaborating higher-order effects, naively using `interpose` (and probably `reinterpret` as well) can lead to interference of effects at the same level. This makes the outcome hard to predict. In certain cases, one might cleverly leverage this interfering behavior in their code. However, in most cases, it would be challenging to anticipate the interference outcome from the code, compromising readability. It's preferable to delineate the hierarchy of effects finely. For reinterpretation, using `interpret` can help in dispatching effects to different levels, avoiding confusion. Even when using `interpose`, one can achieve this by adeptly employing `raise`, `liftLower`, and `liftLowerH` to ensure effects aren't sent to the original level.
 
-エフェクトの干渉は、前述のhoist系操作の非安全性とは異なり、別に何か危険があるわけではないと考えられる。
-単に話が幾分難しくなるというだけで、hoist系のように何か根本的な法則が破れて結果がめちゃくちゃになってしまうということは、おそらくない。
+Interference of effects, unlike the previously mentioned unsafety of hoist operations, is not necessarily considered dangerous. It just complicates matters. Unlike the hoist operations, it's unlikely to fundamentally violate any rules, leading to chaotic outcomes.
 
-`limitLogChunk`に関しては、おそらくその形式によって、解釈元と同一の階層に再度送信するように書くことは不可能なはずだ。
-`runElaborate`と組み合わせるこの形式のelaborationは、原則にもっとも忠実で、故に型により振る舞いの良さ・セマンティクスの予測可能性が保証されていると言って良いだろう。
-`saveLogChunk`の形式は、`runElaborate`と組み合わせる方法と比べて、elaborationを適用する側の柔軟性が高い。
-runElaborateの方式においては、`|+:`によって組み合わされたelaboratorたちは、elaborationにおいて「一斉に・並列的に」実行され、相互作用することができない。
-一方で`saveLogChunk`の形式は、他のelaboratorと相互作用する形で組み合わせることができる。
-故に一般に、後者の形で書けるのであれば、そうしたほうがよい。
-ただしその柔軟性の分だけ、elaborator実装の際のエフェクトの取り扱いはチャレンジングなものとなるだろう。
-つまり、前者の形式のほうが保守的である。
+Regarding `limitLogChunk`, it is likely impossible to write it in a way that sends it back to the same level as the original source based on its format.
+The elaboration of this format combined with `runElaborate` is most faithful to the principles, and therefore it's safe to say that good behavior and predictability of semantics by type are guaranteed.
+The format of `saveLogChunk` has greater flexibility in applying elaboration compared to the method combined with `runElaborate`.
+In the approach of `runElaborate`, the elaborators combined using `|+:` are executed "simultaneously and in parallel" during elaboration, and cannot interact with each other.
+On the other hand, the format of `saveLogChunk` can be combined in a way that interacts with other elaborators.
+Therefore, in general, if it can be written in the latter format, it is better to do so.
+However, this flexibility makes handling the effects during the elaborator implementation more challenging.
+In other words, the former format is more conservative.
 
-## コード全体
+## Entire Code
 
-参考までに、`limitLogChunk`、`saveLogChunk`の順番でelaboratorを合成した際のコードの全体を掲載する。
+For reference, here is the entire code when the elaborators are combined in the order of `limitLogChunk` and `saveLogChunk`.
 
 ```hs
 {-# LANGUAGE OverloadedStrings #-}

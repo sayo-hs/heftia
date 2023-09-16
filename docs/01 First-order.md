@@ -157,7 +157,7 @@ Firstly, a type tag `TTY1` is defined[^1].
 
 Tagging a carrier is done using the `@#` operator, allowing you to express constraints for tagged effect classes. Then, using the `tag` function, effects within that scope that haven't been tagged can be transmitted to the carrier in a tagged state.
 
-For effect class data-types, you can tag first-order ones with the `#` operator. For higher-order effect classes discussed in the next chapter, use the `##` operator.
+For effect class data-types, you can tag first-order ones with the `#` operator. For higher-order effect classes discussed in the next section, use the `##` operator.
 
 Furthermore, when handling, to revert the tag and get back to the base `TeletypeI`, use `untag @TTY1`.
 

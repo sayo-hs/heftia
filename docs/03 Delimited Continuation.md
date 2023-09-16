@@ -1,6 +1,6 @@
 # Example 3 - Delimited Continuation
 
-In this chapter, using an example, we'll demonstrate how `heftia-effects` facilitates the handling of delimited continuations.
+In this section, using an example, we'll demonstrate how `heftia-effects` facilitates the handling of delimited continuations.
 
 ## `fork` effect
 
@@ -100,7 +100,7 @@ First, outside the `delimitFork` scope, it's unaffected by `applyDelimitFork`, a
 
 Thus, with `heftia-effects`, it's easy to handle delimited continuations. Moreover, whether or how to use (or not use) delimited continuations can be flexibly (and modularly) altered through elaboration. This will probably enable the creation of various interesting effects, such as non-deterministic computations and a modifiable Async effect for concurrent computations with a changeable asynchronous backend.
 
-There are many libraries that implement the Effect System in Haskell, but as far as the author knows, the only one that can almost fully emulate what's possible with the renowned "Algebraic Effects and Handlers" (e.g., extracting delimited continuations and using them for modular effect handling) is based on this approach rooted in Hefty Algebras.
+There are many libraries that implement the Effect System in Haskell, but as far as the author knows, the only one that can almost fully emulate what's possible with the renowned "Algebraic Effects and Handlers" (e.g., extracting delimited continuations and using them for modular higher-order effect handling) is based on this approach rooted in Hefty Algebras.
 
 ## Complete code
 
