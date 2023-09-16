@@ -118,3 +118,54 @@ Haskell上でEffect Systemを実現するライブラリは数多くあるが、
 有名な「Algebraic Effects and Handlers」で可能なこと（例えば限定継続の取り出しとそれを用いたモジュラーなエフェクトのハンドリング）をほぼフルでエミュレートできるのは、
 筆者の知る限りではいまのところHefty Algebrasに基づくこの方式のみのはずである。
 
+## コード全体
+
+```hs
+{-# LANGUAGE TemplateHaskell #-}
+
+module Main where
+
+import Control.Effect.Class (sendIns, type (~>))
+import Control.Effect.Class.Machinery.TH (makeEffectF, makeEffectH)
+import Control.Effect.Freer (Fre, interposeK, interpret, runFreerEffects, type (<|))
+import Control.Effect.Heftia (Elaborator, runElaborate)
+import Control.Monad.Trans.Heftia.Church (HeftiaChurchT)
+import Data.Function ((&))
+import Data.Hefty.Sum (SumUnionH)
+import Data.Hefty.Union (UnionH (absurdUnionH, (|+:)))
+
+type ForkID = Int
+
+class Fork f where
+    fork :: f ForkID
+
+makeEffectF ''Fork
+
+runForkSingle :: Monad m => Fre (ForkI ': r) m ~> Fre r m
+runForkSingle = interpret \Fork -> pure 0
+
+class DelimitFork f where
+    delimitFork :: Monoid w => f w -> f w
+
+makeEffectH ''DelimitFork
+
+applyDelimitFork :: (ForkI <| es, Monad m) => Int -> Elaborator DelimitForkS (Fre es m)
+applyDelimitFork numberOfFork (DelimitFork m) =
+    m & interposeK pure \k Fork -> do
+        r <- mapM k [1 .. numberOfFork]
+        pure $ mconcat r
+
+main :: IO ()
+main =
+    runFreerEffects
+        . runForkSingle
+        . runElaborate @_ @HeftiaChurchT @SumUnionH (applyDelimitFork 4 |+: absurdUnionH)
+        $ do
+            sendIns . putStrLn . (("[out of scope] " ++) . show) =<< fork
+            s <- delimitFork do
+                fid1 <- fork
+                fid2 <- fork
+                sendIns $ putStrLn $ "[delimited continuation of `fork`] Fork ID: " ++ show (fid1, fid2)
+                pure $ show (fid1, fid2)
+            sendIns $ putStrLn $ "scope exited. result: " ++ s
+```

@@ -203,6 +203,8 @@ main = runFreerEffects $ do
 
 さらに、ハンドル時はタグを外して素の`TeletypeI`に戻すために、`untag @TTY1`を使用している。
 
+将来のclassy-effectsのバージョンでは、例えば`readTTY & tag @TTY1`を`readTTY' @TTY1`のように短く書けるようになる予定である。
+
 ## コード全体
 
 コードの全体は以下のようになる。暗黙的に有効になっているGHC拡張が多いことに注意せよ。
