@@ -54,13 +54,8 @@ library
     exposed-modules:
         Control.Freer
         Control.Freer.Trans
-        Control.Freer.Trans.Final
         Control.Heftia
-        Control.Heftia.Final
-        Control.Heftia.Final.Naked
         Control.Heftia.Trans
-        Control.Heftia.Trans.Final
-        Control.Heftia.Trans.Final.Naked
         Control.Monad.Trans.Freer
         Control.Monad.Trans.Freer.Tree
         Control.Monad.Trans.Freer.Church
