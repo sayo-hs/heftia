@@ -6,12 +6,15 @@
 
 module Control.Monad.Trans.Freer.Church where
 
-import Control.Effect.Class
-import Control.Freer.Trans
+import Control.Effect.Class (Instruction, LiftIns (..))
+import Control.Freer.Trans (TransFreer (hoistFreer, liftInsT, liftLowerFT, runInterpretF))
 import Control.Heftia.Trans (TransHeftia (..), liftSigT)
-import Control.Monad.Trans
-import Control.Monad.Trans.Freer
-import Control.Monad.Trans.Heftia.Church
+import Control.Monad.Trans (MonadTrans)
+import Control.Monad.Trans.Freer (
+    MonadTransFreer (interpretMK, reinterpretMK),
+    ViaLiftLower (ViaLiftLower),
+ )
+import Control.Monad.Trans.Heftia.Church (HeftiaChurchT (HeftiaChurchT))
 
 newtype FreerChurchT (ins :: Instruction) f a = FreerChurchT
     {unFreerChurchT :: HeftiaChurchT (LiftIns ins) f a}
@@ -35,4 +38,9 @@ instance TransFreer Monad FreerChurchT where
 
 deriving via ViaLiftLower FreerChurchT ins instance MonadTrans (FreerChurchT ins)
 
-instance MonadTransFreer FreerChurchT
+instance MonadTransFreer FreerChurchT where
+    interpretMK f (FreerChurchT (HeftiaChurchT g)) = g $ f . unliftIns
+    {-# INLINE interpretMK #-}
+
+    reinterpretMK f = interpretMK f . hoistFreer liftLowerFT
+    {-# INLINE reinterpretMK #-}
