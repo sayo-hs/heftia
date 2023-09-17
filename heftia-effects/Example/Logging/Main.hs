@@ -21,6 +21,7 @@ import Control.Effect.Freer (
     raise,
     raise2,
     runFreerEffects,
+    subsume,
     type (<|),
  )
 import Control.Effect.Handler.Heftia.Reader (interpretReader, liftReader)
@@ -183,12 +184,12 @@ main =
         . timeToIO
         . logWithTime
         . runDummyFS
-        . interpret (\(Log m) -> log m)
+        . subsume
         . elaborated
         . passthroughLogChunk
         . saveLogChunk
         . interpreted
-        . interpret (\(Log m) -> log m)
+        . subsume
         . runElaborate @_ @HeftiaChurchT @ExtensibleUnionH
             (liftLower . limitLogChunk 2 |+: absurdUnionH)
         $ logs
