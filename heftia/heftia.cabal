@@ -80,12 +80,12 @@ library
     build-depends:
         base                          ^>= 4.16.4.0,
         classy-effects-base           ^>= 0.1,
-        mtl,
-        free,
-        kan-extensions,
-        constraints,
-        transformers-base,
-        transformers,
+        mtl ^>= 2.2.2,
+        free ^>= 5.2,
+        kan-extensions ^>= 5.2.5,
+        constraints ^>= 0.13.4,
+        transformers-base ^>= 0.4.6,
+        transformers ^>= 0.5.6,
         extensible ^>= 0.9,
         membership == 0.0.1,
 
