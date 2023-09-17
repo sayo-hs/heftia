@@ -130,25 +130,3 @@ executable Continuation
         heftia,
         heftia-effects,
         base,
-
-executable ContinuationFetchImage
-    import: common-base
-
-    main-is: Main.hs
-    hs-source-dirs: Example/ContinuationFetchImage
-    build-depends:
-        classy-effects,
-        heftia,
-        heftia-effects,
-        base,
-
-executable Tagged
-    import: common-base
-
-    main-is: Main.hs
-    hs-source-dirs: Example/Tagged
-    build-depends:
-        classy-effects,
-        heftia,
-        heftia-effects,
-        base,
