@@ -85,7 +85,7 @@ Examples with explanations can be found in the [docs/examples/](docs/examples/) 
     and others.
 
 ## License
-The license is MPL 2.0. Please refer to the NOTICE.
+The license is MPL 2.0. Please refer to the [NOTICE](NOTICE).
 Additionally, this README.md and the documents under the `docs`/`docs-ja` directory are licensed
 under CC BY-SA 4.0.
 
