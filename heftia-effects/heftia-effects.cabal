@@ -3,10 +3,15 @@ name:               heftia-effects
 version:            0.1.0.0
 
 -- A short (one-line) description of the package.
-synopsis: <synopsis>
+synopsis: Handlers for standard effects using Heftia.
 
 -- A longer description of the package.
-description: <description>
+description:
+    This library provides interpreters based
+    on [Heftia](https://hackage.haskell.org/package/heftia) for the standard effect classes
+    compliant with [CEPs](https://github.com/sayo-hs/classy-effects/blob/master/CEPs/README.md),
+    offered by
+    the [classy-effects](https://hackage.haskell.org/package/classy-effects) package.
 
 -- A URL where users can report bugs.
 bug-reports: https://github.com/ymdryo/heftia-effects
@@ -51,7 +56,6 @@ library
     import: common-base
 
     exposed-modules:
-        Control.Effect.Handler.Heftia
         Control.Effect.Handler.Heftia.Reader
         Control.Effect.Handler.Heftia.Writer
         Control.Effect.Handler.Heftia.State
