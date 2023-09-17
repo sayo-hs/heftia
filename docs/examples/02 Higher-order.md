@@ -184,6 +184,8 @@ Also here, the function type has a slightly unusual structure.
 
 First, the constraint `ForallHFunctor ...` is a constraint on the effect class list in `heftia-effects`, required throughout the library. If you encounter a `Could not deduce (Forall HFunctor ...)` error while writing a function, add this to the function's constraints.
 
+Additionally, errors like `Could not deduce KnownNat` can be avoided by introducing the `ghc-typelits-knownnat` plugin without adding constraints to the function.
+
 Then, there's `Hef`, which is a higher-order version of `Fre` (Freer) and is (a monad transformer) called **Heftia**. Just as Freer is a combination of the Free monad and co-Yoneda, Heftia is a combination of a hefty tree and a higher-order co-Yoneda. This is introduced by this library specifically for handling higher-order effects.
 
 In `heftia-effects`, the system uses the Heftia transformer to handle higher-order effects. And the carriers for first-order effects (namely, Freer) are usually placed as subordinate carriers under the carriers for higher-order effects (namely, Heftia).

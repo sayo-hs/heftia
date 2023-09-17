@@ -193,6 +193,9 @@ main =
 エフェクトクラス・リストに掛かる制約だ。
 関数を書いていて`Could not deduce (Forall HFunctor ...)`が出たら、関数の制約にこれを追加しよう。
 
+また、`Could not deduce KnownNat`といったエラーは、制約を関数に追加せずとも
+`ghc-typelits-knownnat`プラグインを導入することで回避できるだろう。
+
 そして`Hef`だが、これは`Fre` (Freer)に対する高階版、その名も**Heftia**（のモナドトランスフォーマー）である。
 FreerがFreeモナドとco-Yonedaの合成であるように、
 Heftiaはhefty treeとco-Yoneda（の高階版）の合成であり、高階エフェクトの取り扱いのために本ライブラリが新たに導入するものだ。
