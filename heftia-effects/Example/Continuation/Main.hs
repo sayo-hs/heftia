@@ -12,7 +12,7 @@ import Control.Effect.Freer (Fre, interposeK, interpret, runFreerEffects, type (
 import Control.Effect.Heftia (Elaborator, runElaborate)
 import Control.Monad.Trans.Heftia.Church (HeftiaChurchT)
 import Data.Function ((&))
-import Data.Hefty.Sum (SumUnionH)
+import Data.Hefty.Extensible (ExtensibleUnionH)
 import Data.Hefty.Union (UnionH (absurdUnionH, (|+:)))
 
 type ForkID = Int
@@ -56,7 +56,7 @@ main :: IO ()
 main =
     runFreerEffects
         . runForkSingle
-        . runElaborate @_ @HeftiaChurchT @SumUnionH (applyDelimitFork 4 |+: absurdUnionH)
+        . runElaborate @_ @HeftiaChurchT @ExtensibleUnionH (applyDelimitFork 4 |+: absurdUnionH)
         $ do
             sendIns . putStrLn . (("[out of scope] " ++) . show) =<< fork
             s <- delimitFork do

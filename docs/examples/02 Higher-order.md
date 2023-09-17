@@ -276,7 +276,7 @@ main =
         . passthroughLogChunk
         . interpreted
         . interpret (\(Log m) -> log m)
-        . runElaborate @_ @HeftiaChurchT @SumUnionH
+        . runElaborate @_ @HeftiaChurchT @ExtensibleUnionH
             (liftLower . limitLogChunk 2 |+: absurdUnionH)
         $ logs
 
@@ -305,7 +305,7 @@ main =
         . passthroughLogChunk
         . interpreted
         . interpret (\(Log m) -> log m)
-        . runElaborate @_ @HeftiaChurchT @SumUnionH
+        . runElaborate @_ @HeftiaChurchT @ExtensibleUnionH
             (liftLower . limitLogChunk 2 |+: absurdUnionH)
         $ logs
 
@@ -480,7 +480,7 @@ main =
         . saveLogChunk
         . interpreted
         . interpret (\(Log m) -> log m)
-        . runElaborate @_ @HeftiaChurchT @SumUnionH
+        . runElaborate @_ @HeftiaChurchT @ExtensibleUnionH
             (liftLower . limitLogChunk 2 |+: absurdUnionH)
         $ logs
 
@@ -520,7 +520,7 @@ main =
         . passthroughLogChunk
         . interpreted
         . interpret (\(Log m) -> log m)
-        . runElaborate @_ @HeftiaChurchT @SumUnionH
+        . runElaborate @_ @HeftiaChurchT @ExtensibleUnionH
             (liftLower . limitLogChunk 2 |+: absurdUnionH)
         . hoistHeftiaEffects (interpret \(Log m) -> log m)
         . saveLogChunk
@@ -783,7 +783,6 @@ For reference, here is the entire code when the elaborators are combined in the 
 module Main where
 
 import Control.Effect.Class (SendIns (sendIns), type (<:), type (~>))
-import Control.Effect.Class.Machinery.HFunctor (HFunctor)
 import Control.Effect.Class.Machinery.TH (makeEffectF, makeEffectH)
 import Control.Effect.Class.Reader (Ask (ask), AskI, Local (local), LocalS)
 import Control.Effect.Class.State (State (get), StateI, modify)
@@ -802,6 +801,7 @@ import Control.Effect.Freer (
 import Control.Effect.Handler.Heftia.Reader (interpretReader, liftReader)
 import Control.Effect.Handler.Heftia.State (evalState)
 import Control.Effect.Heftia (
+    ForallHFunctor,
     Hef,
     elaborated,
     flipHeftia,
@@ -815,7 +815,7 @@ import Control.Effect.Heftia (
 import Control.Monad (when)
 import Control.Monad.Trans.Heftia.Church (HeftiaChurchT)
 import Data.Function ((&))
-import Data.Hefty.Sum (SumH, SumUnionH)
+import Data.Hefty.Extensible (ExtensibleUnionH)
 import Data.Hefty.Union (absurdUnionH, (|+:))
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -964,7 +964,7 @@ main =
         . saveLogChunk
         . interpreted
         . interpret (\(Log m) -> log m)
-        . runElaborate @_ @HeftiaChurchT @SumUnionH
+        . runElaborate @_ @HeftiaChurchT @ExtensibleUnionH
             (liftLower . limitLogChunk 2 |+: absurdUnionH)
         $ logs
 
