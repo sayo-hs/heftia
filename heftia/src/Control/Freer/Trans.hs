@@ -12,17 +12,17 @@ import Control.Monad.Identity (IdentityT (IdentityT), runIdentityT)
 class (forall ins f. c f => c (fr ins f)) => TransFreer c fr | fr -> c where
     {-# MINIMAL liftInsT, liftLowerFT, (hoistFreer, runInterpretF | interpretFT) #-}
 
-    -- | Lift a /instruction/ into a Freer monad transformer.
+    -- | Lift a /instruction/ into a Freer carrier transformer.
     liftInsT :: ins ~> fr ins f
 
     liftLowerFT :: forall ins f. c f => f ~> fr ins f
 
-    -- | Translate /instruction/s embedded in a Freer monad transformer.
+    -- | Translate /instruction/s embedded in a Freer carrier transformer.
     transformT :: c f => (ins ~> ins') -> fr ins f ~> fr ins' f
     transformT f = interpretFT liftLowerFT (liftInsT . f)
     {-# INLINE transformT #-}
 
-    -- | Translate an underlying monad.
+    -- | Translate an underlying carrier.
     hoistFreer :: (c f, c g) => (f ~> g) -> fr ins f ~> fr ins g
     hoistFreer f = interpretFT (liftLowerFT . f) liftInsT
     {-# INLINE hoistFreer #-}

@@ -13,7 +13,7 @@ import Data.Functor.Coyoneda (Coyoneda, hoistCoyoneda, liftCoyoneda, lowerCoyone
 class (forall ins. c (f ins)) => Freer c f | f -> c where
     {-# MINIMAL liftIns, (interpretF | retract, transformF) #-}
 
-    -- | Lift a /instruction/ into a Freer monad.
+    -- | Lift a /instruction/ into a Freer carrier.
     liftIns :: ins a -> f ins a
 
     interpretF :: c m => (ins ~> m) -> f ins a -> m a
@@ -24,7 +24,7 @@ class (forall ins. c (f ins)) => Freer c f | f -> c where
     retract = interpretF id
     {-# INLINE retract #-}
 
-    -- | Translate /instruction/s embedded in a Freer monad.
+    -- | Translate /instruction/s embedded in a Freer carrier.
     transformF ::
         (ins ~> ins') ->
         f ins a ->

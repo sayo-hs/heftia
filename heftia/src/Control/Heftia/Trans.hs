@@ -17,7 +17,7 @@ import Control.Monad.Identity (IdentityT (IdentityT), runIdentityT)
 class (forall sig f. c f => c (h sig f)) => TransHeftia c h | h -> c where
     {-# MINIMAL liftSigT, liftLowerHT, (hoistHeftia, runElaborateH | elaborateHT) #-}
 
-    -- | Lift a /signature/ into a Heftia monad transformer.
+    -- | Lift a /signature/ into a Heftia carrier transformer.
     liftSigT :: HFunctor sig => sig (h sig f) a -> h sig f a
 
     transformHT ::
@@ -27,7 +27,7 @@ class (forall sig f. c f => c (h sig f)) => TransHeftia c h | h -> c where
     transformHT f = translateT f
     {-# INLINE transformHT #-}
 
-    -- | Translate /signature/s embedded in a Heftia monad transformer.
+    -- | Translate /signature/s embedded in a Heftia carrier transformer.
     translateT ::
         (c f, HFunctor sig, HFunctor sig') =>
         (sig (h sig' f) ~> sig' (h sig' f)) ->

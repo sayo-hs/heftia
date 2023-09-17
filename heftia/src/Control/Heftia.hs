@@ -12,12 +12,12 @@ import Control.Effect.Class.Machinery.HFunctor (HFunctor)
 class (forall sig. HFunctor sig => c (h sig)) => Heftia c h | h -> c where
     {-# MINIMAL liftSig, interpretHH #-}
 
-    -- | Lift a /signature/ into a Heftia monad.
+    -- | Lift a /signature/ into a Heftia carrier.
     liftSig :: HFunctor sig => sig (h sig) a -> h sig a
 
     interpretHH :: (c m, HFunctor sig) => (sig m ~> m) -> h sig a -> m a
 
-    -- | Translate /signature/s embedded in a Heftia monad.
+    -- | Translate /signature/s embedded in a Heftia carrier.
     translateHH ::
         (HFunctor sig, HFunctor sig') =>
         (sig (h sig') ~> sig' (h sig')) ->
