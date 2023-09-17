@@ -7,6 +7,15 @@
 
 -- The code before modification is MIT licensed; (c) 2023 Casper Bach Poulsen and Cas van der Rest.
 
+{- |
+Copyright   :  (c) 2023 Yamada Ryo
+License     :  MPL-2.0 (see the file LICENSE)
+Maintainer  :  ymdfield@outlook.jp
+Stability   :  experimental
+Portability :  portable
+
+An implementation of an open union for first-order effects using recursively nested binary sums.
+-}
 module Data.Free.Sum (module Data.Free.Sum, pattern L1, pattern R1) where
 
 import Control.Effect.Class (Instruction, NopI, type (~>))
@@ -40,6 +49,9 @@ type family Sum fs where
     Sum '[] = NopI
     Sum (f ': fs) = f :+: Sum fs
 
+{- |
+An implementation of an open union for first-order effects using recursively nested binary sums.
+-}
 newtype SumUnion fs a = SumUnion {unSumUnion :: Sum fs a}
 
 deriving newtype instance Functor (SumUnion '[])

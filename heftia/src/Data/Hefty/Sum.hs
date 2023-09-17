@@ -6,6 +6,15 @@
 
 -- The code before modification is MIT licensed; (c) 2023 Casper Bach Poulsen and Cas van der Rest.
 
+{- |
+Copyright   :  (c) 2023 Yamada Ryo
+License     :  MPL-2.0 (see the file LICENSE)
+Maintainer  :  ymdfield@outlook.jp
+Stability   :  experimental
+Portability :  portable
+
+An implementation of an open union for higher-order effects using recursively nested binary sums.
+-}
 module Data.Hefty.Sum where
 
 import Control.Effect.Class (NopS, Signature, type (~>))
@@ -28,6 +37,9 @@ type family SumH hs where
     SumH '[] = NopS
     SumH (h ': hs) = h :+: SumH hs
 
+{- |
+An implementation of an open union for higher-order effects using recursively nested binary sums.
+-}
 newtype SumUnionH hs f a = SumUnionH {unSumUnionH :: SumH hs f a}
 
 deriving newtype instance Functor (SumUnionH '[] f)

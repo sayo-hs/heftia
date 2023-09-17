@@ -4,6 +4,16 @@
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+{- |
+Copyright   :  (c) 2023 Yamada Ryo
+License     :  MPL-2.0 (see the file LICENSE)
+Maintainer  :  ymdfield@outlook.jp
+Stability   :  experimental
+Portability :  portable
+
+An implementation of an open union for first-order effects using
+the [extensible](https://hackage.haskell.org/package/extensible) package as a backend.
+-}
 module Data.Free.Extensible where
 
 import Control.Effect.Class (Instruction)
@@ -25,6 +35,10 @@ import GHC.TypeNats (KnownNat, Nat, natVal, type (+))
 import Type.Membership (Membership, nextMembership)
 import Unsafe.Coerce (unsafeCoerce)
 
+{- |
+An implementation of an open union for first-order effects using
+the [extensible](https://hackage.haskell.org/package/extensible) package as a backend.
+-}
 newtype ExtensibleUnion fs a = ExtensibleUnion {unExtensibleUnion :: fs :/ FieldApp a}
 
 newtype FieldApp a (f :: Instruction) = FieldApp {unFieldApp :: f a}

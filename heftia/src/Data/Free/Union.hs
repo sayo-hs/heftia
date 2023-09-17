@@ -2,11 +2,25 @@
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+{- |
+Copyright   :  (c) 2023 Yamada Ryo
+License     :  MPL-2.0 (see the file LICENSE)
+Maintainer  :  ymdfield@outlook.jp
+Stability   :  experimental
+Portability :  portable
+
+A type class representing a general open union for first-order effects, independent of the internal
+implementation.
+-}
 module Data.Free.Union where
 
 import Control.Effect.Class (Instruction, type (~>))
 import Data.Kind (Constraint)
 
+{- |
+A type class representing a general open union for first-order effects, independent of the internal
+implementation.
+-}
 class Union (u :: [Instruction] -> Instruction) where
     {-# MINIMAL inject, project, absurdUnion, (comp | (inject0, weaken), decomp | (|+|:)) #-}
 

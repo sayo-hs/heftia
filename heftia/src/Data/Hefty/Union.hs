@@ -4,11 +4,25 @@
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+{- |
+Copyright   :  (c) 2023 Yamada Ryo
+License     :  MPL-2.0 (see the file LICENSE)
+Maintainer  :  ymdfield@outlook.jp
+Stability   :  experimental
+Portability :  portable
+
+A type class representing a general open union for higher-order effects, independent of the internal
+implementation.
+-}
 module Data.Hefty.Union where
 
 import Control.Effect.Class (Signature, type (~>))
 import Data.Kind (Constraint)
 
+{- |
+A type class representing a general open union for higher-order effects, independent of the internal
+implementation.
+-}
 class UnionH (u :: [Signature] -> Signature) where
     {-# MINIMAL injectH, projectH, absurdUnionH, (compH | (inject0H, weakenH), decompH | (|+:)) #-}
 
