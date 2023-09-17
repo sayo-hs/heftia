@@ -16,11 +16,10 @@ A type class to abstract away the encoding details of the Freer monad transforme
 module Control.Monad.Trans.Freer where
 
 import Control.Effect.Class (Instruction, type (~>))
-import Control.Freer.Trans (TransFreer, hoistFreer, interpretFT, liftInsT, liftLowerFT, transformT)
+import Control.Freer.Trans (TransFreer, hoistFreer, interpretFT, liftLowerFT)
 import Control.Monad.Cont (ContT)
 import Control.Monad.Trans (MonadTrans, lift)
 import Data.Coerce (Coercible, coerce)
-import Data.Free.Sum (pattern L1, pattern R1, type (+))
 import Data.Kind (Type)
 
 -- | A type class to abstract away the encoding details of the Freer monad transformers.
@@ -47,20 +46,6 @@ class
         fr ins m ~> t n
     reinterpretMT f = interpretMT f . hoistFreer (coerce . liftLowerFT @Monad @fr @ins)
     {-# INLINE reinterpretMT #-}
-
-mergeFreer ::
-    forall fr m ins ins' c.
-    (TransFreer c fr, c m) =>
-    fr ins (fr ins' m) ~> fr (ins + ins') m
-mergeFreer = interpretFT (transformT @c R1) (liftInsT @c . L1)
-
-splitFreer ::
-    forall fr m ins ins' c.
-    (TransFreer c fr, c m) =>
-    fr (ins + ins') m ~> fr ins (fr ins' m)
-splitFreer = interpretFT (liftLowerFT . liftLowerFT) \case
-    L1 e -> liftInsT e
-    R1 e -> liftLowerFT $ liftInsT e
 
 reinterpretTTViaFinal ::
     forall fr m t n ins.

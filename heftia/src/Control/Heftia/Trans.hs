@@ -19,7 +19,7 @@ A type class to abstract away the encoding details of the Heftia carrier transfo
 module Control.Heftia.Trans where
 
 import Control.Effect.Class (LiftIns (LiftIns), unliftIns, type (~>))
-import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap)
+import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap, (:+:) (Inl, Inr))
 import Control.Freer.Trans (TransFreer, interpretFT, liftInsT, liftLowerFT)
 import Control.Monad.Identity (IdentityT (IdentityT), runIdentityT)
 
@@ -80,3 +80,10 @@ freerToHeftia ::
     fr ins f ~> h (LiftIns ins) f
 freerToHeftia = interpretFT liftLowerHT (liftSigT . LiftIns)
 {-# INLINE freerToHeftia #-}
+
+mergeHeftia ::
+    forall h m sig sig' a c.
+    (HFunctor sig, HFunctor sig', TransHeftia c h, c m) =>
+    h sig (h sig' m) a ->
+    h (sig :+: sig') m a
+mergeHeftia = elaborateHT (translateT @c Inr) (liftSigT @c . Inl)

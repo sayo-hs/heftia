@@ -16,8 +16,8 @@ A type class to abstract away the encoding details of the Heftia monad transform
 module Control.Monad.Trans.Heftia where
 
 import Control.Effect.Class (Signature, type (~>))
-import Control.Effect.Class.Machinery.HFunctor (HFunctor, (:+:) (Inl, Inr))
-import Control.Heftia.Trans (TransHeftia, elaborateHT, hoistHeftia, liftLowerHT, liftSigT, translateT)
+import Control.Effect.Class.Machinery.HFunctor (HFunctor)
+import Control.Heftia.Trans (TransHeftia, elaborateHT, hoistHeftia, liftLowerHT)
 import Control.Monad.Cont (ContT)
 import Control.Monad.Trans (MonadTrans, lift)
 import Data.Coerce (Coercible, coerce)
@@ -56,13 +56,6 @@ class
         h sig m ~> t n
     reelaborateMT f = elaborateMT f . hoistHeftia (coerce . liftLowerHT @Monad @h @sig)
     {-# INLINE reelaborateMT #-}
-
-mergeHeftia ::
-    forall h m sig sig' a c.
-    (HFunctor sig, HFunctor sig', TransHeftia c h, c m) =>
-    h sig (h sig' m) a ->
-    h (sig :+: sig') m a
-mergeHeftia = elaborateHT (translateT @c Inr) (liftSigT @c . Inl)
 
 reinterpretHTTViaFinal ::
     forall h m t n sig.

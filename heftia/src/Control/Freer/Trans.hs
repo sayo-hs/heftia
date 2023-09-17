@@ -17,6 +17,7 @@ module Control.Freer.Trans where
 
 import Control.Effect.Class (type (~>))
 import Control.Monad.Identity (IdentityT (IdentityT), runIdentityT)
+import Data.Free.Sum (pattern L1, pattern R1, type (+))
 
 -- | A type class to abstract away the encoding details of the Freer carrier transformers.
 class (forall ins f. c f => c (fr ins f)) => TransFreer c fr | fr -> c where
@@ -53,3 +54,17 @@ class (forall ins f. c f => c (fr ins f)) => TransFreer c fr | fr -> c where
     reinterpretFT :: c f => (ins ~> fr ins f) -> fr ins f ~> fr ins f
     reinterpretFT = interpretFT liftLowerFT
     {-# INLINE reinterpretFT #-}
+
+mergeFreer ::
+    forall fr m ins ins' c.
+    (TransFreer c fr, c m) =>
+    fr ins (fr ins' m) ~> fr (ins + ins') m
+mergeFreer = interpretFT (transformT @c R1) (liftInsT @c . L1)
+
+splitFreer ::
+    forall fr m ins ins' c.
+    (TransFreer c fr, c m) =>
+    fr (ins + ins') m ~> fr ins (fr ins' m)
+splitFreer = interpretFT (liftLowerFT . liftLowerFT) \case
+    L1 e -> liftInsT e
+    R1 e -> liftLowerFT $ liftInsT e
