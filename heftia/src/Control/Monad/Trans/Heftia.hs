@@ -32,10 +32,6 @@ class
         (Monad m, HFunctor sig) =>
         (sig (ContT r m) ~> ContT r m) ->
         h sig m ~> ContT r m
-    default elaborateMK ::
-        (Monad m, HFunctor sig) =>
-        (sig (ContT r m) ~> ContT r m) ->
-        h sig m ~> ContT r m
     elaborateMK = elaborateMT
     {-# INLINE elaborateMK #-}
 
