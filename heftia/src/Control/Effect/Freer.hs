@@ -88,8 +88,8 @@ import Data.Function ((&))
 import Data.Kind (Type)
 
 {- |
-A data type that wraps Freer with any encoding to become an instance of 'SendIns'/'SendSig' based
-on the `liftInsT` from the `TransFreer` type class.
+A data type that wraps Freer with any encoding to become an instance of 'SendIns' based on the
+`liftInsT` from the `TransFreer` type class.
 -}
 newtype
     FreerUnion
