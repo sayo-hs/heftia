@@ -713,6 +713,20 @@ interpretLowerH ::
 interpretLowerH f = overHeftiaEffects $ interpretLowerHT (unHeftiaEffects . f)
 {-# INLINE interpretLowerH #-}
 
+-- | Transfer the higher-order effect to the underlying level.
+subsume ::
+    ( TransHeftia c h
+    , MemberH u e es
+    , UnionH u
+    , HFunctor e
+    , HFunctor (u es)
+    , HFunctor (u (e : es))
+    , c f
+    ) =>
+    HeftiaEffects h u (e ': es) f ~> HeftiaEffects h u es f
+subsume = interpretH $ heftiaEffects . liftSigT . hfmap unHeftiaEffects . injectH
+{-# INLINE subsume #-}
+
 -- | Lifts the lower carrier.
 liftLowerH :: (TransHeftia c h, c f, HFunctor (u es)) => f ~> HeftiaEffects h u es f
 liftLowerH = heftiaEffects . liftLowerHT

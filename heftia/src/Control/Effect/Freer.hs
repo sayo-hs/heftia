@@ -586,6 +586,20 @@ splitFreerEffects a =
             Left e -> liftInsT e
             Right e -> liftLowerFT $ freerEffects $ liftInsT e
 
+-- | Transfer the effect to the underlying level.
+subsume ::
+    (TransFreer c fr, SendIns e (FreerEffects fr u es f), Union u, c f) =>
+    FreerEffects fr u (e ': es) f ~> FreerEffects fr u es f
+subsume = interpret sendIns
+{-# INLINE subsume #-}
+
+-- | Transfer the effect to the lower carrier.
+subsumeLower ::
+    (TransFreer c fr, SendIns e f, Union u, c f) =>
+    FreerEffects fr u (e ': es) f ~> FreerEffects fr u es f
+subsumeLower = interpret $ liftLower . sendIns
+{-# INLINE subsumeLower #-}
+
 -- | Lifts the lower carrier.
 liftLower :: (TransFreer c fr, c f) => f ~> FreerEffects fr u es f
 liftLower = freerEffects . liftLowerFT
