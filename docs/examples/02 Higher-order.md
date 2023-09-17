@@ -332,7 +332,7 @@ By the way, if you want to elaborate other higher-order effect classes at the sa
 
 The type application of `runElaborate` is currently necessary for the type to be correctly inferred. However, this syntactical verbosity is expected to be improved in future versions.
 
-#### Save Logs to a File
+#### Save Logs to Files
 
 Let's move on to the next example.
 
