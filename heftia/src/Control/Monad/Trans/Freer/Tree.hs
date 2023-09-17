@@ -4,6 +4,15 @@
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+{- |
+Copyright   :  (c) 2023 Yamada Ryo
+License     :  MPL-2.0 (see the file LICENSE)
+Maintainer  :  ymdfield@outlook.jp
+Stability   :  experimental
+Portability :  portable
+
+A tree-structured encoded Freer transformer.
+-}
 module Control.Monad.Trans.Freer.Tree where
 
 import Control.Applicative (Alternative)
@@ -16,6 +25,7 @@ import Control.Monad.Trans (MonadIO, MonadTrans)
 import Control.Monad.Trans.Free (FreeF (Free, Pure), FreeT (FreeT), MonadFree, liftF)
 import Data.Functor.Coyoneda (Coyoneda (Coyoneda), liftCoyoneda)
 
+-- | A tree-structured encoded Freer transformer.
 newtype FreerTreeT f m a = FreerTreeT {unFreerTreeT :: FreeT (Coyoneda f) m a}
     deriving newtype
         ( Functor
@@ -69,3 +79,5 @@ instance Freer Monad FreerTree where
     interpretF i = interpretTTree (pure . runIdentity) i . unFreerTreeMonad
     {-# INLINE liftIns #-}
     {-# INLINE interpretF #-}
+
+-- todo: MonadTransFreer instance

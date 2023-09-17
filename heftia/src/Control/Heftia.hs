@@ -4,11 +4,21 @@
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+{- |
+Copyright   :  (c) 2023 Yamada Ryo
+License     :  MPL-2.0 (see the file LICENSE)
+Maintainer  :  ymdfield@outlook.jp
+Stability   :  experimental
+Portability :  portable
+
+A type class to abstract away the encoding details of the Heftia carriers.
+-}
 module Control.Heftia where
 
 import Control.Effect.Class (LiftIns, unliftIns, type (~>))
 import Control.Effect.Class.Machinery.HFunctor (HFunctor)
 
+-- | A type class to abstract away the encoding details of the Heftia carrier.
 class (forall sig. HFunctor sig => c (h sig)) => Heftia c h | h -> c where
     {-# MINIMAL liftSig, interpretHH #-}
 

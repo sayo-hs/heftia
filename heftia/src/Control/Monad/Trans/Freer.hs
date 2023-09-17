@@ -4,6 +4,15 @@
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+{- |
+Copyright   :  (c) 2023 Yamada Ryo
+License     :  MPL-2.0 (see the file LICENSE)
+Maintainer  :  ymdfield@outlook.jp
+Stability   :  experimental
+Portability :  portable
+
+A type class to abstract away the encoding details of the Freer monad transformers.
+-}
 module Control.Monad.Trans.Freer where
 
 import Control.Effect.Class (Instruction, type (~>))
@@ -14,6 +23,7 @@ import Data.Coerce (Coercible, coerce)
 import Data.Free.Sum (pattern L1, pattern R1, type (+))
 import Data.Kind (Type)
 
+-- | A type class to abstract away the encoding details of the Freer monad transformers.
 class
     (TransFreer Monad fr, forall ins. MonadTrans (fr ins)) =>
     MonadTransFreer fr

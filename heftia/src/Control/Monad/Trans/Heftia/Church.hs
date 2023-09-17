@@ -2,6 +2,15 @@
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+{- |
+Copyright   :  (c) 2023 Yamada Ryo
+License     :  MPL-2.0 (see the file LICENSE)
+Maintainer  :  ymdfield@outlook.jp
+Stability   :  experimental
+Portability :  portable
+
+A Church-encoded Heftia transformer.
+-}
 module Control.Monad.Trans.Heftia.Church where
 
 import Control.Effect.Class (type (~>))
@@ -12,6 +21,7 @@ import Control.Monad.Trans (MonadTrans, lift)
 import Control.Monad.Trans.Cont (ContT (ContT), runContT)
 import Control.Monad.Trans.Heftia (MonadTransHeftia, elaborateMK, reelaborateMK)
 
+-- | A Church-encoded Heftia transformer.
 newtype HeftiaChurchT h f a = HeftiaChurchT
     {unHeftiaChurchT :: forall r. (h (HeftiaChurchT h f) ~> ContT r f) -> ContT r f a}
     deriving stock (Functor)

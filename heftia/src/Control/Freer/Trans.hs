@@ -4,11 +4,21 @@
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+{- |
+Copyright   :  (c) 2023 Yamada Ryo
+License     :  MPL-2.0 (see the file LICENSE)
+Maintainer  :  ymdfield@outlook.jp
+Stability   :  experimental
+Portability :  portable
+
+A type class to abstract away the encoding details of the Freer carrier transformers.
+-}
 module Control.Freer.Trans where
 
 import Control.Effect.Class (type (~>))
 import Control.Monad.Identity (IdentityT (IdentityT), runIdentityT)
 
+-- | A type class to abstract away the encoding details of the Freer carrier transformers.
 class (forall ins f. c f => c (fr ins f)) => TransFreer c fr | fr -> c where
     {-# MINIMAL liftInsT, liftLowerFT, (hoistFreer, runInterpretF | interpretFT) #-}
 

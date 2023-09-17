@@ -4,6 +4,15 @@
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+{- |
+Copyright   :  (c) 2023 Yamada Ryo
+License     :  MPL-2.0 (see the file LICENSE)
+Maintainer  :  ymdfield@outlook.jp
+Stability   :  experimental
+Portability :  portable
+
+A Church-encoded Freer transformer.
+-}
 module Control.Monad.Trans.Freer.Church where
 
 import Control.Effect.Class (Instruction, LiftIns (..))
@@ -16,6 +25,7 @@ import Control.Monad.Trans.Freer (
  )
 import Control.Monad.Trans.Heftia.Church (HeftiaChurchT (HeftiaChurchT))
 
+-- | A Church-encoded Freer transformer.
 newtype FreerChurchT (ins :: Instruction) f a = FreerChurchT
     {unFreerChurchT :: HeftiaChurchT (LiftIns ins) f a}
 

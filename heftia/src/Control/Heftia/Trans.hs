@@ -7,6 +7,15 @@
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+{- |
+Copyright   :  (c) 2023 Yamada Ryo
+License     :  MPL-2.0 (see the file LICENSE)
+Maintainer  :  ymdfield@outlook.jp
+Stability   :  experimental
+Portability :  portable
+
+A type class to abstract away the encoding details of the Heftia carrier transformers.
+-}
 module Control.Heftia.Trans where
 
 import Control.Effect.Class (LiftIns (LiftIns), unliftIns, type (~>))
@@ -14,6 +23,7 @@ import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap)
 import Control.Freer.Trans (TransFreer, interpretFT, liftInsT, liftLowerFT)
 import Control.Monad.Identity (IdentityT (IdentityT), runIdentityT)
 
+-- | A type class to abstract away the encoding details of the Heftia carrier transformers.
 class (forall sig f. c f => c (h sig f)) => TransHeftia c h | h -> c where
     {-# MINIMAL liftSigT, liftLowerHT, (hoistHeftia, runElaborateH | elaborateHT) #-}
 

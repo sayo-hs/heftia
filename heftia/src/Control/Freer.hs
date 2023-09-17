@@ -4,12 +4,22 @@
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+{- |
+Copyright   :  (c) 2023 Yamada Ryo
+License     :  MPL-2.0 (see the file LICENSE)
+Maintainer  :  ymdfield@outlook.jp
+Stability   :  experimental
+Portability :  portable
+
+A type class to abstract away the encoding details of the Freer carriers.
+-}
 module Control.Freer where
 
 import Control.Applicative.Free (Ap, liftAp, runAp)
 import Control.Effect.Class (type (~>))
 import Data.Functor.Coyoneda (Coyoneda, hoistCoyoneda, liftCoyoneda, lowerCoyoneda)
 
+-- | A type class to abstract away the encoding details of the Freer carrier.
 class (forall ins. c (f ins)) => Freer c f | f -> c where
     {-# MINIMAL liftIns, (interpretF | retract, transformF) #-}
 
