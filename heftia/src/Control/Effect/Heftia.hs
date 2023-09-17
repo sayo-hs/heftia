@@ -35,7 +35,7 @@ import Control.Effect.Class (
     type (~>),
  )
 import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap)
-import Control.Effect.Freer (FreerEffects, freerEffects, unFreerEffects)
+import Control.Effect.Freer (FreerEffects, freerEffects, interpose, unFreerEffects)
 import Control.Freer.Trans (TransFreer, interpretFT, liftInsT, liftLowerFT)
 import Control.Heftia.Trans (
     TransHeftia,
@@ -645,6 +645,29 @@ overHeftiaEffects ::
     HeftiaEffects h' u' es' g b
 overHeftiaEffects f = heftiaEffects . f . unHeftiaEffects
 {-# INLINE overHeftiaEffects #-}
+
+{- |
+Interpose the lower Freer carrier.
+
+__Warning__: The given natural transformation must be a monad morphism
+(see <https://hackage.haskell.org/package/mmorph-1.2.0/docs/Control-Monad-Morph.html>).
+If not, the result will be ill-behaved.
+-}
+hoistInterpose ::
+    forall e h u es fr u' es' f c c'.
+    ( TransHeftia c h
+    , HFunctor (u es)
+    , TransFreer c' fr
+    , Union u'
+    , Member u' e es'
+    , c (FreerEffects fr u' es' f)
+    , c' f
+    ) =>
+    (e ~> FreerEffects fr u' es' f) ->
+    HeftiaEffects h u es (FreerEffects fr u' es' f)
+        ~> HeftiaEffects h u es (FreerEffects fr u' es' f)
+hoistInterpose f = hoistHeftiaEffects $ interpose f
+{-# INLINE hoistInterpose #-}
 
 {- |
 Interpose the lower Freer carrier.
