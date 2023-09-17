@@ -8,15 +8,24 @@ import Control.Effect.Class (Instruction, type (~>))
 import Data.Kind (Constraint)
 
 class Union (u :: [Instruction] -> Instruction) where
+    {-# MINIMAL inject, project, absurdUnion, (comp | (inject0, weaken), decomp | (|+|:)) #-}
+
     type HasMembership u (f :: Instruction) (fs :: [Instruction]) :: Constraint
 
     inject :: HasMembership u f fs => f ~> u fs
     project :: HasMembership u f fs => u fs a -> Maybe (f a)
 
-    comp :: Either (f a) (u fs a) -> u (f ': fs) a
-    decomp :: u (f ': fs) a -> Either (f a) (u fs a)
-
     absurdUnion :: u '[] a -> x
+
+    comp :: Either (f a) (u fs a) -> u (f ': fs) a
+    comp = \case
+        Left x -> inject0 x
+        Right x -> weaken x
+    {-# INLINE comp #-}
+
+    decomp :: u (f ': fs) a -> Either (f a) (u fs a)
+    decomp = Left |+|: Right
+    {-# INLINE decomp #-}
 
     infixr 5 |+|:
     (|+|:) :: (f a -> r) -> (u fs a -> r) -> u (f ': fs) a -> r

@@ -68,7 +68,8 @@ library
         heftia                        ^>= 0.1,
         classy-effects                ^>= 0.1,
         mtl,
-        transformers
+        transformers,
+        extensible ^>= 0.9,
 
     hs-source-dirs:   src
 
@@ -107,6 +108,7 @@ executable Logging
 
     main-is: Main.hs
     hs-source-dirs: Example/Logging
+    ghc-options: -Wall -fplugin GHC.TypeLits.KnownNat.Solver
     build-depends:
         classy-effects,
         heftia,
@@ -116,6 +118,7 @@ executable Logging
         time,
         loglevel,
         extra,
+        ghc-typelits-knownnat ^>= 0.7,
 
 executable Continuation
     import: common-base

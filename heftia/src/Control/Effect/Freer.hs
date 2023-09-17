@@ -39,7 +39,8 @@ import Control.Monad.Trans (MonadTrans, lift)
 import Control.Monad.Trans.Freer (MonadTransFreer, interpretMK, interpretMT, reinterpretMK, reinterpretMT)
 import Control.Monad.Trans.Freer.Church (FreerChurchT)
 import Data.Coerce (Coercible, coerce)
-import Data.Free.Sum (SumUnion, caseF, pattern L1, pattern R1, type (+))
+import Data.Free.Extensible (ExtensibleUnion)
+import Data.Free.Sum (caseF, pattern L1, pattern R1, type (+))
 import Data.Free.Union (
     IsMember,
     Member,
@@ -501,8 +502,8 @@ runFreerEffects ::
 runFreerEffects = runInterpret $ id |+|: absurdUnion
 {-# INLINE runFreerEffects #-}
 
-type Fre es f = FreerEffects FreerChurchT SumUnion es f
+type Fre es f = FreerEffects FreerChurchT ExtensibleUnion es f
 
 -- type FreA es f = FreerEffects (FreerFinalT Applicative) SumUnion es f
 
-type e <| es = Member SumUnion e es
+type e <| es = Member ExtensibleUnion e es

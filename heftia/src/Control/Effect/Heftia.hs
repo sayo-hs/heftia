@@ -43,8 +43,9 @@ import Control.Monad (MonadPlus)
 import Control.Monad.Cont (ContT (ContT), MonadTrans, runContT)
 import Control.Monad.Trans.Heftia (MonadTransHeftia, elaborateMK, elaborateMT)
 import Control.Monad.Trans.Heftia.Church (HeftiaChurchT)
+import Data.Extensible.Class (Forall)
 import Data.Free.Union (Member, Union, project)
-import Data.Hefty.Sum (SumUnionH)
+import Data.Hefty.Extensible (ExtensibleUnionH)
 import Data.Hefty.Union (
     IsMemberH,
     MemberH,
@@ -620,10 +621,12 @@ runHeftiaEffects ::
 runHeftiaEffects = runElaborate $ unliftIns |+: absurdUnionH
 {-# INLINE runHeftiaEffects #-}
 
-type Hef es f = HeftiaEffects HeftiaChurchT SumUnionH es f
+type Hef es f = HeftiaEffects HeftiaChurchT ExtensibleUnionH es f
 
 -- type HefA es f = HeftiaEffects (HeftiaFinalT Applicative) SumUnionH es f
 
-type e <<| es = MemberH SumUnionH e es
+type e <<| es = MemberH ExtensibleUnionH e es
 
 type Elaborator e f = e f ~> f
+
+type ForallHFunctor = Forall HFunctor

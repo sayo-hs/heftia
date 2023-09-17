@@ -7,8 +7,7 @@
 
 -- The code before modification is MIT licensed; (c) 2023 Casper Bach Poulsen and Cas van der Rest.
 
-module Data.Free.Sum (module Data.Free.Sum, pattern L1, pattern R1)
-where
+module Data.Free.Sum (module Data.Free.Sum, pattern L1, pattern R1) where
 
 import Control.Effect.Class (Instruction, NopI, type (~>))
 import Data.Free.Union (HasMembership, Union, absurdUnion, comp, decomp, inject, project)

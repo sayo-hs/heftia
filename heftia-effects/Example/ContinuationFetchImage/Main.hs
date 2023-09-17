@@ -54,11 +54,11 @@ downloadImage = do
         fetchURL imageURL
     writeFS "image.dat" imageData
 
-passthroughFetchImageProc :: (HFunctor (SumH r), Monad m) => Hef (FetchImageProcS ': r) m ~> Hef r m
+passthroughFetchImageProc :: (ForallHFunctor r, Monad m) => Hef (FetchImageProcS ': r) m ~> Hef r m
 passthroughFetchImageProc = interpretH \(FetchImageProc m) -> m
 
 tryFetchForCandidateImageURLs ::
-    (ImageURLI <| es', FetchImageProcS <<| es, HFunctor (SumH es), ThrowI FetchFailed <| es', Monad m) =>
+    (ImageURLI <| es', FetchImageProcS <<| es, ForallHFunctor es, ThrowI FetchFailed <| es', Monad m) =>
     [URL] ->
     Hef es (Fre es' m) ~> Hef es (Fre es' m)
 tryFetchForCandidateImageURLs candidates =

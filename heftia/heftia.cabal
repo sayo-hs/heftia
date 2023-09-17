@@ -70,10 +70,12 @@ library
         Control.Monad.Trans.Hefty
         Control.Effect.Freer
         Control.Effect.Heftia
-        Data.Free.Sum
         Data.Free.Union
-        Data.Hefty.Sum
+        Data.Free.Extensible
+        Data.Free.Sum
         Data.Hefty.Union
+        Data.Hefty.Extensible
+        Data.Hefty.Sum
 
     -- Modules included in this executable, other than Main.
     -- other-modules:
@@ -89,6 +91,8 @@ library
         constraints,
         transformers-base,
         transformers,
+        extensible ^>= 0.9,
+        membership == 0.0.1,
 
     hs-source-dirs:   src
     ghc-options:      -Wall

@@ -120,7 +120,7 @@ Let's try writing a higher-order interpretation function that simply outputs the
 ```haskell
 -- | Output logs in log chunks as they are.
 passthroughLogChunk ::
-    (Monad m, HFunctor (SumH r)) =>
+    (Monad m, ForallHFunctor r) =>
     Hef (LogChunkS ': r) m ~> Hef r m
 passthroughLogChunk = interpretH \(LogChunk m) -> m
 ```
@@ -182,7 +182,7 @@ Let's explain what's used in `passthroughLogChunk`.
 `interpretH` is a higher-order version of `interpret`.
 Also here, the function type has a slightly unusual structure.
 
-First, the constraint `HFunctor (SumH ...)` is a constraint on the effect class list in `heftia-effects`, required throughout the library. If you encounter a `No instance for (HFunctor ...)` error while writing a function, add this to the function's constraints.
+First, the constraint `ForallHFunctor ...` is a constraint on the effect class list in `heftia-effects`, required throughout the library. If you encounter a `Could not deduce (Forall HFunctor ...)` error while writing a function, add this to the function's constraints.
 
 Then, there's `Hef`, which is a higher-order version of `Fre` (Freer) and is (a monad transformer) called **Heftia**. Just as Freer is a combination of the Free monad and co-Yoneda, Heftia is a combination of a hefty tree and a higher-order co-Yoneda. This is introduced by this library specifically for handling higher-order effects.
 
@@ -363,7 +363,7 @@ saveLogChunk ::
     , FileSystem (Fre es' m)
     , Time (Fre es' m)
     , Monad m
-    , HFunctor (SumH es)
+    , ForallHFunctor es
     ) =>
     Hef (LogChunkS ': es) (Fre (LogI ': es') m) ~> Hef es (Fre (LogI ': es') m)
 saveLogChunk =
@@ -585,7 +585,7 @@ limitLogChunkBroken ::
     ( LogChunkS <<| es
     , LogI <| es'
     , Monad m
-    , HFunctor (SumH es)
+    , ForallHFunctor es
     ) =>
     Int ->
     Hef (LogChunkS ': es) (Fre (LogI ': es') m) ~> Hef es (Fre (LogI ': es') m)
@@ -679,7 +679,7 @@ saveLogChunk' ::
     , FileSystem (Fre es' m)
     , Time (Fre es' m)
     , Monad m
-    , HFunctor (SumH es)
+    , ForallHFunctor es
     ) =>
     Hef es (Fre es' m) ~> Hef es (Fre es' m)
 saveLogChunk' =
@@ -852,7 +852,7 @@ makeEffectH ''LogChunk
 
 -- | Output logs in log chunks as they are.
 passthroughLogChunk ::
-    (Monad m, HFunctor (SumH r)) =>
+    (Monad m, ForallHFunctor r) =>
     Hef (LogChunkS ': r) m ~> Hef r m
 passthroughLogChunk = interpretH \(LogChunk m) -> m
 
@@ -902,7 +902,7 @@ saveLogChunk ::
     , FileSystem (Fre es' m)
     , Time (Fre es' m)
     , Monad m
-    , HFunctor (SumH es)
+    , ForallHFunctor es
     ) =>
     Hef (LogChunkS ': es) (Fre (LogI ': es') m) ~> Hef es (Fre (LogI ': es') m)
 saveLogChunk =

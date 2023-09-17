@@ -10,15 +10,24 @@ import Control.Effect.Class (Signature, type (~>))
 import Data.Kind (Constraint)
 
 class UnionH (u :: [Signature] -> Signature) where
+    {-# MINIMAL injectH, projectH, absurdUnionH, (compH | (inject0H, weakenH), decompH | (|+:)) #-}
+
     type HasMembershipH u (h :: Signature) (hs :: [Signature]) :: Constraint
 
     injectH :: HasMembershipH u h hs => h f ~> u hs f
     projectH :: HasMembershipH u h hs => u hs f a -> Maybe (h f a)
 
-    compH :: Either (h f a) (u hs f a) -> u (h ': hs) f a
-    decompH :: u (h ': hs) f a -> Either (h f a) (u hs f a)
-
     absurdUnionH :: u '[] f a -> x
+
+    compH :: Either (h f a) (u hs f a) -> u (h ': hs) f a
+    compH = \case
+        Left x -> inject0H x
+        Right x -> weakenH x
+    {-# INLINE compH #-}
+
+    decompH :: u (h ': hs) f a -> Either (h f a) (u hs f a)
+    decompH = Left |+: Right
+    {-# INLINE decompH #-}
 
     infixr 5 |+:
     (|+:) :: (h f a -> r) -> (u hs f a -> r) -> u (h ': hs) f a -> r

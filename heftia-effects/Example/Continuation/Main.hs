@@ -42,7 +42,7 @@ applyDelimitFork numberOfFork (DelimitFork m) =
 -- it being a `Monoid`. Thus, writing it this way results in a type error.
 
 runDelimitFork ::
-    (ForkI <| es, HFunctor (SumH r), Monad m) =>
+    (ForkI <| es, ForallHFunctor r, Monad m) =>
     Int ->
     Hef (DelimitForkS ': r) (Fre es m) ~> Hef r (Fre es m)
 runDelimitFork numberOfFork =

@@ -127,7 +127,7 @@ data LogChunkS f a where
 ```haskell
 -- | Output logs in log chunks as they are.
 passthroughLogChunk ::
-    (Monad m, HFunctor (SumH r)) =>
+    (Monad m, ForallHFunctor r) =>
     Hef (LogChunkS ': r) m ~> Hef r m
 passthroughLogChunk = interpretH \(LogChunk m) -> m
 ```
@@ -189,9 +189,9 @@ main =
 `interpretH`は高階版の`interpret`だ。
 またここで、関数の型が少し珍しいことになっている。
 
-まず、制約の`HFunctor (SumH ...)`だが、これはheftia-effectsにおいて至る所で必要になる、
+まず、制約の`ForallHFunctor ...`だが、これはheftia-effectsにおいて至る所で必要になる、
 エフェクトクラス・リストに掛かる制約だ。
-関数を書いていて`No instance for (HFunctor ...)`が出たら、関数の制約にこれを追加しよう。
+関数を書いていて`Could not deduce (Forall HFunctor ...)`が出たら、関数の制約にこれを追加しよう。
 
 そして`Hef`だが、これは`Fre` (Freer)に対する高階版、その名も**Heftia**（のモナドトランスフォーマー）である。
 FreerがFreeモナドとco-Yonedaの合成であるように、
@@ -379,7 +379,7 @@ saveLogChunk ::
     , FileSystem (Fre es' m)
     , Time (Fre es' m)
     , Monad m
-    , HFunctor (SumH es)
+    , ForallHFunctor es
     ) =>
     Hef (LogChunkS ': es) (Fre (LogI ': es') m) ~> Hef es (Fre (LogI ': es') m)
 saveLogChunk =
@@ -613,7 +613,7 @@ limitLogChunkBroken ::
     ( LogChunkS <<| es
     , LogI <| es'
     , Monad m
-    , HFunctor (SumH es)
+    , ForallHFunctor es
     ) =>
     Int ->
     Hef (LogChunkS ': es) (Fre (LogI ': es') m) ~> Hef es (Fre (LogI ': es') m)
@@ -716,7 +716,7 @@ saveLogChunk' ::
     , FileSystem (Fre es' m)
     , Time (Fre es' m)
     , Monad m
-    , HFunctor (SumH es)
+    , ForallHFunctor es
     ) =>
     Hef es (Fre es' m) ~> Hef es (Fre es' m)
 saveLogChunk' =
@@ -897,7 +897,7 @@ makeEffectH ''LogChunk
 
 -- | Output logs in log chunks as they are.
 passthroughLogChunk ::
-    (Monad m, HFunctor (SumH r)) =>
+    (Monad m, ForallHFunctor r) =>
     Hef (LogChunkS ': r) m ~> Hef r m
 passthroughLogChunk = interpretH \(LogChunk m) -> m
 
@@ -947,7 +947,7 @@ saveLogChunk ::
     , FileSystem (Fre es' m)
     , Time (Fre es' m)
     , Monad m
-    , HFunctor (SumH es)
+    , ForallHFunctor es
     ) =>
     Hef (LogChunkS ': es) (Fre (LogI ': es') m) ~> Hef es (Fre (LogI ': es') m)
 saveLogChunk =

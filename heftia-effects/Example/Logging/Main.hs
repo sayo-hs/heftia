@@ -27,6 +27,7 @@ import Control.Effect.Freer (
 import Control.Effect.Handler.Heftia.Reader (interpretReader, liftReader)
 import Control.Effect.Handler.Heftia.State (evalState)
 import Control.Effect.Heftia (
+    ForallHFunctor,
     Hef,
     elaborated,
     flipHeftia,
@@ -79,7 +80,7 @@ makeEffectH ''LogChunk
 
 -- | Output logs in log chunks as they are.
 passthroughLogChunk ::
-    (Monad m, HFunctor (SumH r)) =>
+    (Monad m, ForallHFunctor r) =>
     Hef (LogChunkS ': r) m ~> Hef r m
 passthroughLogChunk = interpretH \(LogChunk m) -> m
 
@@ -129,7 +130,7 @@ saveLogChunk ::
     , FileSystem (Fre es' m)
     , Time (Fre es' m)
     , Monad m
-    , HFunctor (SumH es)
+    , ForallHFunctor es
     ) =>
     Hef (LogChunkS ': es) (Fre (LogI ': es') m) ~> Hef es (Fre (LogI ': es') m)
 saveLogChunk =
