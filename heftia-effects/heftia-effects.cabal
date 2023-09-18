@@ -37,6 +37,8 @@ tested-with:
 source-repository head
     type: git
     location: https://github.com/sayo-hs/heftia
+    tag: v0.1.0
+    subdir: heftia-effects
 
 common common-base
     ghc-options:      -Wall
