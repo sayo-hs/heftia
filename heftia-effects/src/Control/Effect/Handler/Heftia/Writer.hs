@@ -12,6 +12,7 @@ Stability   :  experimental
 Portability :  portable
 
 Interpreter and elaborator for the t'Control.Effect.Class.Writer.Writer' effect class.
+See [README.md](https://github.com/sayo-hs/heftia/blob/master/README.md).
 -}
 module Control.Effect.Handler.Heftia.Writer where
 

@@ -42,6 +42,7 @@ category: Control, Monads
 extra-source-files:
     ChangeLog.md
     NOTICE
+    README.md
 
 tested-with:
     GHC == 9.2.8
@@ -109,7 +110,7 @@ test-suite test
     main-is: Driver.hs
     hs-source-dirs: test
     build-depends:
-        hefty,
+        heftia,
         base,
         tasty                         ^>= 1.4,
         tasty-hunit                   ^>= 0.10,

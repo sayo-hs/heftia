@@ -29,7 +29,10 @@ elaborateExceptT (Catch action (hdl :: e -> Fre es m a)) = do
         Left e -> hdl e
         Right a -> pure a
 
--- | Elaborate the 'Catch' effect using the 'ContT' continuation monad transformer.
+{- |
+Elaborate the 'Catch' effect using the t'Control.Monad.Trans.Cont.ContT' continuation monad
+transformer.
+-}
 elaborateExceptK ::
     (ThrowI e <| es, Monad m) =>
     CatchS e (Fre es m) ~> Fre es m
@@ -41,6 +44,9 @@ interpretThrowT :: Monad m => Fre (ThrowI e ': es) m ~> ExceptT e (Fre es m)
 interpretThrowT = interpretT \(Throw e) -> throwE e
 {-# INLINE interpretThrowT #-}
 
--- | Interpret the 'Throw' effect using the 'ContT' continuation monad transformer.
+{- |
+Interpret the 'Throw' effect using the t'Control.Monad.Trans.Cont.ContT' continuation monad
+transformer.
+-}
 interpretThrowK :: Monad m => Fre (ThrowI e ': es) m a -> Fre es m (Either e a)
 interpretThrowK = interpretK (pure . Right) \_ (Throw e) -> pure $ Left e

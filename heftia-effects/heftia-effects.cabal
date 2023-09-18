@@ -14,7 +14,7 @@ description:
     the [classy-effects](https://hackage.haskell.org/package/classy-effects) package.
 
 -- A URL where users can report bugs.
-bug-reports: https://github.com/ymdryo/heftia-effects
+bug-reports: https://github.com/sayo-hs/heftia
 
 -- The license under which the package is released.
 license:            MPL-2.0
@@ -29,13 +29,14 @@ category: Control, Effect, Monads
 extra-source-files:
     ChangeLog.md
     NOTICE
+    README.md
 
 tested-with:
     GHC == 9.2.8
 
 source-repository head
     type: git
-    location: https://github.com/ymdryo/heftia-effects
+    location: https://github.com/sayo-hs/heftia
 
 common common-base
     ghc-options:      -Wall

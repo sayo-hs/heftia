@@ -18,7 +18,7 @@ import Control.Effect.Class.Provider (ProviderS (Provide))
 import Control.Effect.Heftia (Elaborator)
 import Control.Monad.Trans (MonadTrans, lift)
 
--- | Elaborate the 'Provider' effect using the given interpreter.
+-- | Elaborate the t'Control.Effect.Class.Provider.Provider' effect using the given interpreter.
 elaborateProvider ::
     (c h, e h) =>
     (f ~> h) ->
@@ -27,7 +27,10 @@ elaborateProvider ::
 elaborateProvider iLower run (Provide i a) = run i $ a iLower
 {-# INLINE elaborateProvider #-}
 
--- | Elaborate the 'Provider' effect using the given interpreter for some monad transformer.
+{- |
+Elaborate the t'Control.Effect.Class.Provider.Provider' effect using the given interpreter for some
+monad transformer.
+-}
 elaborateProviderT ::
     (Monad m, MonadTrans t, c (t m), e (t m)) =>
     (forall x. i -> t m x -> m (g x)) ->
