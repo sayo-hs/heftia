@@ -29,8 +29,10 @@ import Control.Effect.Class (
     getTag,
     runEffectsVia,
     sendIns,
+    type (<:),
     type (~>),
  )
+import Control.Effect.Class.Fail (FailI (Fail))
 import Control.Freer.Trans (
     TransFreer,
     hoistFreer,
@@ -101,6 +103,18 @@ newtype
     deriving newtype (Functor, Applicative, Alternative, Monad, MonadPlus)
     deriving stock (Foldable, Traversable)
 
+instance
+    (IO <: FreerEffects fr u es f, Monad (fr (u es) f)) =>
+    MonadIO (FreerUnion fr u es f)
+    where
+    liftIO = runEffectsVia @EffectDataHandler . sendIns
+
+instance
+    (FailI <: FreerEffects fr u es f, Monad (fr (u es) f)) =>
+    MonadFail (FreerUnion fr u es f)
+    where
+    fail = runEffectsVia @EffectDataHandler . sendIns . Fail
+
 {- |
 A Freer carrier that can be used as a handler for effect systems based
 on [@classy-effects@](https://hackage.haskell.org/package/classy-effects).
@@ -126,8 +140,22 @@ doesn't exist, it's induced to be @'False@.
 -}
 newtype FreerUnionForSend handleHere fr u es f a = FreerUnionForSend
     {runFreerUnionForSend :: FreerUnion fr u es f a}
-    deriving newtype (Functor, Applicative, Alternative, Monad, MonadPlus)
+    deriving newtype
+        ( Functor
+        , Applicative
+        , Alternative
+        , Monad
+        , MonadPlus
+        )
     deriving stock (Foldable, Traversable)
+
+deriving newtype instance
+    (IO <: FreerEffects fr u es f, Monad (fr (u es) f)) =>
+    MonadIO (FreerUnionForSend handleHere fr u es f)
+
+deriving newtype instance
+    (FailI <: FreerEffects fr u es f, Monad (fr (u es) f)) =>
+    MonadFail (FreerUnionForSend handleHere fr u es f)
 
 instance
     SendIns e (FreerUnionForSend (e `IsMember` es) fr u es f) =>

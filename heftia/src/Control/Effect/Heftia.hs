@@ -32,8 +32,12 @@ import Control.Effect.Class (
     sendIns,
     sendSig,
     unliftIns,
+    type (<:),
+    type (<<:),
     type (~>),
  )
+import Control.Effect.Class.Fail (FailI (Fail))
+import Control.Effect.Class.Fix (FixS (Mfix))
 import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap)
 import Control.Effect.Freer (FreerEffects, freerEffects, interpose, unFreerEffects)
 import Control.Freer.Trans (TransFreer, interpretFT, liftInsT, liftLowerFT)
@@ -51,6 +55,8 @@ import Control.Heftia.Trans (
  )
 import Control.Monad (MonadPlus)
 import Control.Monad.Cont (ContT (ContT), MonadTrans, runContT)
+import Control.Monad.Fix (MonadFix, mfix)
+import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.Trans.Heftia (MonadTransHeftia, elaborateMK, elaborateMT)
 import Control.Monad.Trans.Heftia.Church (HeftiaChurchT)
 import Data.Extensible.Class (Forall)
@@ -105,6 +111,24 @@ newtype
     deriving newtype (Functor, Applicative, Alternative, Monad, MonadPlus)
     deriving stock (Foldable, Traversable)
 
+instance
+    (IO <: HeftiaEffects h u es f, Monad (h (u es) f)) =>
+    MonadIO (HeftiaUnion h u es f)
+    where
+    liftIO = runEffectsVia @EffectDataHandler . sendIns
+
+instance
+    (FailI <: HeftiaEffects h u es f, Monad (h (u es) f)) =>
+    MonadFail (HeftiaUnion h u es f)
+    where
+    fail = runEffectsVia @EffectDataHandler . sendIns . Fail
+
+instance
+    (FixS <<: HeftiaEffects h u es f, Monad (h (u es) f)) =>
+    MonadFix (HeftiaUnion h u es f)
+    where
+    mfix f = runEffectsVia @EffectDataHandler . sendSig $ Mfix $ EffectsVia . f
+
 {- |
 A Heftia carrier that can be used as a handler for effect systems based
 on [@classy-effects@](https://hackage.haskell.org/package/classy-effects).
@@ -133,6 +157,18 @@ newtype HeftiaUnionForSendIns handleHere h u es f a = HeftiaUnionForSendIns
     {runHeftiaUnionForSendIns :: HeftiaUnion h u es f a}
     deriving newtype (Functor, Applicative, Alternative, Monad, MonadPlus)
     deriving stock (Foldable, Traversable)
+
+deriving newtype instance
+    (IO <: HeftiaEffects h u es f, Monad (h (u es) f)) =>
+    MonadIO (HeftiaUnionForSendIns handleHere h u es f)
+
+deriving newtype instance
+    (FailI <: HeftiaEffects h u es f, Monad (h (u es) f)) =>
+    MonadFail (HeftiaUnionForSendIns handleHere h u es f)
+
+deriving newtype instance
+    (FixS <<: HeftiaEffects h u es f, Monad (h (u es) f)) =>
+    MonadFix (HeftiaUnionForSendIns handleHere h u es f)
 
 instance
     SendIns e (HeftiaUnionForSendIns (LiftIns e `IsMemberH` es) h u es f) =>

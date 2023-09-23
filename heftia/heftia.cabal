@@ -83,6 +83,7 @@ library
     build-depends:
         base                          ^>= 4.16.4.0,
         classy-effects-base           ^>= 0.1,
+        classy-effects                ^>= 0.1,
         mtl ^>= 2.2.2,
         free ^>= 5.2,
         kan-extensions ^>= 5.2.5,
