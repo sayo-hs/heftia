@@ -64,6 +64,7 @@ library
         Control.Effect.Handler.Heftia.State
         Control.Effect.Handler.Heftia.Except
         Control.Effect.Handler.Heftia.Provider
+        Control.Effect.Handler.Heftia.Resource
 
     -- Modules included in this executable, other than Main.
     -- other-modules:
@@ -77,6 +78,7 @@ library
         mtl                           ^>= 2.2.2,
         transformers                  ^>= 0.5.6,
         extensible                    ^>= 0.9,
+        unliftio,
 
     hs-source-dirs:   src
 
