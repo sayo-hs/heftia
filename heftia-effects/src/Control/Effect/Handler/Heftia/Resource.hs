@@ -67,7 +67,7 @@ resourceToIO = \case
                             z <-
                                 E.uninterruptibleMask_ . run $
                                     delimitIO (interpretMK i $ unFreerEffects $ release resource)
-                            continue z \() -> run $ k result
+                            continue z \() -> restore . run $ k result
     BracketOnExcept acquire onError thing ->
         frech \i -> ContT \k ->
             withRunInIO \run -> E.mask \restore -> do
@@ -83,7 +83,7 @@ resourceToIO = \case
                                     delimitIO (interpretMK i $ unFreerEffects $ onError resource)
                             E.throwIO e
                         Right rresult ->
-                            continue rresult $ run . k
+                            continue rresult $ restore . run . k
 
 {- |
 By forking a thread, the continuation monad is delimited.
