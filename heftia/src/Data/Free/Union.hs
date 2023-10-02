@@ -16,7 +16,14 @@ implementation.
 module Data.Free.Union where
 
 import Control.Effect.Class (Instruction, type (~>))
-import Control.Effect.Class.Machinery.DepParam
+import Control.Effect.Class.Machinery.DepParam (
+    DepParams,
+    DepParamsOf,
+    EffectClassIdentifier,
+    EffectClassIdentifierOf,
+    InsClassOf,
+    QueryDepParamsFor,
+ )
 import Data.Kind (Constraint, Type)
 import GHC.TypeLits (ErrorMessage (ShowType, Text, (:$$:), (:<>:)), TypeError)
 
