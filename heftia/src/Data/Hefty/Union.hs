@@ -17,7 +17,16 @@ implementation.
 module Data.Hefty.Union where
 
 import Control.Effect.Class (Signature, type (~>))
-import Data.Kind (Constraint)
+import Control.Effect.Class.Machinery.DepParam (
+    DepParams,
+    DepParamsOfH,
+    EffectClassIdentifier,
+    EffectClassIdentifierOfH,
+    QueryDepParamsFor,
+    SigClassOf,
+ )
+import Data.Kind (Constraint, Type)
+import GHC.TypeLits (ErrorMessage (ShowType, Text, (:$$:), (:<>:)), TypeError)
 
 {- |
 A type class representing a general open union for higher-order effects, independent of the internal
@@ -154,4 +163,50 @@ type family IsMemberH (h :: Signature) hs where
     IsMemberH h (_ ': hs) = IsMemberH h hs
     IsMemberH _ '[] = 'False
 
-type MemberH u h hs = (HasMembershipH u h hs, IsMemberH h hs ~ 'True)
+type family CheckMemberH isMember h hs :: Constraint where
+    CheckMemberH 'True h hs = ()
+    CheckMemberH 'False h hs =
+        TypeError
+            ( 'Text "The signature class: " ':<>: 'ShowType h
+                ':$$: 'Text " was not found in the list:"
+                ':$$: 'Text "    " ':<>: 'ShowType hs
+            )
+
+type MemberH u h hs = (CheckMemberH (IsMemberH h hs) h hs, HasMembershipH u h hs, IsMemberH h hs ~ 'True)
+
+type FirstDepParamsH eci es f = FindFirstDepParamsH es eci `ThenQueryDepParamsForH` '(eci, f)
+type MemberDepH u eci es = MemberH u (SigClassIn es eci) es
+type SigClassIn es eci = SigClassOf eci (FirstDepParamsInH es eci :: DepParams eci)
+type FirstDepParamsInH es eci = FromJustFirstDepParamsH (FindFirstDepParamsH es eci) es eci
+
+type family FindFirstDepParamsH (es :: [Signature]) (eci :: EffectClassIdentifier) where
+    FindFirstDepParamsH (e ': es) eci =
+        MatchEffectClassH eci (EffectClassIdentifierOfH e) (DepParamsOfH e) es
+    FindFirstDepParamsH '[] eci = 'Nothing
+
+type family MatchEffectClassH eci0 eci1 dps es where
+    MatchEffectClassH eci eci dps _ = 'Just dps
+    MatchEffectClassH eci _ _ es = FindFirstDepParamsH es eci
+
+type family
+    ThenQueryDepParamsForH
+        (mDPS :: Maybe k)
+        (eci'f :: (EffectClassIdentifier, Type -> Type))
+    where
+    ThenQueryDepParamsForH ('Just dps) _ = 'Just dps
+    ThenQueryDepParamsForH 'Nothing '(eci, f) = QueryDepParamsFor eci f
+
+type family
+    FromJustFirstDepParamsH
+        (mDPS :: Maybe k)
+        (es :: [Signature])
+        (eci :: EffectClassIdentifier)
+    where
+    FromJustFirstDepParamsH ('Just dps) _ _ = dps
+    FromJustFirstDepParamsH 'Nothing es eci =
+        TypeError
+            ( 'Text "No signature class matching the effect class identifier:"
+                ':$$: 'Text "    " ':<>: 'ShowType eci
+                ':$$: 'Text " was found in the list:"
+                ':$$: 'Text "    " ':<>: 'ShowType es
+            )

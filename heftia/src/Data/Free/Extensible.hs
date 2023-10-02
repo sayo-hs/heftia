@@ -31,6 +31,7 @@ import Data.Free.Union (
     ),
  )
 import Data.Proxy (Proxy (Proxy))
+import GHC.TypeLits (ErrorMessage (ShowType, Text, (:<>:)), TypeError)
 import GHC.TypeNats (KnownNat, Nat, natVal, type (+))
 import Type.Membership (Membership, nextMembership)
 import Unsafe.Coerce (unsafeCoerce)
@@ -90,3 +91,6 @@ findFirstMembership = unsafeMkMembership $ fromIntegral $ natVal @(TypeIndex xs 
 type family TypeIndex (xs :: [k]) (x :: k) :: Nat where
     TypeIndex (x ': xs) x = 0
     TypeIndex (y ': xs) x = 1 + TypeIndex xs x
+    TypeIndex '[] x =
+        TypeError
+            ('Text "The effect class " ':<>: 'ShowType x ':<>: 'Text " was not found in the list.")

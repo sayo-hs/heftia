@@ -112,6 +112,17 @@ executable Teletype
         heftia-effects,
         base,
 
+executable DepParams
+    import: common-base
+
+    main-is: Main.hs
+    hs-source-dirs: Example/DepParams
+    build-depends:
+        classy-effects,
+        heftia,
+        heftia-effects,
+        base,
+
 executable Logging
     import: common-base
 

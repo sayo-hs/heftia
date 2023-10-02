@@ -33,7 +33,7 @@ import Data.Hefty.Union (
     ),
  )
 import Data.Proxy (Proxy (Proxy))
-import GHC.TypeNats (KnownNat)
+import GHC.TypeLits (KnownNat)
 import Type.Membership (nextMembership)
 
 {- |

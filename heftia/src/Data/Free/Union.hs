@@ -1,6 +1,7 @@
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
+{-# LANGUAGE UndecidableInstances #-}
 
 {- |
 Copyright   :  (c) 2023 Yamada Ryo
@@ -15,7 +16,9 @@ implementation.
 module Data.Free.Union where
 
 import Control.Effect.Class (Instruction, type (~>))
-import Data.Kind (Constraint)
+import Control.Effect.Class.Machinery.DepParam
+import Data.Kind (Constraint, Type)
+import GHC.TypeLits (ErrorMessage (ShowType, Text, (:$$:), (:<>:)), TypeError)
 
 {- |
 A type class representing a general open union for first-order effects, independent of the internal
@@ -147,4 +150,50 @@ type family IsMember (f :: Instruction) fs where
     IsMember f (_ ': fs) = IsMember f fs
     IsMember _ '[] = 'False
 
-type Member u f fs = (HasMembership u f fs, IsMember f fs ~ 'True)
+type family CheckMember isMember f fs :: Constraint where
+    CheckMember 'True f fs = ()
+    CheckMember 'False f fs =
+        TypeError
+            ( 'Text "The instruction class: " ':<>: 'ShowType f
+                ':$$: 'Text " was not found in the list:"
+                ':$$: 'Text "    " ':<>: 'ShowType fs
+            )
+
+type Member u f fs = (CheckMember (IsMember f fs) f fs, HasMembership u f fs, IsMember f fs ~ 'True)
+
+type FirstDepParams eci es f = FindFirstDepParams es eci `ThenQueryDepParamsFor` '(eci, f)
+type MemberDep u eci es = Member u (InsClassIn es eci) es
+type InsClassIn es eci = InsClassOf eci (FirstDepParamsIn es eci :: DepParams eci)
+type FirstDepParamsIn es eci = FromJustFirstDepParams (FindFirstDepParams es eci) es eci
+
+type family FindFirstDepParams (es :: [Instruction]) (eci :: EffectClassIdentifier) where
+    FindFirstDepParams (e ': es) eci =
+        MatchEffectClass eci (EffectClassIdentifierOf e) (DepParamsOf e) es
+    FindFirstDepParams '[] eci = 'Nothing
+
+type family MatchEffectClass eci0 eci1 dps es where
+    MatchEffectClass eci eci dps _ = 'Just dps
+    MatchEffectClass eci _ _ es = FindFirstDepParams es eci
+
+type family
+    ThenQueryDepParamsFor
+        (mDPS :: Maybe k)
+        (eci'f :: (EffectClassIdentifier, Type -> Type))
+    where
+    ThenQueryDepParamsFor ('Just dps) _ = 'Just dps
+    ThenQueryDepParamsFor 'Nothing '(eci, f) = QueryDepParamsFor eci f
+
+type family
+    FromJustFirstDepParams
+        (mDPS :: Maybe k)
+        (es :: [Instruction])
+        (eci :: EffectClassIdentifier)
+    where
+    FromJustFirstDepParams ('Just dps) _ _ = dps
+    FromJustFirstDepParams 'Nothing es eci =
+        TypeError
+            ( 'Text "No instruction class matching the effect class identifier:"
+                ':$$: 'Text "    " ':<>: 'ShowType eci
+                ':$$: 'Text " was found in the list:"
+                ':$$: 'Text "    " ':<>: 'ShowType es
+            )

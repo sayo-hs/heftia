@@ -38,6 +38,7 @@ import Control.Effect.Class (
  )
 import Control.Effect.Class.Fail (FailI (Fail))
 import Control.Effect.Class.Fix (FixS (Mfix))
+import Control.Effect.Class.Machinery.DepParam (QueryDepParamsFor)
 import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap)
 import Control.Effect.Freer (FreerEffects, freerEffects, interpose, unFreerEffects)
 import Control.Freer.Trans (TransFreer, interpretFT, liftInsT, liftLowerFT)
@@ -63,6 +64,7 @@ import Data.Extensible.Class (Forall)
 import Data.Free.Union (Member, Union, project)
 import Data.Hefty.Extensible (ExtensibleUnionH)
 import Data.Hefty.Union (
+    FirstDepParamsH,
     IsMemberH,
     MemberH,
     UnionH (
@@ -197,6 +199,8 @@ instance
     where
     sendSig = HeftiaUnion . liftSigT . hfmap runHeftiaUnion . injectH
     {-# INLINE sendSig #-}
+
+type instance QueryDepParamsFor eci (HeftiaUnion h u es f) = FirstDepParamsH eci es f
 
 -- | Elaborate all effects in the effect class list at once.
 runElaborate ::

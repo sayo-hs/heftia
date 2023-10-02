@@ -23,16 +23,19 @@ import Control.Applicative (Alternative)
 import Control.Effect.Class (
     EffectDataHandler,
     EffectsVia (EffectsVia),
+    Embed,
     Instruction,
     SendIns,
     Tag,
     getTag,
     runEffectsVia,
     sendIns,
+    unEmbed,
     type (<:),
     type (~>),
  )
 import Control.Effect.Class.Fail (FailI (Fail))
+import Control.Effect.Class.Machinery.DepParam (QueryDepParamsFor)
 import Control.Freer.Trans (
     TransFreer,
     hoistFreer,
@@ -54,8 +57,10 @@ import Data.Coerce (Coercible, coerce)
 import Data.Free.Extensible (ExtensibleUnion)
 import Data.Free.Sum (caseF, pattern L1, pattern R1, type (+))
 import Data.Free.Union (
+    FirstDepParams,
     IsMember,
     Member,
+    MemberDep,
     Union (
         absurdUnion,
         bundleUnion2,
@@ -175,6 +180,8 @@ instance (TransFreer c fr, SendIns e f, c f) => SendIns e (FreerUnionForSend 'Fa
     sendIns = FreerUnionForSend . FreerUnion . liftLowerFT . sendIns
     {-# INLINE sendIns #-}
 
+type instance QueryDepParamsFor eci (FreerUnion fr u es f) = FirstDepParams eci es f
+
 -- | Interpret the leading effect class in the effect class list.
 interpret ::
     (TransFreer c fr, Union u, c f) =>
@@ -269,6 +276,12 @@ untag ::
     (TransFreer c fr, Union u, c f) =>
     FreerEffects fr u (Tag e tag ': r) f ~> FreerEffects fr u (e ': r) f
 untag = transform getTag
+
+unembed ::
+    forall g fr u r f c.
+    (TransFreer c fr, Union u, c f) =>
+    FreerEffects fr u (Embed g ': r) f ~> FreerEffects fr u (g ': r) f
+unembed = transform unEmbed
 
 -- | Interpose the effect class that exists within the effect class list.
 interpose ::
@@ -658,3 +671,5 @@ type Fre es f = FreerEffects FreerChurchT ExtensibleUnion es f
 
 -- | An operator representing the membership relationship of the effect class list.
 type e <| es = Member ExtensibleUnion e es
+
+type eci <|- es = MemberDep ExtensibleUnion eci es
