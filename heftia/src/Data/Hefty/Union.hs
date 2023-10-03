@@ -17,7 +17,7 @@ implementation.
 module Data.Hefty.Union where
 
 import Control.Effect.Class (Signature, type (~>))
-import Control.Effect.Class.Machinery.DepParam (
+import Control.Effect.Class.Machinery.DepParams (
     DepParams,
     DepParamsOfH,
     EffectClassIdentifier,

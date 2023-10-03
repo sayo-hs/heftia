@@ -35,7 +35,7 @@ import Control.Effect.Class (
     type (~>),
  )
 import Control.Effect.Class.Fail (FailI (Fail))
-import Control.Effect.Class.Machinery.DepParam (QueryDepParamsFor)
+import Control.Effect.Class.Machinery.DepParams (QueryDepParamsFor)
 import Control.Freer.Trans (
     TransFreer,
     hoistFreer,

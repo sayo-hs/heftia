@@ -38,7 +38,7 @@ import Control.Effect.Class (
  )
 import Control.Effect.Class.Fail (FailI (Fail))
 import Control.Effect.Class.Fix (FixS (Mfix))
-import Control.Effect.Class.Machinery.DepParam (QueryDepParamsFor)
+import Control.Effect.Class.Machinery.DepParams (QueryDepParamsFor)
 import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap)
 import Control.Effect.Freer (FreerEffects, freerEffects, interpose, unFreerEffects)
 import Control.Freer.Trans (TransFreer, interpretFT, liftInsT, liftLowerFT)

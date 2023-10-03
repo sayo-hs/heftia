@@ -14,8 +14,6 @@ The original of this example can be found at polysemy.
 module Main where
 
 import Control.Effect.Class (
-    EffectDataHandler,
-    EffectsVia (EffectsVia),
     Taggable,
     getTag,
     sendIns,
@@ -24,20 +22,11 @@ import Control.Effect.Class (
     type (@#),
     type (~>),
  )
-import Control.Effect.Class.Machinery.DepParam (
-    DepParams,
-    DepParamsFor,
-    DepParamsOf,
-    EffectClassIdentifierOf,
-    InsClassOf,
-    SendInsDep,
-    type (#-),
- )
+import Control.Effect.Class.Machinery.DepParams (type (#-))
+import Control.Effect.Class.Machinery.TH (makeEffectF)
 import Control.Effect.Freer (Fre, interpose, interpret, runFreerEffects, untag, type (<|-))
-import Data.Effect.Class.TH (makeInstruction)
 import Data.Free.Union (FindFirstDepParams, InsClassIn)
 import Data.Function ((&))
-import Data.Kind (Type)
 import Data.String (IsString)
 import Data.Tuple (Solo (Solo))
 
@@ -45,22 +34,7 @@ class Teletype s f | f -> s where
     readTTY :: f s
     writeTTY :: s -> f ()
 
-data I'Teletype
-type instance DepParams I'Teletype = Solo Type
-
-makeInstruction ''Teletype
-
-type instance InsClassOf I'Teletype ('Solo s) = TeletypeI s
-
-type instance EffectClassIdentifierOf (TeletypeI s) = I'Teletype
-type instance DepParamsOf (TeletypeI s) = 'Solo s
-
-instance
-    (SendInsDep I'Teletype f, 'Solo s ~ DepParamsFor I'Teletype f) =>
-    Teletype s (EffectsVia EffectDataHandler f)
-    where
-    readTTY = EffectsVia . sendIns $ ReadTTY
-    writeTTY = EffectsVia . sendIns . WriteTTY
+makeEffectF ''Teletype
 
 teletypeToIO :: (IO <: Fre es m, Monad m) => Fre (TeletypeI String ': es) m ~> Fre es m
 teletypeToIO = interpret \case

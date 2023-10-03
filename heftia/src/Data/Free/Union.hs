@@ -16,7 +16,7 @@ implementation.
 module Data.Free.Union where
 
 import Control.Effect.Class (Instruction, type (~>))
-import Control.Effect.Class.Machinery.DepParam (
+import Control.Effect.Class.Machinery.DepParams (
     DepParams,
     DepParamsOf,
     EffectClassIdentifier,
