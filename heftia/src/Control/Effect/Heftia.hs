@@ -66,6 +66,7 @@ import Data.Hefty.Extensible (ExtensibleUnionH)
 import Data.Hefty.Union (
     FirstDepParamsH,
     IsMemberH,
+    MemberDepH,
     MemberH,
     UnionH (
         absurdUnionH,
@@ -792,6 +793,8 @@ type Hef es f = HeftiaEffects HeftiaChurchT ExtensibleUnionH es f
 
 -- | An operator representing the membership relationship of the higher-order effect class list.
 type e <<| es = MemberH ExtensibleUnionH e es
+
+type eci <<|- es = MemberDepH ExtensibleUnionH eci es
 
 -- | A type synonym for functions that perform the elaboration of higher-order effects.
 type Elaborator e f = e f ~> f
