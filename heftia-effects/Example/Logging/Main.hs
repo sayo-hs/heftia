@@ -27,6 +27,7 @@ import Control.Effect.Freer (
 import Control.Effect.Handler.Heftia.Reader (interpretReader, liftReader)
 import Control.Effect.Handler.Heftia.State (evalState)
 import Control.Effect.Heftia (
+    Elaborator,
     ForallHFunctor,
     Hef,
     elaborated,
@@ -39,7 +40,6 @@ import Control.Effect.Heftia (
     type (<<|),
  )
 import Control.Monad (when)
-import Control.Monad.Trans.Heftia.Church (HeftiaChurchT)
 import Data.Function ((&))
 import Data.Hefty.Extensible (ExtensibleUnionH)
 import Data.Hefty.Union (absurdUnionH, (|+:))
@@ -190,6 +190,11 @@ main =
         . saveLogChunk
         . interpreted
         . subsume
-        . runElaborate @_ @HeftiaChurchT @ExtensibleUnionH
-            (liftLower . limitLogChunk 2 |+: absurdUnionH)
+        . runElaborate' (liftLower . limitLogChunk 2 |+: absurdUnionH)
         $ logs
+
+runElaborate' ::
+    (ForallHFunctor es, Monad f) =>
+    Elaborator (ExtensibleUnionH es) f ->
+    Hef es f ~> f
+runElaborate' = runElaborate

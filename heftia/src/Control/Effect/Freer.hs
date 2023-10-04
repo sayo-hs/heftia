@@ -127,12 +127,12 @@ on [@classy-effects@](https://hackage.haskell.org/package/classy-effects).
 type FreerEffects fr u es f = EffectsVia EffectDataHandler (FreerUnion fr u es f)
 
 -- | Unwrap the `FreerEffects` wrapper.
-unFreerEffects :: FreerEffects fr u es f ~> fr (u es) f
+unFreerEffects :: forall es f fr u. FreerEffects fr u es f ~> fr (u es) f
 unFreerEffects = runFreerUnion . runEffectsVia
 {-# INLINE unFreerEffects #-}
 
 -- | Wrap with `FreerEffects`.
-freerEffects :: fr (u es) f ~> FreerEffects fr u es f
+freerEffects :: forall es f fr u. fr (u es) f ~> FreerEffects fr u es f
 freerEffects = EffectsVia . FreerUnion
 {-# INLINE freerEffects #-}
 
@@ -184,6 +184,7 @@ type instance QueryDepParamsFor eci (FreerUnion fr u es f) = FirstDepParams eci 
 
 -- | Interpret the leading effect class in the effect class list.
 interpret ::
+    forall e es f fr u c.
     (TransFreer c fr, Union u, c f) =>
     (e ~> FreerEffects fr u es f) ->
     FreerEffects fr u (e ': es) f ~> FreerEffects fr u es f
@@ -195,7 +196,7 @@ interpret i =
 
 -- | Interpret the leading effect class in the effect class list using a monad transformer.
 interpretT ::
-    forall t fr u e es f.
+    forall t e es f fr u.
     (MonadTransFreer fr, Union u, MonadTrans t, Monad f, Monad (t (FreerEffects fr u es f))) =>
     (e ~> t (FreerEffects fr u es f)) ->
     FreerEffects fr u (e ': es) f ~> t (FreerEffects fr u es f)
@@ -204,6 +205,7 @@ interpretT i = interpretMT i . splitFreerEffects @_ @fr
 
 -- | Interpret the leading effect class in the effect class list using a delimited continuation.
 interpretK ::
+    forall e r a es f fr u.
     (MonadTransFreer fr, Union u, Monad f) =>
     (a -> FreerEffects fr u es f r) ->
     (forall x. (x -> FreerEffects fr u es f r) -> e x -> FreerEffects fr u es f r) ->
@@ -216,7 +218,7 @@ interpretK k i = (`runContT` k) . interpretContT \e -> ContT (`i` e)
 Interpret the leading effect class in the effect class list using a continuation monad transformer.
 -}
 interpretContT ::
-    forall r fr u e es f.
+    forall e r es f fr u.
     (MonadTransFreer fr, Union u, Monad f) =>
     (e ~> ContT r (FreerEffects fr u es f)) ->
     FreerEffects fr u (e ': es) f ~> ContT r (FreerEffects fr u es f)
@@ -228,6 +230,7 @@ Interpret not only the leading effect class but also all the remaining effect cl
 underlying carrier simultaneously, transforming them into any carrier @g@.
 -}
 interpretAll ::
+    forall e g f es fr u c.
     (TransFreer c fr, Union u, c f, c g) =>
     (f ~> g) ->
     (u es ~> g) ->
@@ -241,6 +244,7 @@ interpretAll iLower iOther iTarget a =
 
 -- | Reinterpret the leading effect class in the effect class list.
 reinterpret ::
+    forall e es f fr u c.
     (TransFreer c fr, Union u, c f) =>
     (e ~> FreerEffects fr u (e ': es) f) ->
     FreerEffects fr u (e ': es) f ~> FreerEffects fr u (e ': es) f
@@ -252,6 +256,7 @@ reinterpret i =
 
 -- | Transform all effect classes in the effect class list into another union of effect classes.
 transformAll ::
+    forall u' es es' f fr u c.
     (TransFreer c fr, Union u, Union u', c f) =>
     (u es ~> u' es') ->
     FreerEffects fr u es f ~> FreerEffects fr u' es' f
@@ -260,7 +265,7 @@ transformAll f = overFreerEffects $ transformT f
 
 -- | Transform the leading effect class in the effect class list into another effect class.
 transform ::
-    forall e' e fr u r f c.
+    forall e' e r f fr u c.
     (TransFreer c fr, Union u, c f) =>
     (e ~> e') ->
     FreerEffects fr u (e ': r) f ~> FreerEffects fr u (e' ': r) f
@@ -272,20 +277,20 @@ transform f =
 
 -- | Remove the tag attached to the effect class.
 untag ::
-    forall tag e fr u r f c.
+    forall tag e r f fr u c.
     (TransFreer c fr, Union u, c f) =>
     FreerEffects fr u (Tag e tag ': r) f ~> FreerEffects fr u (e ': r) f
 untag = transform getTag
 
 unembed ::
-    forall g fr u r f c.
+    forall g r f fr u c.
     (TransFreer c fr, Union u, c f) =>
     FreerEffects fr u (Embed g ': r) f ~> FreerEffects fr u (g ': r) f
 unembed = transform unEmbed
 
 -- | Interpose the effect class that exists within the effect class list.
 interpose ::
-    forall e fr u es f c.
+    forall e es f fr u c.
     (TransFreer c fr, Union u, Member u e es, c f) =>
     (e ~> FreerEffects fr u es f) ->
     FreerEffects fr u es f ~> FreerEffects fr u es f
@@ -297,7 +302,7 @@ interpose f =
 
 -- | Interpose the effect class that exists within the effect class list using a monad transformer.
 interposeT ::
-    forall e t fr u es m.
+    forall e t es m fr u.
     ( MonadTransFreer fr
     , Union u
     , Member u e es
@@ -324,7 +329,7 @@ Transform all other effect classes in the effect class list and the underlying c
 with the effect class that exists within the effect class list, into any carrier @g@.
 -}
 interposeAll ::
-    forall e g fr u es f c.
+    forall e g es f fr u c.
     ( TransFreer c fr
     , Union u
     , Member u e es
@@ -345,6 +350,7 @@ interposeAll iLower iOther iTarget a =
 Interpose the effect class that exists within the effect class list using a delimited continuation.
 -}
 interposeK ::
+    forall e r a es m fr u.
     (MonadTransFreer fr, Union u, Member u e es, Monad m) =>
     (a -> FreerEffects fr u es m r) ->
     (forall x. (x -> FreerEffects fr u es m r) -> e x -> FreerEffects fr u es m r) ->
@@ -358,7 +364,7 @@ Interpose the effect class that exists within the effect class list using a cont
 transformer.
 -}
 interposeContT ::
-    forall e r fr u es m.
+    forall e r es m fr u.
     (MonadTransFreer fr, Union u, Member u e es, Monad m) =>
     (e ~> ContT r (FreerEffects fr u es m)) ->
     FreerEffects fr u es m ~> ContT r (FreerEffects fr u es m)
@@ -375,7 +381,7 @@ interposeContT f a =
 
 -- | Transform the effect of the effect class that exists within the effect class list.
 intercept ::
-    forall e fr u es f c.
+    forall e es f fr u c.
     (TransFreer c fr, Union u, Member u e es, c f) =>
     (e ~> e) ->
     FreerEffects fr u es f ~> FreerEffects fr u es f
@@ -387,7 +393,7 @@ intercept f =
 
 -- | Insert an arbitrary effect class at the beginning of the effect class list.
 raise ::
-    forall e es fr u f c.
+    forall e es f fr u c.
     (TransFreer c fr, Union u, c f) =>
     FreerEffects fr u es f ~> FreerEffects fr u (e ': es) f
 raise = transformAll weaken
@@ -395,7 +401,7 @@ raise = transformAll weaken
 
 -- | Insert two arbitrary effect classes at the beginning of the effect class list.
 raise2 ::
-    forall e1 e2 es fr u f c.
+    forall e1 e2 es f fr u c.
     (TransFreer c fr, Union u, c f) =>
     FreerEffects fr u es f ~> FreerEffects fr u (e1 ': e2 ': es) f
 raise2 = transformAll weaken2
@@ -403,7 +409,7 @@ raise2 = transformAll weaken2
 
 -- | Insert three arbitrary effect classes at the beginning of the effect class list.
 raise3 ::
-    forall e1 e2 e3 es fr u f c.
+    forall e1 e2 e3 es f fr u c.
     (TransFreer c fr, Union u, c f) =>
     FreerEffects fr u es f ~> FreerEffects fr u (e1 ': e2 ': e3 ': es) f
 raise3 = transformAll weaken3
@@ -411,7 +417,7 @@ raise3 = transformAll weaken3
 
 -- | Insert four arbitrary effect classes at the beginning of the effect class list.
 raise4 ::
-    forall e1 e2 e3 e4 es fr u f c.
+    forall e1 e2 e3 e4 es f fr u c.
     (TransFreer c fr, Union u, c f) =>
     FreerEffects fr u es f ~> FreerEffects fr u (e1 ': e2 ': e3 ': e4 ': es) f
 raise4 = transformAll weaken4
@@ -419,7 +425,7 @@ raise4 = transformAll weaken4
 
 -- | Insert an arbitrary effect class below the leading effect class in the effect class list.
 raiseUnder ::
-    forall e1 e2 es fr u f c.
+    forall e1 e2 es f fr u c.
     (TransFreer c fr, Union u, c f) =>
     FreerEffects fr u (e1 ': es) f ~> FreerEffects fr u (e1 ': e2 ': es) f
 raiseUnder = transformAll weakenUnder
@@ -430,7 +436,7 @@ Insert an arbitrary effect class below the first two leading effect classes in t
 list.
 -}
 raiseUnder2 ::
-    forall e1 e2 e3 es fr u f c.
+    forall e1 e2 e3 es f fr u c.
     (TransFreer c fr, Union u, c f) =>
     FreerEffects fr u (e1 ': e2 ': es) f ~> FreerEffects fr u (e1 ': e2 ': e3 ': es) f
 raiseUnder2 = transformAll weakenUnder2
@@ -440,7 +446,7 @@ raiseUnder2 = transformAll weakenUnder2
 Insert an arbitrary effect class below the first three leading effect classes in the effect class list.
 -}
 raiseUnder3 ::
-    forall e1 e2 e3 e4 es fr u f c.
+    forall e1 e2 e3 e4 es f fr u c.
     (TransFreer c fr, Union u, c f) =>
     FreerEffects fr u (e1 ': e2 ': e3 ': es) f ~> FreerEffects fr u (e1 ': e2 ': e3 ': e4 ': es) f
 raiseUnder3 = transformAll weakenUnder3
@@ -448,7 +454,7 @@ raiseUnder3 = transformAll weakenUnder3
 
 -- | Insert two arbitrary effect classes below the leading effect class in the effect class list.
 raise2Under ::
-    forall e1 e2 e3 es fr u f c.
+    forall e1 e2 e3 es f fr u c.
     (TransFreer c fr, Union u, c f) =>
     FreerEffects fr u (e1 ': es) f ~> FreerEffects fr u (e1 ': e2 ': e3 ': es) f
 raise2Under = transformAll weaken2Under
@@ -458,7 +464,7 @@ raise2Under = transformAll weaken2Under
 Insert two arbitrary effect classes below the first two leading effect classes in the effect class list.
 -}
 raise2Under2 ::
-    forall e1 e2 e3 e4 es fr u f c.
+    forall e1 e2 e3 e4 es f fr u c.
     (TransFreer c fr, Union u, c f) =>
     FreerEffects fr u (e1 ': e2 ': es) f ~> FreerEffects fr u (e1 ': e2 ': e3 ': e4 ': es) f
 raise2Under2 = transformAll weaken2Under2
@@ -466,7 +472,7 @@ raise2Under2 = transformAll weaken2Under2
 
 -- | Inserts three arbitrary effect classes under the top effect class in the effect class list.
 raise3Under ::
-    forall e1 e2 e3 e4 es fr u f c.
+    forall e1 e2 e3 e4 es f fr u c.
     (TransFreer c fr, Union u, c f) =>
     FreerEffects fr u (e1 ': es) f ~> FreerEffects fr u (e1 ': e2 ': e3 ': e4 ': es) f
 raise3Under = transformAll weaken3Under
@@ -474,7 +480,7 @@ raise3Under = transformAll weaken3Under
 
 -- | Swaps the top two effect classes in the effect class list.
 flipFreer ::
-    forall e1 e2 es fr u f c.
+    forall e1 e2 es f fr u c.
     (TransFreer c fr, Union u, c f) =>
     FreerEffects fr u (e1 ': e2 ': es) f ~> FreerEffects fr u (e2 ': e1 ': es) f
 flipFreer = transformAll flipUnion
@@ -482,7 +488,7 @@ flipFreer = transformAll flipUnion
 
 -- | Reverses the order of the top three effect classes in the effect class list.
 flipFreer3 ::
-    forall e1 e2 e3 es fr u f c.
+    forall e1 e2 e3 es f fr u c.
     (TransFreer c fr, Union u, c f) =>
     FreerEffects fr u (e1 ': e2 ': e3 ': es) f ~> FreerEffects fr u (e3 ': e2 ': e1 ': es) f
 flipFreer3 = transformAll flipUnion3
@@ -490,7 +496,7 @@ flipFreer3 = transformAll flipUnion3
 
 -- | Swaps the second and third effect classes from the top in the effect class list.
 flipFreerUnder ::
-    forall e1 e2 e3 es fr u f c.
+    forall e1 e2 e3 es f fr u c.
     (TransFreer c fr, Union u, c f) =>
     FreerEffects fr u (e1 ': e2 ': e3 ': es) f ~> FreerEffects fr u (e1 ': e3 ': e2 ': es) f
 flipFreerUnder = transformAll flipUnionUnder
@@ -498,7 +504,7 @@ flipFreerUnder = transformAll flipUnionUnder
 
 -- | Rotates the top three effect classes in the effect class list to the left.
 rotate3 ::
-    forall e1 e2 e3 es fr u f c.
+    forall e1 e2 e3 es f fr u c.
     (TransFreer c fr, Union u, c f) =>
     FreerEffects fr u (e1 ': e2 ': e3 ': es) f ~> FreerEffects fr u (e2 ': e3 ': e1 ': es) f
 rotate3 = transformAll rot3
@@ -506,7 +512,7 @@ rotate3 = transformAll rot3
 
 -- | Rotates the top three effect classes in the effect class list to the left twice.
 rotate3' ::
-    forall e1 e2 e3 es fr u f c.
+    forall e1 e2 e3 es f fr u c.
     (TransFreer c fr, Union u, c f) =>
     FreerEffects fr u (e1 ': e2 ': e3 ': es) f ~> FreerEffects fr u (e3 ': e1 ': e2 ': es) f
 rotate3' = transformAll rot3'
@@ -514,7 +520,7 @@ rotate3' = transformAll rot3'
 
 -- | Bundles the top two effect classes in the effect class list into any open union.
 bundle2 ::
-    forall e1 e2 es fr u f c u'.
+    forall e1 e2 es f fr u c u'.
     (TransFreer c fr, Union u, Union u', c f) =>
     FreerEffects fr u (e1 ': e2 ': es) f ~> FreerEffects fr u (u' '[e1, e2] ': es) f
 bundle2 = transformAll bundleUnion2
@@ -522,7 +528,7 @@ bundle2 = transformAll bundleUnion2
 
 -- | Bundles the top three effect classes in the effect class list into any open union.
 bundle3 ::
-    forall e1 e2 e3 es fr u f c u'.
+    forall e1 e2 e3 u' es f fr u c.
     (TransFreer c fr, Union u, Union u', c f) =>
     FreerEffects fr u (e1 ': e2 ': e3 ': es) f ~> FreerEffects fr u (u' '[e1, e2, e3] ': es) f
 bundle3 = transformAll bundleUnion3
@@ -530,7 +536,7 @@ bundle3 = transformAll bundleUnion3
 
 -- | Bundles the top four effect classes in the effect class list into any open union.
 bundle4 ::
-    forall e1 e2 e3 e4 es fr u f c u'.
+    forall e1 e2 e3 e4 u' es f fr u c.
     (TransFreer c fr, Union u, Union u', c f) =>
     FreerEffects fr u (e1 ': e2 ': e3 ': e4 ': es) f ~> FreerEffects fr u (u' '[e1, e2, e3, e4] ': es) f
 bundle4 = transformAll bundleUnion4
@@ -538,7 +544,7 @@ bundle4 = transformAll bundleUnion4
 
 -- | Expands the open union at the top of the effect class list.
 unbundle2 ::
-    forall e1 e2 es fr u f c u'.
+    forall e1 e2 u' es f fr u c.
     (TransFreer c fr, Union u, Union u', c f) =>
     FreerEffects fr u (u' '[e1, e2] ': es) f ~> FreerEffects fr u (e1 ': e2 ': es) f
 unbundle2 = transformAll unbundleUnion2
@@ -546,7 +552,7 @@ unbundle2 = transformAll unbundleUnion2
 
 -- | Expands the open union at the top of the effect class list.
 unbundle3 ::
-    forall e1 e2 e3 es fr u f c u'.
+    forall e1 e2 e3 u' es f fr u c.
     (TransFreer c fr, Union u, Union u', c f) =>
     FreerEffects fr u (u' '[e1, e2, e3] ': es) f ~> FreerEffects fr u (e1 ': e2 ': e3 ': es) f
 unbundle3 = transformAll unbundleUnion3
@@ -554,7 +560,7 @@ unbundle3 = transformAll unbundleUnion3
 
 -- | Expands the open union at the top of the effect class list.
 unbundle4 ::
-    forall e1 e2 e3 e4 es fr u f c u'.
+    forall e1 e2 e3 e4 u' es f fr u c.
     (TransFreer c fr, Union u, Union u', c f) =>
     FreerEffects fr u (u' '[e1, e2, e3, e4] ': es) f ~> FreerEffects fr u (e1 ': e2 ': e3 ': e4 ': es) f
 unbundle4 = transformAll unbundleUnion4
@@ -568,12 +574,16 @@ __Warning__: The given natural transformation must be a monad morphism
 If not, the result will be ill-behaved.
 -}
 hoistFreerEffects ::
-    (TransFreer c fr, c f, c g) => (f ~> g) -> FreerEffects fr u es f ~> FreerEffects fr u es g
+    forall g f es fr u c.
+    (TransFreer c fr, c f, c g) =>
+    (f ~> g) ->
+    FreerEffects fr u es f ~> FreerEffects fr u es g
 hoistFreerEffects f = overFreerEffects $ hoistFreer f
 {-# INLINE hoistFreerEffects #-}
 
 -- | Converts the lower carrier to an instruction.
 lowerToIns ::
+    forall f g es fr u c.
     (TransFreer c fr, c g, c (f + g), Union u) =>
     FreerEffects fr u es (f + g) ~> FreerEffects fr u (f ': es) g
 lowerToIns =
@@ -585,6 +595,7 @@ lowerToIns =
 
 -- | Converts the instruction to the lower carrier.
 insToLower ::
+    forall f g es fr u c.
     (TransFreer c fr, c (f + g), c g, Union u) =>
     FreerEffects fr u (f ': es) g ~> FreerEffects fr u es (f + g)
 insToLower = overFreerEffects $ interpretFT (liftLowerFT . R1) (liftLowerFT . L1 |+|: liftInsT)
@@ -598,6 +609,7 @@ __Warning__: The given natural transformation must be a monad morphism
 If not, the result will be ill-behaved.
 -}
 interpretLower ::
+    forall g f es fr u c.
     (TransFreer c fr, c f, c g) =>
     (f ~> FreerEffects fr u es g) ->
     FreerEffects fr u es f ~> FreerEffects fr u es g
@@ -606,6 +618,7 @@ interpretLower f = overFreerEffects $ interposeLowerT (unFreerEffects . f)
 
 -- | Accesses the inside of the 'FreerEffects' wrapper.
 overFreerEffects ::
+    forall b es' g fr' u' a es f fr u.
     (fr (u es) f a -> fr' (u' es') g b) ->
     FreerEffects fr u es f a ->
     FreerEffects fr' u' es' g b
@@ -613,12 +626,16 @@ overFreerEffects f = freerEffects . f . unFreerEffects
 {-# INLINE overFreerEffects #-}
 
 -- | Drops a Freer with no effect classes to interpret to the lower carrier.
-interpreted :: (TransFreer c fr, c f, Union u) => FreerEffects fr u '[] f ~> f
+interpreted ::
+    forall f fr u c.
+    (TransFreer c fr, c f, Union u) =>
+    FreerEffects fr u '[] f ~> f
 interpreted = runInterpretF absurdUnion . unFreerEffects
 {-# INLINE interpreted #-}
 
 -- | Splits the Freer into the lower carrier.
 splitFreerEffects ::
+    forall e fr' es f fr u c.
     (TransFreer c fr', TransFreer c fr, c f, c (FreerEffects fr u es f), Union u) =>
     FreerEffects fr u (e ': es) f ~> fr' e (FreerEffects fr u es f)
 splitFreerEffects a =
@@ -629,6 +646,7 @@ splitFreerEffects a =
 
 -- | Transfer the effect to the underlying level.
 subsume ::
+    forall e es f fr u c.
     (TransFreer c fr, SendIns e (FreerEffects fr u es f), Union u, c f) =>
     FreerEffects fr u (e ': es) f ~> FreerEffects fr u es f
 subsume = interpret sendIns
@@ -636,13 +654,17 @@ subsume = interpret sendIns
 
 -- | Transfer the effect to the lower carrier.
 subsumeLower ::
+    forall e f es fr u c.
     (TransFreer c fr, SendIns e f, Union u, c f) =>
     FreerEffects fr u (e ': es) f ~> FreerEffects fr u es f
 subsumeLower = interpret $ liftLower . sendIns
 {-# INLINE subsumeLower #-}
 
 -- | Lifts the lower carrier.
-liftLower :: (TransFreer c fr, c f) => f ~> FreerEffects fr u es f
+liftLower ::
+    forall f es fr u c.
+    (TransFreer c fr, c f) =>
+    f ~> FreerEffects fr u es f
 liftLower = freerEffects . liftLowerFT
 {-# INLINE liftLower #-}
 
@@ -652,12 +674,17 @@ runIO = interpret $ liftLower . liftIO
 {-# INLINE runIO #-}
 
 -- | Interprets all effects in the effect class list at once.
-runInterpret :: (TransFreer c fr, c f) => (u es ~> f) -> FreerEffects fr u es f ~> f
+runInterpret ::
+    forall f es fr u c.
+    (TransFreer c fr, c f) =>
+    (u es ~> f) ->
+    FreerEffects fr u es f ~> f
 runInterpret f = runInterpretF f . unFreerEffects
 {-# INLINE runInterpret #-}
 
 -- | Drops the Freer to the lower carrier.
 runFreerEffects ::
+    forall f fr u c.
     (TransFreer c fr, c f, Union u) =>
     FreerEffects fr u '[f] f ~> f
 runFreerEffects = runInterpret $ id |+|: absurdUnion

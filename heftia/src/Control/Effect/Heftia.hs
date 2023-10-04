@@ -139,12 +139,12 @@ on [@classy-effects@](https://hackage.haskell.org/package/classy-effects).
 type HeftiaEffects h u es f = EffectsVia EffectDataHandler (HeftiaUnion h u es f)
 
 -- | Unwrap the `HeftiaEffects` wrapper.
-unHeftiaEffects :: HeftiaEffects h u es f ~> h (u es) f
+unHeftiaEffects :: forall es f h u. HeftiaEffects h u es f ~> h (u es) f
 unHeftiaEffects = runHeftiaUnion . runEffectsVia
 {-# INLINE unHeftiaEffects #-}
 
 -- | Wrap with `HeftiaEffects`.
-heftiaEffects :: h (u es) f ~> HeftiaEffects h u es f
+heftiaEffects :: forall es f h u. h (u es) f ~> HeftiaEffects h u es f
 heftiaEffects = EffectsVia . HeftiaUnion
 {-# INLINE heftiaEffects #-}
 
@@ -205,6 +205,7 @@ type instance QueryDepParamsFor eci (HeftiaUnion h u es f) = FirstDepParamsH eci
 
 -- | Elaborate all effects in the effect class list at once.
 runElaborate ::
+    forall f es h u c.
     (TransHeftia c h, HFunctor (u es), c f, UnionH u) =>
     (u es f ~> f) ->
     HeftiaEffects h u es f ~> f
@@ -213,6 +214,7 @@ runElaborate f = runElaborateH f . unHeftiaEffects
 
 -- | Elaborate all effects in the effect class list using a delimited continuation.
 runElaborateK ::
+    forall r a m es h u.
     (MonadTransHeftia h, HFunctor (u es), UnionH u, Monad m) =>
     (a -> m r) ->
     (forall x. (x -> m r) -> u es (ContT r m) x -> m r) ->
@@ -225,6 +227,7 @@ runElaborateK k f = (`runContT` k) . runElaborateContT \e -> ContT (`f` e)
 Elaborate all effects in the effect class list using a continuation monad transformer.
 -}
 runElaborateContT ::
+    forall r m es h u.
     (MonadTransHeftia h, HFunctor (u es), UnionH u, Monad m) =>
     (u es (ContT r m) ~> ContT r m) ->
     HeftiaEffects h u es m ~> ContT r m
@@ -235,6 +238,7 @@ runElaborateContT f = elaborateMK f . unHeftiaEffects
 Elaborate all effects in the effect class list using a monad transformer.
 -}
 runElaborateT ::
+    forall t m es h u.
     (MonadTransHeftia h, HFunctor (u es), UnionH u, MonadTrans t, Monad m, Monad (t m)) =>
     (u es (t m) ~> t m) ->
     HeftiaEffects h u es m ~> t m
@@ -255,6 +259,7 @@ elaborate f g = elaborateHT f g . unHeftiaEffects
 
 -- | Elaborate the leading effect class in the effect class list.
 interpretH ::
+    forall e es f h u c.
     (TransHeftia c h, UnionH u, HFunctor (u es), HFunctor (u (e : es)), HFunctor e, c f) =>
     (e (HeftiaEffects h u es f) ~> HeftiaEffects h u es f) ->
     HeftiaEffects h u (e ': es) f ~> HeftiaEffects h u es f
@@ -266,6 +271,7 @@ interpretH i =
 
 -- | Re-elaborate the leading effect class in the effect class list.
 reinterpretH ::
+    forall e es f h u c.
     (TransHeftia c h, UnionH u, HFunctor (u (e : es)), HFunctor e, c f) =>
     (e (HeftiaEffects h u (e ': es) f) ~> HeftiaEffects h u (e ': es) f) ->
     HeftiaEffects h u (e ': es) f ~> HeftiaEffects h u (e ': es) f
@@ -277,6 +283,7 @@ reinterpretH i =
 
 -- | Transform all effect classes in the effect class list into another union of effect classes.
 transformAllH ::
+    forall u' es es' f h u c.
     ( TransHeftia c h
     , UnionH u
     , UnionH u'
@@ -291,7 +298,7 @@ transformAllH f = overHeftiaEffects $ transformHT f
 
 -- | Transform the leading effect class in the effect class list into another effect class.
 transformH ::
-    forall e' e h u r f c.
+    forall e' e r f h u c.
     ( TransHeftia c h
     , UnionH u
     , c f
@@ -307,7 +314,7 @@ transformH f = overHeftiaEffects $ translateT \u ->
 
 -- | Remove the tag attached to the effect class.
 untagH ::
-    forall tag e h u r f c.
+    forall tag e r f h u c.
     ( TransHeftia c h
     , UnionH u
     , c f
@@ -319,7 +326,7 @@ untagH = transformH getTagH
 
 -- | Transform the leading effect class in the effect class list into another effect class.
 translate ::
-    forall e' e h u r f c.
+    forall e' e r f h u c.
     ( TransHeftia c h
     , UnionH u
     , HFunctor (u (e : r))
@@ -338,6 +345,7 @@ translate f =
 
 -- | Transform all effect classes in the effect class list into another union of effect classes.
 translateAll ::
+    forall u' es es' f h u c.
     ( TransHeftia c h
     , UnionH u
     , UnionH u'
@@ -353,7 +361,7 @@ translateAll f =
 
 -- | Interpose the effect class that exists within the effect class list using a monad transformer.
 interposeH ::
-    forall e h u es f c.
+    forall e es f h u c.
     (TransHeftia c h, UnionH u, MemberH u e es, HFunctor (u es), c f) =>
     (e (HeftiaEffects h u es f) ~> HeftiaEffects h u es f) ->
     HeftiaEffects h u es f ~> HeftiaEffects h u es f
@@ -366,7 +374,7 @@ interposeH f =
 
 -- | Transform the effect of the effect class that exists within the effect class list.
 interceptH ::
-    forall e h u es f c.
+    forall e es f h u c.
     (TransHeftia c h, UnionH u, MemberH u e es, HFunctor (u es), HFunctor e, c f) =>
     (e (HeftiaEffects h u es f) ~> e (HeftiaEffects h u es f)) ->
     HeftiaEffects h u es f ~> HeftiaEffects h u es f
@@ -379,66 +387,66 @@ interceptH f =
 
 -- | Insert an arbitrary effect class at the beginning of the effect class list.
 raiseH ::
-    forall e hs h u f c.
+    forall e es f h u c.
     ( TransHeftia c h
-    , HFunctor (u hs)
-    , HFunctor (u (e ': hs))
+    , HFunctor (u es)
+    , HFunctor (u (e ': es))
     , c f
     , UnionH u
     ) =>
-    HeftiaEffects h u hs f ~> HeftiaEffects h u (e ': hs) f
+    HeftiaEffects h u es f ~> HeftiaEffects h u (e ': es) f
 raiseH = transformAllH weakenH
 {-# INLINE raiseH #-}
 
 -- | Insert two arbitrary effect classes at the beginning of the effect class list.
 raise2H ::
-    forall e1 e2 hs h u f c.
+    forall e1 e2 es f h u c.
     ( TransHeftia c h
-    , HFunctor (u hs)
-    , HFunctor (u (e1 ': e2 ': hs))
+    , HFunctor (u es)
+    , HFunctor (u (e1 ': e2 ': es))
     , c f
     , UnionH u
     ) =>
-    HeftiaEffects h u hs f ~> HeftiaEffects h u (e1 ': e2 ': hs) f
+    HeftiaEffects h u es f ~> HeftiaEffects h u (e1 ': e2 ': es) f
 raise2H = transformAllH weaken2H
 {-# INLINE raise2H #-}
 
 -- | Insert three arbitrary effect classes at the beginning of the effect class list.
 raise3H ::
-    forall e1 e2 e3 hs h u f c.
+    forall e1 e2 e3 es f h u c.
     ( TransHeftia c h
-    , HFunctor (u hs)
-    , HFunctor (u (e1 ': e2 ': e3 ': hs))
+    , HFunctor (u es)
+    , HFunctor (u (e1 ': e2 ': e3 ': es))
     , c f
     , UnionH u
     ) =>
-    HeftiaEffects h u hs f ~> HeftiaEffects h u (e1 ': e2 ': e3 ': hs) f
+    HeftiaEffects h u es f ~> HeftiaEffects h u (e1 ': e2 ': e3 ': es) f
 raise3H = transformAllH weaken3H
 {-# INLINE raise3H #-}
 
 -- | Insert four arbitrary effect classes at the beginning of the effect class list.
 raise4H ::
-    forall e1 e2 e3 e4 hs h u f c.
+    forall e1 e2 e3 e4 es f h u c.
     ( TransHeftia c h
-    , HFunctor (u hs)
-    , HFunctor (u (e1 ': e2 ': e3 ': e4 ': hs))
+    , HFunctor (u es)
+    , HFunctor (u (e1 ': e2 ': e3 ': e4 ': es))
     , c f
     , UnionH u
     ) =>
-    HeftiaEffects h u hs f ~> HeftiaEffects h u (e1 ': e2 ': e3 ': e4 ': hs) f
+    HeftiaEffects h u es f ~> HeftiaEffects h u (e1 ': e2 ': e3 ': e4 ': es) f
 raise4H = transformAllH weaken4H
 {-# INLINE raise4H #-}
 
 -- | Insert an arbitrary effect class below the leading effect class in the effect class list.
 raiseUnderH ::
-    forall e1 e2 hs h u f c.
+    forall e1 e2 es f h u c.
     ( TransHeftia c h
-    , HFunctor (u (e1 ': hs))
-    , HFunctor (u (e1 ': e2 ': hs))
+    , HFunctor (u (e1 ': es))
+    , HFunctor (u (e1 ': e2 ': es))
     , c f
     , UnionH u
     ) =>
-    HeftiaEffects h u (e1 ': hs) f ~> HeftiaEffects h u (e1 ': e2 ': hs) f
+    HeftiaEffects h u (e1 ': es) f ~> HeftiaEffects h u (e1 ': e2 ': es) f
 raiseUnderH = transformAllH weakenUnderH
 {-# INLINE raiseUnderH #-}
 
@@ -447,14 +455,14 @@ Insert an arbitrary effect class below the first two leading effect classes in t
 list.
 -}
 raiseUnder2H ::
-    forall e1 e2 e3 hs h u f c.
+    forall e1 e2 e3 es f h u c.
     ( TransHeftia c h
-    , HFunctor (u (e1 ': e2 ': hs))
-    , HFunctor (u (e1 ': e2 ': e3 ': hs))
+    , HFunctor (u (e1 ': e2 ': es))
+    , HFunctor (u (e1 ': e2 ': e3 ': es))
     , c f
     , UnionH u
     ) =>
-    HeftiaEffects h u (e1 ': e2 ': hs) f ~> HeftiaEffects h u (e1 ': e2 ': e3 ': hs) f
+    HeftiaEffects h u (e1 ': e2 ': es) f ~> HeftiaEffects h u (e1 ': e2 ': e3 ': es) f
 raiseUnder2H = transformAllH weakenUnder2H
 {-# INLINE raiseUnder2H #-}
 
@@ -462,27 +470,27 @@ raiseUnder2H = transformAllH weakenUnder2H
 Insert an arbitrary effect class below the first three leading effect classes in the effect class list.
 -}
 raiseUnder3H ::
-    forall e1 e2 e3 e4 hs h u f c.
+    forall e1 e2 e3 e4 es f h u c.
     ( TransHeftia c h
-    , HFunctor (u (e1 ': e2 ': e3 ': hs))
-    , HFunctor (u (e1 ': e2 ': e3 ': e4 ': hs))
+    , HFunctor (u (e1 ': e2 ': e3 ': es))
+    , HFunctor (u (e1 ': e2 ': e3 ': e4 ': es))
     , c f
     , UnionH u
     ) =>
-    HeftiaEffects h u (e1 ': e2 ': e3 ': hs) f ~> HeftiaEffects h u (e1 ': e2 ': e3 ': e4 ': hs) f
+    HeftiaEffects h u (e1 ': e2 ': e3 ': es) f ~> HeftiaEffects h u (e1 ': e2 ': e3 ': e4 ': es) f
 raiseUnder3H = transformAllH weakenUnder3H
 {-# INLINE raiseUnder3H #-}
 
 -- | Insert two arbitrary effect classes below the leading effect class in the effect class list.
 raise2UnderH ::
-    forall e1 e2 e3 hs h u f c.
+    forall e1 e2 e3 es f h u c.
     ( TransHeftia c h
-    , HFunctor (u (e1 ': hs))
-    , HFunctor (u (e1 ': e2 ': e3 ': hs))
+    , HFunctor (u (e1 ': es))
+    , HFunctor (u (e1 ': e2 ': e3 ': es))
     , c f
     , UnionH u
     ) =>
-    HeftiaEffects h u (e1 ': hs) f ~> HeftiaEffects h u (e1 ': e2 ': e3 ': hs) f
+    HeftiaEffects h u (e1 ': es) f ~> HeftiaEffects h u (e1 ': e2 ': e3 ': es) f
 raise2UnderH = transformAllH weaken2UnderH
 {-# INLINE raise2UnderH #-}
 
@@ -490,46 +498,46 @@ raise2UnderH = transformAllH weaken2UnderH
 Insert two arbitrary effect classes below the first two leading effect classes in the effect class list.
 -}
 raise2Under2H ::
-    forall e1 e2 e3 e4 hs h u f c.
+    forall e1 e2 e3 e4 es f h u c.
     ( TransHeftia c h
-    , HFunctor (u (e1 ': e2 ': hs))
-    , HFunctor (u (e1 ': e2 ': e3 ': e4 ': hs))
+    , HFunctor (u (e1 ': e2 ': es))
+    , HFunctor (u (e1 ': e2 ': e3 ': e4 ': es))
     , c f
     , UnionH u
     ) =>
-    HeftiaEffects h u (e1 ': e2 ': hs) f ~> HeftiaEffects h u (e1 ': e2 ': e3 ': e4 ': hs) f
+    HeftiaEffects h u (e1 ': e2 ': es) f ~> HeftiaEffects h u (e1 ': e2 ': e3 ': e4 ': es) f
 raise2Under2H = transformAllH weaken2Under2H
 {-# INLINE raise2Under2H #-}
 
 -- | Inserts three arbitrary effect classes under the top effect class in the effect class list.
 raise3UnderH ::
-    forall e1 e2 e3 e4 hs h u f c.
+    forall e1 e2 e3 e4 es f h u c.
     ( TransHeftia c h
-    , HFunctor (u (e1 ': hs))
-    , HFunctor (u (e1 ': e2 ': e3 ': e4 ': hs))
+    , HFunctor (u (e1 ': es))
+    , HFunctor (u (e1 ': e2 ': e3 ': e4 ': es))
     , c f
     , UnionH u
     ) =>
-    HeftiaEffects h u (e1 ': hs) f ~> HeftiaEffects h u (e1 ': e2 ': e3 ': e4 ': hs) f
+    HeftiaEffects h u (e1 ': es) f ~> HeftiaEffects h u (e1 ': e2 ': e3 ': e4 ': es) f
 raise3UnderH = transformAllH weaken3UnderH
 {-# INLINE raise3UnderH #-}
 
 -- | Swaps the top two effect classes in the effect class list.
 flipHeftia ::
-    forall e1 e2 hs h u f c.
+    forall e1 e2 es f h u c.
     ( TransHeftia c h
-    , HFunctor (u (e1 ': e2 ': hs))
-    , HFunctor (u (e2 ': e1 ': hs))
+    , HFunctor (u (e1 ': e2 ': es))
+    , HFunctor (u (e2 ': e1 ': es))
     , c f
     , UnionH u
     ) =>
-    HeftiaEffects h u (e1 ': e2 ': hs) f ~> HeftiaEffects h u (e2 ': e1 ': hs) f
+    HeftiaEffects h u (e1 ': e2 ': es) f ~> HeftiaEffects h u (e2 ': e1 ': es) f
 flipHeftia = transformAllH flipUnionH
 {-# INLINE flipHeftia #-}
 
 -- | Reverses the order of the top three effect classes in the effect class list.
 flipHeftia3 ::
-    forall e1 e2 e3 es h u f c.
+    forall e1 e2 e3 es f h u c.
     ( TransHeftia c h
     , HFunctor (u (e1 ': e2 ': e3 ': es))
     , HFunctor (u (e3 : e2 : e1 : es))
@@ -542,7 +550,7 @@ flipHeftia3 = transformAllH flipUnion3H
 
 -- | Swaps the second and third effect classes from the top in the effect class list.
 flipHeftiaUnder ::
-    forall e1 e2 e3 es h u f c.
+    forall e1 e2 e3 es f h u c.
     ( TransHeftia c h
     , HFunctor (u (e1 ': e2 ': e3 ': es))
     , HFunctor (u (e1 : e3 : e2 : es))
@@ -555,7 +563,7 @@ flipHeftiaUnder = transformAllH flipUnionUnderH
 
 -- | Rotates the top three effect classes in the effect class list to the left.
 rotate3H ::
-    forall e1 e2 e3 es h u f c.
+    forall e1 e2 e3 es f h u c.
     ( TransHeftia c h
     , HFunctor (u (e1 ': e2 ': e3 ': es))
     , HFunctor (u (e2 : e3 : e1 : es))
@@ -568,7 +576,7 @@ rotate3H = transformAllH rot3H
 
 -- | Rotates the top three effect classes in the effect class list to the left twice.
 rotate3H' ::
-    forall e1 e2 e3 es h u f c.
+    forall e1 e2 e3 es f h u c.
     ( TransHeftia c h
     , HFunctor (u (e1 ': e2 ': e3 ': es))
     , HFunctor (u (e3 : e1 : e2 : es))
@@ -581,7 +589,7 @@ rotate3H' = transformAllH rot3H'
 
 -- | Bundles the top two effect classes in the effect class list into any open union.
 bundle2H ::
-    forall u' e1 e2 es h u f c.
+    forall u' e1 e2 es f h u c.
     ( TransHeftia c h
     , HFunctor (u (e1 ': e2 ': es))
     , HFunctor (u (u' '[e1, e2] ': es))
@@ -595,7 +603,7 @@ bundle2H = transformAllH bundleUnion2H
 
 -- | Bundles the top three effect classes in the effect class list into any open union.
 bundle3H ::
-    forall u' e1 e2 e3 es h u f c.
+    forall u' e1 e2 e3 es f h u c.
     ( TransHeftia c h
     , HFunctor (u (e1 ': e2 ': e3 ': es))
     , HFunctor (u (u' '[e1, e2, e3] : es))
@@ -609,7 +617,7 @@ bundle3H = transformAllH bundleUnion3H
 
 -- | Bundles the top four effect classes in the effect class list into any open union.
 bundle4H ::
-    forall u' e1 e2 e3 e4 es h u f c.
+    forall u' e1 e2 e3 e4 es f h u c.
     ( TransHeftia c h
     , HFunctor (u (e1 ': e2 ': e3 ': e4 ': es))
     , HFunctor (u (u' '[e1, e2, e3, e4] : es))
@@ -624,7 +632,7 @@ bundle4H = transformAllH bundleUnion4H
 
 -- | Expands the open union at the top of the effect class list.
 unbundle2H ::
-    forall e1 e2 es h u u' f c.
+    forall e1 e2 u' es f h u c.
     ( TransHeftia c h
     , HFunctor (u (e1 ': e2 ': es))
     , HFunctor (u (u' '[e1, e2] ': es))
@@ -638,7 +646,7 @@ unbundle2H = transformAllH unbundleUnion2H
 
 -- | Expands the open union at the top of the effect class list.
 unbundle3H ::
-    forall e1 e2 e3 es h u u' f c.
+    forall e1 e2 e3 u' es f h u c.
     ( TransHeftia c h
     , HFunctor (u (e1 ': e2 ': e3 ': es))
     , HFunctor (u (u' '[e1, e2, e3] ': es))
@@ -652,7 +660,7 @@ unbundle3H = transformAllH unbundleUnion3H
 
 -- | Expands the open union at the top of the effect class list.
 unbundle4H ::
-    forall e1 e2 e3 e4 es h u u' f c.
+    forall e1 e2 e3 e4 u' es f h u c.
     ( TransHeftia c h
     , HFunctor (u (e1 ': e2 ': e3 ': e4 ': es))
     , HFunctor (u (u' '[e1, e2, e3, e4] ': es))
@@ -673,6 +681,7 @@ __Warning__: The given natural transformation must be a monad morphism
 If not, the result will be ill-behaved.
 -}
 hoistHeftiaEffects ::
+    forall g f es h u c.
     (TransHeftia c h, HFunctor (u es), c f, c g) =>
     (f ~> g) ->
     HeftiaEffects h u es f ~> HeftiaEffects h u es g
@@ -681,6 +690,7 @@ hoistHeftiaEffects f = overHeftiaEffects $ hoistHeftia f
 
 -- | Accesses the inside of the 'HeftiaEffects' wrapper.
 overHeftiaEffects ::
+    forall b es' g h' u' a es f h u.
     (h (u es) f a -> h' (u' es') g b) ->
     HeftiaEffects h u es f a ->
     HeftiaEffects h' u' es' g b
@@ -695,7 +705,7 @@ __Warning__: The given natural transformation must be a monad morphism
 If not, the result will be ill-behaved.
 -}
 hoistInterpose ::
-    forall e h u es fr u' es' f c c'.
+    forall e es es' f h u fr u' c c'.
     ( TransHeftia c h
     , HFunctor (u es)
     , TransFreer c' fr
@@ -718,7 +728,7 @@ __Warning__: The given natural transformation must be a monad morphism
 If not, the result will be ill-behaved.
 -}
 interposeLower ::
-    forall e h u es fr u' es' f c c'.
+    forall e es es' f h u fr u' c c'.
     ( TransHeftia c h
     , HFunctor (u es)
     , TransFreer c' fr
@@ -748,6 +758,7 @@ __Warning__: The given natural transformation must be a monad morphism
 If not, the result will be ill-behaved.
 -}
 interpretLowerH ::
+    forall g f es h u c.
     (c f, c g, TransHeftia c h, HFunctor (u es)) =>
     (f ~> HeftiaEffects h u es g) ->
     HeftiaEffects h u es f ~> HeftiaEffects h u es g
@@ -755,7 +766,8 @@ interpretLowerH f = overHeftiaEffects $ interpretLowerHT (unHeftiaEffects . f)
 {-# INLINE interpretLowerH #-}
 
 -- | Transfer the higher-order effect to the underlying level.
-subsume ::
+subsumeH ::
+    forall e es f h u c.
     ( TransHeftia c h
     , MemberH u e es
     , UnionH u
@@ -765,21 +777,28 @@ subsume ::
     , c f
     ) =>
     HeftiaEffects h u (e ': es) f ~> HeftiaEffects h u es f
-subsume = interpretH $ heftiaEffects . liftSigT . hfmap unHeftiaEffects . injectH
-{-# INLINE subsume #-}
+subsumeH = interpretH $ heftiaEffects . liftSigT . hfmap unHeftiaEffects . injectH
+{-# INLINE subsumeH #-}
 
 -- | Lifts the lower carrier.
-liftLowerH :: (TransHeftia c h, c f, HFunctor (u es)) => f ~> HeftiaEffects h u es f
+liftLowerH ::
+    forall f es h u c.
+    (TransHeftia c h, c f, HFunctor (u es)) =>
+    f ~> HeftiaEffects h u es f
 liftLowerH = heftiaEffects . liftLowerHT
 {-# INLINE liftLowerH #-}
 
 -- | Drops a Heftia with no effect classes to elaborate to the lower carrier.
-elaborated :: (TransHeftia c h, UnionH u, HFunctor (u '[]), c f) => HeftiaEffects h u '[] f ~> f
+elaborated ::
+    forall f h u c.
+    (TransHeftia c h, UnionH u, HFunctor (u '[]), c f) =>
+    HeftiaEffects h u '[] f ~> f
 elaborated = runElaborateH absurdUnionH . unHeftiaEffects
 {-# INLINE elaborated #-}
 
 -- | Drops the Heftia to the lower carrier.
 runHeftiaEffects ::
+    forall f h u c.
     (TransHeftia c h, HFunctor (u '[LiftIns f]), UnionH u, c f) =>
     HeftiaEffects h u '[LiftIns f] f ~> f
 runHeftiaEffects = runElaborate $ unliftIns |+: absurdUnionH
