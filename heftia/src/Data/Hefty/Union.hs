@@ -22,10 +22,9 @@ import Control.Effect.Class.Machinery.DepParams (
     DepParamsOfH,
     EffectClassIdentifier,
     EffectClassIdentifierOfH,
-    QueryDepParamsFor,
     SigClassOf,
  )
-import Data.Kind (Constraint, Type)
+import Data.Kind (Constraint)
 import GHC.TypeLits (ErrorMessage (ShowType, Text, (:$$:), (:<>:)), TypeError)
 
 {- |
@@ -174,7 +173,7 @@ type family CheckMemberH isMember h hs :: Constraint where
 
 type MemberH u h hs = (CheckMemberH (IsMemberH h hs) h hs, HasMembershipH u h hs, IsMemberH h hs ~ 'True)
 
-type FirstDepParamsH eci es f = FindFirstDepParamsH es eci `ThenQueryDepParamsForH` '(eci, f)
+type FirstDepParamsH eci es f = FindFirstDepParamsH es eci
 type MemberDepH u eci es = MemberH u (SigClassIn es eci) es
 type SigClassIn es eci = SigClassOf eci (FirstDepParamsInH es eci :: DepParams eci)
 type FirstDepParamsInH es eci = FromJustFirstDepParamsH (FindFirstDepParamsH es eci) es eci
@@ -187,14 +186,6 @@ type family FindFirstDepParamsH (es :: [Signature]) (eci :: EffectClassIdentifie
 type family MatchEffectClassH eci0 eci1 dps es where
     MatchEffectClassH eci eci dps _ = 'Just dps
     MatchEffectClassH eci _ _ es = FindFirstDepParamsH es eci
-
-type family
-    ThenQueryDepParamsForH
-        (mDPS :: Maybe k)
-        (eci'f :: (EffectClassIdentifier, Type -> Type))
-    where
-    ThenQueryDepParamsForH ('Just dps) _ = 'Just dps
-    ThenQueryDepParamsForH 'Nothing '(eci, f) = QueryDepParamsFor eci f
 
 type family
     FromJustFirstDepParamsH
