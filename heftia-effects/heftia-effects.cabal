@@ -64,6 +64,7 @@ library
         Control.Effect.Handler.Heftia.State
         Control.Effect.Handler.Heftia.Except
         Control.Effect.Handler.Heftia.Provider
+        Control.Effect.Handler.Heftia.Provider.Implicit
         Control.Effect.Handler.Heftia.Resource
 
     -- Modules included in this executable, other than Main.
