@@ -5,7 +5,7 @@ packages:
 source-repository-package
     type: git
     location: https://github.com/sayo-hs/classy-effects
-    tag: fe8bcc5e5be492a021a464a887dd120f138c2d91
+    tag: 793a6d93e4d8ef47adf94201373d7e68fcb0c8e5
     subdir: classy-effects-base
     subdir: classy-effects-th
     subdir: classy-effects
