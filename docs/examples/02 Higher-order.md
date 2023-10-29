@@ -292,35 +292,6 @@ main =
 -}
 ```
 
-Here's the English translation:
-
-```haskell
-main :: IO ()
-main =
-    runFreerEffects
-        . logToIO
-        . timeToIO
-        . logWithTime
-        . elaborated
-        . passthroughLogChunk
-        . interpreted
-        . interpret (\(Log m) -> log m)
-        . runElaborate @_ @HeftiaChurchT @ExtensibleUnionH
-            (liftLower . limitLogChunk 2 |+: absurdUnionH)
-        $ logs
-
-{- Execution result:
-[2023-09-15 09:08:46.157032474 UTC] foo
-[2023-09-15 09:08:46.15713674 UTC] bar
-[2023-09-15 09:08:46.157159723 UTC] LOG OMITTED...
-------
-[2023-09-15 09:08:46.157204818 UTC] hoge
-[2023-09-15 09:08:46.157224835 UTC] piyo
-[2023-09-15 09:08:46.157245805 UTC] LOG OMITTED...
-------
--}
-```
-
 In this case, `liftLower` is used to match the type of the argument for `runElaborate`.
 `interpret (\(Log m) -> log m)` is for handling logs that are thrown outside the scope that isn't surrounded by `logChunk`. In this example, everything is within `logChunk`, so it's merely for type matching. Moreover, `interpreted . logToIO` has been added, and on top of the existing Heftia hierarchy, a new layer of Heftia and Freer is formed. Typically, the transformer stack of heftia-effects takes on a form where Heftia and Freer create layers similar to a mille-feuille pastry. This layered structure embodies the controlled-controlling relationship between first-order effects and higher-order effects at the type level. It serves as a guardrail for handling higher-order effects under sound semantics.
 
@@ -553,8 +524,6 @@ main =
 The raw logs before the limit are outputted to the file.
 
 Note the need for some tricks to match the types. This library has a significant aspect of "guardrails by type," much like the Rust language, which means it tends to have a steep learning curve. I believe that for readers familiar with Haskell, this won't be too high a barrier.
-
-Here is the English translation of the provided text:
 
 ## Precautions When Handling Higher-Order Effects
 
