@@ -85,7 +85,6 @@ Examples with explanations can be found in the [docs/examples/](docs/examples/) 
 * Benchmarking
 * Enriching the documentation
 * Completing missing definitions such as
-    * the Heftia monad transformer encoded in tree structure
     * handlers for the `Accum`, `Coroutine`, `Fresh`, `Input`, `Output` effect classes
 
     and others.
