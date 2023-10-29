@@ -17,6 +17,7 @@ import Control.Effect.Class (type (~>))
 import Control.Effect.Class.Machinery.HFunctor (hfmap)
 import Control.Heftia.Trans (TransHeftia (..))
 import Control.Monad (join)
+import Control.Monad.Identity (Identity)
 import Control.Monad.Trans (MonadTrans, lift)
 import Control.Monad.Trans.Cont (ContT (ContT), runContT)
 import Control.Monad.Trans.Heftia (MonadTransHeftia, elaborateMK, reelaborateMK)
@@ -75,3 +76,5 @@ instance MonadTransHeftia HeftiaChurchT where
 
     reelaborateMK f = elaborateMK f . hoistHeftia liftLowerHT
     {-# INLINE reelaborateMK #-}
+
+type HeftiaChurch h = HeftiaChurchT h Identity

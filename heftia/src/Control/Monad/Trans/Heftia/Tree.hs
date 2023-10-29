@@ -16,6 +16,7 @@ module Control.Monad.Trans.Heftia.Tree where
 import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap)
 import Control.Monad (join, (<=<))
 import Control.Monad.Cont (ContT (ContT), runContT)
+import Control.Monad.Identity (Identity)
 import Control.Monad.Trans (MonadTrans)
 import Control.Monad.Trans.Free (FreeF (Free, Pure))
 import Control.Monad.Trans.Heftia.Church (HeftiaChurchT (HeftiaChurchT), runHeftiaChurchT)
@@ -59,3 +60,5 @@ fromChurchHeftia (HeftiaChurchT f) =
                         (hfmap (unHeftiaTreeT . fromChurchHeftia) h)
             )
             (pure . pure)
+
+type HeftiaTree h = HeftiaTreeT h Identity
