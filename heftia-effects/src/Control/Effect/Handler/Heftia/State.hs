@@ -13,12 +13,17 @@ Interpreter for the t'Control.Effect.Class.State.State' effect class.
 -}
 module Control.Effect.Handler.Heftia.State where
 
+import Control.Arrow ((>>>))
 import Control.Effect.Class (type (~>))
+import Control.Effect.Class.Reader (AskI (Ask), ask)
 import Control.Effect.Class.State (StateI (Get, Put))
-import Control.Effect.Freer (Fre, interpretT)
+import Control.Effect.Freer (Fre, interpose, interpretK, interpretT, raiseUnder)
+import Control.Effect.Handler.Heftia.Reader (interpretAsk)
 import Control.Monad.State (StateT)
 import Control.Monad.Trans.State (runStateT)
 import Control.Monad.Trans.State qualified as T
+import Data.Function ((&))
+import Data.Functor ((<&>))
 import Data.Tuple (swap)
 
 -- | Interpret the 'Get'/'Put' effects using the 'StateT' monad transformer.
@@ -40,3 +45,19 @@ interpretStateT = interpretT \case
     Get -> T.get
     Put s -> T.put s
 {-# INLINE interpretStateT #-}
+
+{- |
+Interpret the 'Get'/'Put' effects using the t'Control.Monad.Trans.Cont.ContT' continuation monad
+transformer.
+-}
+interpretStateK :: forall s es m a. Monad m => s -> Fre (StateI s ': es) m a -> Fre es m (s, a)
+interpretStateK initialState =
+    raiseUnder
+        >>> interpretK
+            (\a -> ask <&> (,a))
+            ( \k -> \case
+                Get -> k =<< ask
+                Put s -> k () & interpose @(AskI s) \Ask -> pure s
+            )
+        >>> interpretAsk initialState
+{-# INLINE interpretStateK #-}
