@@ -32,7 +32,7 @@ A type class representing a general open union for first-order effects, independ
 implementation.
 -}
 class Union (u :: [Instruction] -> Instruction) where
-    {-# MINIMAL inject, project, absurdUnion, (comp | (inject0, weaken), decomp | (|+|:)) #-}
+    {-# MINIMAL inject, project, absurdUnion, (comp | (inject0, weaken), decomp | (+:)) #-}
 
     type HasMembership u (f :: Instruction) (fs :: [Instruction]) :: Constraint
 
@@ -48,15 +48,15 @@ class Union (u :: [Instruction] -> Instruction) where
     {-# INLINE comp #-}
 
     decomp :: u (f ': fs) a -> Either (f a) (u fs a)
-    decomp = Left |+|: Right
+    decomp = Left +: Right
     {-# INLINE decomp #-}
 
-    infixr 5 |+|:
-    (|+|:) :: (f a -> r) -> (u fs a -> r) -> u (f ': fs) a -> r
-    (f |+|: g) u = case decomp u of
+    infixr 5 +:
+    (+:) :: (f a -> r) -> (u fs a -> r) -> u (f ': fs) a -> r
+    (f +: g) u = case decomp u of
         Left x -> f x
         Right x -> g x
-    {-# INLINE (|+|:) #-}
+    {-# INLINE (+:) #-}
 
     inject0 :: f ~> u (f ': fs)
     inject0 = comp . Left
@@ -91,66 +91,66 @@ class Union (u :: [Instruction] -> Instruction) where
     {-# INLINE weaken4 #-}
 
     weakenUnder :: u (f1 ': fs) ~> u (f1 ': f2 ': fs)
-    weakenUnder = inject0 |+|: weaken2
+    weakenUnder = inject0 +: weaken2
 
     weakenUnder2 :: u (f1 ': f2 ': fs) ~> u (f1 ': f2 ': f3 ': fs)
-    weakenUnder2 = inject0 |+|: injectUnder |+|: weaken3
+    weakenUnder2 = inject0 +: injectUnder +: weaken3
 
     weakenUnder3 :: u (f1 ': f2 ': f3 ': fs) ~> u (f1 ': f2 ': f3 ': f4 ': fs)
-    weakenUnder3 = inject0 |+|: injectUnder |+|: injectUnder2 |+|: weaken4
+    weakenUnder3 = inject0 +: injectUnder +: injectUnder2 +: weaken4
 
     weaken2Under :: u (f1 ': fs) ~> u (f1 ': f2 ': f3 ': fs)
-    weaken2Under = inject0 |+|: weaken3
+    weaken2Under = inject0 +: weaken3
 
     weaken2Under2 :: u (f1 ': f2 ': fs) ~> u (f1 ': f2 ': f3 ': f4 ': fs)
-    weaken2Under2 = inject0 |+|: injectUnder |+|: weaken4
+    weaken2Under2 = inject0 +: injectUnder +: weaken4
 
     weaken3Under :: u (f1 ': fs) ~> u (f1 ': f2 ': f3 ': f4 ': fs)
-    weaken3Under = inject0 |+|: weaken4
+    weaken3Under = inject0 +: weaken4
 
     flipUnion :: u (f1 ': f2 ': fs) ~> u (f2 ': f1 ': fs)
-    flipUnion = injectUnder |+|: inject0 |+|: weaken2
+    flipUnion = injectUnder +: inject0 +: weaken2
 
     flipUnion3 :: u (f1 ': f2 ': f3 ': fs) ~> u (f3 ': f2 ': f1 ': fs)
-    flipUnion3 = injectUnder2 |+|: injectUnder |+|: inject0 |+|: weaken3
+    flipUnion3 = injectUnder2 +: injectUnder +: inject0 +: weaken3
 
     flipUnionUnder :: u (f1 ': f2 ': f3 ': fs) ~> u (f1 ': f3 ': f2 ': fs)
-    flipUnionUnder = inject0 |+|: injectUnder2 |+|: injectUnder |+|: weaken3
+    flipUnionUnder = inject0 +: injectUnder2 +: injectUnder +: weaken3
 
     rot3 :: u (f1 ': f2 ': f3 ': fs) ~> u (f2 ': f3 ': f1 ': fs)
-    rot3 = injectUnder2 |+|: inject0 |+|: injectUnder |+|: weaken3
+    rot3 = injectUnder2 +: inject0 +: injectUnder +: weaken3
 
     rot3' :: u (f1 ': f2 ': f3 ': fs) ~> u (f3 ': f1 ': f2 ': fs)
-    rot3' = injectUnder |+|: injectUnder2 |+|: inject0 |+|: weaken3
+    rot3' = injectUnder +: injectUnder2 +: inject0 +: weaken3
 
     bundleUnion2 :: Union u' => u (f1 ': f2 ': fs) ~> u (u' '[f1, f2] ': fs)
-    bundleUnion2 = inject0 . inject0 |+|: inject0 . injectUnder |+|: weaken
+    bundleUnion2 = inject0 . inject0 +: inject0 . injectUnder +: weaken
 
     bundleUnion3 :: Union u' => u (f1 ': f2 ': f3 ': fs) ~> u (u' '[f1, f2, f3] ': fs)
     bundleUnion3 =
         (inject0 . inject0)
-            |+|: (inject0 . injectUnder)
-            |+|: (inject0 . injectUnder2)
-            |+|: weaken
+            +: (inject0 . injectUnder)
+            +: (inject0 . injectUnder2)
+            +: weaken
 
     bundleUnion4 :: Union u' => u (f1 ': f2 ': f3 ': f4 ': fs) ~> u (u' '[f1, f2, f3, f4] ': fs)
     bundleUnion4 =
         (inject0 . inject0)
-            |+|: (inject0 . injectUnder)
-            |+|: (inject0 . injectUnder2)
-            |+|: (inject0 . injectUnder3)
-            |+|: weaken
+            +: (inject0 . injectUnder)
+            +: (inject0 . injectUnder2)
+            +: (inject0 . injectUnder3)
+            +: weaken
 
     unbundleUnion2 :: Union u' => u (u' '[f1, f2] ': fs) ~> u (f1 ': f2 ': fs)
-    unbundleUnion2 = (inject0 |+|: injectUnder |+|: absurdUnion) |+|: weaken2
+    unbundleUnion2 = (inject0 +: injectUnder +: absurdUnion) +: weaken2
 
     unbundleUnion3 :: Union u' => u (u' '[f1, f2, f3] ': fs) ~> u (f1 ': f2 ': f3 ': fs)
-    unbundleUnion3 = (inject0 |+|: injectUnder |+|: injectUnder2 |+|: absurdUnion) |+|: weaken3
+    unbundleUnion3 = (inject0 +: injectUnder +: injectUnder2 +: absurdUnion) +: weaken3
 
     unbundleUnion4 :: Union u' => u (u' '[f1, f2, f3, f4] ': fs) ~> u (f1 ': f2 ': f3 ': f4 ': fs)
     unbundleUnion4 =
-        (inject0 |+|: injectUnder |+|: injectUnder2 |+|: injectUnder3 |+|: absurdUnion)
-            |+|: weaken4
+        (inject0 +: injectUnder +: injectUnder2 +: injectUnder3 +: absurdUnion)
+            +: weaken4
 
 type family IsMember (f :: Instruction) fs where
     IsMember f (f ': fs) = 'True

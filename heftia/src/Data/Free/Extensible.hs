@@ -27,7 +27,7 @@ import Data.Free.Union (
         inject0,
         project,
         weaken,
-        (|+|:)
+        (+:)
     ),
  )
 import Data.Proxy (Proxy (Proxy))
@@ -78,8 +78,8 @@ instance Union ExtensibleUnion where
         ExtensibleUnion $ EmbedAt (nextMembership w) e
     {-# INLINE weaken #-}
 
-    f |+|: g = (f . unFieldApp <:| g . ExtensibleUnion) . unExtensibleUnion
-    {-# INLINE (|+|:) #-}
+    f +: g = (f . unFieldApp <:| g . ExtensibleUnion) . unExtensibleUnion
+    {-# INLINE (+:) #-}
 
 findFirstMembership :: forall xs x. KnownNat (TypeIndex xs x) => Membership xs x
 findFirstMembership = unsafeMkMembership $ fromIntegral $ natVal @(TypeIndex xs x) Proxy

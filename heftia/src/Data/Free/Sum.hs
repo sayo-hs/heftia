@@ -50,25 +50,24 @@ import GHC.Generics (type (:+:) (L1, R1))
 
 infixr 6 +
 
--- | A type synonym for disambiguation to the sum on the higher-order side.
 type (+) = (:+:)
 
-caseF :: (f a -> r) -> (g a -> r) -> (f + g) a -> r
-caseF f g = \case
+caseSum :: (f a -> r) -> (g a -> r) -> (f + g) a -> r
+caseSum f g = \case
     L1 x -> f x
     R1 x -> g x
-{-# INLINE caseF #-}
+{-# INLINE caseSum #-}
 
 absurdL :: (NopI + f) ~> f
-absurdL = caseF \case {} id
+absurdL = caseSum \case {} id
 {-# INLINE absurdL #-}
 
 absurdR :: (f + NopI) ~> f
-absurdR = caseF id \case {}
+absurdR = caseSum id \case {}
 {-# INLINE absurdR #-}
 
 swapSum :: (f + g) a -> (g + f) a
-swapSum = caseF R1 L1
+swapSum = caseSum R1 L1
 {-# INLINE swapSum #-}
 
 type family Sum fs where

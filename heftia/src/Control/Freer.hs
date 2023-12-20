@@ -18,42 +18,45 @@ module Control.Freer where
 import Control.Applicative.Free (Ap, liftAp, runAp)
 import Control.Effect.Class (type (~>))
 import Data.Functor.Coyoneda (Coyoneda, hoistCoyoneda, liftCoyoneda, lowerCoyoneda)
+import Data.Kind (Type)
+
+type InsClass = Type -> Type
 
 -- | A type class to abstract away the encoding details of the Freer carrier.
-class (forall ins. c (f ins)) => Freer c f | f -> c where
-    {-# MINIMAL liftIns, (interpretF | retract, transformF) #-}
+class (forall e. c (f e)) => Freer c f | f -> c where
+    {-# MINIMAL liftIns, (interpretFreer | retractFreer, transformFreer) #-}
 
     -- | Lift a /instruction/ into a Freer carrier.
-    liftIns :: ins a -> f ins a
+    liftIns :: e a -> f e a
 
-    interpretF :: c m => (ins ~> m) -> f ins a -> m a
-    interpretF i = retract . transformF i
-    {-# INLINE interpretF #-}
+    interpretFreer :: c m => (e ~> m) -> f e a -> m a
+    interpretFreer i = retractFreer . transformFreer i
+    {-# INLINE interpretFreer #-}
 
-    retract :: c m => f m a -> m a
-    retract = interpretF id
-    {-# INLINE retract #-}
+    retractFreer :: c m => f m a -> m a
+    retractFreer = interpretFreer id
+    {-# INLINE retractFreer #-}
 
     -- | Translate /instruction/s embedded in a Freer carrier.
-    transformF ::
-        (ins ~> ins') ->
-        f ins a ->
-        f ins' a
-    transformF phi = interpretF $ liftIns . phi
-    {-# INLINE transformF #-}
+    transformFreer ::
+        (e ~> e') ->
+        f e a ->
+        f e' a
+    transformFreer phi = interpretFreer $ liftIns . phi
+    {-# INLINE transformFreer #-}
 
-    reinterpretF :: (ins ~> f ins) -> f ins a -> f ins a
-    reinterpretF = interpretF
-    {-# INLINE reinterpretF #-}
+    reinterpretFreer :: (e ~> f e) -> f e a -> f e a
+    reinterpretFreer = interpretFreer
+    {-# INLINE reinterpretFreer #-}
 
 instance Freer Functor Coyoneda where
     liftIns = liftCoyoneda
-    interpretF i = lowerCoyoneda . hoistCoyoneda i
+    interpretFreer i = lowerCoyoneda . hoistCoyoneda i
     {-# INLINE liftIns #-}
-    {-# INLINE interpretF #-}
+    {-# INLINE interpretFreer #-}
 
 instance Freer Applicative Ap where
     liftIns = liftAp
-    interpretF = runAp
+    interpretFreer = runAp
     {-# INLINE liftIns #-}
-    {-# INLINE interpretF #-}
+    {-# INLINE interpretFreer #-}

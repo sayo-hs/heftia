@@ -55,25 +55,17 @@ source-repository head
 
 library
     exposed-modules:
+        Control.Effect.HyperFree
+        Control.Effect.Free
+        Control.HyperFree
         Control.Freer
-        Control.Freer.Trans
-        Control.Heftia
-        Control.Heftia.Trans
-        Control.Monad.Trans.Freer
-        Control.Monad.Trans.Freer.Tree
-        Control.Monad.Trans.Freer.Church
-        Control.Monad.Trans.Heftia
-        Control.Monad.Trans.Heftia.Tree
-        Control.Monad.Trans.Heftia.Church
-        Control.Monad.Trans.Hefty
-        Control.Effect.Freer
-        Control.Effect.Heftia
+        Control.Monad.Freer
+        Control.Monad.Freer.Church
+        Control.Monad.Freer.Tree
+        Data.HyperFree.Sum
         Data.Free.Union
         Data.Free.Extensible
         Data.Free.Sum
-        Data.Hefty.Union
-        Data.Hefty.Extensible
-        Data.Hefty.Sum
 
     -- Modules included in this executable, other than Main.
     -- other-modules:
