@@ -26,44 +26,68 @@ newtype
         (u :: [InsClass] -> InsClass)
         (f :: InsClass -> Type -> Type)
         (e :: InsClass)
-        (a :: Type) = EffectfulF {unEffectfulF :: f (SumToUnion u e) a}
+        (a :: Type) = EffectfulF {unEffectfulF :: f (SumToUnionF u e) a}
 
-type SumToUnion u e = u (SumToUnionList u e)
-type ManyToUnion u e = ManyListToUnion u (SumToUnionList u e)
+-- | Manipulate the inside of the t'EffectfulF' wrapper.
+overEffectfulF ::
+    forall b e' f' u' a e f u.
+    (f (SumToUnionF u e) a -> f' (SumToUnionF u' e') b) ->
+    EffectfulF u f e a ->
+    EffectfulF u' f' e' b
+overEffectfulF f = EffectfulF . f . unEffectfulF
+{-# INLINE overEffectfulF #-}
 
-type family ManyListToUnion (u :: [InsClass] -> InsClass) (es :: [InsClass]) :: InsClass where
-    ManyListToUnion u '[] = NopI
-    ManyListToUnion u '[e] = e
-    ManyListToUnion u es = u es
+-- | Convert the sum of first-order effects into an open union.
+type SumToUnionF u e = u (SumToUnionListF u e)
 
-type family SumToUnionList (u :: [InsClass] -> InsClass) (e :: InsClass) :: [InsClass] where
-    SumToUnionList u (e1 + e2) = ManyToUnion u e1 ': SumToUnionList u e2
-    SumToUnionList u NopI = '[]
-    SumToUnionList u e = '[e]
+{- |
+Convert the sum of first-order effects into an open union. If it's a single first-order effect
+rather than a sum, leave it as is without converting.
+-}
+type MultiToUnionF u e = MultiListToUnionF u (SumToUnionListF u e)
 
-deriving newtype instance Functor (f (SumToUnion u e)) => Functor (EffectfulF u f e)
-deriving newtype instance Applicative (f (SumToUnion u e)) => Applicative (EffectfulF u f e)
-deriving newtype instance Alternative (f (SumToUnion u e)) => Alternative (EffectfulF u f e)
-deriving newtype instance Monad (f (SumToUnion u e)) => Monad (EffectfulF u f e)
-deriving newtype instance MonadPlus (f (SumToUnion u e)) => MonadPlus (EffectfulF u f e)
-deriving newtype instance (MonadBase b (f (SumToUnion u e)), Monad b) => MonadBase b (EffectfulF u f e)
-deriving newtype instance MonadIO (f (SumToUnion u e)) => MonadIO (EffectfulF u f e)
-deriving newtype instance MonadFail (f (SumToUnion u e)) => MonadFail (EffectfulF u f e)
+{- |
+Convert a given list of first-order effect classes into a suitable representation type for each case
+of being empty, single, or multiple.
+-}
+type family MultiListToUnionF (u :: [InsClass] -> InsClass) (es :: [InsClass]) :: InsClass where
+    MultiListToUnionF u '[] = NopI
+    MultiListToUnionF u '[e] = e
+    MultiListToUnionF u es = u es
 
-deriving stock instance Foldable (f (SumToUnion u e)) => Foldable (EffectfulF u f e)
-deriving stock instance Traversable (f (SumToUnion u e)) => Traversable (EffectfulF u f e)
+{- |
+Recursively decompose the sum of first-order effects into a list, following the direction of right
+association.
+-}
+type family SumToUnionListF (u :: [InsClass] -> InsClass) (e :: InsClass) :: [InsClass] where
+    SumToUnionListF u (e1 + e2) = MultiToUnionF u e1 ': SumToUnionListF u e2
+    SumToUnionListF u NopI = '[]
+    SumToUnionListF u e = '[e]
 
-deriving newtype instance Eq (f (SumToUnion u e) a) => Eq (EffectfulF u f e a)
-deriving newtype instance Ord (f (SumToUnion u e) a) => Ord (EffectfulF u f e a)
-deriving newtype instance Read (f (SumToUnion u e) a) => Read (EffectfulF u f e a)
-deriving newtype instance Show (f (SumToUnion u e) a) => Show (EffectfulF u f e a)
+deriving newtype instance Functor (f (SumToUnionF u e)) => Functor (EffectfulF u f e)
+deriving newtype instance Applicative (f (SumToUnionF u e)) => Applicative (EffectfulF u f e)
+deriving newtype instance Alternative (f (SumToUnionF u e)) => Alternative (EffectfulF u f e)
+deriving newtype instance Monad (f (SumToUnionF u e)) => Monad (EffectfulF u f e)
+deriving newtype instance MonadPlus (f (SumToUnionF u e)) => MonadPlus (EffectfulF u f e)
+deriving newtype instance (MonadBase b (f (SumToUnionF u e)), Monad b) => MonadBase b (EffectfulF u f e)
+deriving newtype instance MonadIO (f (SumToUnionF u e)) => MonadIO (EffectfulF u f e)
+deriving newtype instance MonadFail (f (SumToUnionF u e)) => MonadFail (EffectfulF u f e)
+
+deriving stock instance Foldable (f (SumToUnionF u e)) => Foldable (EffectfulF u f e)
+deriving stock instance Traversable (f (SumToUnionF u e)) => Traversable (EffectfulF u f e)
+
+deriving newtype instance Eq (f (SumToUnionF u e) a) => Eq (EffectfulF u f e a)
+deriving newtype instance Ord (f (SumToUnionF u e) a) => Ord (EffectfulF u f e a)
+deriving newtype instance Read (f (SumToUnionF u e) a) => Read (EffectfulF u f e a)
+deriving newtype instance Show (f (SumToUnionF u e) a) => Show (EffectfulF u f e a)
 
 type InsClass = Type -> Type
 
+-- Using the provided interpretation function, interpret first-order effects.
 interpretF ::
     forall e r f u c.
     (Freer c f, Union u) =>
-    (ManyToUnion u e ~> EffectfulF u f r) ->
+    (MultiToUnionF u e ~> EffectfulF u f r) ->
     EffectfulF u f (e + r) ~> EffectfulF u f r
 interpretF i =
     overEffectfulF $ interpretFreer \u ->
@@ -74,7 +98,7 @@ interpretF i =
 interpretTF ::
     forall t e r f u.
     (MonadFreer f, Union u, MonadTrans t, Monad (t (EffectfulF u f r))) =>
-    (ManyToUnion u e ~> t (EffectfulF u f r)) ->
+    (MultiToUnionF u e ~> t (EffectfulF u f r)) ->
     EffectfulF u f (e + r) ~> t (EffectfulF u f r)
 interpretTF i = retractFreer . transformFreer (caseSum i lift) . splitF @f
 {-# INLINE interpretTF #-}
@@ -82,7 +106,7 @@ interpretTF i = retractFreer . transformFreer (caseSum i lift) . splitF @f
 transformAllF ::
     forall u' e e' f u c.
     (Freer c f, Union u, Union u') =>
-    (SumToUnion u e ~> SumToUnion u' e') ->
+    (SumToUnionF u e ~> SumToUnionF u' e') ->
     EffectfulF u f e ~> EffectfulF u' f e'
 transformAllF f = overEffectfulF $ transformFreer f
 {-# INLINE transformAllF #-}
@@ -132,7 +156,7 @@ flipEffectfulF = transformAllF flipUnion
 splitF ::
     forall f' e r f u c.
     (Freer c f', Freer c f, Union u) =>
-    EffectfulF u f (e + r) ~> f' (ManyToUnion u e + EffectfulF u f r)
+    EffectfulF u f (e + r) ~> f' (MultiToUnionF u e + EffectfulF u f r)
 splitF (EffectfulF f) =
     f & interpretFreer \u -> case decomp u of
         Left e -> liftIns $ L1 e
@@ -141,7 +165,7 @@ splitF (EffectfulF f) =
 mergeF ::
     forall f' e r f u c.
     (Freer c f', Freer c f, Union u) =>
-    f' (ManyToUnion u e + EffectfulF u f r) ~> EffectfulF u f (e + r)
+    f' (MultiToUnionF u e + EffectfulF u f r) ~> EffectfulF u f (e + r)
 mergeF =
     EffectfulF
         . interpretFreer
@@ -149,11 +173,3 @@ mergeF =
                 (liftIns . inject0)
                 (transformFreer weaken . unEffectfulF)
             )
-
-overEffectfulF ::
-    forall b e' f' u' a e f u.
-    (f (SumToUnion u e) a -> f' (u' (SumToUnionList u' e')) b) ->
-    EffectfulF u f e a ->
-    EffectfulF u' f' e' b
-overEffectfulF f = EffectfulF . f . unEffectfulF
-{-# INLINE overEffectfulF #-}

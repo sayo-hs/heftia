@@ -55,14 +55,15 @@ source-repository head
 
 library
     exposed-modules:
-        Control.Effect.HyperFree
+        Control.Effect.Hefty
         Control.Effect.Free
-        Control.HyperFree
+        Control.Hefty
+        Control.Hefty.SFunctor
         Control.Freer
         Control.Monad.Freer
         Control.Monad.Freer.Church
         Control.Monad.Freer.Tree
-        Data.HyperFree.Sum
+        Data.Hefty.Sum
         Data.Free.Union
         Data.Free.Extensible
         Data.Free.Sum
