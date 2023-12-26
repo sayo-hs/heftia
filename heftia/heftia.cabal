@@ -85,6 +85,7 @@ library
         transformers ^>= 0.5.6,
         extensible ^>= 0.9,
         membership == 0.0.1,
+        singletons-base,
 
     hs-source-dirs:   src
     ghc-options:      -Wall

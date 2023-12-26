@@ -91,7 +91,7 @@ interpretF ::
     EffectfulF u f (e + r) ~> EffectfulF u f r
 interpretF i =
     overEffectfulF $ interpretFreer \u ->
-        case decomp @u u of
+        case decomp u of
             Left e -> unEffectfulF $ i e
             Right e -> liftIns e
 
@@ -100,7 +100,7 @@ interpretTF ::
     (MonadFreer f, Union u, MonadTrans t, Monad (t (EffectfulF u f r))) =>
     (MultiToUnionF u e ~> t (EffectfulF u f r)) ->
     EffectfulF u f (e + r) ~> t (EffectfulF u f r)
-interpretTF i = retractFreer . transformFreer (caseSum i lift) . splitF @f
+interpretTF i = retractFreer . transformFreer (caseSum i lift) . splitEffF @f
 {-# INLINE interpretTF #-}
 
 transformAllF ::
@@ -153,20 +153,20 @@ flipEffectfulF ::
 flipEffectfulF = transformAllF flipUnion
 {-# INLINE flipEffectfulF #-}
 
-splitF ::
+splitEffF ::
     forall f' e r f u c.
     (Freer c f', Freer c f, Union u) =>
     EffectfulF u f (e + r) ~> f' (MultiToUnionF u e + EffectfulF u f r)
-splitF (EffectfulF f) =
+splitEffF (EffectfulF f) =
     f & interpretFreer \u -> case decomp u of
         Left e -> liftIns $ L1 e
         Right e -> liftIns $ R1 $ EffectfulF $ liftIns e
 
-mergeF ::
+mergeEffF ::
     forall f' e r f u c.
     (Freer c f', Freer c f, Union u) =>
     f' (MultiToUnionF u e + EffectfulF u f r) ~> EffectfulF u f (e + r)
-mergeF =
+mergeEffF =
     EffectfulF
         . interpretFreer
             ( caseSum

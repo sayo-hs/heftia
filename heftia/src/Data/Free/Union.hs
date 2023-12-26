@@ -1,7 +1,9 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE UndecidableInstances #-}
+
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
-{-# LANGUAGE UndecidableInstances #-}
 
 {- |
 Copyright   :  (c) 2023 Yamada Ryo
@@ -16,15 +18,13 @@ implementation.
 module Data.Free.Union where
 
 import Control.Effect.Class (Instruction, type (~>))
-import Control.Effect.Class.Machinery.DepParams (
-    DepParams,
-    DepParamsOf,
-    EffectClassIdentifier,
-    EffectClassIdentifierOf,
-    InsClassOf,
-    QueryDepParamsFor,
- )
-import Data.Kind (Constraint, Type)
+import Control.Freer (InsClass)
+import Control.Monad ((<=<))
+import Data.Bool.Singletons (SBool (SFalse, STrue))
+import Data.Kind (Constraint)
+import Data.Singletons (SingI, sing)
+import Data.Type.Bool (If, type (||))
+import Data.Type.Equality ((:~:) (Refl))
 import GHC.TypeLits (ErrorMessage (ShowType, Text, (:$$:), (:<>:)), TypeError)
 
 {- |
@@ -152,55 +152,131 @@ class Union (u :: [Instruction] -> Instruction) where
         (inject0 +: injectUnder +: injectUnder2 +: injectUnder3 +: absurdUnion)
             +: weaken4
 
-type family IsMember (f :: Instruction) fs where
-    IsMember f (f ': fs) = 'True
-    IsMember f (_ ': fs) = IsMember f fs
-    IsMember _ '[] = 'False
+class Member (u :: [InsClass] -> InsClass) f fs where
+    injectRec :: f ~> u fs
+    projectRec :: u fs a -> Maybe (f a)
 
-type family CheckMember isMember f fs :: Constraint where
-    CheckMember 'True f fs = ()
-    CheckMember 'False f fs =
-        TypeError
-            ( 'Text "The instruction class: " ':<>: 'ShowType f
-                ':$$: 'Text " was not found in the list:"
-                ':$$: 'Text "    " ':<>: 'ShowType fs
-            )
-
-type Member u f fs = (CheckMember (IsMember f fs) f fs, HasMembership u f fs, IsMember f fs ~ 'True)
-
-type FirstDepParams eci es f = FindFirstDepParams es eci `ThenQueryDepParamsFor` '(eci, f)
-type MemberDep u eci es = Member u (InsClassIn es eci) es
-type InsClassIn es eci = InsClassOf eci (FirstDepParamsIn es eci :: DepParams eci)
-type FirstDepParamsIn es eci = FromJustFirstDepParams (FindFirstDepParams es eci) es eci
-
-type family FindFirstDepParams (es :: [Instruction]) (eci :: EffectClassIdentifier) where
-    FindFirstDepParams (e ': es) eci =
-        MatchEffectClass eci (EffectClassIdentifierOf e) (DepParamsOf e) es
-    FindFirstDepParams '[] eci = 'Nothing
-
-type family MatchEffectClass eci0 eci1 dps es where
-    MatchEffectClass eci eci dps _ = 'Just dps
-    MatchEffectClass eci _ _ es = FindFirstDepParams es eci
-
-type family
-    ThenQueryDepParamsFor
-        (mDPS :: Maybe k)
-        (eci'f :: (EffectClassIdentifier, Type -> Type))
+instance
+    ( SearchMemberRec fs u f fs found fihu
+    , MemberFound f fs found
+    , SingI fihu
+    ) =>
+    Member u f fs
     where
-    ThenQueryDepParamsFor ('Just dps) _ = 'Just dps
-    ThenQueryDepParamsFor 'Nothing '(eci, f) = QueryDepParamsFor eci f
+    injectRec = withFound @f @fs @found $ injectSMR @fs Refl sing
+    projectRec = withFound @f @fs @found $ projectSMR @fs Refl sing
+    {-# INLINE injectRec #-}
+    {-# INLINE projectRec #-}
 
-type family
-    FromJustFirstDepParams
-        (mDPS :: Maybe k)
-        (es :: [Instruction])
-        (eci :: EffectClassIdentifier)
+class MemberFound f fs found where
+    withFound :: (found ~ 'True => a) -> a
+
+instance MemberFound f fs 'True where
+    withFound a = a
+    {-# INLINE withFound #-}
+
+-- A stopgap until upgrading to base-4.19.
+-- https://hackage.haskell.org/package/base-4.19.0.0/docs/GHC-TypeError.html#t:Unsatisfiable
+instance
+    TypeError
+        ( 'Text "The effect class: " ':<>: 'ShowType f
+            ':$$: 'Text " was not found in the union:"
+            ':$$: 'Text "    " ':<>: 'ShowType fs
+        ) =>
+    MemberFound f fs 'False
     where
-    FromJustFirstDepParams ('Just dps) _ _ = dps
-    FromJustFirstDepParams 'Nothing es eci =
-        TypeError
-            ( 'Text "No instruction class matching the effect class identifier:"
-                ':$$: 'Text "    " ':<>: 'ShowType eci
-                ':$$: 'Text " was found in the list:"
-                ':$$: 'Text "    " ':<>: 'ShowType es
-            )
+    withFound _ = error "unreachable"
+
+type SearchMemberRec rest u f = SearchMemberRec_ (NextSearchMemberRecAction rest u f) rest u f
+
+class
+    SearchMemberRec_
+        (act :: SearchMemberRecAction)
+        (rest :: [Instruction])
+        (u :: [Instruction] -> Instruction)
+        (f :: Instruction)
+        (fs :: [Instruction])
+        (found :: Bool)
+        (foundInHeadUnion :: Bool)
+        | rest f -> found foundInHeadUnion
+    where
+    injectSMR_ :: found :~: 'True -> SBool foundInHeadUnion -> f ~> u fs
+    projectSMR_ :: found :~: 'True -> SBool foundInHeadUnion -> u fs a -> Maybe (f a)
+
+injectSMR ::
+    forall rest u f fs found foundInHeadUnion.
+    SearchMemberRec rest u f fs found foundInHeadUnion =>
+    found :~: 'True ->
+    SBool foundInHeadUnion ->
+    f ~> u fs
+injectSMR = injectSMR_ @(NextSearchMemberRecAction rest u f) @rest
+{-# INLINE injectSMR #-}
+
+projectSMR ::
+    forall rest u f fs found foundInHeadUnion a.
+    SearchMemberRec rest u f fs found foundInHeadUnion =>
+    found :~: 'True ->
+    SBool foundInHeadUnion ->
+    u fs a ->
+    Maybe (f a)
+projectSMR = projectSMR_ @(NextSearchMemberRecAction rest u f) @rest
+{-# INLINE projectSMR #-}
+
+data SearchMemberRecAction = SmrStop | SmrRight | SmrDown
+
+type family NextSearchMemberRecAction rest (u :: [InsClass] -> InsClass) f where
+    NextSearchMemberRecAction (f ': _) u f = 'SmrStop
+    NextSearchMemberRecAction (u _ ': _) u f = 'SmrDown
+    NextSearchMemberRecAction _ u f = 'SmrRight
+
+instance
+    (HasMembership u f fs, Union u) =>
+    SearchMemberRec_ 'SmrStop (f ': _tail) u f fs 'True 'False
+    where
+    injectSMR_ _ _ = inject
+    projectSMR_ _ _ = project
+    {-# INLINE injectSMR_ #-}
+    {-# INLINE projectSMR_ #-}
+
+instance
+    ( SearchMemberRec gs u f gs foundInHead fihuHead
+    , If foundInHead (HasMembership u (u gs) fs) (() :: Constraint)
+    , SearchMemberRec
+        (If foundInHead '[] tail)
+        u
+        f
+        fs
+        foundInTail
+        fihuTail
+    , found ~ (foundInHead || foundInTail)
+    , Union u
+    , SingI fihuHead
+    , SingI fihuTail
+    ) =>
+    SearchMemberRec_ 'SmrDown (u gs ': tail) u f fs found foundInHead
+    where
+    injectSMR_ Refl = \case
+        STrue -> inject . injectSMR @gs @u @_ @gs Refl sing
+        SFalse -> injectSMR @tail Refl sing
+
+    projectSMR_ Refl = \case
+        STrue -> projectSMR @gs @u @_ @gs Refl sing <=< project
+        SFalse -> projectSMR @tail Refl sing
+
+    {-# INLINE injectSMR_ #-}
+    {-# INLINE projectSMR_ #-}
+
+instance
+    (SearchMemberRec rest u f fs found fihu, SingI fihu) =>
+    SearchMemberRec_ 'SmrRight (_f ': rest) u f fs found 'False
+    where
+    injectSMR_ refl _ = injectSMR @rest refl sing
+    projectSMR_ refl _ = projectSMR @rest refl sing
+    {-# INLINE injectSMR_ #-}
+    {-# INLINE projectSMR_ #-}
+
+instance SearchMemberRec_ act '[] u f fs 'False 'False where
+    injectSMR_ = \case {}
+    projectSMR_ = \case {}
+    {-# INLINE injectSMR_ #-}
+    {-# INLINE projectSMR_ #-}
