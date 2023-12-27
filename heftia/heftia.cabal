@@ -63,9 +63,8 @@ library
         Control.Monad.Freer
         Control.Monad.Freer.Church
         Control.Monad.Freer.Tree
-        Data.Hefty.Sum
-        Data.Free.Union
-        Data.Free.Extensible
+        Data.Hefty.Union
+        Data.Hefty.Extensible
         Data.Free.Sum
 
     -- Modules included in this executable, other than Main.

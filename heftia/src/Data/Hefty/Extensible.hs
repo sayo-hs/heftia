@@ -11,15 +11,17 @@ Maintainer  :  ymdfield@outlook.jp
 Stability   :  experimental
 Portability :  portable
 
-An implementation of an open union for first-order effects using
+An implementation of an open union for higher-order effects using
 the [extensible](https://hackage.haskell.org/package/extensible) package as a backend.
 -}
-module Data.Free.Extensible where
+module Data.Hefty.Extensible where
 
-import Control.Effect.Class (Instruction)
-import Data.Extensible (Forall, Match (Match), htabulateFor, leadership, match)
+import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap)
+import Control.Hefty (SigClass)
+import Data.Extensible (Forall, Match (Match), htabulateFor, match)
 import Data.Extensible.Sum (exhaust, strikeAt, (<:|), type (:/) (EmbedAt))
-import Data.Free.Union (
+import Data.Hefty.Union (
+    HFunctorUnion_ (ForallHFunctor),
     Union (
         HasMembership,
         absurdUnion,
@@ -27,40 +29,46 @@ import Data.Free.Union (
         inject0,
         project,
         weaken,
-        (+:)
+        (|+:)
     ),
  )
 import Data.Proxy (Proxy (Proxy))
+import Data.Type.Equality ((:~:) (Refl))
 import GHC.TypeLits (ErrorMessage (ShowType, Text, (:<>:)), TypeError)
-import GHC.TypeNats (KnownNat, Nat, natVal, type (+))
-import Type.Membership (Membership, nextMembership)
+import GHC.TypeNats (KnownNat, Nat, type (+))
+import Type.Membership.Internal (
+    Elaborate,
+    Elaborated (Expecting),
+    FindType,
+    Member (membership),
+    Membership,
+    leadership,
+    nextMembership,
+ )
 import Unsafe.Coerce (unsafeCoerce)
 
 {- |
-An implementation of an open union for first-order effects using
+An implementation of an open union for higher-order effects using
 the [extensible](https://hackage.haskell.org/package/extensible) package as a backend.
 -}
-newtype ExtensibleUnion fs a = ExtensibleUnion {unExtensibleUnion :: fs :/ FieldApp a}
+newtype ExtensibleUnion es f a = ExtensibleUnion {unExtensibleUnion :: es :/ FieldApp f a}
 
-newtype FieldApp a (f :: Instruction) = FieldApp {unFieldApp :: f a}
+newtype FieldApp f a (e :: SigClass) = FieldApp {unFieldApp :: e f a}
 
-instance Forall Functor fs => Functor (ExtensibleUnion fs) where
-    fmap f =
+instance Forall HFunctor es => HFunctor (ExtensibleUnion es) where
+    hfmap f =
         ExtensibleUnion
             . match
-                ( htabulateFor @Functor Proxy \w ->
-                    Match \e -> EmbedAt w $ FieldApp $ f <$> unFieldApp e
+                ( htabulateFor @HFunctor Proxy \w ->
+                    Match $ EmbedAt w . FieldApp . hfmap f . unFieldApp
                 )
             . unExtensibleUnion
-    {-# INLINE fmap #-}
+    {-# INLINE hfmap #-}
 
-{- todo:
-instance Forall Foldable fs => Foldable (ExtensibleUnion fs) where
-instance Forall Traversable fs => Traversable (ExtensibleUnion fs) where
--}
+-- todo: Functor, Foldable, Traversable instances
 
 instance Union ExtensibleUnion where
-    type HasMembership _ f fs = KnownNat (TypeIndex fs f)
+    type HasMembership _ e es = KnownNat (TypeIndex es e)
 
     inject = ExtensibleUnion . EmbedAt findFirstMembership . FieldApp
     {-# INLINE inject #-}
@@ -78,15 +86,18 @@ instance Union ExtensibleUnion where
         ExtensibleUnion $ EmbedAt (nextMembership w) e
     {-# INLINE weaken #-}
 
-    f +: g = (f . unFieldApp <:| g . ExtensibleUnion) . unExtensibleUnion
-    {-# INLINE (+:) #-}
+    f |+: g = (f . unFieldApp <:| g . ExtensibleUnion) . unExtensibleUnion
+    {-# INLINE (|+:) #-}
 
 findFirstMembership :: forall xs x. KnownNat (TypeIndex xs x) => Membership xs x
-findFirstMembership = unsafeMkMembership $ fromIntegral $ natVal @(TypeIndex xs x) Proxy
+findFirstMembership = unsafeMkMembership @(TypeIndex xs x) Proxy
   where
     -- This hack may break if the membership package version gets updated.
-    unsafeMkMembership :: Int -> Membership xs x
-    unsafeMkMembership = unsafeCoerce
+    unsafeMkMembership :: forall pos. Proxy pos -> KnownNat pos => Membership xs x
+    unsafeMkMembership _ = case hackedEquality of Refl -> membership
+      where
+        hackedEquality :: Elaborate x (FindType x xs) :~: 'Expecting pos
+        hackedEquality = unsafeCoerce Refl
 
 type family TypeIndex (xs :: [k]) (x :: k) :: Nat where
     TypeIndex (x ': xs) x = 0
@@ -94,3 +105,6 @@ type family TypeIndex (xs :: [k]) (x :: k) :: Nat where
     TypeIndex '[] x =
         TypeError
             ('Text "The effect class " ':<>: 'ShowType x ':<>: 'Text " was not found in the list.")
+
+instance HFunctorUnion_ (Forall HFunctor) ExtensibleUnion where
+    type ForallHFunctor _ = Forall HFunctor

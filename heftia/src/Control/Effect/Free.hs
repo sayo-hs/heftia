@@ -1,29 +1,61 @@
-{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+{- |
+Copyright   :  (c) 2023 Yamada Ryo
+License     :  MPL-2.0 (see the file LICENSE)
+Maintainer  :  ymdfield@outlook.jp
+Stability   :  experimental
+Portability :  portable
+
+A Freer carrier that can be used as a handler for effect systems based
+on [@classy-effects@](https://hackage.haskell.org/package/classy-effects).
+-}
 module Control.Effect.Free where
 
 import Control.Applicative (Alternative)
-import Control.Effect.Class (NopI, type (~>))
-import Control.Freer (Freer, interpretFreer, liftIns, retractFreer, transformFreer)
+import Control.Effect.Class (LiftIns (LiftIns), NopS, SendIns, sendIns, type (~>))
+import Control.Effect.Hefty (
+    EffUnion (EffUnion),
+    Effectful (Effectful),
+    MemberF,
+    MultiToUnionF,
+    SumToUnionF,
+    unEffUnion,
+    unEffUnionH,
+    unEffectful,
+ )
+import Control.Freer (Freer, InsClass, interpretFreer, liftIns, retractFreer, transformFreer)
+import Control.Hefty (Hefty (Hefty), SigClass, unHefty)
 import Control.Monad (MonadPlus)
 import Control.Monad.Base (MonadBase)
 import Control.Monad.Freer (MonadFreer)
 import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Trans (MonadTrans (lift))
-import Data.Free.Sum (caseSum, pattern L1, pattern R1, type (+))
-import Data.Free.Union (Union, decomp, flipUnion, inject0, weaken, weaken2, weaken3, weaken4, weakenUnder)
+import Data.Free.Sum (caseF, pattern L1, pattern R1, type (+))
 import Data.Function ((&))
+import Data.Hefty.Union (
+    Union,
+    absurdUnion,
+    decomp,
+    flipUnion,
+    inject0,
+    injectRec,
+    weaken,
+    weaken2,
+    weaken3,
+    weaken4,
+    weakenUnder,
+ )
 import Data.Kind (Type)
 
--- | A common monad wrapper data type for representing first-order effectful programs.
+-- | A common wrapper data type for representing first-order effectful programs.
 newtype
     EffectfulF
-        (u :: [InsClass] -> InsClass)
+        (u :: [SigClass] -> SigClass)
         (f :: InsClass -> Type -> Type)
         (e :: InsClass)
         (a :: Type) = EffectfulF {unEffectfulF :: f (SumToUnionF u e) a}
@@ -36,33 +68,6 @@ overEffectfulF ::
     EffectfulF u' f' e' b
 overEffectfulF f = EffectfulF . f . unEffectfulF
 {-# INLINE overEffectfulF #-}
-
--- | Convert the sum of first-order effects into an open union.
-type SumToUnionF u e = u (SumToUnionListF u e)
-
-{- |
-Convert the sum of first-order effects into an open union. If it's a single first-order effect
-rather than a sum, leave it as is without converting.
--}
-type MultiToUnionF u e = MultiListToUnionF u (SumToUnionListF u e)
-
-{- |
-Convert a given list of first-order effect classes into a suitable representation type for each case
-of being empty, single, or multiple.
--}
-type family MultiListToUnionF (u :: [InsClass] -> InsClass) (es :: [InsClass]) :: InsClass where
-    MultiListToUnionF u '[] = NopI
-    MultiListToUnionF u '[e] = e
-    MultiListToUnionF u es = u es
-
-{- |
-Recursively decompose the sum of first-order effects into a list, following the direction of right
-association.
--}
-type family SumToUnionListF (u :: [InsClass] -> InsClass) (e :: InsClass) :: [InsClass] where
-    SumToUnionListF u (e1 + e2) = MultiToUnionF u e1 ': SumToUnionListF u e2
-    SumToUnionListF u NopI = '[]
-    SumToUnionListF u e = '[e]
 
 deriving newtype instance Functor (f (SumToUnionF u e)) => Functor (EffectfulF u f e)
 deriving newtype instance Applicative (f (SumToUnionF u e)) => Applicative (EffectfulF u f e)
@@ -81,7 +86,9 @@ deriving newtype instance Ord (f (SumToUnionF u e) a) => Ord (EffectfulF u f e a
 deriving newtype instance Read (f (SumToUnionF u e) a) => Read (EffectfulF u f e a)
 deriving newtype instance Show (f (SumToUnionF u e) a) => Show (EffectfulF u f e a)
 
-type InsClass = Type -> Type
+instance (MemberF u e es, Freer c fr) => SendIns e (EffectfulF u fr es) where
+    sendIns = EffectfulF . liftIns . injectRec . LiftIns
+    {-# INLINE sendIns #-}
 
 -- Using the provided interpretation function, interpret first-order effects.
 interpretF ::
@@ -100,7 +107,7 @@ interpretTF ::
     (MonadFreer f, Union u, MonadTrans t, Monad (t (EffectfulF u f r))) =>
     (MultiToUnionF u e ~> t (EffectfulF u f r)) ->
     EffectfulF u f (e + r) ~> t (EffectfulF u f r)
-interpretTF i = retractFreer . transformFreer (caseSum i lift) . splitEffF @f
+interpretTF i = retractFreer . transformFreer (caseF i lift) . splitEffF @f
 {-# INLINE interpretTF #-}
 
 transformAllF ::
@@ -169,7 +176,23 @@ mergeEffF ::
 mergeEffF =
     EffectfulF
         . interpretFreer
-            ( caseSum
+            ( caseF
                 (liftIns . inject0)
                 (transformFreer weaken . unEffectfulF)
             )
+
+fromEffectful :: forall e f u c. (Freer c f, Union u) => Effectful u f NopS e ~> EffectfulF u f e
+fromEffectful =
+    EffectfulF
+        . transformFreer (caseF (absurdUnion . unEffUnionH) id . unEffUnion)
+        . unHefty
+        . unEffectful
+{-# INLINE fromEffectful #-}
+
+toEffectful :: forall e f u c. Freer c f => EffectfulF u f e ~> Effectful u f NopS e
+toEffectful =
+    Effectful
+        . Hefty
+        . transformFreer (EffUnion . R1)
+        . unEffectfulF
+{-# INLINE toEffectful #-}
