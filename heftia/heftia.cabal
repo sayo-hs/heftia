@@ -57,6 +57,8 @@ library
     exposed-modules:
         Control.Effect.Hefty
         Control.Effect.Free
+        Control.Effect.ExtensibleChurch
+        Control.Effect.ExtensibleTree
         Control.Hefty
         Control.Hefty.SFunctor
         Control.Freer

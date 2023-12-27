@@ -17,6 +17,7 @@ the [extensible](https://hackage.haskell.org/package/extensible) package as a ba
 module Data.Hefty.Extensible where
 
 import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap)
+import Control.Effect.Hefty (MemberF, MemberH)
 import Control.Hefty (SigClass)
 import Data.Extensible (Forall, Match (Match), htabulateFor, match)
 import Data.Extensible.Sum (exhaust, strikeAt, (<:|), type (:/) (EmbedAt))
@@ -108,3 +109,6 @@ type family TypeIndex (xs :: [k]) (x :: k) :: Nat where
 
 instance HFunctorUnion_ (Forall HFunctor) ExtensibleUnion where
     type ForallHFunctor _ = Forall HFunctor
+
+type e <| es = MemberF ExtensibleUnion e es
+type e <<| es = MemberH ExtensibleUnion e es
