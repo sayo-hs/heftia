@@ -76,7 +76,7 @@ are some examples:
 Furthermore, the structure of Heftia is theoretically straightforward, with ad-hoc elements being
 eliminated.
 
-Heftia is the second objective of the [Sayo Project](https://github.com/sayo-hs).
+Heftia is the current main focus of the [Sayo Project](https://github.com/sayo-hs).
 
 ## Documentation
 Examples with explanations can be found in the [docs/examples/](docs/examples/) directory.
