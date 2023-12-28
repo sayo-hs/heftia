@@ -155,6 +155,26 @@ a sum.
 newtype SingleSig (e :: SigClass) f a = SingleSig {unSingleSig :: e f a}
     deriving newtype (HFunctor)
 
+{- |
+The higher-order effect class @er@ can be decomposed into the sum of t'EffHeadH' @u@ @er@ and @r@
+(@er ≅ EffHeadH u er :+: r@).
+-}
+type DecompH u er r =
+    SumToUnionList u (NormalizeSig er) ~ EffHeadH u er ': SumToUnionList u (NormalizeSig r)
+
+{- |
+The first-order effect class @er@ can be decomposed into the sum of t'EffHeadF' @u@ @er@ and @r@
+(@er ≅ EffHeadF u er + r@).
+-}
+type DecompF u er r = DecompH u (LiftIns er) (LiftIns r)
+
+type family EffHead u e where
+    EffHead u (e :+: r) = MultiToUnion u e
+    EffHead u (SingleSig e) = e
+
+type EffHeadH u er = EffHead u (NormalizeSig er)
+type EffHeadF u er = EffHeadH u (LiftIns er) NopI
+
 deriving newtype instance Functor (Hefty f (EffUnion u eh ef)) => Functor (Effectful u f eh ef)
 deriving newtype instance Applicative (Hefty f (EffUnion u eh ef)) => Applicative (Effectful u f eh ef)
 deriving newtype instance Alternative (Hefty f (EffUnion u eh ef)) => Alternative (Effectful u f eh ef)

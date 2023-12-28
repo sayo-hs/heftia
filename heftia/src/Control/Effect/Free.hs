@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 -- This Source Code Form is subject to the terms of the Mozilla Public
@@ -19,6 +20,8 @@ module Control.Effect.Free where
 import Control.Applicative (Alternative)
 import Control.Effect.Class (LiftIns (LiftIns), NopS, SendIns, sendIns, type (~>))
 import Control.Effect.Hefty (
+    DecompF,
+    EffHeadF,
     EffUnion (EffUnion),
     Effectful (Effectful),
     MemberF,
@@ -32,9 +35,12 @@ import Control.Freer (Freer, InsClass, interpretFreer, liftIns, retractFreer, tr
 import Control.Hefty (Hefty (Hefty), SigClass, unHefty)
 import Control.Monad (MonadPlus)
 import Control.Monad.Base (MonadBase)
-import Control.Monad.Freer (MonadFreer)
+import Control.Monad.Cont (Cont, ContT (ContT), runContT)
+import Control.Monad.Freer (MonadFreer, interpretFreerK)
 import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.Identity (Identity (Identity))
 import Control.Monad.Trans (MonadTrans (lift))
+import Data.Coerce (coerce)
 import Data.Free.Sum (caseF, pattern L1, pattern R1, type (+))
 import Data.Function ((&))
 import Data.Hefty.Union (
@@ -90,25 +96,57 @@ instance (MemberF u e es, Freer c fr) => SendIns e (EffectfulF u fr es) where
     sendIns = EffectfulF . liftIns . injectRec . LiftIns
     {-# INLINE sendIns #-}
 
--- Using the provided interpretation function, interpret first-order effects.
+-- | Interpret the leading first-order effect class.
 interpretF ::
-    forall e r f u c.
-    (Freer c f, Union u) =>
-    (MultiToUnionF u e ~> EffectfulF u f r) ->
-    EffectfulF u f (e + r) ~> EffectfulF u f r
+    forall er r f u c.
+    (Freer c f, Union u, DecompF u er r) =>
+    (EffHeadF u er ~> EffectfulF u f r) ->
+    EffectfulF u f er ~> EffectfulF u f r
 interpretF i =
     overEffectfulF $ interpretFreer \u ->
         case decomp u of
             Left e -> unEffectfulF $ i e
             Right e -> liftIns e
 
+-- | Interpret the leading first-order effect class using a monad transformer.
 interpretTF ::
-    forall t e r f u.
-    (MonadFreer f, Union u, MonadTrans t, Monad (t (EffectfulF u f r))) =>
-    (MultiToUnionF u e ~> t (EffectfulF u f r)) ->
-    EffectfulF u f (e + r) ~> t (EffectfulF u f r)
+    forall t er r f u.
+    (MonadFreer f, Union u, DecompF u er r, MonadTrans t, Monad (t (EffectfulF u f r))) =>
+    (EffHeadF u er ~> t (EffectfulF u f r)) ->
+    EffectfulF u f er ~> t (EffectfulF u f r)
 interpretTF i = retractFreer . transformFreer (caseF i lift) . splitEffF @f
 {-# INLINE interpretTF #-}
+
+-- | Interpret the leading first-order effect class using a delimited continuation.
+interpretKF ::
+    forall er r' a r f u.
+    (MonadFreer f, Union u, DecompF u er r) =>
+    (a -> EffectfulF u f r r') ->
+    (forall x. (x -> EffectfulF u f r r') -> EffHeadF u er x -> EffectfulF u f r r') ->
+    EffectfulF u f er a ->
+    EffectfulF u f r r'
+interpretKF k i = (`runContT` k) . interpretContTF \e -> ContT (`i` e)
+{-# INLINE interpretKF #-}
+
+-- | Interpret the leading first-order effect class using a continuation monad transformer.
+interpretContTF ::
+    forall er r' r f u.
+    (MonadFreer f, Union u, DecompF u er r) =>
+    (EffHeadF u er ~> ContT r' (EffectfulF u f r)) ->
+    EffectfulF u f er ~> ContT r' (EffectfulF u f r)
+interpretContTF i =
+    transCont
+        . interpretFreerK (detransContT . caseF i lift)
+        . splitEffF @f
+{-# INLINE interpretContTF #-}
+
+transCont :: Cont (m r) ~> ContT r m
+transCont (ContT f) = ContT \k -> coerce $ f $ coerce . k
+{-# INLINE transCont #-}
+
+detransContT :: ContT r m ~> Cont (m r)
+detransContT (ContT f) = ContT \k -> coerce $ f $ coerce . k
+{-# INLINE detransContT #-}
 
 transformAllF ::
     forall u' e e' f u c.
@@ -153,17 +191,17 @@ raiseUnderF ::
 raiseUnderF = transformAllF weakenUnder
 {-# INLINE raiseUnderF #-}
 
-flipEffectfulF ::
+flipEffF ::
     forall e1 e2 e f u c.
     (Freer c f, Union u) =>
     EffectfulF u f (e1 + e2 + e) ~> EffectfulF u f (e2 + e1 + e)
-flipEffectfulF = transformAllF flipUnion
-{-# INLINE flipEffectfulF #-}
+flipEffF = transformAllF flipUnion
+{-# INLINE flipEffF #-}
 
 splitEffF ::
-    forall f' e r f u c.
-    (Freer c f', Freer c f, Union u) =>
-    EffectfulF u f (e + r) ~> f' (MultiToUnionF u e + EffectfulF u f r)
+    forall f' er r f u c.
+    (Freer c f', Freer c f, Union u, DecompF u er r) =>
+    EffectfulF u f er ~> f' (EffHeadF u er + EffectfulF u f r)
 splitEffF (EffectfulF f) =
     f & interpretFreer \u -> case decomp u of
         Left e -> liftIns $ L1 e
