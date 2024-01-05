@@ -101,11 +101,7 @@ interpretF ::
     (Freer c f, Union u, DecompF u er) =>
     (MultiToUnionF u (EffHeadF er) ~> EffectfulF u f (EffTailF er)) ->
     EffectfulF u f er ~> EffectfulF u f (EffTailF er)
-interpretF i =
-    overEffectfulF $ interpretFreer \u ->
-        case decomp u of
-            Left e -> unEffectfulF $ i e
-            Right e -> liftIns e
+interpretF i = overEffectfulF $ interpretFreer $ caseH (unEffectfulF . i) liftIns . decomp
 
 -- | Interpret the leading first-order effect class using a monad transformer.
 interpretTF ::
@@ -205,10 +201,12 @@ splitEffF ::
     forall f' er f u c.
     (Freer c f', Freer c f, Union u, DecompF u er) =>
     EffectfulF u f er ~> f' (MultiToUnionF u (EffHeadF er) + EffectfulF u f (EffTailF er))
-splitEffF (EffectfulF f) =
-    f & interpretFreer \u -> case decomp u of
-        Left e -> liftIns $ L1 e
-        Right e -> liftIns $ R1 $ EffectfulF $ liftIns e
+splitEffF (EffectfulF a) =
+    a & interpretFreer \u ->
+        decomp u
+            & caseH
+                (liftIns . L1)
+                (liftIns . R1 . EffectfulF . liftIns)
 
 mergeEffF ::
     forall f' er f u c.

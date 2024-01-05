@@ -20,7 +20,7 @@ implementation.
 module Data.Hefty.Union where
 
 import Control.Effect.Class (type (~>))
-import Control.Effect.Class.Machinery.HFunctor (HFunctor)
+import Control.Effect.Class.Machinery.HFunctor (HFunctor, caseH, (:+:) (Inl, Inr))
 import Control.Hefty (SigClass)
 import Control.Monad ((<=<))
 import Data.Bool.Singletons (SBool (SFalse, STrue))
@@ -50,15 +50,13 @@ class Union (u :: [SigClass] -> SigClass) where
         Right x -> weaken x
     {-# INLINE comp #-}
 
-    decomp :: u (e ': es) f a -> Either (e f a) (u es f a)
-    decomp = Left |+: Right
+    decomp :: u (e ': es) f a -> (e :+: u es) f a
+    decomp = Inl |+: Inr
     {-# INLINE decomp #-}
 
     infixr 5 |+:
     (|+:) :: (e f a -> r) -> (u es f a -> r) -> u (e ': es) f a -> r
-    (f |+: g) u = case decomp u of
-        Left x -> f x
-        Right x -> g x
+    f |+: g = caseH f g . decomp
     {-# INLINE (|+:) #-}
 
     inject0 :: e f ~> u (e ': es) f

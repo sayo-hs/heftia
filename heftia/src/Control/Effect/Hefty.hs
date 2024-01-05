@@ -264,9 +264,11 @@ interpret i =
         $ interpretFreer
         $ caseH
             absurdUnion
-            ( unliftIns >>> decomp >>> \case
-                Left e -> unHefty $ unEffectful $ i e
-                Right e -> liftIns $ Inr $ LiftIns e
+            ( unliftIns
+                >>> decomp
+                >>> caseH
+                    (unHefty . unEffectful . i)
+                    (liftIns . Inr . LiftIns)
             )
 
 {- |
@@ -290,9 +292,11 @@ interpretRec i =
                 . Inl
                 . hfmap (unEffectful . interpretRec @er i . Effectful)
             )
-            ( unliftIns >>> decomp >>> \case
-                Left e -> unHefty $ unEffectful $ i e
-                Right e -> liftIns $ Inr $ LiftIns e
+            ( unliftIns
+                >>> decomp
+                >>> caseH
+                    (unHefty . unEffectful . i)
+                    (liftIns . Inr . LiftIns)
             )
 
 {- |
@@ -314,9 +318,10 @@ interpretRecH i =
         . overHefty
         $ interpretFreer
         $ caseH
-            ( decomp >>> \case
-                Left e -> unHefty $ unEffectful $ i $ hfmap int e
-                Right e -> liftIns $ Inl $ hfmap (unEffectful . int) e
+            ( decomp
+                >>> caseH
+                    (unHefty . unEffectful . i . hfmap int)
+                    (liftIns . Inl . hfmap (unEffectful . int))
             )
             (liftIns . Inr . coerce)
   where
