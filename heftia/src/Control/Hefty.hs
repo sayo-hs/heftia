@@ -7,9 +7,7 @@
 module Control.Hefty where
 
 import Control.Applicative (Alternative)
-import Control.Effect.Class (type (~>))
-import Control.Effect.Class.Machinery.HFunctor (HFunctor, caseH, hfmap, type (:+:))
-import Control.Freer (Freer, InsClass, interpretFreer, liftIns)
+import Control.Freer (InsClass)
 import Control.Monad (MonadPlus)
 import Control.Monad.Base (MonadBase)
 import Control.Monad.IO.Class (MonadIO)
@@ -46,36 +44,3 @@ overHefty ::
     Hefty f' e' b
 overHefty f = Hefty . f . unHefty
 {-# INLINE overHefty #-}
-
-interpretRecRWith ::
-    forall r l f c.
-    Freer c f =>
-    ((Hefty f (l :+: r) ~> Hefty f l) -> l (Hefty f (l :+: r)) ~> l (Hefty f l)) ->
-    ((Hefty f (l :+: r) ~> Hefty f l) -> r (Hefty f (l :+: r)) ~> Hefty f l) ->
-    Hefty f (l :+: r) ~> Hefty f l
-interpretRecRWith f i =
-    overHefty $
-        interpretFreer $
-            caseH
-                (liftIns . f int)
-                (unHefty . i int)
-  where
-    int :: Hefty f (l :+: r) ~> Hefty f l
-    int = interpretRecRWith f i
-    {-# INLINE int #-}
-
-interpretRecR ::
-    forall r l f c.
-    (Freer c f, HFunctor l, HFunctor r) =>
-    (r (Hefty f l) ~> Hefty f l) ->
-    Hefty f (l :+: r) ~> Hefty f l
-interpretRecR i =
-    overHefty $
-        interpretFreer $
-            caseH
-                (liftIns . hfmapInt)
-                (unHefty . i . hfmapInt)
-  where
-    hfmapInt :: HFunctor e => e (Hefty f (l :+: r)) ~> e (Hefty f l)
-    hfmapInt = hfmap $ interpretRecR i
-    {-# INLINE hfmapInt #-}

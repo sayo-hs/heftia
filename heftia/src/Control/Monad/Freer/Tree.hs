@@ -61,8 +61,6 @@ interpretTreeK i (FreerTree m) =
                         (i e)
                         ((`runCont` runIdentity . k) . interpretTreeK i . FreerTree . f)
 
--- ContT \k -> f k \k' e -> Identity $ runCont (i e) (runIdentity . k')
-
 instance Freer Monad FreerTree where
     liftIns = liftInsTree
     interpretFreer = interpretTree

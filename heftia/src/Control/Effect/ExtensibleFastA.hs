@@ -9,17 +9,19 @@ Maintainer  :  ymdfield@outlook.jp
 Stability   :  experimental
 Portability :  portable
 
-Type operators for extensible effectful programs based on the tree-structured encoded Freer monad.
--}
-module Control.Effect.ExtensibleTree where
+Type operators for extensible effectful programs based on the fast-encoded free applicative.
 
+See "Control.Applicative.Free.Fast".
+-}
+module Control.Effect.ExtensibleFastA where
+
+import Control.Applicative.Free.Fast (Ap)
 import Control.Effect.Free (EffectfulF)
 import Control.Effect.Hefty (Effectful)
-import Control.Monad.Freer.Tree (FreerTree)
 import Data.Hefty.Extensible (ExtensibleUnion)
 
 infixr 4 !!
 infixr 3 !
 
-type (!!) = Effectful ExtensibleUnion FreerTree
-type (!) = EffectfulF ExtensibleUnion FreerTree
+type (!!) = Effectful ExtensibleUnion Ap
+type (!) = EffectfulF ExtensibleUnion Ap

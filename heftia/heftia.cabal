@@ -35,8 +35,7 @@ maintainer:         Yamada Ryo <ymdfield@outlook.jp>
 
 -- A copyright notice.
 copyright:
-    2023 Yamada Ryo,
-    2023 Casper Bach Poulsen and Cas van der Rest
+    2023 Yamada Ryo
 category: Control, Monads
 
 extra-source-files:
@@ -59,8 +58,9 @@ library
         Control.Effect.Free
         Control.Effect.ExtensibleChurch
         Control.Effect.ExtensibleTree
+        Control.Effect.ExtensibleTreeA
+        Control.Effect.ExtensibleFastA
         Control.Hefty
-        Control.Hefty.SFunctor
         Control.Freer
         Control.Monad.Freer
         Control.Monad.Freer.Church

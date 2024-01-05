@@ -64,22 +64,22 @@ are some examples:
     ```
 
     Using the `elaborateWriterT` elaborator, you'll get "Goodbye world!", whereas with the `elaborateWriterTransactionalT` elaborator, you'll get "Hello world!".
-    For more details, please refer to the [complete code](heftia-effects/Example/Writer/Main.hs) and the [implementation of the elaborator](heftia-effects/src/Control/Effect/Handler/Heftia/Writer.hs).
+    For more details, please refer to the [complete code](https://github.com/sayo-hs/heftia/blob/develop/heftia-effects/Example/Writer/Main.hs) and the [implementation of the elaborator](https://github.com/sayo-hs/heftia/blob/develop/heftia-effects/src/Control/Effect/Handler/Heftia/Writer.hs).
 
 * Extracting Multi-shot Delimited Continuations
 
     In handling higher-order effects, it's easy to work with multi-shot delimited continuations.
     This enables an almost complete emulation of "Algebraic Effects and Handlers".
     For more details, please refer to
-    [Example 3 - Delimited Continuation](<docs/examples/03 Delimited Continuation.md>) .
+    [Example 3 - Delimited Continuation](<https://github.com/sayo-hs/heftia/blob/develop/docs/examples/03%20Delimited%20Continuation.md>) .
 
 Furthermore, the structure of Heftia is theoretically straightforward, with ad-hoc elements being
 eliminated.
 
-Heftia is the second objective of the [Sayo Project](https://github.com/sayo-hs).
+Heftia is the current main focus of the [Sayo Project](https://github.com/sayo-hs).
 
 ## Documentation
-Examples with explanations can be found in the [docs/examples/](docs/examples/) directory.
+Examples with explanations can be found in the [docs/examples/](https://github.com/sayo-hs/heftia/tree/master/docs/examples) directory.
 
 ## Future Plans
 * Benchmarking
@@ -90,17 +90,16 @@ Examples with explanations can be found in the [docs/examples/](docs/examples/) 
     and others.
 
 ## License
-The license is MPL 2.0. Please refer to the [NOTICE](NOTICE).
+The license is MPL 2.0. Please refer to the [NOTICE](https://github.com/sayo-hs/heftia/blob/develop/NOTICE).
 Additionally, this README.md and the documents under the `docs`/`docs-ja` directory are licensed
 under CC BY-SA 4.0.
 
 ## Your contributions are welcome!
-Please see [CONTRIBUTING.md](CONTRIBUTING.md).
+Please see [CONTRIBUTING.md](https://github.com/sayo-hs/heftia/blob/develop/CONTRIBUTING.md).
 
 ## Credits
-Parts of this project have been adapted or inspired by the following resources:
+Parts of this project have been inspired by the following resources:
 
 * **[Hefty Algebras -- The Artifact](https://github.com/heft-lang/POPL2023)**
     * **Copyright** (c) 2023 Casper Bach Poulsen and Cas van der Rest
     * **License**: MIT
-    * **Modifications**: The inspiration for the idea of Heftia. Code was used in the Data.{[Free](https://github.com/sayo-hs/heftia/blob/165a5246ffbf473210bfb26a17da3e37d79a5346/heftia/src/Data/Free/Sum.hs),[Hefty](https://github.com/sayo-hs/heftia/blob/165a5246ffbf473210bfb26a17da3e37d79a5346/heftia/src/Data/Hefty/Sum.hs)}.Sum.
