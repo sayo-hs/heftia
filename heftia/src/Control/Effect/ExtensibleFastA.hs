@@ -20,8 +20,8 @@ import Control.Effect.Free (EffectfulF)
 import Control.Effect.Hefty (Effectful)
 import Data.Hefty.Extensible (ExtensibleUnion)
 
-infixr 4 !!
-infixr 3 !
+infixr 5 !!
+infixr 4 !
 
 type (!!) = Effectful ExtensibleUnion Ap
 type (!) = EffectfulF ExtensibleUnion Ap

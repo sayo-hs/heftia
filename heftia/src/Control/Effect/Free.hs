@@ -99,7 +99,7 @@ instance (MemberF u e es, Freer c fr) => SendIns e (EffectfulF u fr es) where
 interpretF ::
     forall er f u c.
     (Freer c f, Union u, DecompF u er) =>
-    (MultiToUnionF u (EffHeadF er) ~> EffectfulF u f (EffTailF er)) ->
+    MultiToUnionF u (EffHeadF er) ~> EffectfulF u f (EffTailF er) ->
     EffectfulF u f er ~> EffectfulF u f (EffTailF er)
 interpretF i = overEffectfulF $ interpretFreer $ caseH (unEffectfulF . i) liftIns . decomp
 
@@ -107,7 +107,7 @@ interpretF i = overEffectfulF $ interpretFreer $ caseH (unEffectfulF . i) liftIn
 interpretTF ::
     forall t er f u.
     (MonadFreer f, Union u, DecompF u er, MonadTrans t, Monad (t (EffectfulF u f (EffTailF er)))) =>
-    (MultiToUnionF u (EffHeadF er) ~> t (EffectfulF u f (EffTailF er))) ->
+    MultiToUnionF u (EffHeadF er) ~> t (EffectfulF u f (EffTailF er)) ->
     EffectfulF u f er ~> t (EffectfulF u f (EffTailF er))
 interpretTF i = retractFreer . transformFreer (caseF i lift) . splitEffF @f
 {-# INLINE interpretTF #-}
@@ -131,7 +131,7 @@ interpretKF k i = (`runContT` k) . interpretContTF \e -> ContT (`i` e)
 interpretContTF ::
     forall er r f u.
     (MonadFreer f, Union u, DecompF u er) =>
-    (MultiToUnionF u (EffHeadF er) ~> ContT r (EffectfulF u f (EffTailF er))) ->
+    MultiToUnionF u (EffHeadF er) ~> ContT r (EffectfulF u f (EffTailF er)) ->
     EffectfulF u f er ~> ContT r (EffectfulF u f (EffTailF er))
 interpretContTF i =
     transCont
@@ -150,7 +150,7 @@ detransContT (ContT f) = ContT \k -> coerce $ f $ coerce . k
 transformAllF ::
     forall u' e e' f u c.
     (Freer c f, Union u, Union u') =>
-    (SumToUnionF u e ~> SumToUnionF u' e') ->
+    SumToUnionF u e ~> SumToUnionF u' e' ->
     EffectfulF u f e ~> EffectfulF u' f e'
 transformAllF f = overEffectfulF $ transformFreer f
 {-# INLINE transformAllF #-}

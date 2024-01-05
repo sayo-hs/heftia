@@ -18,8 +18,8 @@ import Control.Effect.Hefty (Effectful)
 import Control.Monad.Freer.Church (FreerChurch)
 import Data.Hefty.Extensible (ExtensibleUnion)
 
-infixr 4 !!
-infixr 3 !
+infixr 5 !!
+infixr 4 !
 
 type (!!) = Effectful ExtensibleUnion FreerChurch
 type (!) = EffectfulF ExtensibleUnion FreerChurch
