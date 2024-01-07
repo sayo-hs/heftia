@@ -3,8 +3,7 @@
 [![Hackage](https://img.shields.io/hackage/v/heftia.svg?logo=haskell&label=heftia)](https://hackage.haskell.org/package/heftia)
 [![Hackage](https://img.shields.io/hackage/v/heftia-effects.svg?logo=haskell&label=heftia-effects)](https://hackage.haskell.org/package/heftia-effects)
 
-Heftia, a composition of hefty trees and co-Yoneda, is a higher-order effects
-version of Freer.
+Heftia is a higher-order effects version of Freer.
 
 The paper
 * Casper Bach Poulsen and Cas van der Rest. 2023. Hefty Algebras: Modular
