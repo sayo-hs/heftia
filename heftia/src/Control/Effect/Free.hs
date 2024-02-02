@@ -18,8 +18,7 @@ on [@classy-effects@](https://hackage.haskell.org/package/classy-effects).
 module Control.Effect.Free where
 
 import Control.Applicative (Alternative)
-import Control.Effect.Class (LiftIns (LiftIns), NopS, SendIns, sendIns, unliftIns, type (~>))
-import Control.Effect.Class.Machinery.HFunctor (caseH, type (:+:) (Inr))
+import Control.Effect (SendIns, sendIns, type (~>))
 import Control.Effect.Hefty (
     DecompF,
     EffHeadF,
@@ -40,6 +39,8 @@ import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Identity (Identity (Identity))
 import Control.Monad.Trans (MonadTrans (lift))
 import Data.Coerce (coerce)
+import Data.Effect (LiftIns (LiftIns), NopS, unliftIns)
+import Data.Effect.HFunctor (caseH, type (:+:) (Inr))
 import Data.Free.Sum (caseF, pattern L1, pattern R1, type (+))
 import Data.Function ((&))
 import Data.Hefty.Union (

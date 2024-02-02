@@ -13,7 +13,7 @@ Interpreter and elaborator for the t'Control.Effect.Class.Reader.Reader' effect 
 -}
 module Control.Effect.Handler.Heftia.Reader where
 
-import Control.Effect.Class (type (~>))
+import Control.Effect (type (~>))
 import Control.Effect.Class.Reader (AskI (Ask), LocalS (Local), ask)
 import Control.Effect.Freer (Fre, interpose, interpret, raise, type (<|))
 import Control.Effect.Heftia (ForallHFunctor, Hef, hoistHeftiaEffects, hoistInterpose, interpretH, raiseH)

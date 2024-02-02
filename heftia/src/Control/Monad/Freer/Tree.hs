@@ -16,7 +16,7 @@ A tree-structured encoded Freer monad.
 module Control.Monad.Freer.Tree where
 
 import Control.Applicative (Alternative)
-import Control.Effect.Class (type (~>))
+import Control.Effect (type (~>))
 import Control.Freer (Freer, interpretFreer, liftIns, transformFreer)
 import Control.Monad (MonadPlus)
 import Control.Monad.Cont (Cont, ContT (ContT), runCont)

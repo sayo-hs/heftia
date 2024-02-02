@@ -13,7 +13,7 @@ Elaborator for the t'Control.Effect.Class.Provider.Provider' effect class.
 -}
 module Control.Effect.Handler.Heftia.Provider where
 
-import Control.Effect.Class (type (~>))
+import Control.Effect (type (~>))
 import Control.Effect.Class.Provider (ProviderS (Provide))
 import Control.Effect.Heftia (Elaborator)
 import Control.Monad.Trans (MonadTrans, lift)

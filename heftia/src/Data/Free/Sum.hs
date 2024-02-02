@@ -13,18 +13,12 @@ Binary sums for first-order effects.
 -}
 module Data.Free.Sum (module Data.Free.Sum, pattern L1, pattern R1) where
 
-import Control.Effect.Class (NopI)
-import Data.Kind (Type)
+import Control.Effect (type (~>))
+import Data.Effect (Nop)
 import GHC.Generics (type (:+:) (L1, R1))
 
-infixr 5 +
-
 type (+) = (:+:)
-
-infixr 4 ~>
-
--- | A natural transformation.
-type f ~> g = forall (x :: Type). f x -> g x
+infixr 5 +
 
 caseF :: (f a -> r) -> (g a -> r) -> (f + g) a -> r
 caseF f g = \case
@@ -32,11 +26,11 @@ caseF f g = \case
     R1 x -> g x
 {-# INLINE caseF #-}
 
-absurdL :: NopI + f ~> f
+absurdL :: Nop + f ~> f
 absurdL = caseF \case {} id
 {-# INLINE absurdL #-}
 
-absurdR :: f + NopI ~> f
+absurdR :: f + Nop ~> f
 absurdR = caseF id \case {}
 {-# INLINE absurdR #-}
 

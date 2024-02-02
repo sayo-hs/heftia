@@ -8,7 +8,7 @@
 
 module Control.Monad.Freer where
 
-import Control.Effect.Class (type (~>))
+import Control.Effect (type (~>))
 import Control.Freer (Freer, interpretFreer)
 import Control.Monad.Cont (Cont)
 

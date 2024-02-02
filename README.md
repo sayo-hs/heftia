@@ -18,10 +18,6 @@ allowing for a straightforward treatment of higher-order effects.
 This library offers Heftia monads and Freer monads, encoded into data
 types in several ways to enable tuning in pursuit of high performance.
 
-Additionally, it's designed to operate as a handler system based
-on [`classy-effects`](https://github.com/sayo-hs/classy-effects), which aims to
-standardize and unify the definitions of effects in Haskell.
-
 Compared to existing Effect System libraries in Haskell that handle higher-order effects, this
 library's approach allows for a more effortless and flexible handling of higher-order effects. Here
 are some examples:

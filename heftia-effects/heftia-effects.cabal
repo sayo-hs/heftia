@@ -8,10 +8,7 @@ synopsis: Handlers for standard effects using Heftia.
 -- A longer description of the package.
 description:
     This library provides interpreters based
-    on [Heftia](https://hackage.haskell.org/package/heftia) for the standard effect classes
-    compliant with [CEPs](https://github.com/sayo-hs/classy-effects/blob/master/CEPs/README.md),
-    offered by
-    the [classy-effects](https://hackage.haskell.org/package/classy-effects) package.
+    on [Heftia](https://hackage.haskell.org/package/heftia).
 
 -- A URL where users can report bugs.
 bug-reports: https://github.com/sayo-hs/heftia
@@ -75,7 +72,7 @@ library
     build-depends:
         base                          ^>= 4.16.4.0,
         heftia                        ^>= 0.1,
-        classy-effects                ^>= 0.1,
+        data-effects                ^>= 0.1,
         mtl                           ^>= 2.2.2,
         transformers                  ^>= 0.5.6,
         extensible                    ^>= 0.9,
@@ -90,7 +87,7 @@ test-suite test
     hs-source-dirs: test
     build-depends:
         heftia-effects,
-        classy-effects,
+        data-effects,
         heftia,
         base,
         tasty                         ^>= 1.4,
@@ -108,7 +105,7 @@ executable Teletype
     main-is: Main.hs
     hs-source-dirs: Example/Teletype
     build-depends:
-        classy-effects,
+        data-effects,
         heftia,
         heftia-effects,
         base,
@@ -119,7 +116,7 @@ executable DepParams
     main-is: Main.hs
     hs-source-dirs: Example/DepParams
     build-depends:
-        classy-effects,
+        data-effects,
         heftia,
         heftia-effects,
         base,
@@ -131,7 +128,7 @@ executable Logging
     hs-source-dirs: Example/Logging
     ghc-options: -Wall -fplugin GHC.TypeLits.KnownNat.Solver
     build-depends:
-        classy-effects,
+        data-effects,
         heftia,
         heftia-effects,
         base,
@@ -147,7 +144,7 @@ executable Continuation
     main-is: Main.hs
     hs-source-dirs: Example/Continuation
     build-depends:
-        classy-effects,
+        data-effects,
         heftia,
         heftia-effects,
         base,
@@ -158,7 +155,7 @@ executable Writer
     main-is: Main.hs
     hs-source-dirs: Example/Writer
     build-depends:
-        classy-effects,
+        data-effects,
         heftia,
         heftia-effects,
         base,

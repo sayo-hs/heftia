@@ -13,7 +13,7 @@ Interpreter and elaborator for the t'Control.Effect.Class.Except.Except' effect 
 -}
 module Control.Effect.Handler.Heftia.Except where
 
-import Control.Effect.Class (type (~>))
+import Control.Effect (type (~>))
 import Control.Effect.Class.Except (CatchS (Catch), ThrowI (Throw))
 import Control.Effect.Freer (Fre, interposeK, interposeT, interpretK, interpretT, type (<|))
 import Control.Monad.Trans.Except (ExceptT (ExceptT), runExceptT, throwE)

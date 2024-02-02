@@ -16,7 +16,7 @@ See [README.md](https://github.com/sayo-hs/heftia/blob/master/README.md).
 -}
 module Control.Effect.Handler.Heftia.Writer where
 
-import Control.Effect.Class (type (~>))
+import Control.Effect (type (~>))
 import Control.Effect.Class.Writer (Tell (tell), TellI (Tell), WriterS (Censor, Listen))
 import Control.Effect.Freer (Fre, intercept, interposeT, interpretK, interpretT, type (<|))
 import Control.Monad.Trans.Writer.CPS (WriterT, runWriterT)

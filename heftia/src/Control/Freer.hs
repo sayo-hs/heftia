@@ -16,7 +16,7 @@ A type class to abstract away the encoding details of the Freer carriers.
 module Control.Freer where
 
 import Control.Applicative.Free (Ap, liftAp, runAp)
-import Control.Effect.Class (type (~>))
+import Control.Effect (type (~>))
 import Data.Functor.Coyoneda (Coyoneda, hoistCoyoneda, liftCoyoneda, lowerCoyoneda)
 import Data.Kind (Type)
 

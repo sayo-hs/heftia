@@ -14,7 +14,7 @@ Interpreter for the t'Control.Effect.Class.State.State' effect class.
 module Control.Effect.Handler.Heftia.State where
 
 import Control.Arrow ((>>>))
-import Control.Effect.Class (type (~>))
+import Control.Effect (type (~>))
 import Control.Effect.Class.Reader (AskI (Ask), ask)
 import Control.Effect.Class.State (StateI (Get, Put))
 import Control.Effect.Freer (Fre, interpose, interpretK, interpretT, raiseUnder)

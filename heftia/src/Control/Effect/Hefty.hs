@@ -18,24 +18,27 @@ module Control.Effect.Hefty where
 
 import Control.Applicative (Alternative)
 import Control.Arrow ((>>>))
-import Control.Effect.Class (
-    LiftIns (LiftIns),
-    NopI,
-    NopS,
+import Control.Effect (
     SendIns,
     SendSig,
     sendIns,
     sendSig,
-    unliftIns,
+    type (~>),
  )
-import Control.Effect.Class.Machinery.HFunctor (HFunctor, caseH, hfmap, (:+:) (Inl, Inr))
 import Control.Freer (Freer, InsClass, interpretFreer, liftIns, transformFreer)
 import Control.Hefty (Hefty (Hefty), SigClass, overHefty, unHefty)
 import Control.Monad (MonadPlus)
 import Control.Monad.Base (MonadBase)
 import Control.Monad.IO.Class (MonadIO)
 import Data.Coerce (coerce)
-import Data.Free.Sum (type (+), type (~>))
+import Data.Effect (
+    LiftIns (LiftIns),
+    Nop,
+    NopS,
+    unliftIns,
+ )
+import Data.Effect.HFunctor (HFunctor, caseH, hfmap, (:+:) (Inl, Inr))
+import Data.Free.Sum (type (+))
 import Data.Hefty.Union (
     ForallHFunctor,
     HFunctorUnion,
@@ -120,7 +123,7 @@ type SumToUnion u e = u (SumToUnionList u e)
 type SumToUnionH u e = SumToUnion u (NormalizeSig e)
 
 -- | Convert the sum of first-order effect classes into an open union with normalization.
-type SumToUnionF u e = SumToUnionH u (LiftIns e) NopI
+type SumToUnionF u e = SumToUnionH u (LiftIns e) Nop
 
 {- |
 Convert the sum of higher-order effects into an open union without normalization.
@@ -141,7 +144,7 @@ Convert the sum of first-order effect classes into an open union with normalizat
 
 If it's a single first-order effect class rather than a sum, leave it as is without converting.
 -}
-type MultiToUnionF u e = MultiToUnionH u (LiftIns e) NopI
+type MultiToUnionF u e = MultiToUnionH u (LiftIns e) Nop
 
 {- |
 Normalization in preparation for decomposing the sum of effect classes into a list.
@@ -149,7 +152,7 @@ Normalization in preparation for decomposing the sum of effect classes into a li
 In particular, mark an indivisible, single effect class by applying the t'SingleSig' wrapper to it.
 -}
 type family NormalizeSig e where
-    NormalizeSig (LiftIns NopI) = LiftIns NopI
+    NormalizeSig (LiftIns Nop) = LiftIns Nop
     NormalizeSig (LiftIns (e1 + e2)) = NormalizeSig (LiftIns e1) :+: NormalizeSig (LiftIns e2)
     NormalizeSig (e1 :+: e2) = NormalizeSig e1 :+: NormalizeSig e2
     NormalizeSig e = SingleSig e
@@ -192,7 +195,7 @@ type family EffTail e where
 
 type family EffTailF e where
     EffTailF (e + r) = r
-    EffTailF e = NopI
+    EffTailF e = Nop
 
 compEff ::
     (Freer c f, Union u, HFunctors u eh, DecompF u er) =>

@@ -19,11 +19,11 @@ implementation.
 -}
 module Data.Hefty.Union where
 
-import Control.Effect.Class (type (~>))
-import Control.Effect.Class.Machinery.HFunctor (HFunctor, caseH, (:+:) (Inl, Inr))
+import Control.Effect (type (~>))
 import Control.Hefty (SigClass)
 import Control.Monad ((<=<))
 import Data.Bool.Singletons (SBool (SFalse, STrue))
+import Data.Effect.HFunctor (HFunctor, caseH, (:+:) (Inl, Inr))
 import Data.Kind (Constraint)
 import Data.Singletons (SingI, sing)
 import Data.Type.Bool (If, type (||))

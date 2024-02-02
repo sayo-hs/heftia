@@ -13,7 +13,7 @@ Elaborator for the t'Control.Effect.Class.Provider.Implicit.ImplicitProvider' ef
 -}
 module Control.Effect.Handler.Heftia.Provider.Implicit where
 
-import Control.Effect.Class (type (~>))
+import Control.Effect (type (~>))
 import Control.Effect.Class.Provider.Implicit (ImplicitProviderS (WithImplicit))
 import Control.Effect.Class.Reader (AskI)
 import Control.Effect.Freer (Fre, raise)

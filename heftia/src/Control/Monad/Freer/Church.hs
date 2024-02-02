@@ -13,7 +13,7 @@ A Church-encoded Freer monad.
 -}
 module Control.Monad.Freer.Church where
 
-import Control.Effect.Class (type (~>))
+import Control.Effect (type (~>))
 import Control.Freer (Freer, interpretFreer, liftIns, retractFreer, transformFreer)
 import Control.Monad.Cont (Cont, ContT (ContT), runCont)
 import Control.Monad.Freer (MonadFreer, interpretFreerK)
