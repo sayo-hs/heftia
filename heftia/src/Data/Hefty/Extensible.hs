@@ -20,12 +20,13 @@ import Control.Effect.Hefty (MemberF, MemberH)
 import Control.Hefty (SigClass)
 import Data.Effect.HFunctor (HFunctor, hfmap)
 import Data.Extensible (Forall, Match (Match), htabulateFor, match)
-import Data.Extensible.Sum (exhaust, strikeAt, (<:|), type (:/) (EmbedAt))
+import Data.Extensible.Sum (strikeAt, (<:|), type (:/) (EmbedAt))
+import Data.Extensible.Sum qualified as E
 import Data.Hefty.Union (
     HFunctorUnion_ (ForallHFunctor),
     Union (
         HasMembership,
-        absurdUnion,
+        exhaust,
         inject,
         inject0,
         project,
@@ -77,8 +78,8 @@ instance Union ExtensibleUnion where
     project (ExtensibleUnion u) = unFieldApp <$> strikeAt findFirstMembership u
     {-# INLINE project #-}
 
-    absurdUnion = exhaust . unExtensibleUnion
-    {-# INLINE absurdUnion #-}
+    exhaust = E.exhaust . unExtensibleUnion
+    {-# INLINE exhaust #-}
 
     inject0 = ExtensibleUnion . EmbedAt leadership . FieldApp
     {-# INLINE inject0 #-}

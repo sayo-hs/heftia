@@ -23,6 +23,7 @@ import Control.Effect (type (~>))
 import Control.Hefty (SigClass)
 import Control.Monad ((<=<))
 import Data.Bool.Singletons (SBool (SFalse, STrue))
+import Data.Effect (LiftIns, unliftIns)
 import Data.Effect.HFunctor (HFunctor, caseH, (:+:) (Inl, Inr))
 import Data.Kind (Constraint)
 import Data.Singletons (SingI, sing)
@@ -35,14 +36,14 @@ A type class representing a general open union for higher-order effects, indepen
 implementation.
 -}
 class Union (u :: [SigClass] -> SigClass) where
-    {-# MINIMAL inject, project, absurdUnion, (comp | (inject0, weaken), decomp | (|+:)) #-}
+    {-# MINIMAL inject, project, exhaust, (comp | (inject0, weaken), decomp | (|+:)) #-}
 
     type HasMembership u (e :: SigClass) (es :: [SigClass]) :: Constraint
 
     inject :: HasMembership u e es => e f ~> u es f
     project :: HasMembership u e es => u es f a -> Maybe (e f a)
 
-    absurdUnion :: u '[] f a -> x
+    exhaust :: u '[] f a -> x
 
     comp :: Either (e f a) (u es f a) -> u (e ': es) f a
     comp = \case
@@ -144,16 +145,16 @@ class Union (u :: [SigClass] -> SigClass) where
             |+: weaken
 
     unbundleUnion2 :: u (u '[e1, e2] ': es) f ~> u (e1 ': e2 ': es) f
-    unbundleUnion2 = (inject0 |+: injectUnder |+: absurdUnion) |+: weaken2
+    unbundleUnion2 = (inject0 |+: injectUnder |+: exhaust) |+: weaken2
 
     unbundleUnion3 :: u (u '[e1, e2, e3] ': es) f ~> u (e1 ': e2 ': e3 ': es) f
-    unbundleUnion3 = (inject0 |+: injectUnder |+: injectUnder2 |+: absurdUnion) |+: weaken3
+    unbundleUnion3 = (inject0 |+: injectUnder |+: injectUnder2 |+: exhaust) |+: weaken3
 
     unbundleUnion4 ::
         u (u '[e1, e2, e3, e4] ': es) f
             ~> u (e1 ': e2 ': e3 ': e4 ': es) f
     unbundleUnion4 =
-        (inject0 |+: injectUnder |+: injectUnder2 |+: injectUnder3 |+: absurdUnion)
+        (inject0 |+: injectUnder |+: injectUnder2 |+: injectUnder3 |+: exhaust)
             |+: weaken4
 
 type HFunctorUnion u = HFunctorUnion_ (ForallHFunctor u) u
@@ -299,3 +300,8 @@ instance SearchMemberRec_ act '[] u e es 'False 'False where
     projectSMR_ = \case {}
     {-# INLINE injectSMR_ #-}
     {-# INLINE projectSMR_ #-}
+
+infixr 5 |+
+(|+) :: Union u => (e a -> r) -> (u es f a -> r) -> u (LiftIns e ': es) f a -> r
+f |+ g = f . unliftIns |+: g
+{-# INLINE (|+) #-}
