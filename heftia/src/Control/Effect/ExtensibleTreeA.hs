@@ -17,12 +17,18 @@ See "Control.Applicative.Free".
 module Control.Effect.ExtensibleTreeA where
 
 import Control.Applicative.Free (Ap)
-import Control.Effect.Free (EffectfulF)
-import Control.Effect.Hefty (Effectful)
+import Control.Effect.Free (EffF, EffectfulF)
+import Control.Effect.Hefty (Eff, Effectful)
 import Data.Hefty.Extensible (ExtensibleUnion)
+
+type eh !! ef = Effectful ExtensibleUnion Ap eh ef
+type (!) ef = EffectfulF ExtensibleUnion Ap ef
 
 infixr 5 !!
 infixr 4 !
 
-type (!!) = Effectful ExtensibleUnion Ap
-type (!) = EffectfulF ExtensibleUnion Ap
+type ehs :!! efs = Eff ExtensibleUnion Ap ehs efs
+type (:!) efs = EffF ExtensibleUnion Ap efs
+
+infixr 5 :!!
+infixr 4 :!

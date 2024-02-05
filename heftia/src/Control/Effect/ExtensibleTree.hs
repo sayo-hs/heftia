@@ -13,13 +13,19 @@ Type operators for extensible effectful programs based on the tree-structured en
 -}
 module Control.Effect.ExtensibleTree where
 
-import Control.Effect.Free (EffectfulF)
-import Control.Effect.Hefty (Effectful)
+import Control.Effect.Free (EffF, EffectfulF)
+import Control.Effect.Hefty (Eff, Effectful)
 import Control.Monad.Freer.Tree (FreerTree)
 import Data.Hefty.Extensible (ExtensibleUnion)
+
+type eh !! ef = Effectful ExtensibleUnion FreerTree eh ef
+type (!) ef = EffectfulF ExtensibleUnion FreerTree ef
 
 infixr 5 !!
 infixr 4 !
 
-type (!!) = Effectful ExtensibleUnion FreerTree
-type (!) = EffectfulF ExtensibleUnion FreerTree
+type ehs :!! efs = Eff ExtensibleUnion FreerTree ehs efs
+type (:!) efs = EffF ExtensibleUnion FreerTree efs
+
+infixr 5 :!!
+infixr 4 :!

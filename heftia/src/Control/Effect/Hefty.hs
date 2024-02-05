@@ -16,23 +16,17 @@ on [@classy-effects@](https://hackage.haskell.org/package/classy-effects).
 -}
 module Control.Effect.Hefty where
 
-import Control.Applicative (Alternative)
-import Control.Arrow ((>>>))
-import Control.Effect (SendIns, SendSig, sendIns, sendSig, type (~>))
-import Control.Freer (Freer, InsClass, interpretFreer, liftIns, transformFreer)
-import Control.Hefty (Hefty (Hefty), SigClass, overHefty, unHefty)
-import Control.Monad (MonadPlus)
-import Control.Monad.Base (MonadBase)
+import Control.Effect (type (~>))
+import Control.Freer (Freer, InjectIns, injectIns, interpretFreer, liftIns, transformFreer)
+import Control.Hefty (Hefty (Hefty), InjectSig, injectSig, overHefty, unHefty)
 import Control.Monad.Cont (Cont, ContT (ContT), lift, runContT)
 import Control.Monad.Freer (MonadFreer, interpretFreerK)
-import Control.Monad.IO.Class (MonadIO)
 import Control.Monad.Identity (Identity (Identity))
 import Control.Monad.Trans (MonadTrans)
 import Data.Coerce (coerce)
-import Data.Effect (LNop, LiftIns (LiftIns), Nop, unliftIns)
-import Data.Effect.HFunctor (HFunctor, caseH, hfmap, (:+:) (Inl, Inr))
-import Data.Free.Sum (pattern L1, pattern R1, type (+))
-import Data.Function ((&))
+import Data.Effect (LNop, LiftIns (LiftIns), Nop, SigClass, unliftIns)
+import Data.Effect.HFunctor (HFunctor, caseH, hfmap, (:+:))
+import Data.Free.Sum (caseF, pattern L1, pattern R1, type (+))
 import Data.Hefty.Union (
     ForallHFunctor,
     HFunctorUnion,
@@ -50,28 +44,42 @@ import Data.Hefty.Union (
 import Data.Kind (Type)
 
 {- |
-A common wrapper data type for representing first-order & higher-order extensible effectful
-programs.
+A common type for representing first-order and higher-order extensible effectful programs that can
+issue effects belonging to the specified sum of effect classes.
 -}
-newtype
-    Effectful
-        (u :: [SigClass] -> SigClass)
-        (f :: InsClass -> Type -> Type)
-        (eh :: SigClass)
-        (ef :: InsClass)
-        (a :: Type) = Effectful {unEffectful :: Hefty f (EffUnion u eh ef) a}
+type Effectful u fr eh ef = Eff u fr (SumToUnionListNH u eh) (SumToUnionListNF u ef)
 
--- | Open union for first-order & higher-order effect classes.
-type EffUnion u eh ef = SumToUnion u (NormalizeSig eh) :+: LiftIns (SumToUnionF u ef)
+{- |
+A common type for representing first-order and higher-order extensible effectful programs that can
+issue effects belonging to the specified list of effect classes.
+-}
+type Eff u fr ehs efs = Hefty fr (EffUnion u ehs efs)
 
--- | Manipulate the inside of the t'Effectful' wrapper.
-overEffectful ::
-    forall b eh' ef' f' u' a eh ef f u.
-    (Hefty f (EffUnion u eh ef) a -> Hefty f' (EffUnion u' eh' ef') b) ->
-    Effectful u f eh ef a ->
-    Effectful u' f' eh' ef' b
-overEffectful f = Effectful . f . unEffectful
-{-# INLINE overEffectful #-}
+{- |
+A common wrapper data type for representing first-order and higher-order extensible effect union.
+-}
+newtype EffUnion (u :: [SigClass] -> SigClass) ehs efs f a = EffUnion
+    {unEffUnion :: (u ehs f + u efs Nop) a}
+
+caseHF :: (u ehs f a -> r) -> (u efs Nop a -> r) -> EffUnion u ehs efs f a -> r
+caseHF f g = caseF f g . unEffUnion
+
+instance HFunctor (u ehs) => HFunctor (EffUnion u ehs efs) where
+    hfmap f = EffUnion . caseF (L1 . hfmap f) R1 . unEffUnion
+    {-# INLINE hfmap #-}
+
+instance MemberRec u (LiftIns e) efs => InjectIns e (EffUnion u ehs efs f) where
+    injectIns = EffUnion . R1 . injectRec . LiftIns
+    {-# INLINE injectIns #-}
+
+instance MemberRec u e ehs => InjectSig e (EffUnion u ehs efs) where
+    injectSig = EffUnion . L1 . injectRec
+    {-# INLINE injectSig #-}
+
+type MemberH u e ehs = MemberRec u e ehs
+
+type MemberF u e efs = MemberH u (LiftIns e) efs
+type HasMembershipF u e efs = HasMembership u (LiftIns e) efs
 
 infixr 4 $
 infixr 5 $$
@@ -82,17 +90,26 @@ type (f :: Type -> Type) $ a = f a
 -- | Type-level infix applcation for higher-order functors.
 type (h :: (Type -> Type) -> Type -> Type) $$ f = h f
 
--- | t'HFunctor' constraint for effect class open unions.
-type HFunctors u e = HFunctor (SumToUnionH u e)
+{- |
+Recursively decompose the sum of higher-order effects into a list, following the direction of right
+association, with normalization.
+-}
+type SumToUnionListNH u eh = SumToUnionList u (NormalizeSig eh)
 
 {- |
-A version of t'HFunctors' where t'HFunctor' is derived for unions extended in the head direction by
-t'HFunctorUnion'.
+Recursively decompose the sum of first-order effects into a list, following the direction of right
+association, with normalization.
 -}
-type TailHFunctor u e = ForallHFunctor u (SumToUnionListN u e)
+type SumToUnionListNF u ef = SumToUnionListNH u (LiftIns ef)
 
--- | t'HFunctor' constraint for effect classes that are either single or in an open union.
-type HeadHFunctor u e = HFunctor (MultiToUnionN u e)
+{- |
+Recursively decompose the sum of higher-order effects into a list, following the direction of right
+association.
+-}
+type family SumToUnionList (u :: [SigClass] -> SigClass) (e :: SigClass) :: [SigClass] where
+    SumToUnionList u (e1 :+: e2) = MultiListToUnion u (SumToUnionList u e1) ': SumToUnionList u e2
+    SumToUnionList u LNop = '[]
+    SumToUnionList u (SingleSig e) = '[e]
 
 {- |
 Convert a given list of higher-order effect classes into a suitable representation type for each
@@ -102,40 +119,6 @@ type family MultiListToUnion (u :: [SigClass] -> SigClass) (es :: [SigClass]) ::
     MultiListToUnion u '[] = LNop
     MultiListToUnion u '[e] = e
     MultiListToUnion u es = u es
-
-{- |
-Recursively decompose the sum of higher-order effects into a list, following the direction of right
-association.
--}
-type family SumToUnionList (u :: [SigClass] -> SigClass) (e :: SigClass) :: [SigClass] where
-    SumToUnionList u (e1 :+: e2) = MultiToUnion u e1 ': SumToUnionList u e2
-    SumToUnionList u LNop = '[]
-    SumToUnionList u (SingleSig e) = '[e]
-
--- | Convert the sum of higher-order effect classes into an open union without normalization.
-type SumToUnion u e = u (SumToUnionList u e)
-
--- | Convert the sum of higher-order effect classes into an open union with normalization.
-type SumToUnionH u e = SumToUnion u (NormalizeSig e)
-
--- | Convert the sum of first-order effect classes into an open union with normalization.
-type SumToUnionF u e = SumToUnionH u (LiftIns e) Nop
-
-type SumToUnionListN u e = SumToUnionList u (NormalizeSig e)
-
-{- |
-Convert the sum of higher-order effects into an open union without normalization.
-
-If it's a single higher-order effect class rather than a sum, leave it as is without converting.
--}
-type MultiToUnion u e = MultiListToUnion u (SumToUnionList u e)
-
-{- |
-Convert the sum of higher-order effect classes into an open union with normalization.
-
-If it's a single higher-order effect rather than a sum, leave it as is without converting.
--}
-type MultiToUnionN u e = MultiToUnion u (NormalizeSig e)
 
 {- |
 Normalization in preparation for decomposing the sum of effect classes into a list.
@@ -155,34 +138,11 @@ a sum.
 newtype SingleSig (e :: SigClass) f a = SingleSig {unSingleSig :: e f a}
     deriving newtype (HFunctor)
 
-{- |
-The higher-order effect class @er@ can be decomposed into the sum of t'EffHead' @er@ and t'EffTail'
-@er@ (@er ≅ EffHead er :+: EffTail er@).
--}
-type DecompH u er =
-    SumToUnionListN u er
-        ~ HeadMultiToUnionH u er
-        ': SumToUnionListN u (EffTail er)
+type HeadIns le = LiftInsIfSingle (UnliftIfSingle le) le
 
-type HeadMultiToUnionH u er = MultiToUnionN u (EffHead er)
-
-{- |
-The first-order effect class @er@ can be decomposed into the sum of t'EffHeadF' @er@ and t'EffTailF'
-@er@ (@er ≅ EffHeadF er + EffTailF er@).
--}
-type DecompF u er =
-    ( SumToUnionListN u (LiftIns er)
-        ~ LHeadMultiToUnionF u er
-        ': SumToUnionListN u (LiftIns (EffTailF er))
-    , LiftInsIfSingle (HeadMultiToUnionF u er) (LHeadMultiToUnionF u er)
-    )
-
-type HeadMultiToUnionF u er = UnliftSingleLiftIns (LHeadMultiToUnionF u er)
-type LHeadMultiToUnionF u er = MultiToUnionN u (LiftIns (EffHeadF er))
-
-type family UnliftSingleLiftIns e where
-    UnliftSingleLiftIns (LiftIns e) = e
-    UnliftSingleLiftIns e = e Nop
+type family UnliftIfSingle e where
+    UnliftIfSingle (LiftIns e) = e
+    UnliftIfSingle e = e Nop
 
 class LiftInsIfSingle e le where
     liftInsIfSingle :: e ~> le Nop
@@ -200,144 +160,155 @@ instance LiftInsIfSingle e (LiftIns e) where
     {-# INLINE liftInsIfSingle #-}
     {-# INLINE unliftInsIfSingle #-}
 
-type family EffHead e where
-    EffHead (e :+: r) = e
-    EffHead e = e
+injectH :: (Freer c f, HFunctor (u ehs)) => u ehs (Eff u f ehs efs) ~> Eff u f ehs efs
+injectH = Hefty . liftIns . EffUnion . L1
+{-# INLINE injectH #-}
 
-type family EffHeadF e where
-    EffHeadF (e + r) = e
-    EffHeadF e = e
-
-type family EffTail e where
-    EffTail (e :+: r) = r
-    EffTail e = LNop
-
-type family EffTailF e where
-    EffTailF (e + r) = r
-    EffTailF e = Nop
-
-compEff ::
-    (Freer c f, Union u, HFunctors u eh, DecompF u er) =>
-    Effectful u f eh (EffHeadF er + EffTailF er) ~> Effectful u f eh er
-compEff = coerce
-{-# INLINE compEff #-}
-
-compEffH ::
-    (Freer c f, Union u, HFunctors u er, DecompH u er) =>
-    Effectful u f (EffHead er :+: EffTail er) ef ~> Effectful u f er ef
-compEffH = coerce
-{-# INLINE compEffH #-}
-
-decompEff ::
-    (Freer c f, Union u, HFunctors u eh, DecompF u er) =>
-    Effectful u f eh er ~> Effectful u f eh (EffHeadF er + EffTailF er)
-decompEff = coerce
-{-# INLINE decompEff #-}
-
-decompEffH ::
-    (Freer c f, Union u, HFunctors u er, DecompH u er) =>
-    Effectful u f er ef ~> Effectful u f (EffHead er :+: EffTail er) ef
-decompEffH = coerce
-{-# INLINE decompEffH #-}
-
-deriving newtype instance Functor (Hefty f (EffUnion u eh ef)) => Functor (Effectful u f eh ef)
-deriving newtype instance
-    Applicative (Hefty f (EffUnion u eh ef)) =>
-    Applicative (Effectful u f eh ef)
-deriving newtype instance
-    Alternative (Hefty f (EffUnion u eh ef)) =>
-    Alternative (Effectful u f eh ef)
-deriving newtype instance Monad (Hefty f (EffUnion u eh ef)) => Monad (Effectful u f eh ef)
-deriving newtype instance MonadPlus (Hefty f (EffUnion u eh ef)) => MonadPlus (Effectful u f eh ef)
-deriving newtype instance
-    (MonadBase b (Hefty f (EffUnion u eh ef)), Monad b) =>
-    MonadBase b (Effectful u f eh ef)
-deriving newtype instance MonadIO (Hefty f (EffUnion u eh ef)) => MonadIO (Effectful u f eh ef)
-deriving newtype instance MonadFail (Hefty f (EffUnion u eh ef)) => MonadFail (Effectful u f eh ef)
-
-deriving stock instance Foldable (Hefty f (EffUnion u eh ef)) => Foldable (Effectful u f eh ef)
-deriving stock instance
-    Traversable (Hefty f (EffUnion u eh ef)) =>
-    Traversable (Effectful u f eh ef)
-
-deriving newtype instance Eq (Hefty f (EffUnion u eh ef) a) => Eq (Effectful u f eh ef a)
-deriving newtype instance Ord (Hefty f (EffUnion u eh ef) a) => Ord (Effectful u f eh ef a)
-deriving newtype instance Read (Hefty f (EffUnion u eh ef) a) => Read (Effectful u f eh ef a)
-deriving newtype instance Show (Hefty f (EffUnion u eh ef) a) => Show (Effectful u f eh ef a)
-
-type MemberF u e ef = MemberH u (LiftIns e) (LiftIns ef)
-type HasMembershipF u e ef =
-    HasMembership u (LiftIns e) (SumToUnionListN u (LiftIns ef))
-
-instance (MemberF u e ef, Freer c fr) => SendIns e (Effectful u fr eh ef) where
-    sendIns = liftFreer . liftIns . Inr . LiftIns . injectRec . LiftIns
-    {-# INLINE sendIns #-}
-
-type MemberH u e eh = MemberRec u e (SumToUnionListN u eh)
-
--- enhance: introduce 'HFunctorCoercible' for performance
-instance (MemberH u e eh, Freer c fr, HFunctor e) => SendSig e (Effectful u fr eh ef) where
-    sendSig = liftFreer . liftIns . Inl . injectRec . hfmap unEffectful
-    {-# INLINE sendSig #-}
+injectF :: Freer c f => u efs Nop ~> Eff u f ehs efs
+injectF = Hefty . liftIns . EffUnion . R1
+{-# INLINE injectF #-}
 
 {-  all types of interpret-family functions:
         - interpret   :                 e  ~> E r           ->    E (e + r)  ~> E r
-        - intercept   :                 e  ~> E (e + r)     ->    E (e + r)  ~> E (e + r)
         - reinterpret :                 e1 ~> E (e2 + r)    ->    E (e1 + r) ~> E (e2 + r)
-        - interpose   :  e <| es  =>    e  ~> E es          ->    E es       ~> E es
+        - intercept   :  e <| es  =>    e  ~> E es          ->    E es       ~> E es
 
-    all possible suffix patterns of interpret-family functions:
-        - <none>
-        - H
-        - H_
-        - Rec
-        - RecH
-        - K
-        - KH
-        - KH_
-        - ContT
-        - ContTH
-        - ContTH_
-        - T
-        - TH
-        - TH_
+        all possible suffix patterns of interpret functions:
+            { <none> , K , ContT , T } x { <none> , H , H_ , FH , FH_ }
+            - Rec
+            - RecH
+            - RecFH
+
+        all possible suffix patterns of interpret-family functions (except 'interpret'):
+            - <none>
+            - K
+            - ContT
+            - T
+            - Rec
+            - RecH
+            - RecFH
 
     all types of transform-family functions:
         - transform :                  e1 ~> e2    ->    E (e1 + r) ~> E (e2 + r)
         - translate :  e2 <| r   =>    e1 ~> e2    ->    E (e1 + r) ~> E r
         - rewrite   :  e  <| es  =>    e  ~> e     ->    E es       ~> E es
 
-    all possible suffix patterns of transform-family functions:
-        - <none>
-        - H
--}
+        all possible suffix patterns of transform-family functions:
+            - <none>
+            - H
+            - FH
 
--- todo: change 'Effectful' into type synonym and 'EffUnion' into newtype wrapper to reduce requiring of HFunctor constraints
+    todo patterns:
+        - translate*, rewrite* in tramsform-family ( 2x3 = 6 functions )
+        - *{FH,FH_} in interpret-family ( (4x2+1) + 2 = 11 functions )
+-}
 
 -- | Using the provided interpretation function, interpret first-order effects.
 interpret ::
-    forall er f u c.
-    (Freer c f, Union u, DecompF u er) =>
-    HeadMultiToUnionF u er ~> Effectful u f LNop (EffTailF er) ->
-    Effectful u f LNop er ~> Effectful u f LNop (EffTailF er)
-interpret i =
-    interpretAllE $ i . unliftInsIfSingle |+: injectF
+    forall e r ehs fr u c.
+    (Freer c fr, Union u, HeadIns e) =>
+    UnliftIfSingle e ~> Eff u fr ehs r ->
+    Eff u fr '[] (e ': r) ~> Eff u fr ehs r
+interpret i = interpretAllE $ i . unliftInsIfSingle |+: injectF
+{-# INLINE interpret #-}
 
 interpretH ::
-    forall eh ef f u c.
-    (Freer c f, HFunctorUnion u, DecompH u eh, EffTail eh ~ LNop, HeadHFunctor u (EffHead eh)) =>
-    (HeadMultiToUnionH u eh (Effectful u f LNop ef) ~> Effectful u f LNop ef) ->
-    Effectful u f eh ef ~> Effectful u f LNop ef
+    forall eh ehs efs fr u c.
+    (Freer c fr, Union u, HFunctor (u '[eh])) =>
+    eh (Eff u fr ehs efs) ~> Eff u fr ehs efs ->
+    Eff u fr '[eh] efs ~> Eff u fr ehs efs
 interpretH i = interpretAllH $ i |+: exhaust
 {-# INLINE interpretH #-}
 
 interpretH_ ::
-    forall eh ef f u c.
-    (Freer c f, Union u, DecompH u eh, EffTail eh ~ LNop) =>
-    (HeadMultiToUnionH u eh (Hefty f (EffUnion u eh ef)) ~> Effectful u f LNop ef) ->
-    Effectful u f eh ef ~> Effectful u f LNop ef
+    forall eh ehs efs fr u c.
+    (Freer c fr, Union u) =>
+    eh (Eff u fr '[eh] efs) ~> Eff u fr ehs efs ->
+    Eff u fr '[eh] efs ~> Eff u fr ehs efs
 interpretH_ i = interpretAllH_ $ i |+: exhaust
 {-# INLINE interpretH_ #-}
+
+-- | Interpret the leading first-order effect class using a delimited continuation.
+interpretK ::
+    forall e rs r a ehs fr u.
+    (MonadFreer fr, Union u, HeadIns e) =>
+    (a -> Eff u fr ehs rs r) ->
+    (forall x. (x -> Eff u fr ehs rs r) -> UnliftIfSingle e x -> Eff u fr ehs rs r) ->
+    Eff u fr '[] (e ': rs) a ->
+    Eff u fr ehs rs r
+interpretK = toInterpretKFromContT interpretContT
+{-# INLINE interpretK #-}
+
+interpretKH ::
+    forall e r ehs efs a fr u.
+    (MonadFreer fr, Union u, HFunctor (u '[e])) =>
+    (a -> Eff u fr ehs efs r) ->
+    (forall x. (x -> Eff u fr ehs efs r) -> e (ContT r (Eff u fr ehs efs)) x -> Eff u fr ehs efs r) ->
+    Eff u fr '[e] efs a ->
+    Eff u fr ehs efs r
+interpretKH = toInterpretKFromContT interpretContTH
+{-# INLINE interpretKH #-}
+
+interpretKH_ ::
+    forall e r ehs efs a fr u.
+    (MonadFreer fr, Union u) =>
+    (a -> Eff u fr ehs efs r) ->
+    (forall x. (x -> Eff u fr ehs efs r) -> e (Eff u fr '[e] efs) x -> Eff u fr ehs efs r) ->
+    Eff u fr '[e] efs a ->
+    Eff u fr ehs efs r
+interpretKH_ = toInterpretKFromContT interpretContTH_
+{-# INLINE interpretKH_ #-}
+
+-- | Interpret the leading first-order effect class using a continuation monad transformer.
+interpretContT ::
+    forall e rs r ehs fr u.
+    (MonadFreer fr, Union u, HeadIns e) =>
+    (UnliftIfSingle e ~> ContT r (Eff u fr ehs rs)) ->
+    Eff u fr '[] (e ': rs) ~> ContT r (Eff u fr ehs rs)
+interpretContT i =
+    interpretContTAll $ i . unliftInsIfSingle |+: lift . injectF
+{-# INLINE interpretContT #-}
+
+interpretContTH ::
+    forall e r ehs efs fr u.
+    (MonadFreer fr, Union u, HFunctor (u '[e])) =>
+    (e (ContT r (Eff u fr ehs efs)) ~> ContT r (Eff u fr ehs efs)) ->
+    Eff u fr '[e] efs ~> ContT r (Eff u fr ehs efs)
+interpretContTH i = interpretContTAllH $ i |+: exhaust
+{-# INLINE interpretContTH #-}
+
+interpretContTH_ ::
+    forall e r ehs efs fr u.
+    (MonadFreer fr, Union u) =>
+    (e (Eff u fr '[e] efs) ~> ContT r (Eff u fr ehs efs)) ->
+    Eff u fr '[e] efs ~> ContT r (Eff u fr ehs efs)
+interpretContTH_ i = interpretContTAllH_ $ i |+: exhaust
+{-# INLINE interpretContTH_ #-}
+
+-- | Interpret the leading first-order effect class using a monad transformer.
+interpretT ::
+    forall e r t ehs fr u.
+    (MonadFreer fr, Union u, MonadTrans t, Monad (t (Eff u fr ehs r)), HeadIns e) =>
+    UnliftIfSingle e ~> t (Eff u fr ehs r) ->
+    Eff u fr '[] (e ': r) ~> t (Eff u fr ehs r)
+interpretT i = interpretAll $ i . unliftInsIfSingle |+: lift . injectF
+{-# INLINE interpretT #-}
+
+interpretTH ::
+    forall e t ehs efs fr u.
+    (MonadFreer fr, Union u, MonadTrans t, Monad (t (Eff u fr ehs efs)), HFunctor (u '[e])) =>
+    e (t (Eff u fr ehs efs)) ~> t (Eff u fr ehs efs) ->
+    Eff u fr '[e] efs ~> t (Eff u fr ehs efs)
+interpretTH i = interpretTAllH $ i |+: exhaust
+{-# INLINE interpretTH #-}
+
+interpretTH_ ::
+    forall e t ehs efs fr u.
+    (MonadFreer fr, Union u, MonadTrans t, Monad (t (Eff u fr ehs efs))) =>
+    e (Eff u fr '[e] efs) ~> t (Eff u fr ehs efs) ->
+    Eff u fr '[e] efs ~> t (Eff u fr ehs efs)
+interpretTH_ i = interpretTAllH_ $ i |+: exhaust
+{-# INLINE interpretTH_ #-}
 
 {- |
 Using the provided interpretation function, interpret first-order effects. For actions (scopes)
@@ -347,10 +318,10 @@ Note that if the interpretation function is stateful (i.e., not a monad morphism
 maintained across the scopes.
 -}
 interpretRec ::
-    forall er eh f u c.
-    (Freer c f, Union u, HFunctors u eh, DecompF u er) =>
-    HeadMultiToUnionF u er ~> Effectful u f eh (EffTailF er) ->
-    Effectful u f eh er ~> Effectful u f eh (EffTailF er)
+    forall e rs ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs), HeadIns e) =>
+    UnliftIfSingle e ~> Eff u fr ehs rs ->
+    Eff u fr ehs (e ': rs) ~> Eff u fr ehs rs
 interpretRec i = interpretAllRec $ i . unliftInsIfSingle |+: injectF
 {-# INLINE interpretRec #-}
 
@@ -362,332 +333,318 @@ Note that if the interpretation function is stateful (i.e., not a monad morphism
 maintained across the scopes.
 -}
 interpretRecH ::
-    forall er ef f u c.
-    ( Freer c f
-    , HFunctorUnion u
-    , HeadHFunctor u (EffHead er)
-    , TailHFunctor u (EffTail er)
-    , DecompH u er
-    ) =>
-    HeadMultiToUnionH u er (Effectful u f (EffTail er) ef) ~> Effectful u f (EffTail er) ef ->
-    Effectful u f er ef ~> Effectful u f (EffTail er) ef
-interpretRecH i = interpretAllRecH $ i |+: injectH
+    forall e rs efs fr u c.
+    (Freer c fr, HFunctorUnion u, HFunctor e, ForallHFunctor u rs) =>
+    e (Eff u fr rs efs) ~> Eff u fr rs efs ->
+    Eff u fr (e ': rs) efs ~> Eff u fr rs efs
+interpretRecH i = interpretAllH $ i |+: injectH
 {-# INLINE interpretRecH #-}
 
--- | Interpret the leading first-order effect class using a delimited continuation.
-interpretK ::
-    forall er r a f u.
-    (MonadFreer f, Union u, DecompF u er) =>
-    (a -> Effectful u f LNop (EffTailF er) r) ->
+reinterpret ::
+    forall e2 e1 r ehs fr u c.
+    (Freer c fr, Union u, HeadIns e1, HFunctor (u '[])) =>
+    UnliftIfSingle e1 ~> Eff u fr ehs (e2 ': r) ->
+    Eff u fr '[] (e1 ': r) ~> Eff u fr ehs (e2 ': r)
+reinterpret f = interpret f . raiseUnder
+{-# INLINE reinterpret #-}
+
+reinterpretK ::
+    forall e2 e1 rs r a ehs fr u.
+    (MonadFreer fr, Union u, HeadIns e1, HFunctor (u '[])) =>
+    (a -> Eff u fr ehs (e2 ': rs) r) ->
     ( forall x.
-      (x -> Effectful u f LNop (EffTailF er) r) ->
-      HeadMultiToUnionF u er x ->
-      Effectful u f LNop (EffTailF er) r
+      (x -> Eff u fr ehs (e2 ': rs) r) ->
+      UnliftIfSingle e1 x ->
+      Eff u fr ehs (e2 ': rs) r
     ) ->
-    Effectful u f LNop er a ->
-    Effectful u f LNop (EffTailF er) r
-interpretK = toInterpretKFromContT interpretContT
-{-# INLINE interpretK #-}
+    Eff u fr '[] (e1 ': rs) a ->
+    Eff u fr ehs (e2 ': rs) r
+reinterpretK = toInterpretKFromContT reinterpretContT
+{-# INLINE reinterpretK #-}
 
--- | Interpret the leading first-order effect class using a continuation monad transformer.
-interpretContT ::
-    forall er r f u.
-    (MonadFreer f, Union u, DecompF u er) =>
-    HeadMultiToUnionF u er ~> ContT r (Effectful u f LNop (EffTailF er)) ->
-    Effectful u f LNop er ~> ContT r (Effectful u f LNop (EffTailF er))
-interpretContT i =
-    interpretContTAll $ i . unliftInsIfSingle |+: lift . injectF
-{-# INLINE interpretContT #-}
+reinterpretContT ::
+    forall e2 e1 rs r ehs fr u.
+    (MonadFreer fr, Union u, HeadIns e1, HFunctor (u '[])) =>
+    (UnliftIfSingle e1 ~> ContT r (Eff u fr ehs (e2 ': rs))) ->
+    Eff u fr '[] (e1 ': rs) ~> ContT r (Eff u fr ehs (e2 ': rs))
+reinterpretContT i = interpretContT i . raiseUnder
+{-# INLINE reinterpretContT #-}
 
-interpretContTH ::
-    forall er ef r f u.
-    (MonadFreer f, HFunctorUnion u, DecompH u er, EffTail er ~ LNop, HeadHFunctor u (EffHead er)) =>
-    HeadMultiToUnionH u er (ContT r (Effectful u f LNop ef)) ~> ContT r (Effectful u f LNop ef) ->
-    Effectful u f er ef ~> ContT r (Effectful u f LNop ef)
-interpretContTH i = interpretContTAllH $ i |+: exhaust
-{-# INLINE interpretContTH #-}
-
--- | Interpret the leading first-order effect class using a monad transformer.
-interpretT ::
-    forall t er f u.
-    ( MonadFreer f
+reinterpretT ::
+    forall e2 e1 t r ehs fr u.
+    ( MonadFreer fr
     , Union u
-    , DecompF u er
     , MonadTrans t
-    , Monad (t (Effectful u f LNop (EffTailF er)))
+    , Monad (t (Eff u fr ehs (e2 ': r)))
+    , HeadIns e1
+    , HFunctor (u '[])
     ) =>
-    HeadMultiToUnionF u er ~> t (Effectful u f LNop (EffTailF er)) ->
-    Effectful u f LNop er ~> t (Effectful u f LNop (EffTailF er))
-interpretT i =
-    interpretAll $ i . unliftInsIfSingle |+: lift . injectF
-{-# INLINE interpretT #-}
+    UnliftIfSingle e1 ~> t (Eff u fr ehs (e2 ': r)) ->
+    Eff u fr '[] (e1 ': r) ~> t (Eff u fr ehs (e2 ': r))
+reinterpretT i = interpretT i . raiseUnder
+{-# INLINE reinterpretT #-}
+
+reinterpretRec ::
+    forall e2 e1 r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs), HeadIns e1) =>
+    UnliftIfSingle e1 ~> Eff u fr ehs (e2 ': r) ->
+    Eff u fr ehs (e1 ': r) ~> Eff u fr ehs (e2 ': r)
+reinterpretRec i = interpretRec i . raiseUnder
+{-# INLINE reinterpretRec #-}
+
+reinterpretRecH ::
+    forall e2 e1 r efs fr u c.
+    (Freer c fr, HFunctorUnion u, HFunctor e1, HFunctor e2, ForallHFunctor u r) =>
+    e1 (Eff u fr (e2 ': r) efs) ~> Eff u fr (e2 ': r) efs ->
+    Eff u fr (e1 ': r) efs ~> Eff u fr (e2 ': r) efs
+reinterpretRecH i = interpretRecH i . raiseUnderH
+{-# INLINE reinterpretRecH #-}
 
 interpose ::
-    forall e ef f u c.
-    (Freer c f, Union u, MemberF u e ef) =>
-    e ~> Effectful u f LNop ef ->
-    Effectful u f LNop ef ~> Effectful u f LNop ef
+    forall e efs fr u c.
+    (Freer c fr, Union u, MemberF u e efs) =>
+    e ~> Eff u fr '[] efs ->
+    Eff u fr '[] efs ~> Eff u fr '[] efs
 interpose f =
     interpretAllE
         \u -> case projectRec u of
             Just (LiftIns e) -> f e
             Nothing -> injectF u
 
-interposeRec ::
-    forall e eh ef f u c.
-    (Freer c f, Union u, MemberF u e ef, HFunctors u eh) =>
-    e ~> Effectful u f eh ef ->
-    Effectful u f eh ef ~> Effectful u f eh ef
-interposeRec f =
-    interpretAllRec
-        \u -> case projectRec u of
-            Just (LiftIns e) -> f e
-            Nothing -> injectF u
-
-interposeRecH ::
-    forall e eh ef f u c.
-    (Freer c f, Union u, MemberH u e eh, HFunctors u eh) =>
-    e (Effectful u f eh ef) ~> Effectful u f eh ef ->
-    Effectful u f eh ef ~> Effectful u f eh ef
-interposeRecH f =
-    interpretAllRecH
-        \u -> case projectRec u of
-            Just e -> f e
-            Nothing -> injectH u
-
 interposeK ::
-    forall e r a es f u.
-    (MonadFreer f, Union u, MemberF u e es) =>
-    (a -> Effectful u f LNop es r) ->
-    ( forall x.
-      (x -> Effectful u f LNop es r) ->
-      e x ->
-      Effectful u f LNop es r
-    ) ->
-    Effectful u f LNop es a ->
-    Effectful u f LNop es r
-interposeK k i = (`runContT` k) . interposeContT \e -> ContT (`i` e)
+    forall e efs r a fr u.
+    (MonadFreer fr, Union u, MemberF u e efs) =>
+    (a -> Eff u fr '[] efs r) ->
+    (forall x. (x -> Eff u fr '[] efs r) -> e x -> Eff u fr '[] efs r) ->
+    Eff u fr '[] efs a ->
+    Eff u fr '[] efs r
+interposeK = toInterpretKFromContT interposeContT
 {-# INLINE interposeK #-}
 
 interposeContT ::
-    forall e r es f u.
-    ( MonadFreer f
-    , Union u
-    , MemberF u e es
-    ) =>
-    e ~> ContT r (Effectful u f LNop es) ->
-    Effectful u f LNop es ~> ContT r (Effectful u f LNop es)
+    forall e efs r fr u.
+    (MonadFreer fr, Union u, MemberF u e efs) =>
+    (e ~> ContT r (Eff u fr '[] efs)) ->
+    Eff u fr '[] efs ~> ContT r (Eff u fr '[] efs)
 interposeContT f =
-    interpretContTAll \u -> case projectRec u of
-        Just (LiftIns e) -> f e
-        Nothing -> lift $ injectF u
+    interpretContTAll
+        \u -> case projectRec u of
+            Just (LiftIns e) -> f e
+            Nothing -> lift $ injectF u
 {-# INLINE interposeContT #-}
 
 interposeT ::
-    forall e t es f u.
-    ( MonadFreer f
-    , Union u
-    , MemberF u e es
-    , MonadTrans t
-    , Monad (t (Effectful u f LNop es))
-    ) =>
-    e ~> t (Effectful u f LNop es) ->
-    Effectful u f LNop es ~> t (Effectful u f LNop es)
+    forall e t efs fr u.
+    (MonadFreer fr, Union u, MonadTrans t, Monad (t (Eff u fr '[] efs)), MemberF u e efs) =>
+    e ~> t (Eff u fr '[] efs) ->
+    Eff u fr '[] efs ~> t (Eff u fr '[] efs)
 interposeT f =
     interpretAll
         \u -> case projectRec u of
             Just (LiftIns e) -> f e
             Nothing -> lift $ injectF u
+{-# INLINE interposeT #-}
 
-intercept ::
-    forall er f u c.
-    (Freer c f, HFunctorUnion u, DecompF u er) =>
-    HeadMultiToUnionF u er ~> Effectful u f LNop er ->
-    Effectful u f LNop er ~> Effectful u f LNop er
-intercept f = interpret f . raiseUnder . decompEff
-{-# INLINE intercept #-}
+interposeRec ::
+    forall e ehs efs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs), MemberF u e efs) =>
+    e ~> Eff u fr ehs efs ->
+    Eff u fr ehs efs ~> Eff u fr ehs efs
+interposeRec f =
+    interpretAllRec
+        \u -> case projectRec u of
+            Just (LiftIns e) -> f e
+            Nothing -> injectF u
+{-# INLINE interposeRec #-}
 
-interceptRec ::
-    forall er eh f u c.
-    (Freer c f, Union u, HFunctors u eh, DecompF u er) =>
-    HeadMultiToUnionF u er ~> Effectful u f eh er ->
-    Effectful u f eh er ~> Effectful u f eh er
-interceptRec f = interpretRec f . raiseUnder . decompEff
-{-# INLINE interceptRec #-}
-
-interceptRecH ::
-    forall er ef f u c.
-    ( Freer c f
-    , HFunctorUnion u
-    , DecompH u er
-    , HeadHFunctor u (EffHead er)
-    , TailHFunctor u (EffTail er)
-    ) =>
-    HeadMultiToUnionH u er (Effectful u f er ef) ~> Effectful u f er ef ->
-    Effectful u f er ef ~> Effectful u f er ef
-interceptRecH f = interpretRecH f . raiseUnderH . decompEffH
-{-# INLINE interceptRecH #-}
+interposeRecH ::
+    forall e ehs efs fr u c.
+    (Freer c fr, HFunctorUnion u, HFunctor e, ForallHFunctor u ehs, MemberH u e ehs) =>
+    e (Eff u fr ehs efs) ~> Eff u fr ehs efs ->
+    Eff u fr ehs efs ~> Eff u fr ehs efs
+interposeRecH f =
+    interpretAllH
+        \u -> case projectRec u of
+            Just e -> f e
+            Nothing -> injectH u
+{-# INLINE interposeRecH #-}
 
 interpretAll ::
-    forall g ef f u c.
-    (Freer c f, Union u, c g) =>
-    SumToUnionF u ef ~> g ->
-    Effectful u f LNop ef ~> g
+    forall g efs fr u c.
+    (Freer c fr, Union u, c g) =>
+    u efs Nop ~> g ->
+    Eff u fr '[] efs ~> g
 interpretAll = interpretAllFH_ exhaust
 {-# INLINE interpretAll #-}
 
 interpretAllE ::
-    forall eh' ef' ef f u c.
-    (Freer c f, Union u) =>
-    SumToUnionF u ef ~> Effectful u f eh' ef' ->
-    Effectful u f LNop ef ~> Effectful u f eh' ef'
+    forall ehs' efs' efs fr u c.
+    (Freer c fr, Union u) =>
+    u efs Nop ~> Eff u fr ehs' efs' ->
+    Eff u fr '[] efs ~> Eff u fr ehs' efs'
 interpretAllE = interpretAllFHE_ exhaust
 {-# INLINE interpretAllE #-}
 
 interpretAllH ::
-    forall eh' eh ef f u c.
-    (Freer c f, Union u, HFunctors u eh) =>
-    SumToUnionH u eh (Effectful u f eh' ef) ~> Effectful u f eh' ef ->
-    Effectful u f eh ef ~> Effectful u f eh' ef
+    forall ehs' ehs efs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    u ehs (Eff u fr ehs' efs) ~> Eff u fr ehs' efs ->
+    Eff u fr ehs efs ~> Eff u fr ehs' efs
 interpretAllH fh =
-    interpretAllH_ $ fh . hfmap (interpretAllH @_ @eh fh . Effectful)
-{-# INLINE interpretAllH #-}
+    interpretAllH_ $ fh . hfmap (interpretAllH fh)
 
 interpretAllH_ ::
-    forall eh' eh ef f u c.
-    (Freer c f, Union u) =>
-    SumToUnionH u eh (Hefty f (EffUnion u eh ef)) ~> Effectful u f eh' ef ->
-    Effectful u f eh ef ~> Effectful u f eh' ef
+    forall ehs' ehs efs fr u c.
+    (Freer c fr, Union u) =>
+    u ehs (Eff u fr ehs efs) ~> Eff u fr ehs' efs ->
+    Eff u fr ehs efs ~> Eff u fr ehs' efs
 interpretAllH_ fh = interpretAllFHE_ fh injectF
 {-# INLINE interpretAllH_ #-}
 
 interpretAllFH ::
-    forall g eh ef f u c.
-    (Freer c f, Union u, c g, HFunctors u eh) =>
-    SumToUnionH u eh g ~> g ->
-    SumToUnionF u ef ~> g ->
-    Effectful u f eh ef ~> g
+    forall g ehs efs fr u c.
+    (Freer c fr, Union u, c g, HFunctor (u ehs)) =>
+    u ehs g ~> g ->
+    u efs Nop ~> g ->
+    Eff u fr ehs efs ~> g
 interpretAllFH fh ff =
-    interpretAllFH_ (fh . hfmap (interpretAllFH @_ @eh @ef fh ff . Effectful)) ff
-{-# INLINE interpretAllFH #-}
+    interpretAllFH_ (fh . hfmap (interpretAllFH fh ff)) ff
 
 interpretAllFH_ ::
-    forall g eh ef f u c.
-    (Freer c f, Union u, c g) =>
-    SumToUnionH u eh (Hefty f (EffUnion u eh ef)) ~> g ->
-    SumToUnionF u ef ~> g ->
-    Effectful u f eh ef ~> g
-interpretAllFH_ fh ff =
-    interpretFreer (caseH fh (ff . unliftIns)) . unliftEff
+    forall g ehs efs fr u c.
+    (Freer c fr, Union u, c g) =>
+    u ehs (Eff u fr ehs efs) ~> g ->
+    u efs Nop ~> g ->
+    Eff u fr ehs efs ~> g
+interpretAllFH_ fh ff = interpretFreer (caseHF fh ff) . unHefty
+{-# INLINE interpretAllFH_ #-}
 
 interpretAllFHE ::
-    forall eh' ef' eh ef f u c.
-    (Freer c f, Union u, HFunctors u eh) =>
-    SumToUnionH u eh (Effectful u f eh' ef') ~> Effectful u f eh' ef' ->
-    SumToUnionF u ef ~> Effectful u f eh' ef' ->
-    Effectful u f eh ef ~> Effectful u f eh' ef'
+    forall ehs' efs' ehs efs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    u ehs (Eff u fr ehs' efs') ~> Eff u fr ehs' efs' ->
+    u efs Nop ~> Eff u fr ehs' efs' ->
+    Eff u fr ehs efs ~> Eff u fr ehs' efs'
 interpretAllFHE fh ff =
-    interpretAllFHE_ (fh . hfmap (interpretAllFHE @_ @_ @eh @ef fh ff . Effectful)) ff
+    interpretAllFHE_ (fh . hfmap (interpretAllFHE fh ff)) ff
 {-# INLINE interpretAllFHE #-}
 
 interpretAllFHE_ ::
-    forall eh' ef' eh ef f u c.
-    (Freer c f, Union u) =>
-    SumToUnionH u eh (Hefty f (EffUnion u eh ef)) ~> Effectful u f eh' ef' ->
-    SumToUnionF u ef ~> Effectful u f eh' ef' ->
-    Effectful u f eh ef ~> Effectful u f eh' ef'
+    forall ehs' efs' ehs efs fr u c.
+    (Freer c fr, Union u) =>
+    u ehs (Eff u fr ehs efs) ~> Eff u fr ehs' efs' ->
+    u efs Nop ~> Eff u fr ehs' efs' ->
+    Eff u fr ehs efs ~> Eff u fr ehs' efs'
 interpretAllFHE_ fh ff =
-    overEffectful
-        . overHefty
-        $ interpretFreer
-        $ caseH fh (ff . unliftIns)
-            >>> unEffectful
-            >>> unHefty
-
-interpretAllRec ::
-    forall ef' eh ef f u c.
-    (Freer c f, Union u, HFunctors u eh) =>
-    SumToUnionF u ef ~> Effectful u f eh ef' ->
-    Effectful u f eh ef ~> Effectful u f eh ef'
-interpretAllRec = interpretAllFHE injectH
-{-# INLINE interpretAllRec #-}
-
-interpretAllRecH ::
-    forall eh' eh ef f u c.
-    (Freer c f, Union u, HFunctors u eh) =>
-    SumToUnionH u eh (Effectful u f eh' ef) ~> Effectful u f eh' ef ->
-    Effectful u f eh ef ~> Effectful u f eh' ef
-interpretAllRecH fh = interpretAllFHE fh injectF
-{-# INLINE interpretAllRecH #-}
+    overHefty $ interpretFreer $ unHefty . caseHF fh ff
 
 interpretKAll ::
-    forall r a ef f u.
-    (MonadFreer f, Union u) =>
-    (a -> Effectful u f LNop ef r) ->
-    (forall x. (x -> Effectful u f LNop ef r) -> SumToUnionF u ef x -> Effectful u f LNop ef r) ->
-    Effectful u f LNop ef a ->
-    Effectful u f LNop ef r
+    forall r a efs fr u.
+    (MonadFreer fr, Union u) =>
+    (a -> Eff u fr '[] efs r) ->
+    (forall x. (x -> Eff u fr '[] efs r) -> u efs Nop x -> Eff u fr '[] efs r) ->
+    Eff u fr '[] efs a ->
+    Eff u fr '[] efs r
 interpretKAll = toInterpretKFromContT interpretContTAll
 {-# INLINE interpretKAll #-}
 
 interpretKAllH ::
-    forall eh' r a eh ef f u.
-    (MonadFreer f, Union u, HFunctors u eh) =>
-    (a -> Effectful u f eh' ef r) ->
+    forall ehs' r a ehs efs fr u.
+    (MonadFreer fr, Union u, HFunctor (u ehs)) =>
+    (a -> Eff u fr ehs' efs r) ->
     ( forall x.
-      (x -> Effectful u f eh' ef r) ->
-      SumToUnionH u eh (ContT r (Effectful u f eh' ef)) x ->
-      Effectful u f eh' ef r
+      (x -> Eff u fr ehs' efs r) ->
+      u ehs (ContT r (Eff u fr ehs' efs)) x ->
+      Eff u fr ehs' efs r
     ) ->
-    Effectful u f eh ef a ->
-    Effectful u f eh' ef r
+    Eff u fr ehs efs a ->
+    Eff u fr ehs' efs r
 interpretKAllH = toInterpretKFromContT interpretContTAllH
 {-# INLINE interpretKAllH #-}
 
+interpretKAllH_ ::
+    forall ehs' r a ehs efs fr u.
+    (MonadFreer fr, Union u) =>
+    (a -> Eff u fr ehs' efs r) ->
+    ( forall x.
+      (x -> Eff u fr ehs' efs r) ->
+      u ehs (Eff u fr ehs efs) x ->
+      Eff u fr ehs' efs r
+    ) ->
+    Eff u fr ehs efs a ->
+    Eff u fr ehs' efs r
+interpretKAllH_ = toInterpretKFromContT interpretContTAllH_
+{-# INLINE interpretKAllH_ #-}
+
 interpretKAllFH ::
-    forall g r a eh ef f u.
-    (MonadFreer f, Union u, HFunctors u eh) =>
+    forall g r a ehs efs fr u.
+    (MonadFreer fr, Union u, HFunctor (u ehs)) =>
     (a -> g r) ->
-    (forall x. (x -> g r) -> SumToUnionH u eh (ContT r g) x -> g r) ->
-    (forall x. (x -> g r) -> SumToUnionF u ef x -> g r) ->
-    Effectful u f eh ef a ->
+    (forall x. (x -> g r) -> u ehs (ContT r g) x -> g r) ->
+    (forall x. (x -> g r) -> u efs Nop x -> g r) ->
+    Eff u fr ehs efs a ->
     g r
 interpretKAllFH = toInterpretKFromContT2 interpretContTAllFH
 {-# INLINE interpretKAllFH #-}
 
+interpretKAllFH_ ::
+    forall g r a ehs efs fr u.
+    (MonadFreer fr, Union u) =>
+    (a -> g r) ->
+    (forall x. (x -> g r) -> u ehs (Eff u fr ehs efs) x -> g r) ->
+    (forall x. (x -> g r) -> u efs Nop x -> g r) ->
+    Eff u fr ehs efs a ->
+    g r
+interpretKAllFH_ = toInterpretKFromContT2 interpretContTAllFH_
+{-# INLINE interpretKAllFH_ #-}
+
 interpretContTAll ::
-    forall g r ef f u.
-    (MonadFreer f, Union u) =>
-    SumToUnionF u ef ~> ContT r g ->
-    Effectful u f LNop ef ~> ContT r g
+    forall g r efs fr u.
+    (MonadFreer fr, Union u) =>
+    u efs Nop ~> ContT r g ->
+    Eff u fr '[] efs ~> ContT r g
 interpretContTAll f =
     transCont
-        . interpretFreerK (caseH exhaust (detransContT . f . unliftIns))
-        . unliftEff
+        . interpretFreerK (caseHF exhaust (detransContT . f))
+        . unHefty
 
 interpretContTAllH ::
-    forall eh' r eh ef f u.
-    (MonadFreer f, Union u, HFunctors u eh) =>
-    SumToUnionH u eh (ContT r (Effectful u f eh' ef)) ~> ContT r (Effectful u f eh' ef) ->
-    Effectful u f eh ef ~> ContT r (Effectful u f eh' ef)
+    forall ehs' r ehs efs fr u.
+    (MonadFreer fr, Union u, HFunctor (u ehs)) =>
+    u ehs (ContT r (Eff u fr ehs' efs)) ~> ContT r (Eff u fr ehs' efs) ->
+    Eff u fr ehs efs ~> ContT r (Eff u fr ehs' efs)
 interpretContTAllH fh = interpretContTAllFH fh (lift . injectF)
 {-# INLINE interpretContTAllH #-}
 
+interpretContTAllH_ ::
+    forall ehs' r ehs efs fr u.
+    (MonadFreer fr, Union u) =>
+    u ehs (Eff u fr ehs efs) ~> ContT r (Eff u fr ehs' efs) ->
+    Eff u fr ehs efs ~> ContT r (Eff u fr ehs' efs)
+interpretContTAllH_ fh = interpretContTAllFH_ fh (lift . injectF)
+{-# INLINE interpretContTAllH_ #-}
+
 interpretContTAllFH ::
-    forall g r eh ef f u.
-    (MonadFreer f, Union u, HFunctors u eh) =>
-    SumToUnionH u eh (ContT r g) ~> ContT r g ->
-    SumToUnionF u ef ~> ContT r g ->
-    Effectful u f eh ef ~> ContT r g
+    forall g r ehs efs fr u.
+    (MonadFreer fr, Union u, HFunctor (u ehs)) =>
+    u ehs (ContT r g) ~> ContT r g ->
+    u efs Nop ~> ContT r g ->
+    Eff u fr ehs efs ~> ContT r g
 interpretContTAllFH fh ff =
     transCont
-        . interpretFreerK
-            ( detransContT
-                . caseH
-                    (fh . hfmap (interpretContTAllFH @_ @_ @eh @ef fh ff . Effectful))
-                    (ff . unliftIns)
-            )
-        . unliftEff
+        . interpretFreerK (detransContT . caseHF (fh . hfmap (interpretContTAllFH fh ff)) ff)
+        . unHefty
+
+interpretContTAllFH_ ::
+    forall g r ehs efs fr u.
+    (MonadFreer fr, Union u) =>
+    u ehs (Eff u fr ehs efs) ~> ContT r g ->
+    u efs Nop ~> ContT r g ->
+    Eff u fr ehs efs ~> ContT r g
+interpretContTAllFH_ fh ff =
+    transCont
+        . interpretFreerK (detransContT . caseHF fh ff)
+        . unHefty
 
 transCont :: Cont (m r) ~> ContT r m
 transCont (ContT f) = ContT \k -> coerce $ f $ coerce . k
@@ -718,233 +675,180 @@ toInterpretKFromContT2 intContT k i1 i2 =
 {-# INLINE toInterpretKFromContT2 #-}
 
 interpretTAll ::
-    forall t g ef f u.
-    (MonadFreer f, Union u, Monad (t g)) =>
-    SumToUnionF u ef ~> t g ->
-    Effectful u f LNop ef ~> t g
+    forall t g efs fr u.
+    (MonadFreer fr, Union u, Monad (t g)) =>
+    u efs Nop ~> t g ->
+    Eff u fr '[] efs ~> t g
 interpretTAll = interpretAll
 {-# INLINE interpretTAll #-}
 
 interpretTAllH ::
-    forall eh' t eh ef f u.
-    (MonadFreer f, Union u, MonadTrans t, Monad (t (Effectful u f eh' ef)), HFunctors u eh) =>
-    SumToUnionH u eh (t (Effectful u f eh' ef)) ~> t (Effectful u f eh' ef) ->
-    Effectful u f eh ef ~> t (Effectful u f eh' ef)
+    forall ehs' t ehs efs fr u.
+    (MonadFreer fr, Union u, MonadTrans t, Monad (t (Eff u fr ehs' efs)), HFunctor (u ehs)) =>
+    u ehs (t (Eff u fr ehs' efs)) ~> t (Eff u fr ehs' efs) ->
+    Eff u fr ehs efs ~> t (Eff u fr ehs' efs)
 interpretTAllH i = interpretTAllFH i (lift . injectF)
 {-# INLINE interpretTAllH #-}
 
+interpretTAllH_ ::
+    forall ehs' t ehs efs fr u.
+    (MonadFreer fr, Union u, MonadTrans t, Monad (t (Eff u fr ehs' efs))) =>
+    u ehs (Eff u fr ehs efs) ~> t (Eff u fr ehs' efs) ->
+    Eff u fr ehs efs ~> t (Eff u fr ehs' efs)
+interpretTAllH_ i = interpretTAllFH_ i (lift . injectF)
+{-# INLINE interpretTAllH_ #-}
+
 interpretTAllFH ::
-    forall g t eh ef f u.
-    (MonadFreer f, Union u, MonadTrans t, Monad (t g), HFunctors u eh) =>
-    SumToUnionH u eh (t g) ~> t g ->
-    SumToUnionF u ef ~> t g ->
-    Effectful u f eh ef ~> t g
+    forall g t ehs efs fr u.
+    (MonadFreer fr, Union u, MonadTrans t, Monad (t g), HFunctor (u ehs)) =>
+    u ehs (t g) ~> t g ->
+    u efs Nop ~> t g ->
+    Eff u fr ehs efs ~> t g
 interpretTAllFH fh ff =
-    interpretAllFH_ (fh . hfmap (interpretTAllFH @_ @_ @eh @ef fh ff . Effectful)) ff
+    interpretAllFH_ (fh . hfmap (interpretTAllFH fh ff)) ff
 {-# INLINE interpretTAllFH #-}
 
+interpretTAllFH_ ::
+    forall g t ehs efs fr u.
+    (MonadFreer fr, Union u, MonadTrans t, Monad (t g)) =>
+    u ehs (Eff u fr ehs efs) ~> t g ->
+    u efs Nop ~> t g ->
+    Eff u fr ehs efs ~> t g
+interpretTAllFH_ = interpretAllFH_
+{-# INLINE interpretTAllFH_ #-}
+
+interpretAllRec ::
+    forall efs' ehs efs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    u efs Nop ~> Eff u fr ehs efs' ->
+    Eff u fr ehs efs ~> Eff u fr ehs efs'
+interpretAllRec = interpretAllFHE injectH
+{-# INLINE interpretAllRec #-}
+
 transform ::
-    forall e1r e2r eh f u c.
-    (Freer c f, Union u, HFunctors u eh, DecompF u e1r, DecompF u e2r, EffTailF e1r ~ EffTailF e2r) =>
-    (HeadMultiToUnionF u e1r ~> HeadMultiToUnionF u e2r) ->
-    Effectful u f eh e1r ~> Effectful u f eh e2r
-transform f = transformAll $ inject0 . liftInsIfSingle . f . unliftInsIfSingle |+: weaken
+    forall e2 e1 r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs), HeadIns e1, HeadIns e2) =>
+    (UnliftIfSingle e1 ~> UnliftIfSingle e2) ->
+    Eff u fr ehs (e1 ': r) ~> Eff u fr ehs (e2 ': r)
+transform f =
+    transformAll $
+        inject0 . liftInsIfSingle . f . unliftInsIfSingle |+: weaken
 {-# INLINE transform #-}
 
 transformH ::
-    forall e1r e2r ef f u c.
-    ( Freer c f
-    , Union u
-    , DecompH u e1r
-    , DecompH u e2r
-    , EffTail e1r ~ EffTail e2r
-    , HFunctors u e1r
-    , HFunctors u e2r
-    ) =>
-    ( HeadMultiToUnionH u e1r (Effectful u f e2r ef)
-        ~> HeadMultiToUnionH u e2r (Effectful u f e2r ef)
-    ) ->
-    Effectful u f e1r ef ~> Effectful u f e2r ef
+    forall e2 e1 r efs fr u c.
+    (Freer c fr, Union u, HFunctor (u (e1 ': r))) =>
+    (e1 (Eff u fr (e2 ': r) efs) ~> e2 (Eff u fr (e2 ': r) efs)) ->
+    Eff u fr (e1 ': r) efs ~> Eff u fr (e2 ': r) efs
 transformH f = transformAllH $ inject0 . f |+: weaken
 {-# INLINE transformH #-}
 
-transformH_ ::
-    forall e1r e2r ef f u c.
-    ( Freer c f
-    , Union u
-    , DecompH u e1r
-    , DecompH u e2r
-    , EffTail e1r ~ EffTail e2r
-    , HFunctors u e1r
-    ) =>
-    ( HeadMultiToUnionH u e1r (Hefty f (EffUnion u e2r ef))
-        ~> HeadMultiToUnionH u e2r (Hefty f (EffUnion u e2r ef))
-    ) ->
-    Effectful u f e1r ef ~> Effectful u f e2r ef
-transformH_ f = transformAllH_ $ inject0 . f |+: weaken
-{-# INLINE transformH_ #-}
-
 transformFH ::
-    forall e1rh e2rh e1rf e2rf f u c.
-    ( Freer c f
-    , Union u
-    , DecompF u e1rf
-    , DecompF u e2rf
-    , EffTailF e1rf ~ EffTailF e2rf
-    , DecompH u e1rh
-    , DecompH u e2rh
-    , EffTail e1rh ~ EffTail e2rh
-    , HFunctors u e1rh
-    , HFunctors u e2rh
-    ) =>
-    ( HeadMultiToUnionH u e1rh (Effectful u f e2rh e2rf)
-        ~> HeadMultiToUnionH u e2rh (Effectful u f e2rh e2rf)
-    ) ->
-    (HeadMultiToUnionF u e1rf ~> HeadMultiToUnionF u e2rf) ->
-    Effectful u f e1rh e1rf ~> Effectful u f e2rh e2rf
+    forall e2h e2f e1h e1f rh rf fr u c.
+    (Freer c fr, Union u, HFunctor (u (e1h ': rh)), HeadIns e1f, HeadIns e2f) =>
+    (e1h (Eff u fr (e2h ': rh) (e2f ': rf)) ~> e2h (Eff u fr (e2h ': rh) (e2f ': rf))) ->
+    (UnliftIfSingle e1f ~> UnliftIfSingle e2f) ->
+    Eff u fr (e1h ': rh) (e1f ': rf) ~> Eff u fr (e2h ': rh) (e2f ': rf)
 transformFH fh ff =
     transformAllFH
         (inject0 . fh |+: weaken)
         (inject0 . (liftInsIfSingle . ff . unliftInsIfSingle) |+: weaken)
 {-# INLINE transformFH #-}
 
-transformFH_ ::
-    forall e1rh e2rh e1rf e2rf f u c.
-    ( Freer c f
-    , Union u
-    , DecompF u e1rf
-    , DecompF u e2rf
-    , EffTailF e1rf ~ EffTailF e2rf
-    , DecompH u e1rh
-    , DecompH u e2rh
-    , EffTail e1rh ~ EffTail e2rh
-    , HFunctors u e1rh
-    ) =>
-    ( HeadMultiToUnionH u e1rh (Hefty f (EffUnion u e2rh e2rf))
-        ~> HeadMultiToUnionH u e2rh (Hefty f (EffUnion u e2rh e2rf))
-    ) ->
-    (HeadMultiToUnionF u e1rf ~> HeadMultiToUnionF u e2rf) ->
-    Effectful u f e1rh e1rf ~> Effectful u f e2rh e2rf
-transformFH_ fh ff =
-    transformAllFH_
-        (inject0 . fh |+: weaken)
-        (inject0 . (liftInsIfSingle . ff . unliftInsIfSingle) |+: weaken)
-{-# INLINE transformFH_ #-}
-
 transformAll ::
-    forall ef' ef eh f u c.
-    (Freer c f, Union u, HFunctors u eh) =>
-    SumToUnionF u ef ~> SumToUnionF u ef' ->
-    Effectful u f eh ef ~> Effectful u f eh ef'
-transformAll = transformAllFH_ id
+    forall efs' efs ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    u efs Nop ~> u efs' Nop ->
+    Eff u fr ehs efs ~> Eff u fr ehs efs'
+transformAll = transformAllFH id
 {-# INLINE transformAll #-}
 
 transformAllH ::
-    forall eh' eh ef f u c.
-    (Freer c f, Union u, HFunctors u eh, HFunctors u eh') =>
-    SumToUnionH u eh (Effectful u f eh' ef)
-        ~> SumToUnionH u eh' (Effectful u f eh' ef) ->
-    Effectful u f eh ef ~> Effectful u f eh' ef
-transformAllH f = transformAllH_ (hfmap unEffectful . f . hfmap Effectful)
+    forall ehs' ehs efs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    u ehs (Eff u fr ehs' efs) ~> u ehs' (Eff u fr ehs' efs) ->
+    Eff u fr ehs efs ~> Eff u fr ehs' efs
+transformAllH f = transformAllFH f id
 {-# INLINE transformAllH #-}
 
-transformAllH_ ::
-    forall eh' eh ef f u c.
-    (Freer c f, Union u, HFunctors u eh) =>
-    SumToUnionH u eh (Hefty f (EffUnion u eh' ef))
-        ~> SumToUnionH u eh' (Hefty f (EffUnion u eh' ef)) ->
-    Effectful u f eh ef ~> Effectful u f eh' ef
-transformAllH_ f = transformAllFH_ f id
-{-# INLINE transformAllH_ #-}
-
 transformAllFH ::
-    forall eh' ef' eh ef f u c.
-    (Freer c f, Union u, HFunctors u eh, HFunctors u eh') =>
-    SumToUnionH u eh (Effectful u f eh' ef')
-        ~> SumToUnionH u eh' (Effectful u f eh' ef') ->
-    (SumToUnionF u ef ~> SumToUnionF u ef') ->
-    Effectful u f eh ef ~> Effectful u f eh' ef'
-transformAllFH fh = transformAllFH_ (hfmap unEffectful . fh . hfmap Effectful)
-{-# INLINE transformAllFH #-}
-
-transformAllFH_ ::
-    forall eh' ef' eh ef f u c.
-    (Freer c f, Union u, HFunctors u eh) =>
-    SumToUnionH u eh (Hefty f (EffUnion u eh' ef'))
-        ~> SumToUnionH u eh' (Hefty f (EffUnion u eh' ef')) ->
-    (SumToUnionF u ef ~> SumToUnionF u ef') ->
-    Effectful u f eh ef ~> Effectful u f eh' ef'
-transformAllFH_ fh ff =
-    overEffectful
-        . overHefty
-        $ transformFreer
-        $ caseH
-            (Inl . fh . hfmap (unEffectful . transformAllFH_ @eh' @ef' @eh @ef fh ff . Effectful))
-            (Inr . LiftIns . ff . unliftIns)
+    forall ehs' efs' ehs efs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    u ehs (Eff u fr ehs' efs') ~> u ehs' (Eff u fr ehs' efs') ->
+    (u efs Nop ~> u efs' Nop) ->
+    Eff u fr ehs efs ~> Eff u fr ehs' efs'
+transformAllFH fh ff =
+    overHefty $
+        transformFreer $
+            EffUnion
+                . caseHF
+                    (L1 . fh . hfmap (transformAllFH fh ff))
+                    (R1 . ff)
 
 raise ::
-    forall er eh f u c.
-    (Freer c f, Union u, HFunctors u eh, DecompF u er) =>
-    Effectful u f eh (EffTailF er) ~> Effectful u f eh er
+    forall e r ehs f u c.
+    (Freer c f, Union u, HFunctor (u ehs)) =>
+    Eff u f ehs r ~> Eff u f ehs (e ': r)
 raise = transformAll weaken
 {-# INLINE raise #-}
 
 raiseH ::
-    forall er ef f u c.
-    (Freer c f, Union u, HFunctors u (EffTail er), DecompH u er) =>
-    Effectful u f (EffTail er) ef ~> Effectful u f er ef
-raiseH = transformAllH_ weaken
+    forall e r efs fr u c.
+    (Freer c fr, Union u, HFunctor (u r)) =>
+    Eff u fr r efs ~> Eff u fr (e ': r) efs
+raiseH = transformAllH weaken
 {-# INLINE raiseH #-}
 
 raiseUnder ::
-    forall e1r e2 eh f u c.
-    (Freer c f, Union u, HFunctors u eh, DecompF u e1r) =>
-    Effectful u f eh (e2 + EffTailF e1r) ~> Effectful u f eh (e2 + e1r)
+    forall e1 e2 r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs (e2 ': r) ~> Eff u fr ehs (e2 ': e1 ': r)
 raiseUnder = transformAll weakenUnder
 {-# INLINE raiseUnder #-}
 
 raiseUnderH ::
-    forall e1r e2 ef f u c.
-    ( Freer c f
-    , HFunctorUnion u
-    , DecompH u e1r
-    , HeadHFunctor u e2
-    , TailHFunctor u (EffTail e1r)
-    ) =>
-    Effectful u f (e2 :+: EffTail e1r) ef ~> Effectful u f (e2 :+: e1r) ef
-raiseUnderH = transformAllH_ weakenUnder
+    forall e1 e2 r efs fr u c.
+    (Freer c fr, Union u, HFunctor (u (e2 ': r))) =>
+    Eff u fr (e2 ': r) efs ~> Eff u fr (e2 ': e1 ': r) efs
+raiseUnderH = transformAllH weakenUnder
 {-# INLINE raiseUnderH #-}
 
 splitEff ::
-    forall f' er f u c.
-    (Freer c f', Freer c f, Union u, DecompF u er) =>
-    Effectful u f LNop er ~> f' (HeadMultiToUnionF u er + Effectful u f LNop (EffTailF er))
+    forall fr' e r ehs fr u c.
+    (Freer c fr', Freer c fr, Union u, HeadIns e) =>
+    Eff u fr '[] (e ': r) ~> fr' (UnliftIfSingle e + Eff u fr ehs r)
 splitEff = interpretAll $ liftIns . (L1 . unliftInsIfSingle |+: R1 . injectF)
 {-# INLINE splitEff #-}
 
-send0 ::
-    ( Freer c f
+mergeEff ::
+    forall fr' e r ehs fr u c.
+    (Freer c fr', Freer c fr, Union u, HeadIns e, c (Eff u fr ehs (e ': r)), HFunctor (u ehs)) =>
+    fr' (UnliftIfSingle e + Eff u fr ehs r) ~> Eff u fr ehs (e ': r)
+mergeEff = interpretFreer $ caseF send0 raise
+{-# INLINE mergeEff #-}
+
+mergeEffH ::
+    forall fr' e r efs fr u c.
+    ( Freer c fr'
+    , Freer c fr
     , Union u
-    , DecompF u er
-    , NormalizeSig (LiftIns (EffHeadF er)) ~ SingleSig (LiftIns (EffHeadF er))
+    , c (Eff u fr (e ': r) efs)
+    , HFunctor (u r)
+    , HFunctor e
     ) =>
-    EffHeadF er ~> Effectful u f eh er
-send0 = liftFreer . liftIns . Inr . LiftIns . inject0 . LiftIns
+    Hefty fr' (e :+: LiftIns (Eff u fr r efs)) ~> Eff u fr (e ': r) efs
+mergeEffH =
+    interpretFreer
+        ( caseH
+            (send0H . hfmap mergeEffH)
+            (raiseH . unliftIns)
+        )
+        . unHefty
 
-injectH ::
-    (Freer c f, HFunctors u eh) =>
-    SumToUnionH u eh (Effectful u f eh ef) ~> Effectful u f eh ef
-injectH = liftFreer . liftIns . Inl . hfmap unEffectful
-{-# INLINE injectH #-}
+send0 :: (Freer c fr, Union u, HeadIns e) => UnliftIfSingle e ~> Eff u fr eh (e ': r)
+send0 = Hefty . liftIns . EffUnion . R1 . inject0 . liftInsIfSingle
+{-# INLINE send0 #-}
 
-injectF :: Freer c f => SumToUnionF u ef ~> Effectful u f eh ef
-injectF = liftFreer . liftIns . Inr . LiftIns
-{-# INLINE injectF #-}
-
-liftFreer :: Freer c f => f (EffUnion u eh ef (Hefty f (EffUnion u eh ef))) ~> Effectful u f eh ef
-liftFreer = coerce
-{-# INLINE liftFreer #-}
-
-unliftEff :: Freer c f => Effectful u f eh ef ~> f (EffUnion u eh ef (Hefty f (EffUnion u eh ef)))
-unliftEff = coerce
-{-# INLINE unliftEff #-}
+send0H :: (Freer c fr, Union u) => e (Eff u fr (e ': r) ef) ~> Eff u fr (e ': r) ef
+send0H = Hefty . liftIns . EffUnion . L1 . inject0
+{-# INLINE send0H #-}

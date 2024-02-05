@@ -13,13 +13,19 @@ Type operators for extensible effectful programs based on the Church-encoded Fre
 -}
 module Control.Effect.ExtensibleChurch where
 
-import Control.Effect.Free (EffectfulF)
-import Control.Effect.Hefty (Effectful)
+import Control.Effect.Free (EffF, EffectfulF)
+import Control.Effect.Hefty (Eff, Effectful)
 import Control.Monad.Freer.Church (FreerChurch)
 import Data.Hefty.Extensible (ExtensibleUnion)
+
+type eh !! ef = Effectful ExtensibleUnion FreerChurch eh ef
+type (!) ef = EffectfulF ExtensibleUnion FreerChurch ef
 
 infixr 5 !!
 infixr 4 !
 
-type (!!) = Effectful ExtensibleUnion FreerChurch
-type (!) = EffectfulF ExtensibleUnion FreerChurch
+type ehs :!! efs = Eff ExtensibleUnion FreerChurch ehs efs
+type (:!) efs = EffF ExtensibleUnion FreerChurch efs
+
+infixr 5 :!!
+infixr 4 :!

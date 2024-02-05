@@ -16,218 +16,63 @@ on [@classy-effects@](https://hackage.haskell.org/package/classy-effects).
 -}
 module Control.Effect.Free where
 
-import Control.Applicative (Alternative)
-import Control.Effect (SendIns, sendIns, type (~>))
-import Control.Effect.Hefty (
-    DecompF,
-    EffTailF,
-    Effectful (Effectful),
-    HeadMultiToUnionF,
-    MemberF,
-    SumToUnionF,
-    detransContT,
-    liftInsIfSingle,
-    transCont,
-    unEffectful,
-    unliftInsIfSingle,
- )
-import Control.Freer (Freer, InsClass, interpretFreer, liftIns, retractFreer, transformFreer)
-import Control.Hefty (Hefty (Hefty), SigClass, unHefty)
-import Control.Monad (MonadPlus)
-import Control.Monad.Base (MonadBase)
-import Control.Monad.Cont (ContT (ContT), runContT)
-import Control.Monad.Freer (MonadFreer, interpretFreerK)
-import Control.Monad.IO.Class (MonadIO)
-import Control.Monad.Trans (MonadTrans (lift))
-import Data.Effect (LNop, LiftIns (LiftIns), unliftIns)
-import Data.Effect.HFunctor (caseH, type (:+:) (Inr))
-import Data.Free.Sum (caseF, pattern L1, pattern R1, type (+))
-import Data.Function ((&))
-import Data.Hefty.Union (
-    Union,
-    decomp,
-    exhaust,
-    flipUnion,
-    inject0,
-    injectRec,
-    weaken,
-    weaken2,
-    weaken3,
-    weaken4,
-    weakenUnder,
- )
-import Data.Kind (Type)
+import Control.Effect (type (~>))
 
--- | A common wrapper data type for representing first-order extensible effectful programs.
-newtype
-    EffectfulF
-        (u :: [SigClass] -> SigClass)
-        (f :: InsClass -> Type -> Type)
-        (e :: InsClass)
-        (a :: Type) = EffectfulF {unEffectfulF :: f (SumToUnionF u e) a}
+import Control.Effect.Hefty (Eff, EffUnion (EffUnion), MemberF, SumToUnionListNF, caseHF)
+import Control.Freer (Freer, InjectIns, ViaFreer (ViaFreer), injectIns, transformFreer, viaFreer)
+import Control.Hefty (Hefty (Hefty), unHefty)
+import Data.Effect (LiftIns (LiftIns), Nop, SigClass)
+import Data.Free.Sum (pattern R1)
+import Data.Hefty.Union (Union, exhaust, injectRec)
 
--- | Manipulate the inside of the t'EffectfulF' wrapper.
-overEffectfulF ::
-    forall b e' f' u' a e f u.
-    (f (SumToUnionF u e) a -> f' (SumToUnionF u' e') b) ->
-    EffectfulF u f e a ->
-    EffectfulF u' f' e' b
-overEffectfulF f = EffectfulF . f . unEffectfulF
-{-# INLINE overEffectfulF #-}
+{- |
+A common type for representing first-order extensible effectful programs that can issue effects
+belonging to the specified sum of effect classes.
+-}
+type EffectfulF u fr e = EffF u fr (SumToUnionListNF u e)
 
-deriving newtype instance Functor (f (SumToUnionF u e)) => Functor (EffectfulF u f e)
-deriving newtype instance Applicative (f (SumToUnionF u e)) => Applicative (EffectfulF u f e)
-deriving newtype instance Alternative (f (SumToUnionF u e)) => Alternative (EffectfulF u f e)
-deriving newtype instance Monad (f (SumToUnionF u e)) => Monad (EffectfulF u f e)
-deriving newtype instance MonadPlus (f (SumToUnionF u e)) => MonadPlus (EffectfulF u f e)
-deriving newtype instance (MonadBase b (f (SumToUnionF u e)), Monad b) => MonadBase b (EffectfulF u f e)
-deriving newtype instance MonadIO (f (SumToUnionF u e)) => MonadIO (EffectfulF u f e)
-deriving newtype instance MonadFail (f (SumToUnionF u e)) => MonadFail (EffectfulF u f e)
+{- |
+A common type for representing first-order extensible effectful programs that can issue effects
+belonging to the specified list of effect classes.
+-}
+type EffF u fr es = ViaFreer fr (EffUnionF u es)
 
-deriving stock instance Foldable (f (SumToUnionF u e)) => Foldable (EffectfulF u f e)
-deriving stock instance Traversable (f (SumToUnionF u e)) => Traversable (EffectfulF u f e)
+-- | A common wrapper data type for representing first-order extensible effect union.
+newtype EffUnionF (u :: [SigClass] -> SigClass) es a = EffUnionF {unEffUnionF :: u es Nop a}
 
-deriving newtype instance Eq (f (SumToUnionF u e) a) => Eq (EffectfulF u f e a)
-deriving newtype instance Ord (f (SumToUnionF u e) a) => Ord (EffectfulF u f e a)
-deriving newtype instance Read (f (SumToUnionF u e) a) => Read (EffectfulF u f e a)
-deriving newtype instance Show (f (SumToUnionF u e) a) => Show (EffectfulF u f e a)
+instance MemberF u e es => InjectIns e (EffUnionF u es) where
+    injectIns = EffUnionF . injectRec . LiftIns
+    {-# INLINE injectIns #-}
 
-instance (MemberF u e es, Freer c fr) => SendIns e (EffectfulF u fr es) where
-    sendIns = EffectfulF . liftIns . injectRec . LiftIns
-    {-# INLINE sendIns #-}
-
--- | Interpret the leading first-order effect class.
-interpretF ::
-    forall er f u c.
-    (Freer c f, Union u, DecompF u er) =>
-    HeadMultiToUnionF u er ~> EffectfulF u f (EffTailF er) ->
-    EffectfulF u f er ~> EffectfulF u f (EffTailF er)
-interpretF i =
-    overEffectfulF $
-        interpretFreer $
-            caseH (unEffectfulF . i . unliftInsIfSingle) liftIns . decomp
-
--- | Interpret the leading first-order effect class using a delimited continuation.
-interpretKF ::
-    forall er r a f u.
-    (MonadFreer f, Union u, DecompF u er) =>
-    (a -> EffectfulF u f (EffTailF er) r) ->
-    ( forall x.
-      (x -> EffectfulF u f (EffTailF er) r) ->
-      HeadMultiToUnionF u er x ->
-      EffectfulF u f (EffTailF er) r
-    ) ->
-    EffectfulF u f er a ->
-    EffectfulF u f (EffTailF er) r
-interpretKF k i = (`runContT` k) . interpretContTF \e -> ContT (`i` e)
-{-# INLINE interpretKF #-}
-
--- | Interpret the leading first-order effect class using a continuation monad transformer.
-interpretContTF ::
-    forall er r f u.
-    (MonadFreer f, Union u, DecompF u er) =>
-    HeadMultiToUnionF u er ~> ContT r (EffectfulF u f (EffTailF er)) ->
-    EffectfulF u f er ~> ContT r (EffectfulF u f (EffTailF er))
-interpretContTF i =
-    transCont
-        . interpretFreerK (detransContT . caseF i lift)
-        . splitEffF @f
-{-# INLINE interpretContTF #-}
-
--- | Interpret the leading first-order effect class using a monad transformer.
-interpretTF ::
-    forall t er f u.
-    (MonadFreer f, Union u, DecompF u er, MonadTrans t, Monad (t (EffectfulF u f (EffTailF er)))) =>
-    HeadMultiToUnionF u er ~> t (EffectfulF u f (EffTailF er)) ->
-    EffectfulF u f er ~> t (EffectfulF u f (EffTailF er))
-interpretTF i = retractFreer . transformFreer (caseF i lift) . splitEffF @f
-{-# INLINE interpretTF #-}
-
-transformAllF ::
-    forall u' e e' f u c.
-    (Freer c f, Union u, Union u') =>
-    SumToUnionF u e ~> SumToUnionF u' e' ->
-    EffectfulF u f e ~> EffectfulF u' f e'
-transformAllF f = overEffectfulF $ transformFreer f
-{-# INLINE transformAllF #-}
-
-raiseF ::
-    forall er f u c.
-    (Freer c f, Union u, DecompF u er) =>
-    EffectfulF u f (EffTailF er) ~> EffectfulF u f er
-raiseF = transformAllF weaken
-{-# INLINE raiseF #-}
-
-raise2F ::
-    forall e2 e1r f u c.
-    (Freer c f, Union u, DecompF u e1r) =>
-    EffectfulF u f (EffTailF e1r) ~> EffectfulF u f (e2 + e1r)
-raise2F = transformAllF weaken2
-{-# INLINE raise2F #-}
-
-raise3F ::
-    forall e3 e2 e1r f u c.
-    (Freer c f, Union u, DecompF u e1r) =>
-    EffectfulF u f (EffTailF e1r) ~> EffectfulF u f (e3 + e2 + e1r)
-raise3F = transformAllF weaken3
-{-# INLINE raise3F #-}
-
-raise4F ::
-    forall e4 e3 e2 e1r f u c.
-    (Freer c f, Union u, DecompF u e1r) =>
-    EffectfulF u f (EffTailF e1r) ~> EffectfulF u f (e4 + e3 + e2 + e1r)
-raise4F = transformAllF weaken4
-{-# INLINE raise4F #-}
-
-raiseUnderF ::
-    forall e1r e2 f u c.
-    (Freer c f, Union u, DecompF u e1r) =>
-    EffectfulF u f (e2 + EffTailF e1r) ~> EffectfulF u f (e2 + e1r)
-raiseUnderF = transformAllF weakenUnder
-{-# INLINE raiseUnderF #-}
-
-flipEffF ::
-    forall e1 e2 e f u c.
-    (Freer c f, Union u) =>
-    EffectfulF u f (e1 + e2 + e) ~> EffectfulF u f (e2 + e1 + e)
-flipEffF = transformAllF flipUnion
-{-# INLINE flipEffF #-}
-
-splitEffF ::
-    forall f' er f u c.
-    (Freer c f', Freer c f, Union u, DecompF u er) =>
-    EffectfulF u f er ~> f' (HeadMultiToUnionF u er + EffectfulF u f (EffTailF er))
-splitEffF (EffectfulF a) =
-    a & interpretFreer \u ->
-        decomp u
-            & caseH
-                (liftIns . L1 . unliftInsIfSingle)
-                (liftIns . R1 . EffectfulF . liftIns)
-
-mergeEffF ::
-    forall f' er f u c.
-    (Freer c f', Freer c f, Union u, DecompF u er) =>
-    f' (HeadMultiToUnionF u er + EffectfulF u f (EffTailF er)) ~> EffectfulF u f er
-mergeEffF =
-    EffectfulF
-        . interpretFreer
-            ( caseF
-                (liftIns . inject0 . liftInsIfSingle)
-                (transformFreer weaken . unEffectfulF)
-            )
-
-toEffectfulF :: forall e f u c. (Freer c f, Union u) => Effectful u f LNop e ~> EffectfulF u f e
-toEffectfulF =
-    EffectfulF
-        . transformFreer (caseH exhaust unliftIns)
+toEffF :: forall es fr u c. (Freer c fr, Union u) => Eff u fr '[] es ~> EffF u fr es
+toEffF =
+    ViaFreer
+        . transformFreer (caseHF exhaust EffUnionF)
         . unHefty
-        . unEffectful
-{-# INLINE toEffectfulF #-}
+{-# INLINE toEffF #-}
 
-fromEffectfulF :: forall e f u c. Freer c f => EffectfulF u f e ~> Effectful u f LNop e
+fromEffectfulF :: forall es fr u c. Freer c fr => EffF u fr es ~> Eff u fr '[] es
 fromEffectfulF =
-    Effectful
-        . Hefty
-        . transformFreer (Inr . LiftIns)
-        . unEffectfulF
+    Hefty
+        . transformFreer (EffUnion . R1 . unEffUnionF)
+        . viaFreer
 {-# INLINE fromEffectfulF #-}
+
+{-  all types of interpret-family functions:
+        - interpret   :                 e  ~> E r           ->    E (e + r)  ~> E r
+        - reinterpret :                 e1 ~> E (e2 + r)    ->    E (e1 + r) ~> E (e2 + r)
+        - intercept   :  e <| es  =>    e  ~> E es          ->    E es       ~> E es
+
+        all possible suffix patterns of interpret-family functions:
+            - <none>
+            - K
+            - ContT
+            - T
+
+    all types of transform-family functions:
+        - transform :                  e1 ~> e2    ->    E (e1 + r) ~> E (e2 + r)
+        - translate :  e2 <| r   =>    e1 ~> e2    ->    E (e1 + r) ~> E r
+        - rewrite   :  e  <| es  =>    e  ~> e     ->    E es       ~> E es
+
+    todo patterns: all ( 4x3 + 3 = 16 functions )
+-}

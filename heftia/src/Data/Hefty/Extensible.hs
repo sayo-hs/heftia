@@ -17,7 +17,7 @@ the [extensible](https://hackage.haskell.org/package/extensible) package as a ba
 module Data.Hefty.Extensible where
 
 import Control.Effect.Hefty (MemberF, MemberH)
-import Control.Hefty (SigClass)
+import Data.Effect (SigClass)
 import Data.Effect.HFunctor (HFunctor, hfmap)
 import Data.Extensible (Forall, Match (Match), htabulateFor, match)
 import Data.Extensible.Sum (strikeAt, (<:|), type (:/) (EmbedAt))

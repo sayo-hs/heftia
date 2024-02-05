@@ -20,10 +20,10 @@ implementation.
 module Data.Hefty.Union where
 
 import Control.Effect (type (~>))
-import Control.Hefty (SigClass)
 import Control.Monad ((<=<))
 import Data.Bool.Singletons (SBool (SFalse, STrue))
-import Data.Effect (LiftIns, unliftIns)
+import Data.Coerce (Coercible)
+import Data.Effect (LiftIns, SigClass, unliftIns)
 import Data.Effect.HFunctor (HFunctor, caseH, (:+:) (Inl, Inr))
 import Data.Kind (Constraint)
 import Data.Singletons (SingI, sing)
