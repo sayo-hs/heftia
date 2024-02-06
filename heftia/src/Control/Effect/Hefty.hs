@@ -24,36 +24,36 @@ import Control.Monad.Freer (MonadFreer, interpretFreerK)
 import Control.Monad.Identity (Identity (Identity))
 import Control.Monad.Trans (MonadTrans)
 import Data.Coerce (coerce)
-import Data.Effect (LNop, LiftIns (LiftIns), Nop, SigClass, unliftIns)
+import Data.Effect (LiftIns (LiftIns), Nop, SigClass, unliftIns)
 import Data.Effect.HFunctor (HFunctor, caseH, hfmap, (:+:))
 import Data.Free.Sum (caseF, pattern L1, pattern R1, type (+))
 import Data.Hefty.Union (
-    ForallHFunctor,
     HFunctorUnion,
-    HasMembership,
+    HFunctorUnion_ (ForallHFunctor),
+    HeadIns,
+    LiftInsIfSingle (liftInsIfSingle, unliftInsIfSingle),
     MemberRec,
-    Union,
-    exhaust,
-    inject0,
+    U,
+    UH,
+    Union (HasMembership, exhaust, inject0, weaken, weakenUnder, (|+:)),
+    UnliftIfSingle,
     injectRec,
     projectRec,
-    weaken,
-    weakenUnder,
-    (|+:),
+    (|+),
  )
 import Data.Kind (Type)
-
-{- |
-A common type for representing first-order and higher-order extensible effectful programs that can
-issue effects belonging to the specified sum of effect classes.
--}
-type Effectful u fr eh ef = Eff u fr (SumToUnionListNH u eh) (SumToUnionListNF u ef)
 
 {- |
 A common type for representing first-order and higher-order extensible effectful programs that can
 issue effects belonging to the specified list of effect classes.
 -}
 type Eff u fr ehs efs = Hefty fr (EffUnion u ehs efs)
+
+{- |
+A common type for representing first-order and higher-order extensible effectful programs that can
+issue effects belonging to the specified sum of effect classes.
+-}
+type Effectful u fr eh ef = Eff u fr (UH u eh) (U u ef)
 
 {- |
 A common wrapper data type for representing first-order and higher-order extensible effect union.
@@ -90,75 +90,7 @@ type (f :: Type -> Type) $ a = f a
 -- | Type-level infix applcation for higher-order functors.
 type (h :: (Type -> Type) -> Type -> Type) $$ f = h f
 
-{- |
-Recursively decompose the sum of higher-order effects into a list, following the direction of right
-association, with normalization.
--}
-type SumToUnionListNH u eh = SumToUnionList u (NormalizeSig eh)
-
-{- |
-Recursively decompose the sum of first-order effects into a list, following the direction of right
-association, with normalization.
--}
-type SumToUnionListNF u ef = SumToUnionListNH u (LiftIns ef)
-
-{- |
-Recursively decompose the sum of higher-order effects into a list, following the direction of right
-association.
--}
-type family SumToUnionList (u :: [SigClass] -> SigClass) (e :: SigClass) :: [SigClass] where
-    SumToUnionList u (e1 :+: e2) = MultiListToUnion u (SumToUnionList u e1) ': SumToUnionList u e2
-    SumToUnionList u LNop = '[]
-    SumToUnionList u (SingleSig e) = '[e]
-
-{- |
-Convert a given list of higher-order effect classes into a suitable representation type for each
-case of being empty, single, or multiple.
--}
-type family MultiListToUnion (u :: [SigClass] -> SigClass) (es :: [SigClass]) :: SigClass where
-    MultiListToUnion u '[] = LNop
-    MultiListToUnion u '[e] = e
-    MultiListToUnion u es = u es
-
-{- |
-Normalization in preparation for decomposing the sum of effect classes into a list.
-
-In particular, mark an indivisible, single effect class by applying the t'SingleSig' wrapper to it.
--}
-type family NormalizeSig e where
-    NormalizeSig (LiftIns Nop) = LiftIns Nop
-    NormalizeSig (LiftIns (e1 + e2)) = NormalizeSig (LiftIns e1) :+: NormalizeSig (LiftIns e2)
-    NormalizeSig (e1 :+: e2) = NormalizeSig e1 :+: NormalizeSig e2
-    NormalizeSig e = SingleSig e
-
-{- |
-A wrapper to mark a single, i.e., a higher-order effect class that cannot be further decomposed as
-a sum.
--}
-newtype SingleSig (e :: SigClass) f a = SingleSig {unSingleSig :: e f a}
-    deriving newtype (HFunctor)
-
-type HeadIns le = LiftInsIfSingle (UnliftIfSingle le) le
-
-type family UnliftIfSingle e where
-    UnliftIfSingle (LiftIns e) = e
-    UnliftIfSingle e = e Nop
-
-class LiftInsIfSingle e le where
-    liftInsIfSingle :: e ~> le Nop
-    unliftInsIfSingle :: le Nop ~> e
-
-instance LiftInsIfSingle (e Nop) e where
-    liftInsIfSingle = id
-    unliftInsIfSingle = id
-    {-# INLINE liftInsIfSingle #-}
-    {-# INLINE unliftInsIfSingle #-}
-
-instance LiftInsIfSingle e (LiftIns e) where
-    liftInsIfSingle = LiftIns
-    unliftInsIfSingle = unliftIns
-    {-# INLINE liftInsIfSingle #-}
-    {-# INLINE unliftInsIfSingle #-}
+type Elab e f = e f ~> f
 
 injectH :: (Freer c f, HFunctor (u ehs)) => u ehs (Eff u f ehs efs) ~> Eff u f ehs efs
 injectH = Hefty . liftIns . EffUnion . L1
@@ -199,7 +131,7 @@ injectF = Hefty . liftIns . EffUnion . R1
             - FH
 
     todo patterns:
-        - translate*, rewrite* in tramsform-family ( 2x3 = 6 functions )
+        - translate* in tramsform-family ( 3 functions )
         - *{FH,FH_} in interpret-family ( (4x2+1) + 2 = 11 functions )
 -}
 
@@ -228,7 +160,7 @@ interpretH_ ::
 interpretH_ i = interpretAllH_ $ i |+: exhaust
 {-# INLINE interpretH_ #-}
 
--- | Interpret the leading first-order effect class using a delimited continuation.
+-- | Interpret the leading first-order effect class using delimited continuations.
 interpretK ::
     forall e rs r a ehs fr u.
     (MonadFreer fr, Union u, HeadIns e) =>
@@ -755,6 +687,48 @@ transformFH fh ff =
         (inject0 . (liftInsIfSingle . ff . unliftInsIfSingle) |+: weaken)
 {-# INLINE transformFH #-}
 
+rewrite ::
+    forall e efs ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs), MemberF u e efs) =>
+    (e ~> e) ->
+    Eff u fr ehs efs ~> Eff u fr ehs efs
+rewrite f =
+    transformAll
+        \u -> case projectRec u of
+            Just (LiftIns e) -> injectRec $ LiftIns $ f e
+            Nothing -> u
+{-# INLINE rewrite #-}
+
+rewriteH ::
+    forall e efs ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs), MemberH u e ehs) =>
+    (e (Eff u fr ehs efs) ~> e (Eff u fr ehs efs)) ->
+    Eff u fr ehs efs ~> Eff u fr ehs efs
+rewriteH f =
+    transformAllH
+        \u -> case projectRec u of
+            Just e -> injectRec $ f e
+            Nothing -> u
+{-# INLINE rewriteH #-}
+
+rewriteFH ::
+    forall eh ef efs ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs), MemberH u eh ehs, MemberF u ef efs) =>
+    (eh (Eff u fr ehs efs) ~> eh (Eff u fr ehs efs)) ->
+    (ef ~> ef) ->
+    Eff u fr ehs efs ~> Eff u fr ehs efs
+rewriteFH fh ff =
+    transformAllFH
+        ( \u -> case projectRec u of
+            Just e -> injectRec $ fh e
+            Nothing -> u
+        )
+        ( \u -> case projectRec u of
+            Just (LiftIns e) -> injectRec $ LiftIns $ ff e
+            Nothing -> u
+        )
+{-# INLINE rewriteFH #-}
+
 transformAll ::
     forall efs' efs ehs fr u c.
     (Freer c fr, Union u, HFunctor (u ehs)) =>
@@ -852,3 +826,7 @@ send0 = Hefty . liftIns . EffUnion . R1 . inject0 . liftInsIfSingle
 send0H :: (Freer c fr, Union u) => e (Eff u fr (e ': r) ef) ~> Eff u fr (e ': r) ef
 send0H = Hefty . liftIns . EffUnion . L1 . inject0
 {-# INLINE send0H #-}
+
+runEff :: forall f fr u c. (Freer c fr, Union u, c f) => Eff u fr '[] '[LiftIns f] ~> f
+runEff = interpretAll $ id |+ exhaust
+{-# INLINE runEff #-}

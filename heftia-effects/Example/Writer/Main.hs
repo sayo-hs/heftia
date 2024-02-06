@@ -4,46 +4,34 @@
 
 module Main where
 
-import Control.Effect.Class (sendIns, type (~>))
-import Control.Effect.Class.Machinery.HFunctor (HFunctor)
-import Control.Effect.Class.Writer (Writer, censor, tell)
-import Control.Effect.Freer (runFreerEffects)
-import Control.Effect.Handler.Heftia.Writer (
-    elaborateWriterT,
-    elaborateWriterTransactionalT,
-    interpretTell,
- )
-import Control.Effect.Heftia (Elaborator, Hef, runElaborate)
-import Data.Hefty.Union (absurdUnionH, (|+:))
+import Control.Effect (sendIns, type (<:), type (<<:))
+import Control.Effect.ExtensibleFinal (runEff)
+import Control.Effect.Handler.Heftia.Writer (elaborateWriter, elaborateWriterTransactional, interpretTell)
+import Control.Effect.Hefty (interpretH)
+import Data.Effect.Writer (Tell, WriterH, censor, tell)
 
-hello :: (Writer String m, Monad m) => m ()
+hello :: (Tell String <: m, Monad m) => m ()
 hello = do
     tell "Hello"
     tell " world!"
 
-censorHello :: (Writer String m, Monad m) => m ()
+censorHello :: (Tell String <: m, WriterH String <<: m, Monad m) => m ()
 censorHello =
     censor
         (\s -> if s == "Hello" then "Goodbye" else s)
         hello
 
 main :: IO ()
-main = runFreerEffects do
+main = runEff do
     (s :: String, _) <-
         interpretTell
-            . runElaborate' (elaborateWriterT @String)
+            . interpretH (elaborateWriter @String)
             $ censorHello
 
     (sTransactional :: String, _) <-
         interpretTell
-            . runElaborate' (elaborateWriterTransactionalT @String)
+            . interpretH (elaborateWriterTransactional @String)
             $ censorHello
 
     sendIns $ putStrLn $ "Normal: " <> s
     sendIns $ putStrLn $ "Transactional: " <> sTransactional
-
-runElaborate' ::
-    (HFunctor e, Monad f) =>
-    Elaborator e f ->
-    Hef '[e] f ~> f
-runElaborate' f = runElaborate $ f |+: absurdUnionH

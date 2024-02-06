@@ -16,7 +16,8 @@ module Control.Effect.Handler.Heftia.Except where
 
 import Control.Effect (type (~>))
 import Control.Effect.Hefty (
-    Effectful,
+    Eff,
+    Elab,
     MemberF,
     interposeK,
     interposeT,
@@ -25,39 +26,50 @@ import Control.Effect.Hefty (
  )
 import Control.Monad.Freer (MonadFreer)
 import Control.Monad.Trans.Except (ExceptT, runExceptT, throwE)
-import Data.Effect (LNop)
-import Data.Effect.Except (Catch (Catch), Throw (Throw))
-import Data.Free.Sum (type (+))
+import Data.Effect.Except (Catch (Catch), LThrow, Throw (Throw))
 import Data.Function ((&))
 import Data.Hefty.Union (Union)
 
--- | Elaborate the 'Catch' effect using a delimited continuation.
+-- | Elaborate the t'Catch' effect using the 'ExceptT' monad transformer.
 elaborateCatch ::
-    (MemberF u (Throw e) ef, MonadFreer f, Union u) =>
-    Catch e (Effectful u f LNop ef) ~> Effectful u f LNop ef
-elaborateCatch (Catch action hdl) =
-    action & interposeK pure \_ (Throw e) -> hdl e
-
--- | Elaborate the 'Catch' effect using the 'ExceptT' monad transformer.
-elaborateCatchT ::
-    (MemberF u (Throw e) ef, MonadFreer f, Union u) =>
-    Catch e (Effectful u f LNop ef) ~> Effectful u f LNop ef
-elaborateCatchT (Catch action hdl) = do
+    forall e ef fr u.
+    (MemberF u (Throw e) ef, MonadFreer fr, Union u) =>
+    Elab (Catch e) (Eff u fr '[] ef)
+elaborateCatch (Catch action hdl) = do
     r <- runExceptT $ action & interposeT \(Throw e) -> throwE e
     case r of
         Left e -> hdl e
         Right a -> pure a
 
--- | Interpret the 'Throw' effect using a delimited continuation.
+-- | Elaborate the 'Catch' effect using a delimited continuation.
+elaborateCatchK ::
+    forall e ef fr u.
+    (MemberF u (Throw e) ef, MonadFreer fr, Union u) =>
+    Elab (Catch e) (Eff u fr '[] ef)
+elaborateCatchK (Catch action hdl) =
+    action & interposeK pure \_ (Throw e) -> hdl e
+
+-- | Interpret the 'Throw' effect using the 'ExceptT' monad transformer.
 interpretThrow ::
-    (MonadFreer f, Union u) =>
-    Effectful u f LNop (Throw e + es) a ->
-    Effectful u f LNop es (Either e a)
-interpretThrow = interpretK (pure . Right) \_ (Throw e) -> pure $ Left e
+    forall e r a fr u.
+    (MonadFreer fr, Union u) =>
+    Eff u fr '[] (LThrow e ': r) a ->
+    Eff u fr '[] r (Either e a)
+interpretThrow = runExceptT . interpretThrowT
+{-# INLINE interpretThrow #-}
 
 -- | Interpret the 'Throw' effect using the 'ExceptT' monad transformer.
 interpretThrowT ::
-    (MonadFreer f, Union u) =>
-    Effectful u f LNop (Throw e + es) ~> ExceptT e (Effectful u f LNop es)
+    forall e r fr u.
+    (MonadFreer fr, Union u) =>
+    Eff u fr '[] (LThrow e ': r) ~> ExceptT e (Eff u fr '[] r)
 interpretThrowT = interpretT \(Throw e) -> throwE e
 {-# INLINE interpretThrowT #-}
+
+-- | Interpret the 'Throw' effect using a delimited continuation.
+interpretThrowK ::
+    forall e r a fr u.
+    (MonadFreer fr, Union u) =>
+    Eff u fr '[] (LThrow e ': r) a ->
+    Eff u fr '[] r (Either e a)
+interpretThrowK = interpretK (pure . Right) \_ (Throw e) -> pure $ Left e

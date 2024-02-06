@@ -1,3 +1,5 @@
+{-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE UndecidableInstances #-}
 {-# OPTIONS_GHC -Wno-unrecognised-pragmas #-}
 
 {-# HLINT ignore "Eta reduce" #-}
@@ -12,7 +14,15 @@ import Control.Effect (type (~>))
 import Control.Freer (Freer, interpretFreer)
 import Control.Monad.Cont (Cont)
 
-class Freer Monad f => MonadFreer f where
-    interpretFreerK :: (e ~> Cont r) -> f e ~> Cont r
+class Freer Monad fr => MonadFreer fr where
+    interpretFreerK :: (e ~> Cont r) -> fr e ~> Cont r
     interpretFreerK i = interpretFreer i
     {-# INLINE interpretFreerK #-}
+
+{-
+class (Freer c fr, forall f. c f => Monad f) => MonadFreer c fr where
+    interpretFreerK :: (e ~> Cont r) -> fr e ~> Cont r
+    default interpretFreerK :: c (Cont r) => (e ~> Cont r) -> fr e ~> Cont r
+    interpretFreerK i = interpretFreer i
+    {-# INLINE interpretFreerK #-}
+-}

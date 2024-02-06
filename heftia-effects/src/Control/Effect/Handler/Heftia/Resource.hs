@@ -15,12 +15,12 @@ An elaborator for the t'Control.Effect.Class.Resource.Resource' effect class.
 -}
 module Control.Effect.Handler.Heftia.Resource where
 
-import Control.Effect.Class.Resource (ResourceS (Bracket, BracketOnExcept))
-import Control.Effect.Heftia (Elaborator)
+import Control.Effect.Hefty (Elab)
+import Data.Effect.Resource (Resource (Bracket, BracketOnExcept))
 import UnliftIO (MonadUnliftIO, bracket, bracketOnError)
 
 -- | Elaborates the `Resource` effect under the `MonadUnliftIO` context.
-resourceToIO :: MonadUnliftIO m => Elaborator ResourceS m
+resourceToIO :: MonadUnliftIO m => Elab Resource m
 resourceToIO = \case
     Bracket acquire release thing -> bracket acquire release thing
     BracketOnExcept acquire onError thing -> bracketOnError acquire onError thing

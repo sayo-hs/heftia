@@ -18,18 +18,18 @@ module Control.Effect.Free where
 
 import Control.Effect (type (~>))
 
-import Control.Effect.Hefty (Eff, EffUnion (EffUnion), MemberF, SumToUnionListNF, caseHF)
+import Control.Effect.Hefty (Eff, EffUnion (EffUnion), MemberF, caseHF)
 import Control.Freer (Freer, InjectIns, ViaFreer (ViaFreer), injectIns, transformFreer, viaFreer)
 import Control.Hefty (Hefty (Hefty), unHefty)
 import Data.Effect (LiftIns (LiftIns), Nop, SigClass)
 import Data.Free.Sum (pattern R1)
-import Data.Hefty.Union (Union, exhaust, injectRec)
+import Data.Hefty.Union (U, Union, exhaust, injectRec)
 
 {- |
 A common type for representing first-order extensible effectful programs that can issue effects
 belonging to the specified sum of effect classes.
 -}
-type EffectfulF u fr e = EffF u fr (SumToUnionListNF u e)
+type EffectfulF u fr e = EffF u fr (U u e)
 
 {- |
 A common type for representing first-order extensible effectful programs that can issue effects
@@ -51,12 +51,12 @@ toEffF =
         . unHefty
 {-# INLINE toEffF #-}
 
-fromEffectfulF :: forall es fr u c. Freer c fr => EffF u fr es ~> Eff u fr '[] es
-fromEffectfulF =
+fromEffF :: forall es fr u c. Freer c fr => EffF u fr es ~> Eff u fr '[] es
+fromEffF =
     Hefty
         . transformFreer (EffUnion . R1 . unEffUnionF)
         . viaFreer
-{-# INLINE fromEffectfulF #-}
+{-# INLINE fromEffF #-}
 
 {-  all types of interpret-family functions:
         - interpret   :                 e  ~> E r           ->    E (e + r)  ~> E r
@@ -76,3 +76,7 @@ fromEffectfulF =
 
     todo patterns: all ( 4x3 + 3 = 16 functions )
 -}
+
+runEffF :: forall f fr u c. (Freer c fr, Union u, c f) => EffF u fr '[LiftIns f] ~> f
+runEffF = undefined
+{-# INLINE runEffF #-}

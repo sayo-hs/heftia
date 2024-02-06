@@ -14,16 +14,16 @@ Elaborator for the t'Control.Effect.Class.Provider.Provider' effect class.
 module Control.Effect.Handler.Heftia.Provider where
 
 import Control.Effect (type (~>))
-import Control.Effect.Class.Provider (ProviderS (Provide))
-import Control.Effect.Heftia (Elaborator)
+import Control.Effect.Hefty (Elab)
 import Control.Monad.Trans (MonadTrans, lift)
+import Data.Effect.Provider (Provider' (Provide))
 
 -- | Elaborate the t'Control.Effect.Class.Provider.Provider' effect using the given interpreter.
 elaborateProvider ::
     (c g, e g) =>
     (f ~> g) ->
     (i -> forall x. g x -> f (ctx x)) ->
-    Elaborator (ProviderS c i ctx e) f
+    Elab (Provider' c i ctx e) f
 elaborateProvider iLower run (Provide i f) = run i $ f iLower
 {-# INLINE elaborateProvider #-}
 
@@ -34,6 +34,6 @@ monad transformer.
 elaborateProviderT ::
     (Monad m, MonadTrans t, c (t m), e (t m)) =>
     (i -> forall x. t m x -> m (ctx x)) ->
-    Elaborator (ProviderS c i ctx e) m
+    Elab (Provider' c i ctx e) m
 elaborateProviderT = elaborateProvider lift
 {-# INLINE elaborateProviderT #-}

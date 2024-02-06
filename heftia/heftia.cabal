@@ -56,12 +56,15 @@ library
     exposed-modules:
         Control.Effect.Hefty
         Control.Effect.Free
+        Control.Effect.ExtensibleFinal
         Control.Effect.ExtensibleChurch
         Control.Effect.ExtensibleTree
+        Control.Effect.ExtensibleFinalA
         Control.Effect.ExtensibleTreeA
         Control.Effect.ExtensibleFastA
         Control.Hefty
         Control.Freer
+        Control.Freer.Final
         Control.Monad.Freer
         Control.Monad.Freer.Church
         Control.Monad.Freer.Tree

@@ -14,26 +14,30 @@ Elaborator for the t'Control.Effect.Class.Provider.Implicit.ImplicitProvider' ef
 module Control.Effect.Handler.Heftia.Provider.Implicit where
 
 import Control.Effect (type (~>))
-import Control.Effect.Class.Provider.Implicit (ImplicitProviderS (WithImplicit))
-import Control.Effect.Class.Reader (AskI)
-import Control.Effect.Freer (Fre, raise)
 import Control.Effect.Handler.Heftia.Reader (interpretAsk)
-import Control.Effect.Heftia (Elaborator)
+import Control.Effect.Hefty (Eff, Elab, raise)
+import Control.Monad.Freer (MonadFreer)
+import Data.Effect.HFunctor (HFunctor)
+import Data.Effect.Provider.Implicit (ImplicitProvider' (WithImplicit))
+import Data.Effect.Reader (LAsk)
+import Data.Hefty.Union (Union)
 
-{- |
-Elaborate the t'Control.Effect.Class.Provider.Implicit.ImplicitProvider' effect using the given
-interpreter.
--}
+-- | Elaborate the t'ImplicitProvider'' effect using the given interpreter.
 elaborateImplicitProvider ::
     (c g, e g) =>
     (f ~> g) ->
     (i -> forall x. g x -> f x) ->
-    Elaborator (ImplicitProviderS c i e) f
+    Elab (ImplicitProvider' c i e) f
 elaborateImplicitProvider iLower run (WithImplicit i f) = run i $ f iLower
 {-# INLINE elaborateImplicitProvider #-}
 
--- todo: make the 'classy-effects-static' handler system and use the static Reader carrier here.
 runImplicitProvider ::
-    (c (Fre (AskI i ': r) m), e (Fre (AskI i ': r) m), Monad m) =>
-    Elaborator (ImplicitProviderS c i e) (Fre r m)
+    ( e (Eff u fr eh (LAsk i ': ef))
+    , c (Eff u fr eh (LAsk i ': ef))
+    , MonadFreer fr
+    , Union u
+    , HFunctor (u eh)
+    ) =>
+    Elab (ImplicitProvider' c i e) (Eff u fr eh ef)
 runImplicitProvider (WithImplicit i f) = interpretAsk i $ f raise
+{-# INLINE runImplicitProvider #-}

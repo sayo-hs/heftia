@@ -18,6 +18,7 @@ module Control.Freer where
 
 import Control.Applicative (Alternative)
 import Control.Applicative.Free (Ap, liftAp, runAp)
+import Control.Applicative.Free.Fast qualified as Fast
 import Control.Effect (SendIns, sendIns, type (~>))
 import Control.Monad (MonadPlus)
 import Control.Monad.Base (MonadBase)
@@ -62,6 +63,12 @@ instance Freer Functor Coyoneda where
 instance Freer Applicative Ap where
     liftIns = liftAp
     interpretFreer = runAp
+    {-# INLINE liftIns #-}
+    {-# INLINE interpretFreer #-}
+
+instance Freer Applicative Fast.Ap where
+    liftIns = Fast.liftAp
+    interpretFreer = Fast.runAp
     {-# INLINE liftIns #-}
     {-# INLINE interpretFreer #-}
 

@@ -22,9 +22,9 @@ module Data.Hefty.Union where
 import Control.Effect (type (~>))
 import Control.Monad ((<=<))
 import Data.Bool.Singletons (SBool (SFalse, STrue))
-import Data.Coerce (Coercible)
-import Data.Effect (LiftIns, SigClass, unliftIns)
+import Data.Effect (LNop, LiftIns (LiftIns), Nop, SigClass, unliftIns)
 import Data.Effect.HFunctor (HFunctor, caseH, (:+:) (Inl, Inr))
+import Data.Free.Sum (type (+))
 import Data.Kind (Constraint)
 import Data.Singletons (SingI, sing)
 import Data.Type.Bool (If, type (||))
@@ -305,3 +305,91 @@ infixr 5 |+
 (|+) :: Union u => (e a -> r) -> (u es f a -> r) -> u (LiftIns e ': es) f a -> r
 f |+ g = f . unliftIns |+: g
 {-# INLINE (|+) #-}
+
+{- |
+Recursively decompose the sum of first-order effects into a list, following the direction of right
+association, with normalization.
+-}
+type U u ef = UH u (LiftIns ef)
+
+{- |
+Recursively decompose the sum of higher-order effects into a list, following the direction of right
+association, with normalization.
+-}
+type UH u eh = SumToUnionList u (NormalizeSig eh)
+
+{- |
+Recursively decompose the sum of higher-order effects into a list, following the direction of right
+association.
+-}
+type family SumToUnionList (u :: [SigClass] -> SigClass) (e :: SigClass) :: [SigClass] where
+    SumToUnionList u (e1 :+: e2) = MultiListToUnion u (SumToUnionList u e1) ': SumToUnionList u e2
+    SumToUnionList u LNop = '[]
+    SumToUnionList u (SingleSig e) = '[e]
+
+{- |
+Convert a given list of higher-order effect classes into a suitable representation type for each
+case of being empty, single, or multiple.
+-}
+type family MultiListToUnion (u :: [SigClass] -> SigClass) (es :: [SigClass]) :: SigClass where
+    MultiListToUnion u '[] = LNop
+    MultiListToUnion u '[e] = e
+    MultiListToUnion u es = u es
+
+{- |
+Normalization in preparation for decomposing the sum of effect classes into a list.
+
+In particular, mark an indivisible, single effect class by applying the t'SingleSig' wrapper to it.
+-}
+type family NormalizeSig e where
+    NormalizeSig LNop = LNop
+    NormalizeSig (LiftIns (e1 + e2)) = NormalizeSig (LiftIns e1) :+: NormalizeSig (LiftIns e2)
+    NormalizeSig (e1 :+: e2) = NormalizeSig e1 :+: NormalizeSig e2
+    NormalizeSig e = SingleSig e
+
+{- |
+A wrapper to mark a single, i.e., a higher-order effect class that cannot be further decomposed as
+a sum.
+-}
+newtype SingleSig (e :: SigClass) f a = SingleSig {unSingleSig :: e f a}
+    deriving newtype (HFunctor)
+
+type family UnionListToSum (u :: [SigClass] -> SigClass) (es :: [SigClass]) :: SigClass where
+    UnionListToSum u '[e] = UnionToSum u e
+    UnionListToSum u '[] = LNop
+    UnionListToSum u (e ': r) = UnionToSum u e :+: UnionListToSum u r
+
+type family UnionToSum (u :: [SigClass] -> SigClass) (e :: SigClass) :: SigClass where
+    UnionToSum u (u es) = UnionListToSum u es
+    UnionToSum u e = e
+
+type S u es = UnionListToSum u es Nop
+type SH u es = UnionListToSum u es
+
+type NormalFormUnionList u es = U u (S u es) ~ es
+type NormalFormUnionListH u es = UH u (SH u es) ~ es
+
+type NFU u es = NormalFormUnionList u es
+type NFUH u es = NormalFormUnionListH u es
+
+type HeadIns le = LiftInsIfSingle (UnliftIfSingle le) le
+
+type family UnliftIfSingle e where
+    UnliftIfSingle (LiftIns e) = e
+    UnliftIfSingle e = e Nop
+
+class LiftInsIfSingle e le where
+    liftInsIfSingle :: e ~> le Nop
+    unliftInsIfSingle :: le Nop ~> e
+
+instance LiftInsIfSingle (e Nop) e where
+    liftInsIfSingle = id
+    unliftInsIfSingle = id
+    {-# INLINE liftInsIfSingle #-}
+    {-# INLINE unliftInsIfSingle #-}
+
+instance LiftInsIfSingle e (LiftIns e) where
+    liftInsIfSingle = LiftIns
+    unliftInsIfSingle = unliftIns
+    {-# INLINE liftInsIfSingle #-}
+    {-# INLINE unliftInsIfSingle #-}

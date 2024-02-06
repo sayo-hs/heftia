@@ -17,8 +17,12 @@ See "Control.Applicative.Free".
 module Control.Effect.ExtensibleTreeA where
 
 import Control.Applicative.Free (Ap)
+import Control.Effect (type (~>))
 import Control.Effect.Free (EffF, EffectfulF)
+import Control.Effect.Free qualified as F
 import Control.Effect.Hefty (Eff, Effectful)
+import Control.Effect.Hefty qualified as H
+import Data.Effect (LiftIns)
 import Data.Hefty.Extensible (ExtensibleUnion)
 
 type eh !! ef = Effectful ExtensibleUnion Ap eh ef
@@ -32,3 +36,11 @@ type (:!) efs = EffF ExtensibleUnion Ap efs
 
 infixr 5 :!!
 infixr 4 :!
+
+runEff :: Applicative f => '[] :!! '[LiftIns f] ~> f
+runEff = H.runEff
+{-# INLINE runEff #-}
+
+runEffF :: Applicative f => (:!) '[LiftIns f] ~> f
+runEffF = F.runEffF
+{-# INLINE runEffF #-}
