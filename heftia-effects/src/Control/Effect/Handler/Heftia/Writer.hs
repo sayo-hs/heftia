@@ -28,16 +28,29 @@ import Data.Hefty.Union (Union)
 import Data.Tuple (swap)
 
 elaborateWriter ::
-    forall w ef fr u.
-    (Monoid w, MonadFreer fr, Union u, MemberF u (Tell w) ef, HFunctor (u '[])) =>
+    forall w ef fr u c.
+    ( Monoid w
+    , MonadFreer c fr
+    , Union u
+    , MemberF u (Tell w) ef
+    , HFunctor (u '[])
+    , c (WriterT w (Eff u fr '[] ef))
+    , c (Eff u fr '[] ef)
+    ) =>
     Elab (WriterH w) (Eff u fr '[] ef)
 elaborateWriter = \case
     Listen m -> listenT m
     Censor f m -> m & rewrite @(Tell w) \(Tell w) -> Tell $ f w
 
 elaborateWriterTransactional ::
-    forall w ef fr u.
-    (Monoid w, MonadFreer fr, Union u, MemberF u (Tell w) ef) =>
+    forall w ef fr u c.
+    ( Monoid w
+    , MonadFreer c fr
+    , Union u
+    , MemberF u (Tell w) ef
+    , c (WriterT w (Eff u fr '[] ef))
+    , c (Eff u fr '[] ef)
+    ) =>
     Elab (WriterH w) (Eff u fr '[] ef)
 elaborateWriterTransactional = \case
     Listen m -> listenT m
@@ -47,8 +60,14 @@ elaborateWriterTransactional = \case
         pure a
 
 listenT ::
-    forall w es a fr u.
-    (Monoid w, MonadFreer fr, Union u, MemberF u (Tell w) es) =>
+    forall w es a fr u c.
+    ( Monoid w
+    , MonadFreer c fr
+    , Union u
+    , MemberF u (Tell w) es
+    , c (WriterT w (Eff u fr '[] es))
+    , c (Eff u fr '[] es)
+    ) =>
     Eff u fr '[] es a ->
     Eff u fr '[] es (a, w)
 listenT m = do
@@ -58,22 +77,36 @@ listenT m = do
 {-# INLINE listenT #-}
 
 confiscateT ::
-    forall w es a fr u.
-    (Monoid w, MonadFreer fr, Union u, MemberF u (Tell w) es) =>
+    forall w es a fr u c.
+    ( Monoid w
+    , MonadFreer c fr
+    , Union u
+    , MemberF u (Tell w) es
+    , c (WriterT w (Eff u fr '[] es))
+    , c (Eff u fr '[] es)
+    ) =>
     Eff u fr '[] es a ->
     Eff u fr '[] es (a, w)
 confiscateT = runWriterT . interposeT @(Tell w) \(Tell w) -> T.tell w
 {-# INLINE confiscateT #-}
 
-interpretTell :: (Monoid w, MonadFreer fr, Union u) => Eff u fr '[] (LTell w ': r) a -> Eff u fr '[] r (w, a)
+interpretTell ::
+    (Monoid w, MonadFreer c fr, Union u, c (WriterT w (Eff u fr '[] r)), c (Eff u fr '[] r)) =>
+    Eff u fr '[] (LTell w ': r) a ->
+    Eff u fr '[] r (w, a)
 interpretTell = fmap swap . runWriterT . interpretTellT
 {-# INLINE interpretTell #-}
 
-interpretTellT :: (Monoid w, MonadFreer fr, Union u) => Eff u fr '[] (LTell w ': r) ~> WriterT w (Eff u fr '[] r)
+interpretTellT ::
+    (Monoid w, MonadFreer c fr, Union u, c (Eff u fr '[] r), c (WriterT w (Eff u fr '[] r))) =>
+    Eff u fr '[] (LTell w ': r) ~> WriterT w (Eff u fr '[] r)
 interpretTellT = interpretT \(Tell w) -> T.tell w
 {-# INLINE interpretTellT #-}
 
-interpretTellK :: (Monoid w, MonadFreer fr, Union u) => Eff u fr '[] (LTell w ': r) a -> Eff u fr '[] r (w, a)
+interpretTellK ::
+    (Monoid w, MonadFreer c fr, Union u, c (Eff u fr '[] r)) =>
+    Eff u fr '[] (LTell w ': r) a ->
+    Eff u fr '[] r (w, a)
 interpretTellK =
     interpretK (pure . (mempty,)) \k (Tell w) -> do
         (w', r) <- k ()

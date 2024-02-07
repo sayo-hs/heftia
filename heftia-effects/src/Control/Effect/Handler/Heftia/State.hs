@@ -31,8 +31,8 @@ import Data.Tuple (swap)
 
 -- | Interpret the 'Get'/'Put' effects using the 'StateT' monad transformer.
 interpretState ::
-    forall s r a fr u.
-    (MonadFreer fr, Union u) =>
+    forall s r a fr u c.
+    (MonadFreer c fr, Union u, c (Eff u fr '[] r), c (StateT s (Eff u fr '[] r))) =>
     s ->
     Eff u fr '[] (LState s ': r) a ->
     Eff u fr '[] r (s, a)
@@ -40,16 +40,16 @@ interpretState s a = swap <$> runStateT (interpretStateT a) s
 {-# INLINE interpretState #-}
 
 evalState ::
-    forall s r fr u.
-    (MonadFreer fr, Union u) =>
+    forall s r fr u c.
+    (MonadFreer c fr, Union u, c (Eff u fr '[] r), c (StateT s (Eff u fr '[] r))) =>
     s ->
     Eff u fr '[] (LState s ': r) ~> Eff u fr '[] r
 evalState s a = snd <$> interpretState s a
 {-# INLINE evalState #-}
 
 execState ::
-    forall s r a fr u.
-    (MonadFreer fr, Union u) =>
+    forall s r a fr u c.
+    (MonadFreer c fr, Union u, c (Eff u fr '[] r), c (StateT s (Eff u fr '[] r))) =>
     s ->
     Eff u fr '[] (LState s ': r) a ->
     Eff u fr '[] r s
@@ -58,8 +58,8 @@ execState s a = fst <$> interpretState s a
 
 -- | Interpret the 'Get'/'Put' effects using the 'StateT' monad transformer.
 interpretStateT ::
-    forall s r fr u.
-    (MonadFreer fr, Union u) =>
+    forall s r fr u c.
+    (MonadFreer c fr, Union u, c (Eff u fr '[] r), c (StateT s (Eff u fr '[] r))) =>
     Eff u fr '[] (LState s ': r) ~> StateT s (Eff u fr '[] r)
 interpretStateT =
     interpretT \case
@@ -69,8 +69,14 @@ interpretStateT =
 
 -- | Interpret the 'Get'/'Put' effects using delimited continuations.
 interpretStateK ::
-    forall s r a fr u.
-    (MonadFreer fr, Union u, HFunctor (u '[]), MemberF u (Ask s) (LAsk s ': r)) =>
+    forall s r a fr u c.
+    ( MonadFreer c fr
+    , Union u
+    , HFunctor (u '[])
+    , MemberF u (Ask s) (LAsk s ': r)
+    , c (Eff u fr '[] (LAsk s ': r))
+    , Applicative (Eff u fr '[] r)
+    ) =>
     s ->
     Eff u fr '[] (LState s ': r) a ->
     Eff u fr '[] r (s, a)

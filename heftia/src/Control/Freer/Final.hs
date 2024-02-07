@@ -112,4 +112,4 @@ instance (forall e. c (FreerFinal c e)) => Freer c (FreerFinal c) where
     {-# INLINE liftIns #-}
     {-# INLINE interpretFreer #-}
 
-instance MonadFreer (FreerFinal Monad)
+instance MonadFreer Monad (FreerFinal Monad)

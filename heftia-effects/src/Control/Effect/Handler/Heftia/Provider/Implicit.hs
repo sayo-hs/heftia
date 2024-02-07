@@ -16,7 +16,7 @@ module Control.Effect.Handler.Heftia.Provider.Implicit where
 import Control.Effect (type (~>))
 import Control.Effect.Handler.Heftia.Reader (interpretAsk)
 import Control.Effect.Hefty (Eff, Elab, raise)
-import Control.Monad.Freer (MonadFreer)
+import Control.Freer (Freer)
 import Data.Effect.HFunctor (HFunctor)
 import Data.Effect.Provider.Implicit (ImplicitProvider' (WithImplicit))
 import Data.Effect.Reader (LAsk)
@@ -34,9 +34,10 @@ elaborateImplicitProvider iLower run (WithImplicit i f) = run i $ f iLower
 runImplicitProvider ::
     ( e (Eff u fr eh (LAsk i ': ef))
     , c (Eff u fr eh (LAsk i ': ef))
-    , MonadFreer fr
+    , Freer c fr
     , Union u
     , HFunctor (u eh)
+    , Applicative (Eff u fr eh ef)
     ) =>
     Elab (ImplicitProvider' c i e) (Eff u fr eh ef)
 runImplicitProvider (WithImplicit i f) = interpretAsk i $ f raise

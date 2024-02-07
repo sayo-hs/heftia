@@ -32,8 +32,13 @@ import Data.Hefty.Union (Union)
 
 -- | Elaborate the t'Catch' effect using the 'ExceptT' monad transformer.
 elaborateCatch ::
-    forall e ef fr u.
-    (MemberF u (Throw e) ef, MonadFreer fr, Union u) =>
+    forall e ef fr u c.
+    ( MemberF u (Throw e) ef
+    , MonadFreer c fr
+    , Union u
+    , c (Eff u fr '[] ef)
+    , c (ExceptT e (Eff u fr '[] ef))
+    ) =>
     Elab (Catch e) (Eff u fr '[] ef)
 elaborateCatch (Catch action hdl) = do
     r <- runExceptT $ action & interposeT \(Throw e) -> throwE e
@@ -43,16 +48,16 @@ elaborateCatch (Catch action hdl) = do
 
 -- | Elaborate the 'Catch' effect using a delimited continuation.
 elaborateCatchK ::
-    forall e ef fr u.
-    (MemberF u (Throw e) ef, MonadFreer fr, Union u) =>
+    forall e ef fr u c.
+    (MemberF u (Throw e) ef, MonadFreer c fr, Union u, c (Eff u fr '[] ef)) =>
     Elab (Catch e) (Eff u fr '[] ef)
 elaborateCatchK (Catch action hdl) =
     action & interposeK pure \_ (Throw e) -> hdl e
 
 -- | Interpret the 'Throw' effect using the 'ExceptT' monad transformer.
 interpretThrow ::
-    forall e r a fr u.
-    (MonadFreer fr, Union u) =>
+    forall e r a fr u c.
+    (MonadFreer c fr, Union u, c (Eff u fr '[] r), c (ExceptT e (Eff u fr '[] r))) =>
     Eff u fr '[] (LThrow e ': r) a ->
     Eff u fr '[] r (Either e a)
 interpretThrow = runExceptT . interpretThrowT
@@ -60,16 +65,16 @@ interpretThrow = runExceptT . interpretThrowT
 
 -- | Interpret the 'Throw' effect using the 'ExceptT' monad transformer.
 interpretThrowT ::
-    forall e r fr u.
-    (MonadFreer fr, Union u) =>
+    forall e r fr u c.
+    (MonadFreer c fr, Union u, c (Eff u fr '[] r), c (ExceptT e (Eff u fr '[] r))) =>
     Eff u fr '[] (LThrow e ': r) ~> ExceptT e (Eff u fr '[] r)
 interpretThrowT = interpretT \(Throw e) -> throwE e
 {-# INLINE interpretThrowT #-}
 
 -- | Interpret the 'Throw' effect using a delimited continuation.
 interpretThrowK ::
-    forall e r a fr u.
-    (MonadFreer fr, Union u) =>
+    forall e r a fr u c.
+    (MonadFreer c fr, Union u, c (Eff u fr '[] r)) =>
     Eff u fr '[] (LThrow e ': r) a ->
     Eff u fr '[] r (Either e a)
 interpretThrowK = interpretK (pure . Right) \_ (Throw e) -> pure $ Left e

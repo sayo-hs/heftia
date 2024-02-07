@@ -69,6 +69,6 @@ instance Freer Monad FreerTree where
     {-# INLINE interpretFreer #-}
     {-# INLINE transformFreer #-}
 
-instance MonadFreer FreerTree where
+instance MonadFreer Monad FreerTree where
     interpretFreerK = interpretTreeK
     {-# INLINE interpretFreerK #-}

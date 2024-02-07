@@ -53,6 +53,6 @@ instance Freer Monad FreerChurch where
     {-# INLINE retractFreer #-}
     {-# INLINE transformFreer #-}
 
-instance MonadFreer FreerChurch where
+instance MonadFreer Monad FreerChurch where
     interpretFreerK = interpretChurchK
     {-# INLINE interpretFreerK #-}
