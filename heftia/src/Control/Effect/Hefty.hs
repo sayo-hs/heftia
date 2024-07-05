@@ -26,6 +26,7 @@ import Control.Monad.Trans (MonadTrans)
 import Data.Coerce (coerce)
 import Data.Effect (LiftIns (LiftIns), Nop, SigClass, unliftIns)
 import Data.Effect.HFunctor (HFunctor, caseH, hfmap, (:+:))
+import Data.Effect.Tag (Tag (unTag), TagH (unTagH), type (#), type (##))
 import Data.Free.Sum (caseF, pattern L1, pattern R1, type (+))
 import Data.Hefty.Union (
     HFunctorUnion,
@@ -37,9 +38,11 @@ import Data.Hefty.Union (
     UH,
     Union (HasMembership, exhaust, inject0, weaken, weakenUnder, (|+:)),
     UnliftIfSingle,
+    flipUnion,
     injectRec,
     projectRec,
-    (|+),
+    weaken2,
+    (|+), MemberRec'
  )
 import Data.Kind (Type)
 
@@ -76,7 +79,7 @@ instance MemberRec u e ehs => InjectSig e (EffUnion u ehs efs) where
     injectSig = EffUnion . L1 . injectRec
     {-# INLINE injectSig #-}
 
-type MemberH u e ehs = MemberRec u e ehs
+type MemberH u e ehs = MemberRec' u e ehs
 
 type MemberF u e efs = MemberH u (LiftIns e) efs
 type HasMembershipF u e efs = HasMembership u (LiftIns e) efs
@@ -103,7 +106,7 @@ injectF = Hefty . liftIns . EffUnion . R1
 {-  all types of interpret-family functions:
         - interpret   :                 e  ~> E r           ->    E (e + r)  ~> E r
         - reinterpret :                 e1 ~> E (e2 + r)    ->    E (e1 + r) ~> E (e2 + r)
-        - intercept   :  e <| es  =>    e  ~> E es          ->    E es       ~> E es
+        - interpose   :  e <| es  =>    e  ~> E es          ->    E es       ~> E es
 
         all possible suffix patterns of interpret functions:
             { <none> , K , ContT , T } x { <none> , H , H_ , FH , FH_ }
@@ -131,7 +134,6 @@ injectF = Hefty . liftIns . EffUnion . R1
             - FH
 
     todo patterns:
-        - translate* in tramsform-family ( 3 functions )
         - *{FH,FH_} in interpret-family ( (4x2+1) + 2 = 11 functions )
 -}
 
@@ -709,8 +711,44 @@ transformFH ::
 transformFH fh ff =
     transformAllFH
         (inject0 . fh |+: weaken)
-        (inject0 . (liftInsIfSingle . ff . unliftInsIfSingle) |+: weaken)
+        (inject0 . liftInsIfSingle . ff . unliftInsIfSingle |+: weaken)
 {-# INLINE transformFH #-}
+
+translate ::
+    forall e2 e1 es ehs fr u c.
+    (Freer c fr, Union u, MemberF u e2 es, HFunctor (u ehs), HeadIns e1) =>
+    (UnliftIfSingle e1 ~> e2) ->
+    Eff u fr ehs (e1 ': es) ~> Eff u fr ehs es
+translate f =
+    transformAll $
+        injectRec . LiftIns . f . unliftInsIfSingle |+: id
+{-# INLINE translate #-}
+
+translateH ::
+    forall e2 e1 es efs fr u c.
+    (Freer c fr, Union u, MemberH u e2 es, HFunctor (u (e1 ': es))) =>
+    (e1 (Eff u fr es efs) ~> e2 (Eff u fr es efs)) ->
+    Eff u fr (e1 ': es) efs ~> Eff u fr es efs
+translateH f = transformAllH $ injectRec . f |+: id
+{-# INLINE translateH #-}
+
+translateFH ::
+    forall e2h e2f e1h e1f ehs efs fr u c.
+    ( Freer c fr
+    , Union u
+    , MemberH u e2h ehs
+    , MemberF u e2f efs
+    , HFunctor (u (e1h ': ehs))
+    , HeadIns e1f
+    ) =>
+    (e1h (Eff u fr ehs efs) ~> e2h (Eff u fr ehs efs)) ->
+    (UnliftIfSingle e1f ~> e2f) ->
+    Eff u fr (e1h ': ehs) (e1f ': efs) ~> Eff u fr ehs efs
+translateFH fh ff =
+    transformAllFH
+        (injectRec . fh |+: id)
+        (injectRec . LiftIns . ff . unliftInsIfSingle |+: id)
+{-# INLINE translateFH #-}
 
 rewrite ::
     forall e efs ehs fr u c.
@@ -785,9 +823,9 @@ transformAllFH fh ff =
                     (R1 . ff)
 
 raise ::
-    forall e r ehs f u c.
-    (Freer c f, Union u, HFunctor (u ehs)) =>
-    Eff u f ehs r ~> Eff u f ehs (e ': r)
+    forall e r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs r ~> Eff u fr ehs (e ': r)
 raise = transformAll weaken
 {-# INLINE raise #-}
 
@@ -797,6 +835,13 @@ raiseH ::
     Eff u fr r efs ~> Eff u fr (e ': r) efs
 raiseH = transformAllH weaken
 {-# INLINE raiseH #-}
+
+raise2H ::
+    forall e2 e1 r efs fr u c.
+    (Freer c fr, Union u, HFunctor (u r)) =>
+    Eff u fr r efs ~> Eff u fr (e2 ': e1 ': r) efs
+raise2H = transformAllH weaken2
+{-# INLINE raise2H #-}
 
 raiseUnder ::
     forall e1 e2 r ehs fr u c.
@@ -811,6 +856,34 @@ raiseUnderH ::
     Eff u fr (e2 ': r) efs ~> Eff u fr (e2 ': e1 ': r) efs
 raiseUnderH = transformAllH weakenUnder
 {-# INLINE raiseUnderH #-}
+
+raiseAll ::
+    forall ehs efs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs '[] ~> Eff u fr ehs efs
+raiseAll = transformAll exhaust
+{-# INLINE raiseAll #-}
+
+raiseAllH ::
+    forall ehs efs fr u c.
+    (Freer c fr, Union u) =>
+    Eff u fr '[] efs ~> Eff u fr ehs efs
+raiseAllH = overHefty $ transformFreer $ EffUnion . caseHF exhaust R1
+{-# INLINE raiseAllH #-}
+
+flipEff ::
+    forall e1 e2 r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs (e1 ': e2 ': r) ~> Eff u fr ehs (e2 ': e1 ': r)
+flipEff = transformAll flipUnion
+{-# INLINE flipEff #-}
+
+flipEffH ::
+    forall e1 e2 r efs fr u c.
+    (Freer c fr, Union u, HFunctor (u (e1 ': e2 ': r))) =>
+    Eff u fr (e1 ': e2 ': r) efs ~> Eff u fr (e2 ': e1 ': r) efs
+flipEffH = transformAllH flipUnion
+{-# INLINE flipEffH #-}
 
 splitEff ::
     forall fr' e r ehs fr u c.
@@ -848,10 +921,32 @@ send0 :: (Freer c fr, Union u, HeadIns e) => UnliftIfSingle e ~> Eff u fr eh (e 
 send0 = Hefty . liftIns . EffUnion . R1 . inject0 . liftInsIfSingle
 {-# INLINE send0 #-}
 
+send1 :: (Freer c fr, Union u, HeadIns e1) => UnliftIfSingle e1 ~> Eff u fr eh (e2 ': e1 ': r)
+send1 = Hefty . liftIns . EffUnion . R1 . weaken . inject0 . liftInsIfSingle
+{-# INLINE send1 #-}
+
 send0H :: (Freer c fr, Union u) => e (Eff u fr (e ': r) ef) ~> Eff u fr (e ': r) ef
 send0H = Hefty . liftIns . EffUnion . L1 . inject0
 {-# INLINE send0H #-}
 
+send1H :: (Freer c fr, Union u) => e1 (Eff u fr (e2 ': e1 ': r) ef) ~> Eff u fr (e2 ': e1 ': r) ef
+send1H = Hefty . liftIns . EffUnion . L1 . weaken . inject0
+{-# INLINE send1H #-}
+
 runEff :: forall f fr u c. (Freer c fr, Union u, c f) => Eff u fr '[] '[LiftIns f] ~> f
 runEff = interpretAll $ id |+ exhaust
 {-# INLINE runEff #-}
+
+untagEff ::
+    forall tag e r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs (LiftIns (e # tag) ': r) ~> Eff u fr ehs (LiftIns e ': r)
+untagEff = transform unTag
+{-# INLINE untagEff #-}
+
+untagEffH ::
+    forall tag e r efs fr u c.
+    (Freer c fr, Union u, HFunctor (u (e ## tag ': r))) =>
+    Eff u fr (e ## tag ': r) efs ~> Eff u fr (e ': r) efs
+untagEffH = transformH unTagH
+{-# INLINE untagEffH #-}

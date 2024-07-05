@@ -14,7 +14,11 @@ Portability :  portable
 An implementation of an open union for higher-order effects using
 the [extensible](https://hackage.haskell.org/package/extensible) package as a backend.
 -}
-module Data.Hefty.Extensible where
+module Data.Hefty.Extensible (
+    module Data.Hefty.Extensible,
+    Forall,
+)
+where
 
 import Control.Effect.Hefty (MemberF, MemberH)
 import Data.Effect (SigClass)
@@ -32,12 +36,11 @@ import Data.Hefty.Union (
         project,
         weaken,
         (|+:)
-    ),
+    ), TypeIndex,
  )
 import Data.Proxy (Proxy (Proxy))
 import Data.Type.Equality ((:~:) (Refl))
-import GHC.TypeLits (ErrorMessage (ShowType, Text, (:<>:)), TypeError)
-import GHC.TypeNats (KnownNat, Nat, type (+))
+import GHC.TypeNats (KnownNat)
 import Type.Membership.Internal (
     Elaborate,
     Elaborated (Expecting),
@@ -101,15 +104,13 @@ findFirstMembership = unsafeMkMembership @(TypeIndex xs x) Proxy
         hackedEquality :: Elaborate x (FindType x xs) :~: 'Expecting pos
         hackedEquality = unsafeCoerce Refl
 
-type family TypeIndex (xs :: [k]) (x :: k) :: Nat where
-    TypeIndex (x ': xs) x = 0
-    TypeIndex (y ': xs) x = 1 + TypeIndex xs x
-    TypeIndex '[] x =
-        TypeError
-            ('Text "The effect class " ':<>: 'ShowType x ':<>: 'Text " was not found in the list.")
-
 instance HFunctorUnion_ (Forall HFunctor) ExtensibleUnion where
     type ForallHFunctor _ = Forall HFunctor
 
 type e <| es = MemberF ExtensibleUnion e es
 type e <<| es = MemberH ExtensibleUnion e es
+
+infix 3 <|
+infix 3 <<|
+
+type ForallHFunctor = Forall HFunctor

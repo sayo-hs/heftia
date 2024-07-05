@@ -2,6 +2,8 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
+{-# LANGUAGE TypeFamilyDependencies #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -26,10 +28,13 @@ import Data.Effect (LNop, LiftIns (LiftIns), Nop, SigClass, unliftIns)
 import Data.Effect.HFunctor (HFunctor, caseH, (:+:) (Inl, Inr))
 import Data.Free.Sum (type (+))
 import Data.Kind (Constraint)
-import Data.Singletons (SingI, sing)
-import Data.Type.Bool (If, type (||))
-import Data.Type.Equality ((:~:) (Refl))
-import GHC.TypeLits (ErrorMessage (ShowType, Text, (:$$:), (:<>:)), TypeError)
+import Data.Singletons (SingI, sing, Sing)
+import Data.Singletons.TH (singletons)
+import Data.Type.Bool (If, type (||), Not, type (&&))
+import Data.Type.Equality ((:~:) (Refl), type (==))
+import GHC.TypeLits (ErrorMessage (ShowType, Text, (:$$:), (:<>:)), TypeError, Nat)
+import Data.Constraint (Dict (Dict))
+import qualified GHC.TypeNats as N
 
 {- |
 A type class representing a general open union for higher-order effects, independent of the internal
@@ -157,6 +162,11 @@ class Union (u :: [SigClass] -> SigClass) where
         (inject0 |+: injectUnder |+: injectUnder2 |+: injectUnder3 |+: exhaust)
             |+: weaken4
 
+$(singletons [d|
+    data Found = FoundIn FoundLevel | NotFound
+    data FoundLevel = CurrentLevel | LowerLevel
+    |])
+
 type HFunctorUnion u = HFunctorUnion_ (ForallHFunctor u) u
 
 -- A hack to avoid the "Quantified predicate must have a class or type variable head" error.
@@ -172,26 +182,58 @@ class
     where
     type ForallHFunctor u :: [SigClass] -> Constraint
 
-class MemberRec (u :: [SigClass] -> SigClass) e es where
-    injectRec :: e f ~> u es f
-    projectRec :: u es f a -> Maybe (e f a)
+class MemberRec u e es => MemberRec' u e es where
+    member ::
+        ( forall lvl foundInHeadUnion.
+            ( SearchMemberRec es u e es ('FoundIn lvl) foundInHeadUnion
+            , SingI lvl
+            , HasMembership u e es
+            , SingI foundInHeadUnion
+            ) => r
+        ) -> r
 
 instance
     ( SearchMemberRec es u e es found fihu
     , MemberFound e es found
     , SingI fihu
+    , found ~ 'FoundIn lvl
+    , SingI lvl
+    , HasMembership u e es
     ) =>
+    MemberRec' u e es where
+    member x = withFound @e @es @found x
+    {-# INLINE member #-}
+
+{-
+type family DetermineLevel u e es :: FoundLevel where
+    DetermineLevel u e (e ': _) = 'CurrentLevel
+    DetermineLevel u e (u es ': r) = If (IsMemberRec u e es) 'LowerLevel (DetermineLevel u e r)
+    DetermineLevel u e (_ ': es) = DetermineLevel u e es
+
+type family IsMemberRec u e es :: Bool where
+    IsMemberRec u e (e ': _) = 'True
+    IsMemberRec u e (u es ': r) = IsMemberRec u e es || IsMemberRec u e r
+    IsMemberRec u e (_ ': es) = IsMemberRec u e es
+    IsMemberRec _ _ _ = 'False
+-}
+
+class MemberRec (u :: [SigClass] -> SigClass) e es where
+    injectRec :: e f ~> u es f
+    projectRec :: u es f a -> Maybe (e f a)
+
+instance
+    (SearchMemberRec es u e es found fihu, MemberFound e es found, SingI fihu) =>
     MemberRec u e es
     where
-    injectRec = withFound @e @es @found $ injectSMR @es Refl sing
-    projectRec = withFound @e @es @found $ projectSMR @es Refl sing
+    injectRec = withFound @e @es @found $ injectSMR @es Refl sing sing
+    projectRec = withFound @e @es @found $ projectSMR @es Refl sing sing
     {-# INLINE injectRec #-}
     {-# INLINE projectRec #-}
 
 class MemberFound e es found where
-    withFound :: (found ~ 'True => a) -> a
+    withFound :: (forall lvl. (found ~ 'FoundIn lvl, SingI lvl) => a) -> a
 
-instance MemberFound e es 'True where
+instance SingI lvl => MemberFound e es ('FoundIn lvl) where
     withFound a = a
     {-# INLINE withFound #-}
 
@@ -203,7 +245,7 @@ instance
             ':$$: 'Text " was not found in the union:"
             ':$$: 'Text "    " ':<>: 'ShowType es
         ) =>
-    MemberFound e es 'False
+    MemberFound e es 'NotFound
     where
     withFound _ = error "unreachable"
 
@@ -216,27 +258,29 @@ class
         (u :: [SigClass] -> SigClass)
         (e :: SigClass)
         (es :: [SigClass])
-        (found :: Bool)
-        (foundInHeadUnion :: Bool)
+        (found :: Found)
+        (foundInHeadUnion :: Found)
         | rest e -> found foundInHeadUnion
     where
-    injectSMR_ :: found :~: 'True -> SBool foundInHeadUnion -> e f ~> u es f
-    projectSMR_ :: found :~: 'True -> SBool foundInHeadUnion -> u es f a -> Maybe (e f a)
+    injectSMR_ :: found :~: 'FoundIn lvl -> SFound ('FoundIn lvl) -> SFound foundInHeadUnion -> e f ~> u es f
+    projectSMR_ :: found :~: 'FoundIn lvl -> SFound ('FoundIn lvl) -> SFound foundInHeadUnion -> u es f a -> Maybe (e f a)
 
 injectSMR ::
-    forall rest u e es found foundInHeadUnion f.
+    forall rest u e es found lvl foundInHeadUnion f.
     SearchMemberRec rest u e es found foundInHeadUnion =>
-    found :~: 'True ->
-    SBool foundInHeadUnion ->
+    found :~: 'FoundIn lvl ->
+    SFound ('FoundIn lvl) ->
+    SFound foundInHeadUnion ->
     e f ~> u es f
 injectSMR = injectSMR_ @(NextSearchMemberRecAction rest u e) @rest
 {-# INLINE injectSMR #-}
 
 projectSMR ::
-    forall rest u e es found foundInHeadUnion f a.
+    forall rest u e es found lvl foundInHeadUnion f a.
     SearchMemberRec rest u e es found foundInHeadUnion =>
-    found :~: 'True ->
-    SBool foundInHeadUnion ->
+    found :~: 'FoundIn lvl ->
+    SFound ('FoundIn lvl) ->
+    SFound foundInHeadUnion ->
     u es f a ->
     Maybe (e f a)
 projectSMR = projectSMR_ @(NextSearchMemberRecAction rest u e) @rest
@@ -251,51 +295,60 @@ type family NextSearchMemberRecAction rest (u :: [SigClass] -> SigClass) e where
 
 instance
     (HasMembership u e es, Union u) =>
-    SearchMemberRec_ 'SmrStop (e ': _tail) u e es 'True 'False
+    SearchMemberRec_ 'SmrStop (e ': _tail) u e es ('FoundIn 'CurrentLevel) 'NotFound
     where
-    injectSMR_ _ _ = inject
-    projectSMR_ _ _ = project
+    injectSMR_ _ _ _ = inject
+    projectSMR_ _ _ _ = project
     {-# INLINE injectSMR_ #-}
     {-# INLINE projectSMR_ #-}
 
+type family IsFound found where
+    IsFound ('FoundIn _) = 'True
+    IsFound 'NotFound = 'False
+
 instance
     ( SearchMemberRec es' u e es' foundInHead fihuHead
-    , If foundInHead (HasMembership u (u es') es) (() :: Constraint)
-    , SearchMemberRec
-        (If foundInHead '[] tail)
-        u
-        e
-        es
-        foundInTail
-        fihuTail
-    , found ~ (foundInHead || foundInTail)
+    , isFoundInHead ~ IsFound foundInHead
+    , If isFoundInHead (HasMembership u (u es') es) (() :: Constraint)
+    , SearchMemberRec (If isFoundInHead '[] tail) u e es foundInTail fihuTail
+    , found ~ If isFoundInHead ('FoundIn 'LowerLevel) foundInTail
     , Union u
     , SingI fihuHead
     , SingI fihuTail
     ) =>
     SearchMemberRec_ 'SmrDown (u es' ': tail) u e es found foundInHead
     where
-    injectSMR_ Refl = \case
-        STrue -> inject . injectSMR @es' @u @_ @es' Refl sing
-        SFalse -> injectSMR @tail Refl sing
+    injectSMR_ Refl found = \case
+        SFoundIn lvl -> inject . injectSMR @es' @u @_ @es' Refl (SFoundIn lvl) sing
+        SNotFound -> injectSMR @tail Refl found sing
 
-    projectSMR_ Refl = \case
-        STrue -> projectSMR @es' @u @_ @es' Refl sing <=< project
-        SFalse -> projectSMR @tail Refl sing
+    projectSMR_ Refl found = \case
+        SFoundIn lvl -> projectSMR @es' @u @_ @es' Refl (SFoundIn lvl) sing <=< project
+        SNotFound -> projectSMR @tail Refl found sing
 
     {-# INLINE injectSMR_ #-}
     {-# INLINE projectSMR_ #-}
 
 instance
-    (SearchMemberRec rest u e es found fihu, SingI fihu) =>
-    SearchMemberRec_ 'SmrRight (_e ': rest) u e es found 'False
+    ( SearchMemberRec rest u e rest found fihu
+    , HasMembership u e (_e ': rest)
+    , SingI fihu
+    , Union u
+    ) =>
+    SearchMemberRec_ 'SmrRight (_e ': rest) u e (_e ': rest) found 'NotFound
     where
-    injectSMR_ refl _ = injectSMR @rest refl sing
-    projectSMR_ refl _ = projectSMR @rest refl sing
+    injectSMR_ Refl (SFoundIn lvl) _ = case lvl of
+        SCurrentLevel -> inject
+        SLowerLevel -> weaken . injectSMR @rest Refl sing sing
+
+    projectSMR_ Refl (SFoundIn lvl) _ = case lvl of
+        SCurrentLevel -> project
+        SLowerLevel -> const Nothing |+: projectSMR @rest Refl sing sing
+
     {-# INLINE injectSMR_ #-}
     {-# INLINE projectSMR_ #-}
 
-instance SearchMemberRec_ act '[] u e es 'False 'False where
+instance SearchMemberRec_ act '[] u e es 'NotFound 'NotFound where
     injectSMR_ = \case {}
     projectSMR_ = \case {}
     {-# INLINE injectSMR_ #-}
@@ -393,3 +446,10 @@ instance LiftInsIfSingle e (LiftIns e) where
     unliftInsIfSingle = unliftIns
     {-# INLINE liftInsIfSingle #-}
     {-# INLINE unliftInsIfSingle #-}
+
+type family TypeIndex (xs :: [k]) (x :: k) :: Nat where
+    TypeIndex (x ': xs) x = 0
+    TypeIndex (y ': xs) x = 1 N.+ TypeIndex xs x
+    TypeIndex '[] x =
+        TypeError
+            ('Text "The effect class " ':<>: 'ShowType x ':<>: 'Text " was not found in the list.")

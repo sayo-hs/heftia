@@ -58,6 +58,7 @@ library
     exposed-modules:
         Control.Effect.Handler.Heftia.Reader
         Control.Effect.Handler.Heftia.Writer
+        Control.Effect.Handler.Heftia.Cont
         Control.Effect.Handler.Heftia.State
         Control.Effect.Handler.Heftia.Except
         Control.Effect.Handler.Heftia.Provider
@@ -77,6 +78,7 @@ library
         transformers                  ^>= 0.5.6,
         extensible                    ^>= 0.9,
         unliftio,
+        free
 
     hs-source-dirs:   src
 
@@ -148,6 +150,18 @@ executable Continuation
         heftia,
         heftia-effects,
         base,
+
+executable Continuation2
+    import: common-base
+
+    main-is: Main.hs
+    hs-source-dirs: Example/Continuation2
+    build-depends:
+        data-effects,
+        heftia,
+        heftia-effects,
+        base,
+        extra
 
 executable Writer
     import: common-base

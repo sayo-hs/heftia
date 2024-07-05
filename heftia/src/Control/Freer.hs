@@ -107,3 +107,7 @@ class InjectIns e (e' :: InsClass) where
 overFreer :: (fr e a -> fr' e' b) -> ViaFreer fr e a -> ViaFreer fr' e' b
 overFreer f = ViaFreer . f . viaFreer
 {-# INLINE overFreer #-}
+
+reencodeFreer :: (Freer c fr, Freer c' fr', c (fr' f)) => fr f ~> fr' f
+reencodeFreer = interpretFreer liftIns
+{-# INLINE reencodeFreer #-}

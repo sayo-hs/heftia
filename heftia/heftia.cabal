@@ -90,6 +90,7 @@ library
         extensible ^>= 0.9,
         membership == 0.0.1,
         singletons-base,
+        singletons-th,
 
     hs-source-dirs:   src
     ghc-options:      -Wall
