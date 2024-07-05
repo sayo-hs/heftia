@@ -25,7 +25,6 @@ import Data.Function ((&))
 import Control.Monad (when)
 import Control.Effect.Handler.Heftia.Reader (interpretReader)
 import Data.Effect.Reader (Local, Ask, LAsk)
-import Data.Hefty.Union (member)
 
 data Log a where
     Logging :: Text -> Log ()
@@ -67,7 +66,7 @@ limitLogChunk
     ::  forall eh ef. (LogChunk <<| eh, Log <| {- LState Int ': -} ef) =>
         Int -> LogChunk ('[] :!! ef) ~> LogChunk ('[] :!! ef)
 limitLogChunk n (LogChunk chunkName a) =
-    member @ExtensibleUnion @LLog @ef $
+    -- member @ExtensibleUnion @LLog @ef $
         LogChunk chunkName . evalState @Int 0 $
             raise a & interposeRec \(Logging msg) -> do
                 count <- get
@@ -94,12 +93,9 @@ saveLogChunk
     :: forall eh ef. (LogChunk <<| eh, Log <| ef, FileSystem <| ef, Forall HFunctor eh) =>
         eh :!! ef ~> eh :!! ef
 saveLogChunk a =
-    {-
-        interpretReader @FilePath "./log/" $
-            raiseH (raise a) & interposeRecH @LogChunk \(LogChunk chunkName a) -> do
-                undefined
-    -}
-    undefined
+    interpretReader @FilePath "./log/" $
+        raiseH (raise a) & interposeRecH @LogChunk \(LogChunk chunkName a) -> do
+            undefined
 
 main :: IO ()
 main = undefined
