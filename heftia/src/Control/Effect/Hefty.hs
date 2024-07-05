@@ -42,7 +42,7 @@ import Data.Hefty.Union (
     injectRec,
     projectRec,
     weaken2,
-    (|+), MemberRec'
+    (|+), Member
  )
 import Data.Kind (Type)
 
@@ -79,7 +79,7 @@ instance MemberRec u e ehs => InjectSig e (EffUnion u ehs efs) where
     injectSig = EffUnion . L1 . injectRec
     {-# INLINE injectSig #-}
 
-type MemberH u e ehs = MemberRec' u e ehs
+type MemberH u e ehs = Member u e ehs
 
 type MemberF u e efs = MemberH u (LiftIns e) efs
 type HasMembershipF u e efs = HasMembership u (LiftIns e) efs
