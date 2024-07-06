@@ -12,7 +12,7 @@ import Data.Kind (Type)
 import Data.Effect.TH (makeEffectF, makeEffectH)
 import Data.Hefty.Extensible (type (<|), type (<<|), ForallHFunctor)
 import Control.Effect.ExtensibleChurch (runEff, type (:!!))
-import Control.Effect (type (~>), sendIns)
+import Control.Effect (type (~>), sendIns, type (<:), type (<<:))
 import Control.Effect.Hefty (interpretRec, interposeRec, interpretRecH, interposeRec, raise, raiseH, interposeRecH)
 import qualified Data.Text.IO as T
 import Data.Time (UTCTime, getCurrentTime)
@@ -108,7 +108,7 @@ saveLogChunk =
         )
     >>> interpretReader @FilePath "./log/"
 
-logExample :: (LogChunk <<| eh, Log <| ef, IO <| ef) => (eh :!! ef) ()
+logExample :: (LogChunk <<: m, Log <: m, IO <: m, Monad m) => m ()
 logExample =
     logChunk "scope1" do
         logging "foo"
