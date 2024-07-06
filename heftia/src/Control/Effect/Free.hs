@@ -18,7 +18,7 @@ module Control.Effect.Free where
 
 import Control.Effect (type (~>))
 
-import Control.Effect.Hefty (Eff, EffUnion (EffUnion), MemberF, caseHF)
+import Control.Effect.Hefty (Eff, EffUnion (EffUnion), Member, caseHF)
 import Control.Freer (Freer, InjectIns, ViaFreer (ViaFreer), injectIns, transformFreer, viaFreer)
 import Control.Hefty (Hefty (Hefty), unHefty)
 import Data.Effect (LiftIns (LiftIns), Nop, SigClass)
@@ -40,7 +40,7 @@ type EffF u fr es = ViaFreer fr (EffUnionF u es)
 -- | A common wrapper data type for representing first-order extensible effect union.
 newtype EffUnionF (u :: [SigClass] -> SigClass) es a = EffUnionF {unEffUnionF :: u es Nop a}
 
-instance MemberF u e es => InjectIns e (EffUnionF u es) where
+instance Member u e es => InjectIns e (EffUnionF u es) where
     injectIns = EffUnionF . injectRec . LiftIns
     {-# INLINE injectIns #-}
 

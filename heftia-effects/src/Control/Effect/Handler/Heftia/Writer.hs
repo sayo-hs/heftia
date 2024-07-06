@@ -17,7 +17,7 @@ See [README.md](https://github.com/sayo-hs/heftia/blob/master/README.md).
 module Control.Effect.Handler.Heftia.Writer where
 
 import Control.Effect (type (~>))
-import Control.Effect.Hefty (Eff, Elab, MemberF, interposeT, interpretK, interpretT, rewrite)
+import Control.Effect.Hefty (Eff, Elab, Member, interposeT, interpretK, interpretT, rewrite)
 import Control.Monad.Freer (MonadFreer)
 import Control.Monad.Trans.Writer.CPS (WriterT, runWriterT)
 import Control.Monad.Trans.Writer.CPS qualified as T
@@ -32,7 +32,7 @@ elaborateWriter ::
     ( Monoid w
     , MonadFreer c fr
     , Union u
-    , MemberF u (Tell w) ef
+    , Member u (Tell w) ef
     , HFunctor (u '[])
     , c (WriterT w (Eff u fr '[] ef))
     , c (Eff u fr '[] ef)
@@ -47,7 +47,7 @@ elaborateWriterTransactional ::
     ( Monoid w
     , MonadFreer c fr
     , Union u
-    , MemberF u (Tell w) ef
+    , Member u (Tell w) ef
     , c (WriterT w (Eff u fr '[] ef))
     , c (Eff u fr '[] ef)
     ) =>
@@ -64,7 +64,7 @@ listenT ::
     ( Monoid w
     , MonadFreer c fr
     , Union u
-    , MemberF u (Tell w) es
+    , Member u (Tell w) es
     , c (WriterT w (Eff u fr '[] es))
     , c (Eff u fr '[] es)
     ) =>
@@ -81,7 +81,7 @@ confiscateT ::
     ( Monoid w
     , MonadFreer c fr
     , Union u
-    , MemberF u (Tell w) es
+    , Member u (Tell w) es
     , c (WriterT w (Eff u fr '[] es))
     , c (Eff u fr '[] es)
     ) =>

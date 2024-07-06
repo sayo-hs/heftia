@@ -19,7 +19,7 @@ import Control.Effect (type (~>))
 import Control.Effect.Hefty (
     Eff,
     Elab,
-    MemberF,
+    Member,
     interposeRec,
     interpretRec,
     interpretRecH,
@@ -35,7 +35,7 @@ interpretReader ::
     ( Freer c fr
     , HFunctorUnion u
     , ForallHFunctor u rh
-    , MemberF u (Ask r) (LAsk r ': rf)
+    , Member u (Ask r) (LAsk r ': rf)
     , Functor (Eff u fr rh (LAsk r ': rf))
     , Applicative (Eff u fr rh rf)
     ) =>
@@ -47,7 +47,7 @@ interpretReader r = interpretRecH elaborateLocal >>> interpretAsk r
 -- | Elaborate the t'Local' effect.
 elaborateLocal ::
     forall r eh ef fr u c.
-    (MemberF u (Ask r) ef, Freer c fr, Union u, HFunctor (u eh), Functor (Eff u fr eh ef)) =>
+    (Member u (Ask r) ef, Freer c fr, Union u, HFunctor (u eh), Functor (Eff u fr eh ef)) =>
     Elab (Local r) (Eff u fr eh ef)
 elaborateLocal (Local f a) = a & interposeRec @(Ask r) \Ask -> f <$> ask
 

@@ -1,5 +1,6 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -26,6 +27,7 @@ import Control.Monad.IO.Class (MonadIO)
 import Data.Effect (InsClass)
 import Data.Functor.Coyoneda (Coyoneda, hoistCoyoneda, liftCoyoneda, lowerCoyoneda)
 import Data.Kind (Type)
+import Control.Effect.Key (SendInsBy, sendInsBy)
 
 -- | A type class to abstract away the encoding details of the Freer carrier.
 class (forall e. c (f e)) => Freer c f | f -> c where
@@ -103,6 +105,13 @@ instance (Freer c fr, InjectIns e e') => SendIns e (ViaFreer fr e') where
 
 class InjectIns e (e' :: InsClass) where
     injectIns :: e ~> e'
+
+instance (Freer c fr, InjectInsBy key e' e) => SendInsBy key (ViaFreer fr e') e where
+    sendInsBy = ViaFreer . liftIns . injectInsBy @key
+    {-# INLINE sendInsBy #-}
+
+class InjectInsBy key (e' :: InsClass) e | key e' -> e where
+    injectInsBy :: e ~> e'
 
 overFreer :: (fr e a -> fr' e' b) -> ViaFreer fr e a -> ViaFreer fr' e' b
 overFreer f = ViaFreer . f . viaFreer

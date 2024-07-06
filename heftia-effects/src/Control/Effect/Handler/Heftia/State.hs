@@ -16,7 +16,7 @@ module Control.Effect.Handler.Heftia.State where
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
 import Control.Effect.Handler.Heftia.Reader (interpretAsk)
-import Control.Effect.Hefty (Eff, MemberF, interpose, interpretK, interpretT, raiseUnder)
+import Control.Effect.Hefty (Eff, Member, interpose, interpretK, interpretT, raiseUnder)
 import Control.Monad.Freer (MonadFreer)
 import Control.Monad.State (StateT)
 import Control.Monad.Trans.State (runStateT)
@@ -73,7 +73,7 @@ interpretStateK ::
     ( MonadFreer c fr
     , Union u
     , HFunctor (u '[])
-    , MemberF u (Ask s) (LAsk s ': r)
+    , Member u (Ask s) (LAsk s ': r)
     , c (Eff u fr '[] (LAsk s ': r))
     , Applicative (Eff u fr '[] r)
     ) =>

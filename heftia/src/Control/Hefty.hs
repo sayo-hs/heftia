@@ -1,5 +1,6 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -9,12 +10,13 @@ module Control.Hefty where
 
 import Control.Applicative (Alternative)
 import Control.Effect (SendIns (..), SendSig (..), type (~>))
-import Control.Freer (Freer (liftIns), InjectIns, injectIns)
+import Control.Freer (Freer (liftIns), InjectIns, injectIns, InjectInsBy, injectInsBy)
 import Control.Monad (MonadPlus)
 import Control.Monad.Base (MonadBase)
 import Control.Monad.IO.Class (MonadIO)
 import Data.Effect (InsClass, SigClass)
 import Data.Kind (Type)
+import Control.Effect.Key (SendInsBy, sendInsBy, SendSigBy, sendSigBy)
 
 newtype
     Hefty
@@ -56,3 +58,14 @@ instance (Freer c fr, InjectSig e e') => SendSig e (Hefty fr e') where
 
 class InjectSig e (e' :: SigClass) where
     injectSig :: e f ~> e' f
+
+instance (Freer c fr, InjectInsBy key (e' (Hefty fr e')) e) => SendInsBy key (Hefty fr e') e where
+    sendInsBy = Hefty . liftIns . injectInsBy @key
+    {-# INLINE sendInsBy #-}
+
+instance (Freer c fr, InjectSigBy key e' e) => SendSigBy key (Hefty fr e') e where
+    sendSigBy = Hefty . liftIns . injectSigBy @key
+    {-# INLINE sendSigBy #-}
+
+class InjectSigBy key (e' :: SigClass) e | key e' -> e where
+    injectSigBy :: e f ~> e' f

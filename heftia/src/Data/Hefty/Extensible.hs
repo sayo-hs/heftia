@@ -21,7 +21,7 @@ module Data.Hefty.Extensible (
 )
 where
 
-import Control.Effect.Hefty (MemberF, MemberH)
+import Control.Effect.Hefty (Member, MemberH)
 import Data.Effect (SigClass)
 import Data.Effect.HFunctor (HFunctor, hfmap)
 import Data.Extensible (Forall, Match (Match), htabulateFor, match)
@@ -46,13 +46,14 @@ import Type.Membership.Internal (
     Elaborate,
     Elaborated (Expecting),
     FindType,
-    Member (membership),
+    membership,
     Membership,
     leadership,
     nextMembership,
  )
 import Unsafe.Coerce (unsafeCoerce)
 import qualified Data.Hefty.Union as Union
+import qualified Control.Effect.Hefty as H
 
 {- |
 An implementation of an open union for higher-order effects using
@@ -109,8 +110,11 @@ findFirstMembership = unsafeMkMembership @(ClassIndex xs x) Proxy
 instance HFunctorUnion_ (Forall HFunctor) ExtensibleUnion where
     type ForallHFunctor _ = Forall HFunctor
 
-type e <| es = MemberF ExtensibleUnion e es
+type e <| es = Member ExtensibleUnion e es
 type e <<| es = MemberH ExtensibleUnion e es
+
+type MemberBy key e efs = H.MemberBy ExtensibleUnion key e efs
+type MemberHBy key e ehs = H.MemberHBy ExtensibleUnion key e ehs
 
 infix 3 <|
 infix 3 <<|

@@ -17,8 +17,8 @@ on [@classy-effects@](https://hackage.haskell.org/package/classy-effects).
 module Control.Effect.Hefty where
 
 import Control.Effect (type (~>))
-import Control.Freer (Freer, InjectIns, injectIns, interpretFreer, liftIns, transformFreer)
-import Control.Hefty (Hefty (Hefty), InjectSig, injectSig, overHefty, unHefty)
+import Control.Freer (Freer, InjectIns, injectIns, interpretFreer, liftIns, transformFreer, InjectInsBy, injectInsBy)
+import Control.Hefty (Hefty (Hefty), InjectSig, injectSig, overHefty, unHefty, InjectSigBy, injectSigBy)
 import Control.Monad.Cont (Cont, ContT (ContT), lift, runContT)
 import Control.Monad.Freer (MonadFreer, interpretFreerK)
 import Control.Monad.Identity (Identity (Identity))
@@ -42,9 +42,11 @@ import Data.Hefty.Union (
     injectRec,
     projectRec,
     weaken2,
-    (|+), HasMembershipRec
+    (|+), HasMembershipRec, Lookup
  )
 import Data.Kind (Type)
+import Data.Maybe.Singletons (FromJust)
+import Data.Effect.Key (type (#>), type (##>), unKey, unKeyH, Key (Key))
 
 {- |
 A common type for representing first-order and higher-order extensible effectful programs that can
@@ -81,7 +83,7 @@ instance MemberRec u e ehs => InjectSig e (EffUnion u ehs efs) where
 
 type MemberH u e ehs = HasMembershipRec u e ehs
 
-type MemberF u e efs = MemberH u (LiftIns e) efs
+type Member u e efs = MemberH u (LiftIns e) efs
 type HasMembershipF u e efs = HasMembership u (LiftIns e) efs
 
 infixr 4 $
@@ -135,6 +137,7 @@ injectF = Hefty . liftIns . EffUnion . R1
 
     todo patterns:
         - *{FH,FH_} in interpret-family ( (4x2+1) + 2 = 11 functions )
+        - *By in interpose/translate/rewrite ( 7 + 3x2 = 13 functions )
 -}
 
 -- | Using the provided interpretation function, interpret first-order effects.
@@ -349,7 +352,7 @@ reinterpretRecH i = interpretRecH i . raiseUnderH
 
 interpose ::
     forall e efs fr u c.
-    (Freer c fr, Union u, MemberF u e efs) =>
+    (Freer c fr, Union u, Member u e efs) =>
     e ~> Eff u fr '[] efs ->
     Eff u fr '[] efs ~> Eff u fr '[] efs
 interpose f =
@@ -360,7 +363,7 @@ interpose f =
 
 interposeK ::
     forall e efs r a fr u c.
-    (MonadFreer c fr, Union u, MemberF u e efs, c (Eff u fr '[] efs)) =>
+    (MonadFreer c fr, Union u, Member u e efs, c (Eff u fr '[] efs)) =>
     (a -> Eff u fr '[] efs r) ->
     (forall x. (x -> Eff u fr '[] efs r) -> e x -> Eff u fr '[] efs r) ->
     Eff u fr '[] efs a ->
@@ -370,7 +373,7 @@ interposeK = toInterpretKFromContT interposeContT
 
 interposeContT ::
     forall e efs r fr u c.
-    (MonadFreer c fr, Union u, MemberF u e efs, c (Eff u fr '[] efs)) =>
+    (MonadFreer c fr, Union u, Member u e efs, c (Eff u fr '[] efs)) =>
     (e ~> ContT r (Eff u fr '[] efs)) ->
     Eff u fr '[] efs ~> ContT r (Eff u fr '[] efs)
 interposeContT f =
@@ -385,7 +388,7 @@ interposeT ::
     ( MonadFreer c fr
     , Union u
     , MonadTrans t
-    , MemberF u e efs
+    , Member u e efs
     , c (Eff u fr '[] efs)
     , c (t (Eff u fr '[] efs))
     ) =>
@@ -400,7 +403,7 @@ interposeT f =
 
 interposeRec ::
     forall e ehs efs fr u c.
-    (Freer c fr, Union u, HFunctor (u ehs), MemberF u e efs) =>
+    (Freer c fr, Union u, HFunctor (u ehs), Member u e efs) =>
     e ~> Eff u fr ehs efs ->
     Eff u fr ehs efs ~> Eff u fr ehs efs
 interposeRec f =
@@ -716,7 +719,7 @@ transformFH fh ff =
 
 translate ::
     forall e2 e1 es ehs fr u c.
-    (Freer c fr, Union u, MemberF u e2 es, HFunctor (u ehs), HeadIns e1) =>
+    (Freer c fr, Union u, Member u e2 es, HFunctor (u ehs), HeadIns e1) =>
     (UnliftIfSingle e1 ~> e2) ->
     Eff u fr ehs (e1 ': es) ~> Eff u fr ehs es
 translate f =
@@ -737,7 +740,7 @@ translateFH ::
     ( Freer c fr
     , Union u
     , MemberH u e2h ehs
-    , MemberF u e2f efs
+    , Member u e2f efs
     , HFunctor (u (e1h ': ehs))
     , HeadIns e1f
     ) =>
@@ -752,7 +755,7 @@ translateFH fh ff =
 
 rewrite ::
     forall e efs ehs fr u c.
-    (Freer c fr, Union u, HFunctor (u ehs), MemberF u e efs) =>
+    (Freer c fr, Union u, HFunctor (u ehs), Member u e efs) =>
     (e ~> e) ->
     Eff u fr ehs efs ~> Eff u fr ehs efs
 rewrite f =
@@ -776,7 +779,7 @@ rewriteH f =
 
 rewriteFH ::
     forall eh ef efs ehs fr u c.
-    (Freer c fr, Union u, HFunctor (u ehs), MemberH u eh ehs, MemberF u ef efs) =>
+    (Freer c fr, Union u, HFunctor (u ehs), MemberH u eh ehs, Member u ef efs) =>
     (eh (Eff u fr ehs efs) ~> eh (Eff u fr ehs efs)) ->
     (ef ~> ef) ->
     Eff u fr ehs efs ~> Eff u fr ehs efs
@@ -950,3 +953,35 @@ untagEffH ::
     Eff u fr (e ## tag ': r) efs ~> Eff u fr (e ': r) efs
 untagEffH = transformH unTagH
 {-# INLINE untagEffH #-}
+
+
+-- keyed effects
+
+instance
+    (MemberRec u (LiftIns (key #> e)) efs, LiftIns (key #> e) ~ FromJust (Lookup efs u key)) =>
+    InjectInsBy key (EffUnion u ehs efs f) e where
+    injectInsBy = EffUnion . R1 . injectRec . LiftIns . Key @key
+    {-# INLINE injectInsBy #-}
+
+instance
+    (MemberRec u e ehs, e ~ FromJust (Lookup ehs u key)) =>
+    InjectSigBy key (EffUnion u ehs efs) e where
+    injectSigBy = EffUnion . L1 . injectRec
+    {-# INLINE injectSigBy #-}
+
+type MemberBy u key e ehs = (Member u (key #> e) ehs, Lookup ehs u key ~ 'Just (LiftIns (key #> e)))
+type MemberHBy u key e ehs = (MemberH u (key ##> e) ehs, Lookup ehs u key ~ 'Just (key ##> e))
+
+unkeyEff ::
+    forall key e r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs (LiftIns (key #> e) ': r) ~> Eff u fr ehs (LiftIns e ': r)
+unkeyEff = transform unKey
+{-# INLINE unkeyEff #-}
+
+unkeyEffH ::
+    forall tag e r efs fr u c.
+    (Freer c fr, Union u, HFunctor (u (tag ##> e ': r))) =>
+    Eff u fr (tag ##> e ': r) efs ~> Eff u fr (e ': r) efs
+unkeyEffH = transformH unKeyH
+{-# INLINE unkeyEffH #-}

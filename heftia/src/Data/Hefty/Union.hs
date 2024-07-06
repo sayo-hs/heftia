@@ -33,6 +33,7 @@ import Data.Type.Bool (If)
 import Data.Type.Equality ((:~:) (Refl))
 import GHC.TypeLits (ErrorMessage (ShowType, Text, (:$$:), (:<>:)), TypeError, Nat)
 import qualified GHC.TypeNats as N
+import Data.Effect.Key (type (#>), type (##>))
 
 {- |
 A type class representing a general open union for higher-order effects, independent of the internal
@@ -496,3 +497,16 @@ type family ClassIndex (es :: [SigClass]) (e :: SigClass) :: Nat where
     ClassIndex '[] e =
         TypeError
             ('Text "The effect class ‘" ':<>: 'ShowType e ':<>: 'Text "’ was not found in the list.")
+
+
+-- keyed effects
+
+type family Lookup es (u :: [SigClass] -> SigClass) (key :: k) :: Maybe SigClass where
+    Lookup (key ##> e ': _) u key = 'Just (key ##> e)
+    Lookup (LiftIns (key #> e) ': _) u key = 'Just (LiftIns (key #> e))
+    Lookup (u es ': es') u key = Lookup es u key `OrElse` Lookup es' u key
+    Lookup (_ ': es) u key = Lookup es u key
+
+type family OrElse (a :: Maybe k) (b :: Maybe k) :: Maybe k where
+    OrElse ('Just a) _ = 'Just a
+    OrElse 'Nothing a = a

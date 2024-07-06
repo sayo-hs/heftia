@@ -18,7 +18,7 @@ import Control.Effect (type (~>))
 import Control.Effect.Hefty (
     Eff,
     Elab,
-    MemberF,
+    Member,
     interposeK,
     interposeT,
     interpretK,
@@ -33,7 +33,7 @@ import Data.Hefty.Union (Union)
 -- | Elaborate the t'Catch' effect using the 'ExceptT' monad transformer.
 elaborateCatch ::
     forall e ef fr u c.
-    ( MemberF u (Throw e) ef
+    ( Member u (Throw e) ef
     , MonadFreer c fr
     , Union u
     , c (Eff u fr '[] ef)
@@ -49,7 +49,7 @@ elaborateCatch (Catch action hdl) = do
 -- | Elaborate the 'Catch' effect using a delimited continuation.
 elaborateCatchK ::
     forall e ef fr u c.
-    (MemberF u (Throw e) ef, MonadFreer c fr, Union u, c (Eff u fr '[] ef)) =>
+    (Member u (Throw e) ef, MonadFreer c fr, Union u, c (Eff u fr '[] ef)) =>
     Elab (Catch e) (Eff u fr '[] ef)
 elaborateCatchK (Catch action hdl) =
     action & interposeK pure \_ (Throw e) -> hdl e
