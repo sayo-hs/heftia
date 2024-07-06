@@ -505,14 +505,15 @@ type family ClassIndex (es :: [SigClass]) (e :: SigClass) :: Nat where
 
 -- keyed effects
 
-type MemberBy u key e ehs = (Member u (key #> e) ehs, Lookup ehs u key ~ 'Just (LiftIns (key #> e)))
-type MemberHBy u key e ehs = (MemberH u (key ##> e) ehs, Lookup ehs u key ~ 'Just (key ##> e))
+type MemberBy u key e efs = (Member u (key #> e) efs, Lookup key efs ~ 'Just (LiftIns (key #> e)))
+type MemberHBy u key e ehs = (MemberH u (key ##> e) ehs, Lookup key ehs ~ 'Just (key ##> e))
 
-type family Lookup es (u :: [SigClass] -> SigClass) (key :: k) :: Maybe SigClass where
-    Lookup (key ##> e ': _) u key = 'Just (key ##> e)
-    Lookup (LiftIns (key #> e) ': _) u key = 'Just (LiftIns (key #> e))
-    Lookup (u es ': es') u key = Lookup es u key `OrElse` Lookup es' u key
-    Lookup (_ ': es) u key = Lookup es u key
+type family Lookup (key :: k) es :: Maybe SigClass where
+    Lookup key (key ##> e ': _) = 'Just (key ##> e)
+    Lookup key (LiftIns (key #> e) ': _) = 'Just (LiftIns (key #> e))
+    Lookup key (u es ': es') = Lookup key es `OrElse` Lookup key es'
+    Lookup key (_ ': es) = Lookup key es
+    Lookup key '[] = 'Nothing
 
 type family OrElse (a :: Maybe k) (b :: Maybe k) :: Maybe k where
     OrElse ('Just a) _ = 'Just a

@@ -955,13 +955,13 @@ untagEffH = transformH unTagH
 -- keyed effects
 
 instance
-    (MemberRec u (LiftIns (key #> e)) efs, LiftIns (key #> e) ~ FromJust (Lookup efs u key)) =>
+    (MemberRec u (LiftIns (key #> e)) efs, LiftIns (key #> e) ~ FromJust (Lookup key efs)) =>
     InjectInsBy key e (EffUnion u ehs efs f) where
     injectInsBy = EffUnion . R1 . injectRec . LiftIns . Key @key
     {-# INLINE injectInsBy #-}
 
 instance
-    (MemberRec u e ehs, e ~ FromJust (Lookup ehs u key)) =>
+    (MemberRec u e ehs, e ~ FromJust (Lookup key ehs)) =>
     InjectSigBy key e (EffUnion u ehs efs) where
     injectSigBy = EffUnion . L1 . injectRec
     {-# INLINE injectSigBy #-}
