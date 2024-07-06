@@ -17,6 +17,12 @@ allowing for a straightforward treatment of higher-order effects.
 This library offers Heftia monads and Freer monads, encoded into data
 types in several ways to enable tuning in pursuit of high performance.
 
+## Status
+
+Please note that this library is currently in the experimental stage. There may be significant changes and potential bugs.
+
+## Example
+
 Compared to existing Effect System libraries in Haskell that handle higher-order effects, this
 library's approach allows for a more effortless and flexible handling of higher-order effects. Here
 are some examples:
@@ -26,12 +32,12 @@ are some examples:
     Let's consider the following Writer effectful program:
 
     ```hs
-    hello :: (Writer String m, Monad m) => m ()
+    hello :: (Tell String <: m, Monad m) => m ()
     hello = do
         tell "Hello"
         tell " world!"
 
-    censorHello :: (Writer String m, Monad m) => m ()
+    censorHello :: (Tell String <: m, WriterH String <<: m, Monad m) => m ()
     censorHello =
         censor
             (\s -> if s == "Hello" then "Goodbye" else s)
@@ -43,22 +49,22 @@ are some examples:
 
     ```hs
     main :: IO ()
-    main = runFreerEffects do
+    main = runEff do
         (s :: String, _) <-
             interpretTell
-                . runElaborate' (elaborateWriterT @String)
+                . interpretH (elaborateWriter @String)
                 $ censorHello
 
         (sTransactional :: String, _) <-
             interpretTell
-                . runElaborate' (elaborateWriterTransactionalT @String)
+                . interpretH (elaborateWriterTransactional @String)
                 $ censorHello
 
         sendIns $ putStrLn $ "Normal: " <> s
         sendIns $ putStrLn $ "Transactional: " <> sTransactional
     ```
 
-    Using the `elaborateWriterT` elaborator, you'll get "Goodbye world!", whereas with the `elaborateWriterTransactionalT` elaborator, you'll get "Hello world!".
+    Using the `elaborateWriter` elaborator, you'll get "Goodbye world!", whereas with the `elaborateWriterTransactional` elaborator, you'll get "Hello world!".
     For more details, please refer to the [complete code](https://github.com/sayo-hs/heftia/blob/develop/heftia-effects/Example/Writer/Main.hs) and the [implementation of the elaborator](https://github.com/sayo-hs/heftia/blob/develop/heftia-effects/src/Control/Effect/Handler/Heftia/Writer.hs).
 
 * Extracting Multi-shot Delimited Continuations
@@ -66,7 +72,7 @@ are some examples:
     In handling higher-order effects, it's easy to work with multi-shot delimited continuations.
     This enables an almost complete emulation of "Algebraic Effects and Handlers".
     For more details, please refer to
-    [Example 3 - Delimited Continuation](<https://github.com/sayo-hs/heftia/blob/develop/docs/examples/03%20Delimited%20Continuation.md>) .
+    ~~[Example 3 - Delimited Continuation](<https://github.com/sayo-hs/heftia/blob/develop/docs/examples/03%20Delimited%20Continuation.md>)~~ [an example code](heftia-effects/Example/Continuation/Main.hs) .
 
 Furthermore, the structure of Heftia is theoretically straightforward, with ad-hoc elements being
 eliminated.
@@ -74,7 +80,9 @@ eliminated.
 Heftia is the current main focus of the [Sayo Project](https://github.com/sayo-hs).
 
 ## Documentation
-Examples with explanations can be found in the [docs/examples/](https://github.com/sayo-hs/heftia/tree/master/docs/examples) directory.
+~~Examples with explanations can be found in the [docs/examples/](https://github.com/sayo-hs/heftia/tree/master/docs/examples) directory.~~
+
+Documents have become outdated. Please wait for the documentation for the new version to be written.
 
 ## Future Plans
 * Benchmarking
