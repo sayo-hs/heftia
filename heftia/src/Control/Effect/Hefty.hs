@@ -42,7 +42,7 @@ import Data.Hefty.Union (
     injectRec,
     projectRec,
     weaken2,
-    (|+), HasMembershipRec, Lookup
+    (|+), Lookup, Member, MemberH
  )
 import Data.Kind (Type)
 import Data.Maybe.Singletons (FromJust)
@@ -81,9 +81,6 @@ instance MemberRec u e ehs => InjectSig e (EffUnion u ehs efs) where
     injectSig = EffUnion . L1 . injectRec
     {-# INLINE injectSig #-}
 
-type MemberH u e ehs = HasMembershipRec u e ehs
-
-type Member u e efs = MemberH u (LiftIns e) efs
 type HasMembershipF u e efs = HasMembership u (LiftIns e) efs
 
 infixr 4 $
@@ -968,9 +965,6 @@ instance
     InjectSigBy key e (EffUnion u ehs efs) where
     injectSigBy = EffUnion . L1 . injectRec
     {-# INLINE injectSigBy #-}
-
-type MemberBy u key e ehs = (Member u (key #> e) ehs, Lookup ehs u key ~ 'Just (LiftIns (key #> e)))
-type MemberHBy u key e ehs = (MemberH u (key ##> e) ehs, Lookup ehs u key ~ 'Just (key ##> e))
 
 unkeyEff ::
     forall key e r ehs fr u c.

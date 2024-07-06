@@ -19,7 +19,6 @@ import Control.Effect (type (~>))
 import Control.Effect.Hefty (
     Eff,
     Elab,
-    Member,
     interposeRec,
     interpretRec,
     interpretRecH,
@@ -28,7 +27,7 @@ import Control.Freer (Freer)
 import Data.Effect.HFunctor (HFunctor)
 import Data.Effect.Reader (Ask (..), LAsk, Local (..), ask)
 import Data.Function ((&))
-import Data.Hefty.Union (ForallHFunctor, HFunctorUnion, Union)
+import Data.Hefty.Union (ForallHFunctor, HFunctorUnion, Union, Member)
 
 interpretReader ::
     forall r rh rf fr u c.

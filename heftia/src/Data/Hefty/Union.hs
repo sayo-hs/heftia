@@ -176,6 +176,7 @@ class
     where
     type ForallHFunctor u :: [SigClass] -> Constraint
 
+
 $(singletons [d|
     data SearchResult = FoundIn FoundLevel | NotFound
     data FoundLevel = CurrentLevel | LowerLevel
@@ -183,6 +184,9 @@ $(singletons [d|
 
 type family FoundLevelOf found :: FoundLevel where
     FoundLevelOf ('FoundIn l) = l
+
+type MemberH u e ehs = HasMembershipRec u e ehs
+type Member u e efs = MemberH u (LiftIns e) efs
 
 class MemberRec (u :: [SigClass] -> SigClass) e es where
     injectRec :: e f ~> u es f
@@ -500,6 +504,9 @@ type family ClassIndex (es :: [SigClass]) (e :: SigClass) :: Nat where
 
 
 -- keyed effects
+
+type MemberBy u key e ehs = (Member u (key #> e) ehs, Lookup ehs u key ~ 'Just (LiftIns (key #> e)))
+type MemberHBy u key e ehs = (MemberH u (key ##> e) ehs, Lookup ehs u key ~ 'Just (key ##> e))
 
 type family Lookup es (u :: [SigClass] -> SigClass) (key :: k) :: Maybe SigClass where
     Lookup (key ##> e ': _) u key = 'Just (key ##> e)

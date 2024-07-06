@@ -17,14 +17,14 @@ See [README.md](https://github.com/sayo-hs/heftia/blob/master/README.md).
 module Control.Effect.Handler.Heftia.Writer where
 
 import Control.Effect (type (~>))
-import Control.Effect.Hefty (Eff, Elab, Member, interposeT, interpretK, interpretT, rewrite)
+import Control.Effect.Hefty (Eff, Elab, interposeT, interpretK, interpretT, rewrite)
 import Control.Monad.Freer (MonadFreer)
 import Control.Monad.Trans.Writer.CPS (WriterT, runWriterT)
 import Control.Monad.Trans.Writer.CPS qualified as T
 import Data.Effect.HFunctor (HFunctor)
 import Data.Effect.Writer (LTell, Tell (Tell), WriterH (Censor, Listen), tell)
 import Data.Function ((&))
-import Data.Hefty.Union (Union)
+import Data.Hefty.Union (Union, Member)
 import Data.Tuple (swap)
 
 elaborateWriter ::

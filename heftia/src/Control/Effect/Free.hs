@@ -18,12 +18,12 @@ module Control.Effect.Free where
 
 import Control.Effect (type (~>))
 
-import Control.Effect.Hefty (Eff, EffUnion (EffUnion), Member, caseHF)
+import Control.Effect.Hefty (Eff, EffUnion (EffUnion), caseHF)
 import Control.Freer (Freer, InjectIns, ViaFreer (ViaFreer), injectIns, transformFreer, viaFreer)
 import Control.Hefty (Hefty (Hefty), unHefty)
 import Data.Effect (LiftIns (LiftIns), Nop, SigClass)
 import Data.Free.Sum (pattern R1)
-import Data.Hefty.Union (U, Union, exhaust, injectRec)
+import Data.Hefty.Union (U, Union, exhaust, injectRec, Member)
 
 {- |
 A common type for representing first-order extensible effectful programs that can issue effects
