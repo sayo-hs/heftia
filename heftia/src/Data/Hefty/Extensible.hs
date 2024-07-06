@@ -52,6 +52,7 @@ import Type.Membership.Internal (
     nextMembership,
  )
 import Unsafe.Coerce (unsafeCoerce)
+import qualified Data.Hefty.Union as Union
 
 {- |
 An implementation of an open union for higher-order effects using
@@ -115,3 +116,9 @@ infix 3 <|
 infix 3 <<|
 
 type ForallHFunctor = Forall HFunctor
+
+type U ef = Union.U ExtensibleUnion ef
+type UH eh = Union.UH ExtensibleUnion eh
+
+type S ef = Union.S ExtensibleUnion ef
+type SH eh = Union.SH ExtensibleUnion eh

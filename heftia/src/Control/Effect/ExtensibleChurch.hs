@@ -21,7 +21,6 @@ import Control.Effect.Hefty qualified as H
 import Control.Monad.Freer.Church (FreerChurch)
 import Data.Effect (LiftIns)
 import Data.Hefty.Extensible (ExtensibleUnion)
-import qualified Data.Hefty.Union as Union
 
 type eh !! ef = Effectful ExtensibleUnion FreerChurch eh ef
 type (!) ef = EffectfulF ExtensibleUnion FreerChurch ef
@@ -34,9 +33,6 @@ type (:!) efs = EffF ExtensibleUnion FreerChurch efs
 
 infixr 5 :!!
 infixr 4 :!
-
-type U ef = Union.U ExtensibleUnion ef
-type UH eh = Union.UH ExtensibleUnion eh
 
 runEff :: Monad f => '[] :!! '[LiftIns f] ~> f
 runEff = H.runEff
