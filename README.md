@@ -82,7 +82,10 @@ Heftia is the current main focus of the [Sayo Project](https://github.com/sayo-h
 ## Documentation
 ~~Examples with explanations can be found in the [docs/examples/](https://github.com/sayo-hs/heftia/tree/master/docs/examples) directory.~~
 
-Documents have become outdated. Please wait for the documentation for the new version to be written.
+Documents have become outdated.
+Please wait for the documentation for the new version to be written.
+
+The example codes are located in the [heftia-effects/Example/](heftia-effects/Example/) directory.
 
 ## Future Plans
 * Benchmarking
