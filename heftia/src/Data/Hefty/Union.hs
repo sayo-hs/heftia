@@ -495,4 +495,4 @@ type family ClassIndex (es :: [SigClass]) (e :: SigClass) :: Nat where
     ClassIndex (_ ': es) e = 1 N.+ ClassIndex es e
     ClassIndex '[] e =
         TypeError
-            ('Text "The effect class " ':<>: 'ShowType e ':<>: 'Text " was not found in the list.")
+            ('Text "The effect class ‘" ':<>: 'ShowType e ':<>: 'Text "’ was not found in the list.")
