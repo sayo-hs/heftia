@@ -134,6 +134,7 @@ main =
     runEff @IO
       . logToIO
       . timeToIO
+      . logWithTime
       . runDummyFS
       . runLogChunk
       . saveLogChunk
@@ -141,32 +142,32 @@ main =
         logExample
 
 {-
-<runDummyFS> mkdir ./log/2024-07-06T12:31:45.230925641Z-scope1/
-foo
-<runDummyFS> writeToFile ./log/2024-07-06T12:31:45.230925641Z-scope1/2024-07-06T12:31:45.231047059Z.log : "foo"
-bar
-<runDummyFS> writeToFile ./log/2024-07-06T12:31:45.230925641Z-scope1/2024-07-06T12:31:45.231079049Z.log : "bar"
-baz
-<runDummyFS> writeToFile ./log/2024-07-06T12:31:45.230925641Z-scope1/2024-07-06T12:31:45.231103074Z.log : "baz"
-qux
-<runDummyFS> writeToFile ./log/2024-07-06T12:31:45.230925641Z-scope1/2024-07-06T12:31:45.231125807Z.log : "qux"
+<runDummyFS> mkdir ./log/2024-07-06T13:56:23.447829919Z-scope1/
+[2024-07-06 13:56:23.448628515 UTC] foo
+<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.448625419Z.log : "foo"
+[2024-07-06 13:56:23.448932798 UTC] bar
+<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.448930113Z.log : "bar"
+[2024-07-06 13:56:23.448989065 UTC] baz
+<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.448986289Z.log : "baz"
+[2024-07-06 13:56:23.449036674 UTC] qux
+<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449035743Z.log : "qux"
 ------
-<runDummyFS> mkdir ./log/2024-07-06T12:31:45.230925641Z-scope1/2024-07-06T12:31:45.23115415Z-scope2/
-hoge
-<runDummyFS> writeToFile ./log/2024-07-06T12:31:45.230925641Z-scope1/2024-07-06T12:31:45.231179508Z.log : "hoge"
-<runDummyFS> writeToFile ./log/2024-07-06T12:31:45.230925641Z-scope1/2024-07-06T12:31:45.23115415Z-scope2/2024-07-06T12:31:45.231177534Z.log : "hoge"
-piyo
-<runDummyFS> writeToFile ./log/2024-07-06T12:31:45.230925641Z-scope1/2024-07-06T12:31:45.231225564Z.log : "piyo"
-<runDummyFS> writeToFile ./log/2024-07-06T12:31:45.230925641Z-scope1/2024-07-06T12:31:45.23115415Z-scope2/2024-07-06T12:31:45.231223681Z.log : "piyo"
-fuga
-<runDummyFS> writeToFile ./log/2024-07-06T12:31:45.230925641Z-scope1/2024-07-06T12:31:45.231270128Z.log : "fuga"
-<runDummyFS> writeToFile ./log/2024-07-06T12:31:45.230925641Z-scope1/2024-07-06T12:31:45.23115415Z-scope2/2024-07-06T12:31:45.231268194Z.log : "fuga"
-hogera
-<runDummyFS> writeToFile ./log/2024-07-06T12:31:45.230925641Z-scope1/2024-07-06T12:31:45.231313499Z.log : "hogera"
-<runDummyFS> writeToFile ./log/2024-07-06T12:31:45.230925641Z-scope1/2024-07-06T12:31:45.23115415Z-scope2/2024-07-06T12:31:45.231311516Z.log : "hogera"
+<runDummyFS> mkdir ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449090566Z-scope2/
+[2024-07-06 13:56:23.44913009 UTC] hoge
+<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449127986Z.log : "hoge"
+<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449090566Z-scope2/2024-07-06T13:56:23.449125371Z.log : "hoge"
+[2024-07-06 13:56:23.449215892 UTC] piyo
+<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449213508Z.log : "piyo"
+<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449090566Z-scope2/2024-07-06T13:56:23.449210612Z.log : "piyo"
+[2024-07-06 13:56:23.449303087 UTC] fuga
+<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449300221Z.log : "fuga"
+<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449090566Z-scope2/2024-07-06T13:56:23.449298909Z.log : "fuga"
+[2024-07-06 13:56:23.449383799 UTC] hogera
+<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449380502Z.log : "hogera"
+<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449090566Z-scope2/2024-07-06T13:56:23.44937926Z.log : "hogera"
 ------
-quux
-<runDummyFS> writeToFile ./log/2024-07-06T12:31:45.230925641Z-scope1/2024-07-06T12:31:45.231360958Z.log : "quux"
-foobar
-<runDummyFS> writeToFile ./log/2024-07-06T12:31:45.230925641Z-scope1/2024-07-06T12:31:45.231384543Z.log : "foobar"
+[2024-07-06 13:56:23.449513012 UTC] quux
+<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449510688Z.log : "quux"
+[2024-07-06 13:56:23.449560241 UTC] foobar
+<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449558087Z.log : "foobar"
 -}
