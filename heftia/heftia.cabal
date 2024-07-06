@@ -49,7 +49,7 @@ tested-with:
 source-repository head
     type: git
     location: https://github.com/sayo-hs/heftia
-    tag: v0.1.0
+    tag: v0.2.0
     subdir: heftia
 
 library

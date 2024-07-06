@@ -34,7 +34,7 @@ tested-with:
 source-repository head
     type: git
     location: https://github.com/sayo-hs/heftia
-    tag: v0.1.0
+    tag: v0.2.0
     subdir: heftia-effects
 
 common common-base
@@ -53,7 +53,10 @@ common common-base
         PatternSynonyms
 
     build-depends:
-        ghc-typelits-knownnat ^>= 0.7
+        base ^>= 4.16,
+        ghc-typelits-knownnat ^>= 0.7,
+        data-effects ^>= 0.1,
+        heftia ^>= 0.2,
 
     ghc-options: -Wall -fplugin GHC.TypeLits.KnownNat.Solver
 
@@ -76,14 +79,11 @@ library
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:
-        base                          ^>= 4.16.4.0,
-        heftia                        ^>= 0.1,
-        data-effects                  ^>= 0.1,
         mtl                           ^>= 2.2.2,
         transformers                  ^>= 0.5.6,
         extensible                    ^>= 0.9,
-        unliftio,
-        free
+        unliftio                      ^>= 0.2.0,
+        free                          ^>= 5.2,
 
     hs-source-dirs:   src
 
@@ -94,9 +94,6 @@ test-suite test
     hs-source-dirs: test
     build-depends:
         heftia-effects,
-        data-effects,
-        heftia,
-        base,
         tasty                         ^>= 1.4,
         tasty-hunit                   ^>= 0.10,
 
@@ -112,10 +109,7 @@ executable Teletype
     main-is: Main.hs
     hs-source-dirs: Example/Teletype
     build-depends:
-        data-effects,
-        heftia,
         heftia-effects,
-        base,
 
 executable KeyedEffects
     import: common-base
@@ -123,10 +117,7 @@ executable KeyedEffects
     main-is: Main.hs
     hs-source-dirs: Example/KeyedEffects
     build-depends:
-        data-effects,
-        heftia,
         heftia-effects,
-        base,
 
 executable Logging
     import: common-base
@@ -134,10 +125,7 @@ executable Logging
     main-is: Main.hs
     hs-source-dirs: Example/Logging
     build-depends:
-        data-effects,
-        heftia,
         heftia-effects,
-        base,
         text ^>= 1.2.5,
         time ^>= 1.11.1,
         loglevel ^>= 0.1.0,
@@ -149,10 +137,7 @@ executable Continuation
     main-is: Main.hs
     hs-source-dirs: Example/Continuation
     build-depends:
-        data-effects,
-        heftia,
         heftia-effects,
-        base,
 
 executable Continuation2
     import: common-base
@@ -160,10 +145,7 @@ executable Continuation2
     main-is: Main.hs
     hs-source-dirs: Example/Continuation2
     build-depends:
-        data-effects,
-        heftia,
         heftia-effects,
-        base,
         extra
 
 executable Writer
@@ -172,7 +154,4 @@ executable Writer
     main-is: Main.hs
     hs-source-dirs: Example/Writer
     build-depends:
-        data-effects,
-        heftia,
         heftia-effects,
-        base,
