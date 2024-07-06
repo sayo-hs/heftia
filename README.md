@@ -3,8 +3,7 @@
 [![Hackage](https://img.shields.io/hackage/v/heftia.svg?logo=haskell&label=heftia)](https://hackage.haskell.org/package/heftia)
 [![Hackage](https://img.shields.io/hackage/v/heftia-effects.svg?logo=haskell&label=heftia-effects)](https://hackage.haskell.org/package/heftia-effects)
 
-Heftia, a composition of hefty trees and co-Yoneda, is a higher-order effects
-version of Freer.
+Heftia is a higher-order effects version of Freer.
 
 The paper
 * Casper Bach Poulsen and Cas van der Rest. 2023. Hefty Algebras: Modular
@@ -17,10 +16,6 @@ allowing for a straightforward treatment of higher-order effects.
 
 This library offers Heftia monads and Freer monads, encoded into data
 types in several ways to enable tuning in pursuit of high performance.
-
-Additionally, it's designed to operate as a handler system based
-on [`classy-effects`](https://github.com/sayo-hs/classy-effects), which aims to
-standardize and unify the definitions of effects in Haskell.
 
 Compared to existing Effect System libraries in Haskell that handle higher-order effects, this
 library's approach allows for a more effortless and flexible handling of higher-order effects. Here
@@ -76,7 +71,7 @@ are some examples:
 Furthermore, the structure of Heftia is theoretically straightforward, with ad-hoc elements being
 eliminated.
 
-Heftia is the second objective of the [Sayo Project](https://github.com/sayo-hs).
+Heftia is the current main focus of the [Sayo Project](https://github.com/sayo-hs).
 
 ## Documentation
 Examples with explanations can be found in the [docs/examples/](docs/examples/) directory.
