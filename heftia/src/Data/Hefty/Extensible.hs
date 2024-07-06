@@ -1,4 +1,5 @@
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ImpredicativeTypes #-}
 
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -36,7 +37,7 @@ import Data.Hefty.Union (
         project,
         weaken,
         (|+:)
-    ), TypeIndex,
+    ), ClassIndex,
  )
 import Data.Proxy (Proxy (Proxy))
 import Data.Type.Equality ((:~:) (Refl))
@@ -73,7 +74,7 @@ instance Forall HFunctor es => HFunctor (ExtensibleUnion es) where
 -- todo: Functor, Foldable, Traversable instances
 
 instance Union ExtensibleUnion where
-    type HasMembership _ e es = KnownNat (TypeIndex es e)
+    type HasMembership _ e es = KnownNat (ClassIndex es e)
 
     inject = ExtensibleUnion . EmbedAt findFirstMembership . FieldApp
     {-# INLINE inject #-}
@@ -94,8 +95,8 @@ instance Union ExtensibleUnion where
     f |+: g = (f . unFieldApp <:| g . ExtensibleUnion) . unExtensibleUnion
     {-# INLINE (|+:) #-}
 
-findFirstMembership :: forall xs x. KnownNat (TypeIndex xs x) => Membership xs x
-findFirstMembership = unsafeMkMembership @(TypeIndex xs x) Proxy
+findFirstMembership :: forall xs x. KnownNat (ClassIndex xs x) => Membership xs x
+findFirstMembership = unsafeMkMembership @(ClassIndex xs x) Proxy
   where
     -- This hack may break if the membership package version gets updated.
     unsafeMkMembership :: forall pos. Proxy pos -> KnownNat pos => Membership xs x
