@@ -1,4 +1,5 @@
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -6,67 +7,63 @@
 
 module Main where
 
-import Control.Effect.Class (sendIns, type (~>))
-import Control.Effect.Class.Machinery.HFunctor (HFunctor)
-import Control.Effect.Class.Machinery.TH (makeEffectF, makeEffectH)
-import Control.Effect.Freer (Fre, interposeK, interpret, runFreerEffects, type (<|))
-import Control.Effect.Heftia (Elaborator, Hef, runElaborate)
+import Data.Effect.TH (makeEffectF, makeEffectH)
+import Control.Effect.ExtensibleChurch (runEff, type (:!!))
+import Control.Effect (SendIns (sendIns), type (~>))
+import Control.Effect.Hefty (interpretRec, interposeK, interpretH)
+import Data.Hefty.Extensible (ForallHFunctor, type (<|))
 import Data.Function ((&))
-import Data.Hefty.Union (UnionH (absurdUnionH, (|+:)))
 
 type ForkID = Int
 
-class Fork f where
-    fork :: f ForkID
+data Fork a where
+    Fork :: Fork ForkID
+makeEffectF [''Fork]
 
-makeEffectF ''Fork
+runForkSingle :: ForallHFunctor eh => eh :!! LFork ': r ~> eh :!! r
+runForkSingle = interpretRec \Fork -> pure 0
 
-runForkSingle :: Monad m => Fre (ForkI ': r) m ~> Fre r m
-runForkSingle = interpret \Fork -> pure 0
+data ResetFork f a where
+    ResetFork :: Monoid w => f w -> ResetFork f w
+makeEffectH [''ResetFork]
 
-class DelimitFork f where
-    delimitFork :: Monoid w => f w -> f w
-
-makeEffectH ''DelimitFork
-
-applyDelimitFork :: (ForkI <| es, Monad m) => Int -> Elaborator DelimitForkS (Fre es m)
-applyDelimitFork numberOfFork (DelimitFork m) =
+applyResetFork :: Fork <| r => Int -> ResetFork ('[] :!! r) ~> '[] :!! r
+applyResetFork numberOfFork (ResetFork m) =
     m & interposeK pure \k Fork -> do
         r <- mapM k [1 .. numberOfFork]
         pure $ mconcat r
 
-{-
--- In the `mconcat` section, we utilize the fact that `w` in `delimitFork` is a `Monoid`.
--- However, `hoistHeftiaEffects` quantifies `w` into any type, so we can't make use of
--- it being a `Monoid`. Thus, writing it this way results in a type error.
-
-runDelimitFork ::
-    (ForkI <| es, ForallHFunctor r, Monad m) =>
-    Int ->
-    Hef (DelimitForkS ': r) (Fre es m) ~> Hef r (Fre es m)
-runDelimitFork numberOfFork =
-    interpretH \(DelimitFork m) ->
-        ($ m) $ hoistHeftiaEffects $ interposeK pure \k Fork -> do
-            r <- mapM k [1 .. numberOfFork]
-            pure $ mconcat r -- Here's where the type error occurs
--}
-
 main :: IO ()
 main =
-    runFreerEffects
-        . runForkSingle
-        . runElaborate' (applyDelimitFork 4)
-        $ do
+    runEff
+      . runForkSingle
+      . interpretH (applyResetFork 4)
+      $ do
             sendIns . putStrLn . (("[out of scope] " ++) . show) =<< fork
-            s <- delimitFork do
+            s <- resetFork do
                 fid1 <- fork
                 fid2 <- fork
                 sendIns $ putStrLn $ "[delimited continuation of `fork`] Fork ID: " ++ show (fid1, fid2)
                 pure $ show (fid1, fid2)
             sendIns $ putStrLn $ "scope exited. result: " ++ s
 
-runElaborate' ::
-    (HFunctor e, Monad f) =>
-    Elaborator e f ->
-    Hef '[e] f ~> f
-runElaborate' f = runElaborate $ f |+: absurdUnionH
+{-
+[out of scope] 0
+[delimited continuation of `fork`] Fork ID: (1,1)
+[delimited continuation of `fork`] Fork ID: (1,2)
+[delimited continuation of `fork`] Fork ID: (1,3)
+[delimited continuation of `fork`] Fork ID: (1,4)
+[delimited continuation of `fork`] Fork ID: (2,1)
+[delimited continuation of `fork`] Fork ID: (2,2)
+[delimited continuation of `fork`] Fork ID: (2,3)
+[delimited continuation of `fork`] Fork ID: (2,4)
+[delimited continuation of `fork`] Fork ID: (3,1)
+[delimited continuation of `fork`] Fork ID: (3,2)
+[delimited continuation of `fork`] Fork ID: (3,3)
+[delimited continuation of `fork`] Fork ID: (3,4)
+[delimited continuation of `fork`] Fork ID: (4,1)
+[delimited continuation of `fork`] Fork ID: (4,2)
+[delimited continuation of `fork`] Fork ID: (4,3)
+[delimited continuation of `fork`] Fork ID: (4,4)
+scope exited. result: (1,1)(1,2)(1,3)(1,4)(2,1)(2,2)(2,3)(2,4)(3,1)(3,2)(3,3)(3,4)(4,1)(4,2)(4,3)(4,4)
+-}
