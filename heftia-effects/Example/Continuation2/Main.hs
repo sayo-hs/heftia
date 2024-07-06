@@ -9,7 +9,7 @@ import Control.Effect.ExtensibleChurch (runEff, type (!!))
 import Control.Effect.Handler.Heftia.Cont (Shift, Shift_, getCC, getCC_, runShift, runShift_)
 import Control.Effect.Handler.Heftia.Reader (elaborateLocal, interpretAsk)
 import Control.Effect.Handler.Heftia.State (evalState)
-import Control.Effect.Hefty (interpretH, send1)
+import Control.Effect.Hefty (interpretH, send1, type ($))
 import Control.Monad.Extra (whenM)
 import Data.Effect.HFunctor ((:+:))
 import Data.Effect.Reader (Ask, Local, ask, local)
@@ -68,7 +68,7 @@ elaborateLocalThenShift =
         & evalState 0
         & runEff
   where
-    prog :: (Local Double !! Ask Double + Shift () !! State Int + IO) ()
+    prog :: Local Double !! Ask Double + Shift () !! State Int + IO $ ()
     prog = do
         k <- send1 getCC
         env <- ask @Double
@@ -89,7 +89,7 @@ elaborateShiftThenLocal = do
         & evalState 0
         & runEff
   where
-    prog :: (Shift_ :+: Local Double !! Ask Double + State Int + IO) ()
+    prog :: Shift_ :+: Local Double !! Ask Double + State Int + IO $ ()
     prog = do
         k <- getCC_
         env <- ask @Double
