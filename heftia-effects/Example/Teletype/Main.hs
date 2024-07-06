@@ -14,10 +14,9 @@ module Main where
 import Control.Effect (SendIns (sendIns), type (<:), type (~>))
 import Control.Effect.ExtensibleChurch (runEff, type (:!!))
 import Control.Effect.Hefty (interposeRec, interpretRec, untagEff)
-import Data.Effect.HFunctor (HFunctor)
 import Data.Effect.TH (makeEffectF)
 import Data.Effect.Tag (Tag (unTag), type (#))
-import Data.Hefty.Extensible (Forall, type (<|))
+import Data.Hefty.Extensible (type (<|), ForallHFunctor)
 
 data Teletype a where
     ReadTTY :: Teletype String
@@ -25,7 +24,7 @@ data Teletype a where
 
 makeEffectF [''Teletype]
 
-teletypeToIO :: (IO <| r, Forall HFunctor eh) => eh :!! LTeletype ': r ~> eh :!! r
+teletypeToIO :: (IO <| r, ForallHFunctor eh) => eh :!! LTeletype ': r ~> eh :!! r
 teletypeToIO = interpretRec \case
     ReadTTY -> sendIns getLine
     WriteTTY msg -> sendIns $ putStrLn msg
@@ -37,7 +36,7 @@ echo = do
         "" -> pure ()
         _ -> writeTTY' @"tty1" i >> echo
 
-strong :: (Teletype # "tty1" <| ef, Forall HFunctor eh) => eh :!! ef ~> eh :!! ef
+strong :: (Teletype # "tty1" <| ef, ForallHFunctor eh) => eh :!! ef ~> eh :!! ef
 strong =
     interposeRec @(_ # "tty1") \e -> case unTag e of
         ReadTTY -> readTTY' @"tty1"
