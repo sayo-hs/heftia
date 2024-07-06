@@ -117,11 +117,11 @@ executable Teletype
         heftia-effects,
         base,
 
-executable DepParams
+executable KeyedEffects
     import: common-base
 
     main-is: Main.hs
-    hs-source-dirs: Example/DepParams
+    hs-source-dirs: Example/KeyedEffects
     build-depends:
         data-effects,
         heftia,
