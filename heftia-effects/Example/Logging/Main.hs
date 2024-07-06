@@ -131,7 +131,7 @@ logExample =
 
 main :: IO ()
 main =
-    runEff @IO
+    runEff
       . logToIO
       . timeToIO
       . logWithTime

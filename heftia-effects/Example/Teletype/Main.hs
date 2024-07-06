@@ -43,6 +43,6 @@ strong =
         WriteTTY msg -> writeTTY' @"tty1" $ msg <> "!"
 
 main :: IO ()
-main = runEff $ do
+main = runEff do
     sendIns $ putStrLn "Please enter something..."
     teletypeToIO . untagEff @"tty1" . strong . strong $ echo
