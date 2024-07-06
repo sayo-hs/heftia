@@ -9,42 +9,53 @@ Maintainer  :  ymdfield@outlook.jp
 Stability   :  experimental
 Portability :  portable
 
-Interpreter and elaborator for the t'Control.Effect.Class.Reader.Reader' effect class.
+Interpreter and elaborator for the t'Data.Effect.Reader.Local' / t'Data.Effect.Reader.Catch' effect
+classes.
 -}
 module Control.Effect.Handler.Heftia.Reader where
 
-import Control.Effect.Class (type (~>))
-import Control.Effect.Class.Reader (AskI (Ask), LocalS (Local), ask)
-import Control.Effect.Freer (Fre, interpose, interpret, raise, type (<|))
-import Control.Effect.Heftia (ForallHFunctor, Hef, hoistHeftiaEffects, hoistInterpose, interpretH, raiseH)
+import Control.Arrow ((>>>))
+import Control.Effect (type (~>))
+import Control.Effect.Hefty (
+    Eff,
+    Elab,
+    MemberF,
+    interposeRec,
+    interpretRec,
+    interpretRecH,
+ )
+import Control.Freer (Freer)
+import Data.Effect.HFunctor (HFunctor)
+import Data.Effect.Reader (Ask (..), LAsk, Local (..), ask)
 import Data.Function ((&))
+import Data.Hefty.Union (ForallHFunctor, HFunctorUnion, Union)
 
 interpretReader ::
-    (Monad m, ForallHFunctor es) =>
+    forall r rh rf fr u c.
+    ( Freer c fr
+    , HFunctorUnion u
+    , ForallHFunctor u rh
+    , MemberF u (Ask r) (LAsk r ': rf)
+    , Functor (Eff u fr rh (LAsk r ': rf))
+    , Applicative (Eff u fr rh rf)
+    ) =>
     r ->
-    Hef (LocalS r ': es) (Fre (AskI r ': es') m) ~> Hef es (Fre es' m)
-interpretReader r = hoistHeftiaEffects (interpretAsk r) . interpretReaderH
+    Eff u fr (Local r ': rh) (LAsk r ': rf) ~> Eff u fr rh rf
+interpretReader r = interpretRecH elaborateLocal >>> interpretAsk r
 {-# INLINE interpretReader #-}
 
-interpretReaderH ::
-    (AskI r <| es', ForallHFunctor es, Monad m) =>
-    Hef (LocalS r ': es) (Fre es' m) ~> Hef es (Fre es' m)
-interpretReaderH =
-    interpretH \(Local (f :: r -> r) a) ->
-        a & hoistInterpose @(AskI r) \Ask -> f <$> ask
+-- | Elaborate the t'Local' effect.
+elaborateLocal ::
+    forall r eh ef fr u c.
+    (MemberF u (Ask r) ef, Freer c fr, Union u, HFunctor (u eh), Functor (Eff u fr eh ef)) =>
+    Elab (Local r) (Eff u fr eh ef)
+elaborateLocal (Local f a) = a & interposeRec @(Ask r) \Ask -> f <$> ask
 
-elaborateReader ::
-    (AskI r <| es, Monad m) =>
-    LocalS r (Fre es m) ~> Fre es m
-elaborateReader (Local (f :: r -> r) a) =
-    a & interpose @(AskI r) \Ask -> f <$> ask
-
-interpretAsk :: Monad m => r -> Fre (AskI r ': es) m ~> Fre es m
-interpretAsk r = interpret \Ask -> pure r
+-- | Interpret the t'Ask' effect.
+interpretAsk ::
+    forall r rs eh fr u c.
+    (Freer c fr, Union u, Applicative (Eff u fr eh rs), HFunctor (u eh)) =>
+    r ->
+    Eff u fr eh (LAsk r ': rs) ~> Eff u fr eh rs
+interpretAsk r = interpretRec \Ask -> pure r
 {-# INLINE interpretAsk #-}
-
-liftReader ::
-    (ForallHFunctor es, Monad m) =>
-    Hef es (Fre es' m) ~> Hef (LocalS FilePath ': es) (Fre (AskI FilePath ': es') m)
-liftReader = raiseH . hoistHeftiaEffects raise
-{-# INLINE liftReader #-}

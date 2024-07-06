@@ -1,12 +1,106 @@
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE AllowAmbiguousTypes #-}
 
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 module Main where
+import Data.Text (Text)
+import Data.Kind (Type)
+import Data.Effect.TH (makeEffectF, makeEffectH)
+import Data.Hefty.Extensible (type (<|), Forall, type (<<|), ExtensibleUnion)
+import Control.Effect.ExtensibleChurch (runEff, type (:!!), type (!!), UH, U)
+import Control.Effect (type (~>), sendIns)
+import Control.Effect.Hefty (interpretRec, interposeRec, interpretRecH, interposeRec, raise, raiseH, flipEffH, interposeRecH)
+import Data.Effect.HFunctor (HFunctor, (:+:))
+import qualified Data.Text.IO as T
+import Data.Time (UTCTime, getCurrentTime)
+import qualified Data.Text as T
+import Data.Free.Sum (type (+))
+import Data.Effect.State (State, LState, get, modify)
+import Control.Effect.Handler.Heftia.State (evalState)
+import Data.Function ((&))
+import Control.Monad (when)
+import Control.Effect.Handler.Heftia.Reader (interpretReader)
+import Data.Effect.Reader (Local, Ask, LAsk)
 
+data Log a where
+    Logging :: Text -> Log ()
+
+makeEffectF [''Log]
+
+logToIO :: (IO <| r, Forall HFunctor eh) => eh :!! LLog ': r ~> eh :!! r
+logToIO = interpretRec \(Logging msg) -> sendIns $ T.putStrLn msg
+
+data Time a where
+    CurrentTime :: Time UTCTime
+
+makeEffectF [''Time]
+
+timeToIO :: (IO <| U r, Forall HFunctor (UH eh)) => eh !! Time + r ~> eh !! r
+timeToIO = interpretRec \CurrentTime -> sendIns getCurrentTime
+
+logWithTime :: (Log <| ef, Time <| ef, Forall HFunctor eh) => eh :!! ef ~> eh :!! ef
+logWithTime = interposeRec \(Logging msg) -> do
+    t <- currentTime
+    logging $ "[" <> T.pack (show t) <> "] " <> msg
+
+-- | An effect that introduces a scope that represents a chunk of logs.
+data LogChunk f (a :: Type) where
+    LogChunk ::
+        -- | chunk name
+        Text ->
+        f a ->
+        LogChunk f a
+
+makeEffectH [''LogChunk]
+
+-- | Ignore chunk names and output logs in log chunks as they are.
+passthroughLogChunk :: Forall HFunctor (UH eh) => LogChunk :+: eh !! ef ~> eh !! ef
+passthroughLogChunk = interpretRecH \(LogChunk _ m) -> m
+
+-- | Limit the number of logs in a log chunk to the first @n@ logs.
+limitLogChunk
+    ::  forall eh ef. (LogChunk <<| eh, Log <| {- LState Int ': -} ef) =>
+        Int -> LogChunk ('[] :!! ef) ~> LogChunk ('[] :!! ef)
+limitLogChunk n (LogChunk chunkName a) =
+    -- member @ExtensibleUnion @LLog @ef $
+        LogChunk chunkName . evalState @Int 0 $
+            raise a & interposeRec \(Logging msg) -> do
+                count <- get
+                when (count <= n) do
+                    if count == n
+                        then logging "LOG OMITTED..."
+                        else logging msg
+
+                    modify @Int (+ 1)
+
+data FileSystem a where
+    Mkdir :: FilePath -> FileSystem ()
+    WriteToFile :: FilePath -> String -> FileSystem ()
+
+makeEffectF [''FileSystem]
+
+runDummyFS :: (IO <| U r, Forall HFunctor (UH eh)) => eh !! FileSystem + r ~> eh !! r
+runDummyFS = interpretRec \case
+    Mkdir path -> sendIns $ putStrLn $ "<runDummyFS> mkdir " <> path
+    WriteToFile path content -> sendIns $ putStrLn $ "<runDummyFS> writeToFile " <> path <> " : " <> content
+
+-- | Create directories according to the log-chunk structure and save one log in one file.
+saveLogChunk
+    :: forall eh ef. (LogChunk <<| eh, Log <| ef, FileSystem <| ef, Forall HFunctor eh) =>
+        eh :!! ef ~> eh :!! ef
+saveLogChunk a =
+    interpretReader @FilePath "./log/" $
+        raiseH (raise a) & interposeRecH @LogChunk \(LogChunk chunkName a) -> do
+            undefined
+
+main :: IO ()
+main = undefined
+
+{-
 import Control.Effect.Class (SendIns (sendIns), type (<:), type (~>))
 import Control.Effect.Class.Machinery.TH (makeEffectF, makeEffectH)
 import Control.Effect.Class.Reader (Ask (ask), AskI, Local (local), LocalS)
@@ -198,3 +292,4 @@ runElaborate' ::
     Elaborator (ExtensibleUnionH es) f ->
     Hef es f ~> f
 runElaborate' = runElaborate
+-}

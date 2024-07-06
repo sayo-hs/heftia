@@ -9,34 +9,30 @@ Maintainer  :  ymdfield@outlook.jp
 Stability   :  experimental
 Portability :  portable
 
-Type operators for extensible effectful programs based on the Church-encoded Freer monad.
+Type operators for extensible effectful programs based on the final-encoded Freer monad.
 -}
-module Control.Effect.ExtensibleChurch where
+module Control.Effect.ExtensibleFinal where
 
 import Control.Effect (type (~>))
 import Control.Effect.Free (EffF, EffectfulF)
 import Control.Effect.Free qualified as F
 import Control.Effect.Hefty (Eff, Effectful)
 import Control.Effect.Hefty qualified as H
-import Control.Monad.Freer.Church (FreerChurch)
+import Control.Freer.Final (FreerFinal)
 import Data.Effect (LiftIns)
 import Data.Hefty.Extensible (ExtensibleUnion)
-import qualified Data.Hefty.Union as Union
 
-type eh !! ef = Effectful ExtensibleUnion FreerChurch eh ef
-type (!) ef = EffectfulF ExtensibleUnion FreerChurch ef
+type eh !! ef = Effectful ExtensibleUnion (FreerFinal Monad) eh ef
+type (!) ef = EffectfulF ExtensibleUnion (FreerFinal Monad) ef
 
 infixr 5 !!
 infixr 4 !
 
-type ehs :!! efs = Eff ExtensibleUnion FreerChurch ehs efs
-type (:!) efs = EffF ExtensibleUnion FreerChurch efs
+type ehs :!! efs = Eff ExtensibleUnion (FreerFinal Monad) ehs efs
+type (:!) efs = EffF ExtensibleUnion (FreerFinal Monad) efs
 
 infixr 5 :!!
 infixr 4 :!
-
-type U ef = Union.U ExtensibleUnion ef
-type UH eh = Union.UH ExtensibleUnion eh
 
 runEff :: Monad f => '[] :!! '[LiftIns f] ~> f
 runEff = H.runEff

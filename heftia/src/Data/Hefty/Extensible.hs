@@ -1,4 +1,5 @@
 {-# LANGUAGE UndecidableInstances #-}
+{-# LANGUAGE ImpredicativeTypes #-}
 
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -14,29 +15,33 @@ Portability :  portable
 An implementation of an open union for higher-order effects using
 the [extensible](https://hackage.haskell.org/package/extensible) package as a backend.
 -}
-module Data.Hefty.Extensible where
+module Data.Hefty.Extensible (
+    module Data.Hefty.Extensible,
+    Forall,
+)
+where
 
-import Control.Effect.Class.Machinery.HFunctor (HFunctor, hfmap)
 import Control.Effect.Hefty (MemberF, MemberH)
-import Control.Hefty (SigClass)
+import Data.Effect (SigClass)
+import Data.Effect.HFunctor (HFunctor, hfmap)
 import Data.Extensible (Forall, Match (Match), htabulateFor, match)
-import Data.Extensible.Sum (exhaust, strikeAt, (<:|), type (:/) (EmbedAt))
+import Data.Extensible.Sum (strikeAt, (<:|), type (:/) (EmbedAt))
+import Data.Extensible.Sum qualified as E
 import Data.Hefty.Union (
     HFunctorUnion_ (ForallHFunctor),
     Union (
         HasMembership,
-        absurdUnion,
+        exhaust,
         inject,
         inject0,
         project,
         weaken,
         (|+:)
-    ),
+    ), ClassIndex,
  )
 import Data.Proxy (Proxy (Proxy))
 import Data.Type.Equality ((:~:) (Refl))
-import GHC.TypeLits (ErrorMessage (ShowType, Text, (:<>:)), TypeError)
-import GHC.TypeNats (KnownNat, Nat, type (+))
+import GHC.TypeNats (KnownNat)
 import Type.Membership.Internal (
     Elaborate,
     Elaborated (Expecting),
@@ -69,7 +74,7 @@ instance Forall HFunctor es => HFunctor (ExtensibleUnion es) where
 -- todo: Functor, Foldable, Traversable instances
 
 instance Union ExtensibleUnion where
-    type HasMembership _ e es = KnownNat (TypeIndex es e)
+    type HasMembership _ e es = KnownNat (ClassIndex es e)
 
     inject = ExtensibleUnion . EmbedAt findFirstMembership . FieldApp
     {-# INLINE inject #-}
@@ -77,8 +82,8 @@ instance Union ExtensibleUnion where
     project (ExtensibleUnion u) = unFieldApp <$> strikeAt findFirstMembership u
     {-# INLINE project #-}
 
-    absurdUnion = exhaust . unExtensibleUnion
-    {-# INLINE absurdUnion #-}
+    exhaust = E.exhaust . unExtensibleUnion
+    {-# INLINE exhaust #-}
 
     inject0 = ExtensibleUnion . EmbedAt leadership . FieldApp
     {-# INLINE inject0 #-}
@@ -90,8 +95,8 @@ instance Union ExtensibleUnion where
     f |+: g = (f . unFieldApp <:| g . ExtensibleUnion) . unExtensibleUnion
     {-# INLINE (|+:) #-}
 
-findFirstMembership :: forall xs x. KnownNat (TypeIndex xs x) => Membership xs x
-findFirstMembership = unsafeMkMembership @(TypeIndex xs x) Proxy
+findFirstMembership :: forall xs x. KnownNat (ClassIndex xs x) => Membership xs x
+findFirstMembership = unsafeMkMembership @(ClassIndex xs x) Proxy
   where
     -- This hack may break if the membership package version gets updated.
     unsafeMkMembership :: forall pos. Proxy pos -> KnownNat pos => Membership xs x
@@ -100,15 +105,13 @@ findFirstMembership = unsafeMkMembership @(TypeIndex xs x) Proxy
         hackedEquality :: Elaborate x (FindType x xs) :~: 'Expecting pos
         hackedEquality = unsafeCoerce Refl
 
-type family TypeIndex (xs :: [k]) (x :: k) :: Nat where
-    TypeIndex (x ': xs) x = 0
-    TypeIndex (y ': xs) x = 1 + TypeIndex xs x
-    TypeIndex '[] x =
-        TypeError
-            ('Text "The effect class " ':<>: 'ShowType x ':<>: 'Text " was not found in the list.")
-
 instance HFunctorUnion_ (Forall HFunctor) ExtensibleUnion where
     type ForallHFunctor _ = Forall HFunctor
 
 type e <| es = MemberF ExtensibleUnion e es
 type e <<| es = MemberH ExtensibleUnion e es
+
+infix 3 <|
+infix 3 <<|
+
+type ForallHFunctor = Forall HFunctor

@@ -9,39 +9,35 @@ Maintainer  :  ymdfield@outlook.jp
 Stability   :  experimental
 Portability :  portable
 
-Type operators for extensible effectful programs based on the Church-encoded Freer monad.
+Type operators for extensible effectful programs based on the final-encoded Freer applicative.
 -}
-module Control.Effect.ExtensibleChurch where
+module Control.Effect.ExtensibleFinalA where
 
 import Control.Effect (type (~>))
 import Control.Effect.Free (EffF, EffectfulF)
 import Control.Effect.Free qualified as F
 import Control.Effect.Hefty (Eff, Effectful)
 import Control.Effect.Hefty qualified as H
-import Control.Monad.Freer.Church (FreerChurch)
+import Control.Freer.Final (FreerFinal)
 import Data.Effect (LiftIns)
 import Data.Hefty.Extensible (ExtensibleUnion)
-import qualified Data.Hefty.Union as Union
 
-type eh !! ef = Effectful ExtensibleUnion FreerChurch eh ef
-type (!) ef = EffectfulF ExtensibleUnion FreerChurch ef
+type eh !! ef = Effectful ExtensibleUnion (FreerFinal Applicative) eh ef
+type (!) ef = EffectfulF ExtensibleUnion (FreerFinal Applicative) ef
 
 infixr 5 !!
 infixr 4 !
 
-type ehs :!! efs = Eff ExtensibleUnion FreerChurch ehs efs
-type (:!) efs = EffF ExtensibleUnion FreerChurch efs
+type ehs :!! efs = Eff ExtensibleUnion (FreerFinal Applicative) ehs efs
+type (:!) efs = EffF ExtensibleUnion (FreerFinal Applicative) efs
 
 infixr 5 :!!
 infixr 4 :!
 
-type U ef = Union.U ExtensibleUnion ef
-type UH eh = Union.UH ExtensibleUnion eh
-
-runEff :: Monad f => '[] :!! '[LiftIns f] ~> f
+runEff :: Applicative f => '[] :!! '[LiftIns f] ~> f
 runEff = H.runEff
 {-# INLINE runEff #-}
 
-runEffF :: Monad f => (:!) '[LiftIns f] ~> f
+runEffF :: Applicative f => (:!) '[LiftIns f] ~> f
 runEffF = F.runEffF
 {-# INLINE runEffF #-}

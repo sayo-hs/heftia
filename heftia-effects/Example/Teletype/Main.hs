@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
 
 -- This Source Code Form is subject to the terms of the Mozilla Public
@@ -10,38 +11,39 @@ The original of this example can be found at polysemy.
 -}
 module Main where
 
-import Control.Effect.Class (Taggable, getTag, sendIns, tag, type (#), type (<:), type (@#), type (~>))
-import Control.Effect.Class.Machinery.TH (makeEffectF)
-import Control.Effect.Freer (Fre, interpose, interpret, runFreerEffects, untag, type (<|))
-import Data.Function ((&))
+import Control.Effect (SendIns (sendIns), type (<:), type (~>))
+import Control.Effect.ExtensibleChurch (runEff, type (:!!))
+import Control.Effect.Hefty (interposeRec, interpretRec, untagEff)
+import Data.Effect.HFunctor (HFunctor)
+import Data.Effect.TH (makeEffectF)
+import Data.Effect.Tag (Tag (unTag), type (#))
+import Data.Hefty.Extensible (Forall, type (<|))
 
-class Teletype f where
-    readTTY :: f String
-    writeTTY :: String -> f ()
+data Teletype a where
+    ReadTTY :: Teletype String
+    WriteTTY :: String -> Teletype ()
 
-makeEffectF ''Teletype
+makeEffectF [''Teletype]
 
-teletypeToIO :: (IO <: Fre es m, Monad m) => Fre (TeletypeI ': es) m ~> Fre es m
-teletypeToIO = interpret \case
+teletypeToIO :: (IO <| r, Forall HFunctor eh) => eh :!! LTeletype ': r ~> eh :!! r
+teletypeToIO = interpretRec \case
     ReadTTY -> sendIns getLine
     WriteTTY msg -> sendIns $ putStrLn msg
 
-data TTY1
-
-echo :: (Teletype (m @# TTY1), Monad m, Taggable m) => m ()
+echo :: (Teletype # "tty1" <: m, Monad m) => m ()
 echo = do
-    i <- readTTY & tag @TTY1
+    i <- readTTY' @"tty1"
     case i of
         "" -> pure ()
-        _ -> (writeTTY i & tag @TTY1) >> echo
+        _ -> writeTTY' @"tty1" i >> echo
 
-strong :: (TeletypeI # TTY1 <| es, Monad m) => Fre es m ~> Fre es m
+strong :: (Teletype # "tty1" <| ef, Forall HFunctor eh) => eh :!! ef ~> eh :!! ef
 strong =
-    interpose @(_ # TTY1) \e -> case getTag e of
-        ReadTTY -> readTTY & tag @TTY1
-        WriteTTY msg -> writeTTY (msg <> "!") & tag @TTY1
+    interposeRec @(_ # "tty1") \e -> case unTag e of
+        ReadTTY -> readTTY' @"tty1"
+        WriteTTY msg -> writeTTY' @"tty1" $ msg <> "!"
 
 main :: IO ()
-main = runFreerEffects $ do
+main = runEff $ do
     sendIns $ putStrLn "Please enter something..."
-    teletypeToIO . untag @TTY1 . strong . strong $ echo
+    teletypeToIO . untagEff @"tty1" . strong . strong $ echo

@@ -16,7 +16,7 @@ A tree-structured encoded Freer monad.
 module Control.Monad.Freer.Tree where
 
 import Control.Applicative (Alternative)
-import Control.Effect.Class (type (~>))
+import Control.Effect (type (~>))
 import Control.Freer (Freer, interpretFreer, liftIns, transformFreer)
 import Control.Monad (MonadPlus)
 import Control.Monad.Cont (Cont, ContT (ContT), runCont)
@@ -61,8 +61,6 @@ interpretTreeK i (FreerTree m) =
                         (i e)
                         ((`runCont` runIdentity . k) . interpretTreeK i . FreerTree . f)
 
--- ContT \k -> f k \k' e -> Identity $ runCont (i e) (runIdentity . k')
-
 instance Freer Monad FreerTree where
     liftIns = liftInsTree
     interpretFreer = interpretTree
@@ -71,6 +69,6 @@ instance Freer Monad FreerTree where
     {-# INLINE interpretFreer #-}
     {-# INLINE transformFreer #-}
 
-instance MonadFreer FreerTree where
+instance MonadFreer Monad FreerTree where
     interpretFreerK = interpretTreeK
     {-# INLINE interpretFreerK #-}

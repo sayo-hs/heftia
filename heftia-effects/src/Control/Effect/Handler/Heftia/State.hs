@@ -14,50 +14,79 @@ Interpreter for the t'Control.Effect.Class.State.State' effect class.
 module Control.Effect.Handler.Heftia.State where
 
 import Control.Arrow ((>>>))
-import Control.Effect.Class (type (~>))
-import Control.Effect.Class.Reader (AskI (Ask), ask)
-import Control.Effect.Class.State (StateI (Get, Put))
-import Control.Effect.Freer (Fre, interpose, interpretK, interpretT, raiseUnder)
+import Control.Effect (type (~>))
 import Control.Effect.Handler.Heftia.Reader (interpretAsk)
+import Control.Effect.Hefty (Eff, MemberF, interpose, interpretK, interpretT, raiseUnder)
+import Control.Monad.Freer (MonadFreer)
 import Control.Monad.State (StateT)
 import Control.Monad.Trans.State (runStateT)
 import Control.Monad.Trans.State qualified as T
+import Data.Effect.HFunctor (HFunctor)
+import Data.Effect.Reader (Ask (Ask), LAsk, ask)
+import Data.Effect.State (LState, State (Get, Put))
 import Data.Function ((&))
 import Data.Functor ((<&>))
+import Data.Hefty.Union (Union)
 import Data.Tuple (swap)
 
 -- | Interpret the 'Get'/'Put' effects using the 'StateT' monad transformer.
-interpretState :: forall s es m a. Monad m => s -> Fre (StateI s ': es) m a -> Fre es m (s, a)
+interpretState ::
+    forall s r a fr u c.
+    (MonadFreer c fr, Union u, c (Eff u fr '[] r), c (StateT s (Eff u fr '[] r))) =>
+    s ->
+    Eff u fr '[] (LState s ': r) a ->
+    Eff u fr '[] r (s, a)
 interpretState s a = swap <$> runStateT (interpretStateT a) s
 {-# INLINE interpretState #-}
 
-evalState :: forall s es m a. Monad m => s -> Fre (StateI s ': es) m a -> Fre es m a
+evalState ::
+    forall s r fr u c.
+    (MonadFreer c fr, Union u, c (Eff u fr '[] r), c (StateT s (Eff u fr '[] r))) =>
+    s ->
+    Eff u fr '[] (LState s ': r) ~> Eff u fr '[] r
 evalState s a = snd <$> interpretState s a
 {-# INLINE evalState #-}
 
-execState :: forall s es m a. Monad m => s -> Fre (StateI s ': es) m a -> Fre es m s
+execState ::
+    forall s r a fr u c.
+    (MonadFreer c fr, Union u, c (Eff u fr '[] r), c (StateT s (Eff u fr '[] r))) =>
+    s ->
+    Eff u fr '[] (LState s ': r) a ->
+    Eff u fr '[] r s
 execState s a = fst <$> interpretState s a
 {-# INLINE execState #-}
 
 -- | Interpret the 'Get'/'Put' effects using the 'StateT' monad transformer.
-interpretStateT :: forall s es m. Monad m => Fre (StateI s ': es) m ~> StateT s (Fre es m)
-interpretStateT = interpretT \case
-    Get -> T.get
-    Put s -> T.put s
+interpretStateT ::
+    forall s r fr u c.
+    (MonadFreer c fr, Union u, c (Eff u fr '[] r), c (StateT s (Eff u fr '[] r))) =>
+    Eff u fr '[] (LState s ': r) ~> StateT s (Eff u fr '[] r)
+interpretStateT =
+    interpretT \case
+        Get -> T.get
+        Put s -> T.put s
 {-# INLINE interpretStateT #-}
 
-{- |
-Interpret the 'Get'/'Put' effects using the t'Control.Monad.Trans.Cont.ContT' continuation monad
-transformer.
--}
-interpretStateK :: forall s es m a. Monad m => s -> Fre (StateI s ': es) m a -> Fre es m (s, a)
+-- | Interpret the 'Get'/'Put' effects using delimited continuations.
+interpretStateK ::
+    forall s r a fr u c.
+    ( MonadFreer c fr
+    , Union u
+    , HFunctor (u '[])
+    , MemberF u (Ask s) (LAsk s ': r)
+    , c (Eff u fr '[] (LAsk s ': r))
+    , Applicative (Eff u fr '[] r)
+    ) =>
+    s ->
+    Eff u fr '[] (LState s ': r) a ->
+    Eff u fr '[] r (s, a)
 interpretStateK initialState =
     raiseUnder
         >>> interpretK
             (\a -> ask <&> (,a))
             ( \k -> \case
                 Get -> k =<< ask
-                Put s -> k () & interpose @(AskI s) \Ask -> pure s
+                Put s -> k () & interpose @(Ask s) \Ask -> pure s
             )
         >>> interpretAsk initialState
 {-# INLINE interpretStateK #-}

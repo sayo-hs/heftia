@@ -1,1 +1,1 @@
-../heftia/README.md
+../README.md

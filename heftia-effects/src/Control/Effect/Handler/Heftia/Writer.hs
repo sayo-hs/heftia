@@ -16,27 +16,43 @@ See [README.md](https://github.com/sayo-hs/heftia/blob/master/README.md).
 -}
 module Control.Effect.Handler.Heftia.Writer where
 
-import Control.Effect.Class (type (~>))
-import Control.Effect.Class.Writer (Tell (tell), TellI (Tell), WriterS (Censor, Listen))
-import Control.Effect.Freer (Fre, intercept, interposeT, interpretK, interpretT, type (<|))
+import Control.Effect (type (~>))
+import Control.Effect.Hefty (Eff, Elab, MemberF, interposeT, interpretK, interpretT, rewrite)
+import Control.Monad.Freer (MonadFreer)
 import Control.Monad.Trans.Writer.CPS (WriterT, runWriterT)
 import Control.Monad.Trans.Writer.CPS qualified as T
+import Data.Effect.HFunctor (HFunctor)
+import Data.Effect.Writer (LTell, Tell (Tell), WriterH (Censor, Listen), tell)
 import Data.Function ((&))
+import Data.Hefty.Union (Union)
 import Data.Tuple (swap)
 
-elaborateWriterT ::
-    forall w m es.
-    (Monad m, Monoid w, TellI w <| es) =>
-    WriterS w (Fre es m) ~> Fre es m
-elaborateWriterT = \case
+elaborateWriter ::
+    forall w ef fr u c.
+    ( Monoid w
+    , MonadFreer c fr
+    , Union u
+    , MemberF u (Tell w) ef
+    , HFunctor (u '[])
+    , c (WriterT w (Eff u fr '[] ef))
+    , c (Eff u fr '[] ef)
+    ) =>
+    Elab (WriterH w) (Eff u fr '[] ef)
+elaborateWriter = \case
     Listen m -> listenT m
-    Censor f m -> m & intercept @(TellI w) \(Tell w) -> Tell $ f w
+    Censor f m -> m & rewrite @(Tell w) \(Tell w) -> Tell $ f w
 
-elaborateWriterTransactionalT ::
-    forall w m es.
-    (Monad m, Monoid w, TellI w <| es) =>
-    WriterS w (Fre es m) ~> Fre es m
-elaborateWriterTransactionalT = \case
+elaborateWriterTransactional ::
+    forall w ef fr u c.
+    ( Monoid w
+    , MonadFreer c fr
+    , Union u
+    , MemberF u (Tell w) ef
+    , c (WriterT w (Eff u fr '[] ef))
+    , c (Eff u fr '[] ef)
+    ) =>
+    Elab (WriterH w) (Eff u fr '[] ef)
+elaborateWriterTransactional = \case
     Listen m -> listenT m
     Censor f m -> do
         (a, w) <- confiscateT m
@@ -44,9 +60,16 @@ elaborateWriterTransactionalT = \case
         pure a
 
 listenT ::
-    (Monoid w, Monad m, TellI w <| es) =>
-    Fre es m a ->
-    Fre es m (a, w)
+    forall w es a fr u c.
+    ( Monoid w
+    , MonadFreer c fr
+    , Union u
+    , MemberF u (Tell w) es
+    , c (WriterT w (Eff u fr '[] es))
+    , c (Eff u fr '[] es)
+    ) =>
+    Eff u fr '[] es a ->
+    Eff u fr '[] es (a, w)
 listenT m = do
     (a, w) <- confiscateT m
     tell w
@@ -54,22 +77,36 @@ listenT m = do
 {-# INLINE listenT #-}
 
 confiscateT ::
-    forall w m es a.
-    (Monoid w, Monad m, TellI w <| es) =>
-    Fre es m a ->
-    Fre es m (a, w)
-confiscateT = runWriterT . interposeT @(TellI w) \(Tell w) -> T.tell w
+    forall w es a fr u c.
+    ( Monoid w
+    , MonadFreer c fr
+    , Union u
+    , MemberF u (Tell w) es
+    , c (WriterT w (Eff u fr '[] es))
+    , c (Eff u fr '[] es)
+    ) =>
+    Eff u fr '[] es a ->
+    Eff u fr '[] es (a, w)
+confiscateT = runWriterT . interposeT @(Tell w) \(Tell w) -> T.tell w
 {-# INLINE confiscateT #-}
 
-interpretTell :: (Monad m, Monoid w) => Fre (TellI w ': es) m a -> Fre es m (w, a)
+interpretTell ::
+    (Monoid w, MonadFreer c fr, Union u, c (WriterT w (Eff u fr '[] r)), c (Eff u fr '[] r)) =>
+    Eff u fr '[] (LTell w ': r) a ->
+    Eff u fr '[] r (w, a)
 interpretTell = fmap swap . runWriterT . interpretTellT
 {-# INLINE interpretTell #-}
 
-interpretTellT :: (Monad m, Monoid w) => Fre (TellI w ': es) m a -> WriterT w (Fre es m) a
+interpretTellT ::
+    (Monoid w, MonadFreer c fr, Union u, c (Eff u fr '[] r), c (WriterT w (Eff u fr '[] r))) =>
+    Eff u fr '[] (LTell w ': r) ~> WriterT w (Eff u fr '[] r)
 interpretTellT = interpretT \(Tell w) -> T.tell w
 {-# INLINE interpretTellT #-}
 
-interpretTellK :: (Monad m, Monoid w) => Fre (TellI w ': es) m a -> Fre es m (w, a)
+interpretTellK ::
+    (Monoid w, MonadFreer c fr, Union u, c (Eff u fr '[] r)) =>
+    Eff u fr '[] (LTell w ': r) a ->
+    Eff u fr '[] r (w, a)
 interpretTellK =
     interpretK (pure . (mempty,)) \k (Tell w) -> do
         (w', r) <- k ()

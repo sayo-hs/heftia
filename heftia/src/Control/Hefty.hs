@@ -1,3 +1,4 @@
+{-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 -- This Source Code Form is subject to the terms of the Mozilla Public
@@ -7,12 +8,12 @@
 module Control.Hefty where
 
 import Control.Applicative (Alternative)
-import Control.Effect.Class (type (~>))
-import Control.Effect.Class.Machinery.HFunctor (HFunctor, caseH, hfmap, type (:+:))
-import Control.Freer (Freer, InsClass, interpretFreer, liftIns)
+import Control.Effect (SendIns (..), SendSig (..), type (~>))
+import Control.Freer (Freer (liftIns), InjectIns, injectIns)
 import Control.Monad (MonadPlus)
 import Control.Monad.Base (MonadBase)
 import Control.Monad.IO.Class (MonadIO)
+import Data.Effect (InsClass, SigClass)
 import Data.Kind (Type)
 
 newtype
@@ -21,8 +22,6 @@ newtype
         (e :: SigClass)
         (a :: Type) = Hefty
     {unHefty :: f (e (Hefty f e)) a}
-
-type SigClass = (Type -> Type) -> Type -> Type
 
 deriving newtype instance Functor (f (e (Hefty f e))) => Functor (Hefty f e)
 deriving newtype instance Applicative (f (e (Hefty f e))) => Applicative (Hefty f e)
@@ -47,35 +46,13 @@ overHefty ::
 overHefty f = Hefty . f . unHefty
 {-# INLINE overHefty #-}
 
-interpretRecRWith ::
-    forall r l f c.
-    Freer c f =>
-    ((Hefty f (l :+: r) ~> Hefty f l) -> l (Hefty f (l :+: r)) ~> l (Hefty f l)) ->
-    ((Hefty f (l :+: r) ~> Hefty f l) -> r (Hefty f (l :+: r)) ~> Hefty f l) ->
-    Hefty f (l :+: r) ~> Hefty f l
-interpretRecRWith f i =
-    overHefty $
-        interpretFreer $
-            caseH
-                (liftIns . f int)
-                (unHefty . i int)
-  where
-    int :: Hefty f (l :+: r) ~> Hefty f l
-    int = interpretRecRWith f i
-    {-# INLINE int #-}
+instance (Freer c fr, InjectIns e (e' (Hefty fr e'))) => SendIns e (Hefty fr e') where
+    sendIns = Hefty . liftIns . injectIns
+    {-# INLINE sendIns #-}
 
-interpretRecR ::
-    forall r l f c.
-    (Freer c f, HFunctor l, HFunctor r) =>
-    (r (Hefty f l) ~> Hefty f l) ->
-    Hefty f (l :+: r) ~> Hefty f l
-interpretRecR i =
-    overHefty $
-        interpretFreer $
-            caseH
-                (liftIns . hfmapInt)
-                (unHefty . i . hfmapInt)
-  where
-    hfmapInt :: HFunctor e => e (Hefty f (l :+: r)) ~> e (Hefty f l)
-    hfmapInt = hfmap $ interpretRecR i
-    {-# INLINE hfmapInt #-}
+instance (Freer c fr, InjectSig e e') => SendSig e (Hefty fr e') where
+    sendSig = Hefty . liftIns . injectSig
+    {-# INLINE sendSig #-}
+
+class InjectSig e (e' :: SigClass) where
+    injectSig :: e f ~> e' f

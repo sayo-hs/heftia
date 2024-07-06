@@ -3,23 +3,22 @@
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 {- |
-Copyright   :  (c) 2023 Yamada Ryo
-               (c) 2023 Casper Bach Poulsen and Cas van der Rest
+Copyright   :  (c) 2023-2024 Yamada Ryo
 License     :  MPL-2.0 (see the file LICENSE)
 Maintainer  :  ymdfield@outlook.jp
 Stability   :  experimental
 Portability :  portable
 
-An implementation of an open union for first-order effects using recursively nested binary sums.
+Binary sums for first-order effects.
 -}
 module Data.Free.Sum (module Data.Free.Sum, pattern L1, pattern R1) where
 
-import Control.Effect.Class (NopI, type (~>))
+import Control.Effect (type (~>))
+import Data.Effect (Nop)
 import GHC.Generics (type (:+:) (L1, R1))
 
-infixr 6 +
-
 type (+) = (:+:)
+infixr 5 +
 
 caseF :: (f a -> r) -> (g a -> r) -> (f + g) a -> r
 caseF f g = \case
@@ -27,11 +26,11 @@ caseF f g = \case
     R1 x -> g x
 {-# INLINE caseF #-}
 
-absurdL :: (NopI + f) ~> f
+absurdL :: Nop + f ~> f
 absurdL = caseF \case {} id
 {-# INLINE absurdL #-}
 
-absurdR :: (f + NopI) ~> f
+absurdR :: f + Nop ~> f
 absurdR = caseF id \case {}
 {-# INLINE absurdR #-}
 
