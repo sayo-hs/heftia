@@ -95,7 +95,7 @@ saveLogChunk
         eh :!! ef ~> eh :!! ef
 saveLogChunk =
         raise >>> raiseH
-    >>> (   interposeRecH @LogChunk \(LogChunk chunkName a) -> do
+    >>> (   interposeRecH \(LogChunk chunkName a) -> do
                 chunkBeginAt <- currentTime
                 let dirName = iso8601Show chunkBeginAt ++ "-" ++ T.unpack chunkName
                 local @FilePath (++ dirName ++ "/") do
