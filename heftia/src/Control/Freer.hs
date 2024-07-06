@@ -106,11 +106,11 @@ instance (Freer c fr, InjectIns e e') => SendIns e (ViaFreer fr e') where
 class InjectIns e (e' :: InsClass) where
     injectIns :: e ~> e'
 
-instance (Freer c fr, InjectInsBy key e' e) => SendInsBy key (ViaFreer fr e') e where
+instance (Freer c fr, InjectInsBy key e e') => SendInsBy key e (ViaFreer fr e') where
     sendInsBy = ViaFreer . liftIns . injectInsBy @key
     {-# INLINE sendInsBy #-}
 
-class InjectInsBy key (e' :: InsClass) e | key e' -> e where
+class InjectInsBy key e (e' :: InsClass) | key e' -> e where
     injectInsBy :: e ~> e'
 
 overFreer :: (fr e a -> fr' e' b) -> ViaFreer fr e a -> ViaFreer fr' e' b

@@ -959,13 +959,13 @@ untagEffH = transformH unTagH
 
 instance
     (MemberRec u (LiftIns (key #> e)) efs, LiftIns (key #> e) ~ FromJust (Lookup efs u key)) =>
-    InjectInsBy key (EffUnion u ehs efs f) e where
+    InjectInsBy key e (EffUnion u ehs efs f) where
     injectInsBy = EffUnion . R1 . injectRec . LiftIns . Key @key
     {-# INLINE injectInsBy #-}
 
 instance
     (MemberRec u e ehs, e ~ FromJust (Lookup ehs u key)) =>
-    InjectSigBy key (EffUnion u ehs efs) e where
+    InjectSigBy key e (EffUnion u ehs efs) where
     injectSigBy = EffUnion . L1 . injectRec
     {-# INLINE injectSigBy #-}
 

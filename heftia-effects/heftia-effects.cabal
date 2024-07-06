@@ -52,6 +52,11 @@ common common-base
         DefaultSignatures,
         PatternSynonyms
 
+    build-depends:
+        ghc-typelits-knownnat ^>= 0.7
+
+    ghc-options: -Wall -fplugin GHC.TypeLits.KnownNat.Solver
+
 library
     import: common-base
 
@@ -73,7 +78,7 @@ library
     build-depends:
         base                          ^>= 4.16.4.0,
         heftia                        ^>= 0.1,
-        data-effects                ^>= 0.1,
+        data-effects                  ^>= 0.1,
         mtl                           ^>= 2.2.2,
         transformers                  ^>= 0.5.6,
         extensible                    ^>= 0.9,
@@ -128,7 +133,6 @@ executable Logging
 
     main-is: Main.hs
     hs-source-dirs: Example/Logging
-    ghc-options: -Wall -fplugin GHC.TypeLits.KnownNat.Solver
     build-depends:
         data-effects,
         heftia,
@@ -138,7 +142,6 @@ executable Logging
         time ^>= 1.11.1,
         loglevel ^>= 0.1.0,
         extra ^>= 1.7.14,
-        ghc-typelits-knownnat ^>= 0.7,
 
 executable Continuation
     import: common-base

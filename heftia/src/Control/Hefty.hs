@@ -59,13 +59,13 @@ instance (Freer c fr, InjectSig e e') => SendSig e (Hefty fr e') where
 class InjectSig e (e' :: SigClass) where
     injectSig :: e f ~> e' f
 
-instance (Freer c fr, InjectInsBy key (e' (Hefty fr e')) e) => SendInsBy key (Hefty fr e') e where
+instance (Freer c fr, InjectInsBy key e (e' (Hefty fr e'))) => SendInsBy key e (Hefty fr e') where
     sendInsBy = Hefty . liftIns . injectInsBy @key
     {-# INLINE sendInsBy #-}
 
-instance (Freer c fr, InjectSigBy key e' e) => SendSigBy key (Hefty fr e') e where
+instance (Freer c fr, InjectSigBy key e e') => SendSigBy key e (Hefty fr e') where
     sendSigBy = Hefty . liftIns . injectSigBy @key
     {-# INLINE sendSigBy #-}
 
-class InjectSigBy key (e' :: SigClass) e | key e' -> e where
+class InjectSigBy key e (e' :: SigClass) | key e' -> e where
     injectSigBy :: e f ~> e' f

@@ -28,7 +28,7 @@ teletypeToIO = interpretRec \case
     ReadTTY -> sendIns getLine
     WriteTTY msg -> sendIns $ putStrLn msg
 
-echo :: (SendInsBy "tty1" m Teletype, Monad m) => m ()
+echo :: (SendInsBy "tty1" Teletype m, Monad m) => m ()
 echo = do
     i <- readTTY & key @"tty1"
     case i of
