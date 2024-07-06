@@ -31,8 +31,8 @@ infixr 4 !
 type ehs :!! efs = Eff ExtensibleUnion FreerChurch ehs efs
 type (:!) efs = EffF ExtensibleUnion FreerChurch efs
 
-infixr 5 :!!
-infixr 4 :!
+infixr 4 :!!
+infixr 3 :!
 
 runEff :: Monad f => '[] :!! '[LiftIns f] ~> f
 runEff = H.runEff

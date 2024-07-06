@@ -39,7 +39,7 @@ data Time a where
 
 makeEffectF [''Time]
 
-timeToIO :: (IO <| r, ForallHFunctor eh) => eh :!! (LTime ': r) ~> eh :!! r
+timeToIO :: (IO <| r, ForallHFunctor eh) => eh :!! LTime ': r ~> eh :!! r
 timeToIO = interpretRec \CurrentTime -> sendIns getCurrentTime
 
 logWithTime :: (Log <| ef, Time <| ef, ForallHFunctor eh) => eh :!! ef ~> eh :!! ef
@@ -58,12 +58,12 @@ data LogChunk f (a :: Type) where
 makeEffectH [''LogChunk]
 
 -- | Ignore chunk names and output logs in log chunks as they are.
-runLogChunk :: ForallHFunctor eh => (LogChunk ': eh) :!! ef ~> eh :!! ef
+runLogChunk :: ForallHFunctor eh => LogChunk ': eh :!! ef ~> eh :!! ef
 runLogChunk = interpretRecH \(LogChunk _ m) -> m
 
 -- | Limit the number of logs in a log chunk to the first @n@ logs.
 limitLogChunk
-    ::  forall eh ef. (LogChunk <<| eh, Log <| {- LState Int ': -} ef) =>
+    ::  forall eh ef. (LogChunk <<| eh, Log <| ef) =>
         Int -> LogChunk ('[] :!! ef) ~> LogChunk ('[] :!! ef)
 limitLogChunk n (LogChunk chunkName a) =
     LogChunk chunkName . evalState @Int 0 $
@@ -82,7 +82,7 @@ data FileSystem a where
 
 makeEffectF [''FileSystem]
 
-runDummyFS :: (IO <| r, ForallHFunctor eh) => eh :!! (LFileSystem ': r) ~> eh :!! r
+runDummyFS :: (IO <| r, ForallHFunctor eh) => eh :!! LFileSystem ': r ~> eh :!! r
 runDummyFS = interpretRec \case
     Mkdir path ->
         sendIns $ putStrLn $ "<runDummyFS> mkdir " <> path
