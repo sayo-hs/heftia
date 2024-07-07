@@ -13,8 +13,7 @@ import Control.Effect.Hefty (interposeRec, interpretRec, unkeyEff)
 import Data.Effect.TH (makeEffectF)
 import Data.Hefty.Extensible (type (<|), MemberBy, ForallHFunctor)
 import Data.Effect.Key (type (#>), unKey)
-import Data.Function ((&))
-import Control.Effect.Key (key, SendInsBy)
+import Control.Effect.Key (SendInsBy)
 
 data Teletype a where
     ReadTTY :: Teletype String
@@ -29,16 +28,16 @@ teletypeToIO = interpretRec \case
 
 echo :: (SendInsBy "tty1" Teletype m, Monad m) => m ()
 echo = do
-    i <- readTTY & key @"tty1"
+    i <- readTTY'' @"tty1"
     case i of
         "" -> pure ()
-        _ -> writeTTY i & key @"tty1" >> echo
+        _ -> writeTTY'' @"tty1" i >> echo
 
 strong :: (MemberBy "tty1" Teletype ef, ForallHFunctor eh) => eh :!! ef ~> eh :!! ef
 strong =
     interposeRec @("tty1" #> _) \e -> case unKey e of
-        ReadTTY -> readTTY & key @"tty1"
-        WriteTTY msg -> writeTTY (msg <> "!") & key @"tty1"
+        ReadTTY -> readTTY'' @"tty1"
+        WriteTTY msg -> writeTTY'' @"tty1" $ msg <> "!"
 
 main :: IO ()
 main = runEff do
