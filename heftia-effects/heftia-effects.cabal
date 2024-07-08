@@ -66,9 +66,10 @@ library
     exposed-modules:
         Control.Effect.Handler.Heftia.Reader
         Control.Effect.Handler.Heftia.Writer
-        Control.Effect.Handler.Heftia.ShiftReset
         Control.Effect.Handler.Heftia.State
         Control.Effect.Handler.Heftia.Except
+        Control.Effect.Handler.Heftia.ShiftReset
+        Control.Effect.Handler.Heftia.Coroutine
         Control.Effect.Handler.Heftia.Provider
         Control.Effect.Handler.Heftia.Provider.Implicit
         Control.Effect.Handler.Heftia.Resource
@@ -106,9 +107,10 @@ library
         Data.Effect.Writer,
         Data.Effect.State,
         Data.Effect.Except,
+        Data.Effect.ShiftReset,
+        Data.Effect.Coroutine,
         Data.Effect.Provider,
         Data.Effect.Provider.Implicit,
-        Data.Effect.ShiftReset,
         Data.Effect.Resource,
 
     -- Modules included in this executable, other than Main.

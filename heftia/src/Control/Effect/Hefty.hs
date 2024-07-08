@@ -134,7 +134,7 @@ injectF = Hefty . liftIns . EffUnion . R1
             - FH
 
     todo patterns:
-        - *{FH,FH_} in interpret-family ( (5x2+1) + 2 = 11 functions )
+        - *{FH,FH_} in interpret-family ( (5x2+1) + 2 = 13 functions )
         - *By in interpose/translate/rewrite ( 7 + 3x2 = 13 functions )
 -}
 
