@@ -73,6 +73,7 @@ library
         Control.Effect.Handler.Heftia.Provider
         Control.Effect.Handler.Heftia.Provider.Implicit
         Control.Effect.Handler.Heftia.Resource
+        Control.Effect.Handler.Heftia.Unlift
 
     reexported-modules:
         Control.Effect.Hefty,
