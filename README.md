@@ -75,8 +75,8 @@ are some examples:
                 . interpretH (elaborateWriterPost @String)
                 $ censorHello
 
-        sendIns $ putStrLn $ "Pre-applying: " <> sPre
-        sendIns $ putStrLn $ "Post-applying: " <> sPost
+        liftIO $ putStrLn $ "Pre-applying: " <> sPre
+        liftIO $ putStrLn $ "Post-applying: " <> sPost
     ```
 
     Using the `elaborateWriterPre` elaborator, you'll get "Goodbye world!", whereas with the `elaborateWriterPost` elaborator, you'll get "Hello world!!".

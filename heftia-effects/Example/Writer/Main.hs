@@ -4,10 +4,11 @@
 
 module Main where
 
-import Control.Effect (sendIns, type (<:), type (<<:))
+import Control.Effect (type (<:), type (<<:))
 import Control.Effect.ExtensibleChurch (runEff)
 import Control.Effect.Handler.Heftia.Writer (elaborateWriterPost, elaborateWriterPre, interpretTell)
 import Control.Effect.Hefty (interpretH)
+import Control.Monad.IO.Class (liftIO)
 import Data.Effect.Writer (Tell, WriterH, censor, tell)
 
 hello :: (Tell String <: m, Monad m) => m ()
@@ -40,8 +41,8 @@ main = runEff do
             . interpretH (elaborateWriterPost @String)
             $ censorHello
 
-    sendIns $ putStrLn $ "Pre-applying: " <> sPre
-    sendIns $ putStrLn $ "Post-applying: " <> sPost
+    liftIO $ putStrLn $ "Pre-applying: " <> sPre
+    liftIO $ putStrLn $ "Post-applying: " <> sPost
 
 {-
 Pre-applying: Goodbye world!

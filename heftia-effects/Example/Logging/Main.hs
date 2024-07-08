@@ -9,12 +9,13 @@
 module Main where
 
 import Control.Arrow ((>>>))
-import Control.Effect (sendIns, type (<:), type (<<:), type (~>))
+import Control.Effect (type (<:), type (<<:), type (~>))
 import Control.Effect.ExtensibleChurch (runEff, type (:!!))
 import Control.Effect.Handler.Heftia.Reader (interpretReader)
 import Control.Effect.Handler.Heftia.State (evalState)
 import Control.Effect.Hefty (interposeRec, interposeRecH, interpretRec, interpretRecH, raise, raiseH)
 import Control.Monad (when)
+import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Effect.Reader (ask, local)
 import Data.Effect.State (get, modify)
 import Data.Effect.TH (makeEffectF, makeEffectH)
@@ -33,7 +34,7 @@ data Log a where
 makeEffectF [''Log]
 
 logToIO :: (IO <| r, ForallHFunctor eh) => eh :!! LLog ': r ~> eh :!! r
-logToIO = interpretRec \(Logging msg) -> sendIns $ T.putStrLn msg
+logToIO = interpretRec \(Logging msg) -> liftIO $ T.putStrLn msg
 
 data Time a where
     CurrentTime :: Time UTCTime
@@ -41,7 +42,7 @@ data Time a where
 makeEffectF [''Time]
 
 timeToIO :: (IO <| r, ForallHFunctor eh) => eh :!! LTime ': r ~> eh :!! r
-timeToIO = interpretRec \CurrentTime -> sendIns getCurrentTime
+timeToIO = interpretRec \CurrentTime -> liftIO getCurrentTime
 
 logWithTime :: (Log <| ef, Time <| ef, ForallHFunctor eh) => eh :!! ef ~> eh :!! ef
 logWithTime = interposeRec \(Logging msg) -> do
@@ -88,9 +89,9 @@ makeEffectF [''FileSystem]
 runDummyFS :: (IO <| r, ForallHFunctor eh) => eh :!! LFileSystem ': r ~> eh :!! r
 runDummyFS = interpretRec \case
     Mkdir path ->
-        sendIns $ putStrLn $ "<runDummyFS> mkdir " <> path
+        liftIO $ putStrLn $ "<runDummyFS> mkdir " <> path
     WriteToFile path content ->
-        sendIns $ putStrLn $ "<runDummyFS> writeToFile " <> path <> " : " <> content
+        liftIO $ putStrLn $ "<runDummyFS> writeToFile " <> path <> " : " <> content
 
 -- | Create directories according to the log-chunk structure and save one log in one file.
 saveLogChunk ::
@@ -112,7 +113,7 @@ saveLogChunk =
             )
         >>> interpretReader @FilePath "./log/"
 
-logExample :: (LogChunk <<: m, Log <: m, IO <: m, Monad m) => m ()
+logExample :: (LogChunk <<: m, Log <: m, MonadIO m) => m ()
 logExample =
     logChunk "scope1" do
         logging "foo"
@@ -120,7 +121,7 @@ logExample =
         logging "baz"
         logging "qux"
 
-        sendIns $ putStrLn "------"
+        liftIO $ putStrLn "------"
 
         logChunk "scope2" do
             logging "hoge"
@@ -128,7 +129,7 @@ logExample =
             logging "fuga"
             logging "hogera"
 
-        sendIns $ putStrLn "------"
+        liftIO $ putStrLn "------"
 
         logging "quux"
         logging "foobar"

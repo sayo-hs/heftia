@@ -7,10 +7,11 @@
 
 module Main where
 
-import Control.Effect (SendIns (sendIns), type (~>))
+import Control.Effect (type (~>))
 import Control.Effect.ExtensibleChurch (runEff, type (:!!))
 import Control.Effect.Hefty (interposeRec, interpretRec, unkeyEff)
 import Control.Effect.Key (SendInsBy)
+import Control.Monad.IO.Class (liftIO)
 import Data.Effect.Key (unKey, type (#>))
 import Data.Effect.TH (makeEffectF)
 import Data.Hefty.Extensible (ForallHFunctor, MemberBy, type (<|))
@@ -23,8 +24,8 @@ makeEffectF [''Teletype]
 
 teletypeToIO :: (IO <| r, ForallHFunctor eh) => eh :!! LTeletype ': r ~> eh :!! r
 teletypeToIO = interpretRec \case
-    ReadTTY -> sendIns getLine
-    WriteTTY msg -> sendIns $ putStrLn msg
+    ReadTTY -> liftIO getLine
+    WriteTTY msg -> liftIO $ putStrLn msg
 
 echo :: (SendInsBy "tty1" Teletype m, Monad m) => m ()
 echo = do
@@ -41,5 +42,5 @@ strong =
 
 main :: IO ()
 main = runEff do
-    sendIns $ putStrLn "Please enter something..."
+    liftIO $ putStrLn "Please enter something..."
     teletypeToIO . unkeyEff @"tty1" . strong . strong $ echo

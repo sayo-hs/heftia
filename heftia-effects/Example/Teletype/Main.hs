@@ -11,9 +11,10 @@ The original of this example can be found at polysemy.
 -}
 module Main where
 
-import Control.Effect (SendIns (sendIns), type (<:), type (~>))
+import Control.Effect (type (<:), type (~>))
 import Control.Effect.ExtensibleChurch (runEff, type (:!!))
 import Control.Effect.Hefty (interposeRec, interpretRec, untagEff)
+import Control.Monad.IO.Class (liftIO)
 import Data.Effect.TH (makeEffectF)
 import Data.Effect.Tag (Tag (unTag), type (#))
 import Data.Hefty.Extensible (ForallHFunctor, type (<|))
@@ -26,8 +27,8 @@ makeEffectF [''Teletype]
 
 teletypeToIO :: (IO <| r, ForallHFunctor eh) => eh :!! LTeletype ': r ~> eh :!! r
 teletypeToIO = interpretRec \case
-    ReadTTY -> sendIns getLine
-    WriteTTY msg -> sendIns $ putStrLn msg
+    ReadTTY -> liftIO getLine
+    WriteTTY msg -> liftIO $ putStrLn msg
 
 echo :: (Teletype # "tty1" <: m, Monad m) => m ()
 echo = do
@@ -44,5 +45,5 @@ strong =
 
 main :: IO ()
 main = runEff do
-    sendIns $ putStrLn "Please enter something..."
+    liftIO $ putStrLn "Please enter something..."
     teletypeToIO . untagEff @"tty1" . strong . strong $ echo

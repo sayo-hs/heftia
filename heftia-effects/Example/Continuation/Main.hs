@@ -7,9 +7,10 @@
 
 module Main where
 
-import Control.Effect (SendIns (sendIns), type (~>))
+import Control.Effect (type (~>))
 import Control.Effect.ExtensibleChurch (runEff, type (:!!))
 import Control.Effect.Hefty (interposeK, interpretH, interpretRec)
+import Control.Monad.IO.Class (liftIO)
 import Data.Effect.TH (makeEffectF, makeEffectH)
 import Data.Function ((&))
 import Data.Hefty.Extensible (ForallHFunctor, type (<|))
@@ -39,13 +40,13 @@ main =
         . runForkSingle
         . interpretH (applyResetFork 4)
         $ do
-            sendIns . putStrLn . (("[out of scope] " ++) . show) =<< fork
+            liftIO . putStrLn . (("[out of scope] " ++) . show) =<< fork
             s <- resetFork do
                 fid1 <- fork
                 fid2 <- fork
-                sendIns $ putStrLn $ "[delimited continuation of `fork`] Fork ID: " ++ show (fid1, fid2)
+                liftIO $ putStrLn $ "[delimited continuation of `fork`] Fork ID: " ++ show (fid1, fid2)
                 pure $ show (fid1, fid2)
-            sendIns $ putStrLn $ "scope exited. result: " ++ s
+            liftIO $ putStrLn $ "scope exited. result: " ++ s
 
 {-
 [out of scope] 0

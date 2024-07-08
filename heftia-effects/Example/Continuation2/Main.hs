@@ -4,13 +4,13 @@
 
 module Main where
 
-import Control.Effect (sendIns)
 import Control.Effect.ExtensibleChurch (runEff, type (!!))
 import Control.Effect.Handler.Heftia.Reader (elaborateLocal, interpretAsk)
 import Control.Effect.Handler.Heftia.ShiftReset (Shift, Shift_, getCC, getCC_, runShift, runShift_)
 import Control.Effect.Handler.Heftia.State (evalState)
 import Control.Effect.Hefty (interpretH, send1, type ($))
 import Control.Monad.Extra (whenM)
+import Control.Monad.IO.Class (liftIO)
 import Data.Effect.HFunctor ((:+:))
 import Data.Effect.Reader (Ask, Local, ask, local)
 import Data.Effect.State (State, get, modify)
@@ -72,12 +72,12 @@ elaborateLocalThenShift =
     prog = do
         k <- send1 getCC
         env <- ask @Double
-        send1 $ sendIns $ putStrLn $ "[local scope outer] env = " ++ show env
+        send1 $ liftIO $ putStrLn $ "[local scope outer] env = " ++ show env
         local @Double (* 2) do
             whenM (send1 (get @Int) <&> (< 5)) do
                 send1 $ modify @Int (+ 1)
                 env' <- ask @Double
-                send1 $ sendIns $ putStrLn $ "[local scope inner] env = " ++ show env'
+                send1 $ liftIO $ putStrLn $ "[local scope inner] env = " ++ show env'
                 send1 k
 
 elaborateShiftThenLocal :: IO ()
@@ -93,10 +93,10 @@ elaborateShiftThenLocal = do
     prog = do
         k <- getCC_
         env <- ask @Double
-        sendIns $ putStrLn $ "[local scope outer] env = " ++ show env
+        liftIO $ putStrLn $ "[local scope outer] env = " ++ show env
         local @Double (* 2) do
             whenM (get @Int <&> (< 5)) do
                 modify @Int (+ 1)
                 env' <- ask @Double
-                sendIns $ putStrLn $ "[local scope inner] env = " ++ show env'
+                liftIO $ putStrLn $ "[local scope inner] env = " ++ show env'
                 k
