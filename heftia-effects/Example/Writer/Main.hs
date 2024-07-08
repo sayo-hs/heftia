@@ -7,9 +7,7 @@ module Main where
 import Control.Effect (sendIns, type (<:), type (<<:))
 import Control.Effect.ExtensibleChurch (runEff)
 import Control.Effect.Handler.Heftia.Writer (elaborateWriterPost, elaborateWriterPre, interpretTell)
-import Control.Effect.Hefty (
-    interpretH,
- )
+import Control.Effect.Hefty (interpretH)
 import Data.Effect.Writer (Tell, WriterH, censor, tell)
 
 hello :: (Tell String <: m, Monad m) => m ()
