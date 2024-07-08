@@ -19,8 +19,8 @@ import Control.Freer (Freer)
 import Control.Monad.State (StateT)
 import Data.Effect.HFunctor (HFunctor)
 import Data.Effect.Input (Input (Input), LInput)
-import Data.Effect.State (LState, gets, put)
-import Data.Hefty.Union (Union (HasMembership))
+import Data.Effect.State (LState, State, gets, put)
+import Data.Hefty.Union (Member, Union)
 import Data.List (uncons)
 
 runInputEff ::
@@ -47,7 +47,7 @@ runInputList ::
     , Monad (Eff u fr '[] (LState [i] ': r))
     , c (Eff u fr '[] r)
     , c (StateT [i] (Eff u fr '[] r))
-    , HasMembership u (LState [i]) (LState [i] ': r)
+    , Member u (State [i]) (LState [i] ': r)
     , HFunctor (u '[])
     ) =>
     [i] ->
