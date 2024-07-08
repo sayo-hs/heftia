@@ -29,7 +29,7 @@ are some examples:
 
 * Extracting Multi-shot Delimited Continuations
 
-    In handling higher-order effects, it's easy to work with multi-shot delimited continuations.
+    In handling higher-order effects, it's easy to work with **multi-shot delimited continuations**.
     This enables an almost complete emulation of "Algebraic Effects and Handlers".
     For more details, please refer to
     the [example code](heftia-effects/Example/Continuation/Main.hs).
@@ -60,7 +60,7 @@ are some examples:
 
     For `censorHello`, should the final written string be `"Goodbye world!"` (Pre-applying behavior) ?
     Or should it be `"Hello world!!"` (Post-applying behavior) ?
-    With Heftia, you can freely choose either behavior depending on which higher-order effect interpreter (which we call an elaborator) you use.
+    With Heftia, **you can freely choose either behavior depending on which higher-order effect interpreter (which we call an elaborator) you use**.
 
     ```hs
     main :: IO ()
@@ -89,6 +89,9 @@ are some examples:
 
 Furthermore, the structure of Heftia is theoretically straightforward, with ad-hoc elements being
 eliminated.
+
+Additionally, Heftia supports not only monadic effectful programs but also **applicative effectful programs**.
+This may be useful when writing concurrent effectful code.
 
 Heftia is the current main focus of the [Sayo Project](https://github.com/sayo-hs).
 
