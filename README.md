@@ -65,12 +65,12 @@ are some examples:
     ```hs
     main :: IO ()
     main = runEff do
-        (sPre :: String, _) <-
+        (sPre, _) <-
             interpretTell
                 . interpretH (elaborateWriterPre @String)
                 $ censorHello
 
-        (sPost :: String, _) <-
+        (sPost, _) <-
             interpretTell
                 . interpretH (elaborateWriterPost @String)
                 $ censorHello
