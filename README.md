@@ -27,6 +27,13 @@ Compared to existing Effect System libraries in Haskell that handle higher-order
 library's approach allows for a more effortless and flexible handling of higher-order effects. Here
 are some examples:
 
+* Extracting Multi-shot Delimited Continuations
+
+    In handling higher-order effects, it's easy to work with multi-shot delimited continuations.
+    This enables an almost complete emulation of "Algebraic Effects and Handlers".
+    For more details, please refer to
+    the [example code](heftia-effects/Example/Continuation/Main.hs).
+
 * Two interpretations of the `censor` effect for Writer
 
     Let's consider the following Writer effectful program:
@@ -40,39 +47,45 @@ are some examples:
     censorHello :: (Tell String <: m, WriterH String <<: m, Monad m) => m ()
     censorHello =
         censor
-            (\s -> if s == "Hello" then "Goodbye" else s)
+            ( \s ->
+                if s == "Hello" then
+                    "Goodbye"
+                else if s == "Hello world!" then
+                    "Hello world!!"
+                else
+                    s
+            )
             hello
     ```
 
-    For `censorHello`, should the final written string be `"Goodbye world!"`? Or should it be `"Hello world!"`?
+    For `censorHello`, should the final written string be `"Goodbye world!"` (Pre-applying behavior) ?
+    Or should it be `"Hello world!!"` (Post-applying behavior) ?
     With Heftia, you can freely choose either behavior depending on which higher-order effect interpreter (which we call an elaborator) you use.
 
     ```hs
     main :: IO ()
     main = runEff do
-        (s :: String, _) <-
+        (sPre :: String, _) <-
             interpretTell
-                . interpretH (elaborateWriter @String)
+                . interpretH (elaborateWriterPre @String)
                 $ censorHello
 
-        (sTransactional :: String, _) <-
+        (sPost :: String, _) <-
             interpretTell
-                . interpretH (elaborateWriterTransactional @String)
+                . interpretH (elaborateWriterPost @String)
                 $ censorHello
 
-        sendIns $ putStrLn $ "Normal: " <> s
-        sendIns $ putStrLn $ "Transactional: " <> sTransactional
+        sendIns $ putStrLn $ "Pre-applying: " <> sPre
+        sendIns $ putStrLn $ "Post-applying: " <> sPost
     ```
 
-    Using the `elaborateWriter` elaborator, you'll get "Goodbye world!", whereas with the `elaborateWriterTransactional` elaborator, you'll get "Hello world!".
+    Using the `elaborateWriterPre` elaborator, you'll get "Goodbye world!", whereas with the `elaborateWriterPost` elaborator, you'll get "Hello world!!".
+    ```
+    Pre-applying: Goodbye world!
+    Post-applying: Hello world!!
+    ```
+
     For more details, please refer to the [complete code](https://github.com/sayo-hs/heftia/blob/develop/heftia-effects/Example/Writer/Main.hs) and the [implementation of the elaborator](https://github.com/sayo-hs/heftia/blob/develop/heftia-effects/src/Control/Effect/Handler/Heftia/Writer.hs).
-
-* Extracting Multi-shot Delimited Continuations
-
-    In handling higher-order effects, it's easy to work with multi-shot delimited continuations.
-    This enables an almost complete emulation of "Algebraic Effects and Handlers".
-    For more details, please refer to
-    ~~[Example 3 - Delimited Continuation](<https://github.com/sayo-hs/heftia/blob/develop/docs/examples/03%20Delimited%20Continuation.md>)~~ [an example code](heftia-effects/Example/Continuation/Main.hs) .
 
 Furthermore, the structure of Heftia is theoretically straightforward, with ad-hoc elements being
 eliminated.
@@ -80,12 +93,11 @@ eliminated.
 Heftia is the current main focus of the [Sayo Project](https://github.com/sayo-hs).
 
 ## Documentation
-~~Examples with explanations can be found in the [docs/examples/](https://github.com/sayo-hs/heftia/tree/master/docs/examples) directory.~~
+The example codes are located in the [heftia-effects/Example/](heftia-effects/Example/) directory.
 
-Documents have become outdated.
+~~Examples with explanations can be found in the [docs/examples/](https://github.com/sayo-hs/heftia/tree/master/docs/examples) directory.~~ Documents have become outdated.
 Please wait for the documentation for the new version to be written.
 
-The example codes are located in the [heftia-effects/Example/](heftia-effects/Example/) directory.
 
 ## Future Plans
 * Benchmarking

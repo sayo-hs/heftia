@@ -5,7 +5,7 @@
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE TemplateHaskell #-}
 
-module Control.Effect.Handler.Heftia.Cont where
+module Control.Effect.Handler.Heftia.ShiftReset where
 
 import Control.Arrow ((>>>))
 import Control.Effect (type (<<:), type (~>))

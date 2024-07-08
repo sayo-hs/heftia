@@ -6,7 +6,7 @@ module Main where
 
 import Control.Effect (sendIns, type (<:), type (<<:))
 import Control.Effect.ExtensibleChurch (runEff)
-import Control.Effect.Handler.Heftia.Writer (elaborateWriter, elaborateWriterTransactional, interpretTell)
+import Control.Effect.Handler.Heftia.Writer (elaborateWriterPost, elaborateWriterPre, interpretTell)
 import Control.Effect.Hefty (
     interpretH,
  )
@@ -20,20 +20,32 @@ hello = do
 censorHello :: (Tell String <: m, WriterH String <<: m, Monad m) => m ()
 censorHello =
     censor
-        (\s -> if s == "Hello" then "Goodbye" else s)
+        ( \s ->
+            if s == "Hello" then
+                "Goodbye"
+            else if s == "Hello world!" then
+                "Hello world!!"
+            else
+                s
+        )
         hello
 
 main :: IO ()
 main = runEff do
-    (s :: String, _) <-
+    (sPre :: String, _) <-
         interpretTell
-            . interpretH (elaborateWriter @String)
+            . interpretH (elaborateWriterPre @String)
             $ censorHello
 
-    (sTransactional :: String, _) <-
+    (sPost :: String, _) <-
         interpretTell
-            . interpretH (elaborateWriterTransactional @String)
+            . interpretH (elaborateWriterPost @String)
             $ censorHello
 
-    sendIns $ putStrLn $ "Normal: " <> s
-    sendIns $ putStrLn $ "Transactional: " <> sTransactional
+    sendIns $ putStrLn $ "Pre-applying: " <> sPre
+    sendIns $ putStrLn $ "Post-applying: " <> sPost
+
+{-
+Pre-applying: Goodbye world!
+Post-applying: Hello world!!
+-}

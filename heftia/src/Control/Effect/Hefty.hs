@@ -108,7 +108,7 @@ injectF = Hefty . liftIns . EffUnion . R1
         - interpose   :  e <| es  =>    e  ~> E es          ->    E es       ~> E es
 
         all possible suffix patterns of interpret functions:
-            { <none> , K , ContT , T } x { <none> , H , H_ , FH , FH_ }
+            { <none> , K , ContT , Fin , T } x { <none> , H , H_ , FH , FH_ }
             - Rec
             - RecH
             - RecFH
@@ -117,6 +117,7 @@ injectF = Hefty . liftIns . EffUnion . R1
             - <none>
             - K
             - ContT
+            - Fin ('interpose' only)
             - T
             - Rec
             - RecH
@@ -133,7 +134,7 @@ injectF = Hefty . liftIns . EffUnion . R1
             - FH
 
     todo patterns:
-        - *{FH,FH_} in interpret-family ( (4x2+1) + 2 = 11 functions )
+        - *{FH,FH_} in interpret-family ( (5x2+1) + 2 = 11 functions )
         - *By in interpose/translate/rewrite ( 7 + 3x2 = 13 functions )
 -}
 
@@ -219,41 +220,69 @@ interpretContTH_ ::
 interpretContTH_ i = interpretContTAllH_ $ i |+: exhaust
 {-# INLINE interpretContTH_ #-}
 
+-- | Interpret the leading first-order effect class into the carrier @f@.
+interpretFin ::
+    forall e r f fr u c.
+    (Freer c fr , Union u, HeadIns e, c f) =>
+    (u r Nop ~> f) ->
+    UnliftIfSingle e ~> f ->
+    Eff u fr '[] (e ': r) ~> f
+interpretFin liftFin i = interpretAll $ i . unliftInsIfSingle |+: liftFin
+{-# INLINE interpretFin #-}
+
+interpretFinH ::
+    forall e f efs fr u c.
+    (Freer c fr, Union u, HFunctor (u '[e]), c f) =>
+    (u efs Nop ~> f) ->
+    e f ~> f ->
+    Eff u fr '[e] efs ~> f
+interpretFinH liftFin i = interpretAllFH (i |+: exhaust) liftFin
+{-# INLINE interpretFinH #-}
+
+interpretFinH_ ::
+    forall e f efs fr u c.
+    (Freer c fr, Union u, c f) =>
+    (u efs Nop ~> f) ->
+    e (Eff u fr '[e] efs) ~> f ->
+    Eff u fr '[e] efs ~> f
+interpretFinH_ liftFin i = interpretAllFH_ (i |+: exhaust) liftFin
+{-# INLINE interpretFinH_ #-}
+
 -- | Interpret the leading first-order effect class using a monad transformer.
 interpretT ::
     forall e r t ehs fr u c.
-    ( MonadFreer c fr
+    ( Freer c fr
     , Union u
     , MonadTrans t
     , HeadIns e
-    , c (Eff u fr ehs r)
+    , Monad (Eff u fr ehs r)
     , c (t (Eff u fr ehs r))
     ) =>
     UnliftIfSingle e ~> t (Eff u fr ehs r) ->
     Eff u fr '[] (e ': r) ~> t (Eff u fr ehs r)
-interpretT i = interpretAll $ i . unliftInsIfSingle |+: lift . injectF
+interpretT = interpretFin $ lift . injectF
 {-# INLINE interpretT #-}
 
 interpretTH ::
     forall e t ehs efs fr u c.
-    ( MonadFreer c fr
+    ( Freer c fr
     , Union u
     , MonadTrans t
     , HFunctor (u '[e])
-    , c (Eff u fr ehs efs)
+    , Monad (Eff u fr ehs efs)
     , c (t (Eff u fr ehs efs))
     ) =>
     e (t (Eff u fr ehs efs)) ~> t (Eff u fr ehs efs) ->
     Eff u fr '[e] efs ~> t (Eff u fr ehs efs)
-interpretTH i = interpretTAllH $ i |+: exhaust
+interpretTH = interpretFinH $ lift . injectF
 {-# INLINE interpretTH #-}
 
 interpretTH_ ::
     forall e t ehs efs fr u c.
-    (MonadFreer c fr, Union u, MonadTrans t, c (Eff u fr ehs efs), c (t (Eff u fr ehs efs))) =>
+    (Freer c fr, Union u, MonadTrans t, Monad (Eff u fr ehs efs), c (t (Eff u fr ehs efs))) =>
     e (Eff u fr '[e] efs) ~> t (Eff u fr ehs efs) ->
     Eff u fr '[e] efs ~> t (Eff u fr ehs efs)
-interpretTH_ i = interpretTAllH_ $ i |+: exhaust
+interpretTH_ = interpretFinH_ $ lift . injectF
 {-# INLINE interpretTH_ #-}
 
 {- |
@@ -318,12 +347,12 @@ reinterpretContT i = interpretContT i . raiseUnder
 
 reinterpretT ::
     forall e2 e1 t r ehs fr u c.
-    ( MonadFreer c fr
+    ( Freer c fr
     , Union u
     , MonadTrans t
     , HeadIns e1
     , HFunctor (u '[])
-    , c (Eff u fr ehs (e2 ': r))
+    , Monad (Eff u fr ehs (e2 ': r))
     , c (t (Eff u fr ehs (e2 ': r)))
     ) =>
     UnliftIfSingle e1 ~> t (Eff u fr ehs (e2 ': r)) ->
@@ -380,22 +409,31 @@ interposeContT f =
             Nothing -> lift $ injectF u
 {-# INLINE interposeContT #-}
 
+interposeFin ::
+    forall e f efs fr u c.
+    (Freer c fr, Union u, Member u e efs, c f) =>
+    u efs Nop ~> f ->
+    e ~> f ->
+    Eff u fr '[] efs ~> f
+interposeFin liftFin f =
+    interpretAll
+        \u -> case projectRec u of
+            Just (LiftIns e) -> f e
+            Nothing -> liftFin u
+{-# INLINE interposeFin #-}
+
 interposeT ::
     forall e t efs fr u c.
-    ( MonadFreer c fr
+    ( Freer c fr
     , Union u
     , MonadTrans t
     , Member u e efs
-    , c (Eff u fr '[] efs)
+    , Monad (Eff u fr '[] efs)
     , c (t (Eff u fr '[] efs))
     ) =>
     e ~> t (Eff u fr '[] efs) ->
     Eff u fr '[] efs ~> t (Eff u fr '[] efs)
-interposeT f =
-    interpretAll
-        \u -> case projectRec u of
-            Just (LiftIns e) -> f e
-            Nothing -> lift $ injectF u
+interposeT = interposeFin $ lift . injectF
 {-# INLINE interposeT #-}
 
 interposeRec ::
@@ -629,7 +667,7 @@ toInterpretKFromContT2 intContT k i1 i2 =
 
 interpretTAll ::
     forall t g efs fr u c.
-    (MonadFreer c fr, Union u, c (t g)) =>
+    (Freer c fr, Union u, c (t g)) =>
     u efs Nop ~> t g ->
     Eff u fr '[] efs ~> t g
 interpretTAll = interpretAll
@@ -637,44 +675,25 @@ interpretTAll = interpretAll
 
 interpretTAllH ::
     forall ehs' t ehs efs fr u c.
-    ( MonadFreer c fr
+    ( Freer c fr
     , Union u
     , MonadTrans t
     , HFunctor (u ehs)
-    , c (Eff u fr ehs' efs)
+    , Monad (Eff u fr ehs' efs)
     , c (t (Eff u fr ehs' efs))
     ) =>
     u ehs (t (Eff u fr ehs' efs)) ~> t (Eff u fr ehs' efs) ->
     Eff u fr ehs efs ~> t (Eff u fr ehs' efs)
-interpretTAllH i = interpretTAllFH i (lift . injectF)
+interpretTAllH i = interpretAllFH i (lift . injectF)
 {-# INLINE interpretTAllH #-}
 
 interpretTAllH_ ::
     forall ehs' t ehs efs fr u c.
-    (MonadFreer c fr, Union u, MonadTrans t, c (Eff u fr ehs' efs), c (t (Eff u fr ehs' efs))) =>
+    (Freer c fr, Union u, MonadTrans t, Monad (Eff u fr ehs' efs), c (t (Eff u fr ehs' efs))) =>
     u ehs (Eff u fr ehs efs) ~> t (Eff u fr ehs' efs) ->
     Eff u fr ehs efs ~> t (Eff u fr ehs' efs)
-interpretTAllH_ i = interpretTAllFH_ i (lift . injectF)
+interpretTAllH_ i = interpretAllFH_ i (lift . injectF)
 {-# INLINE interpretTAllH_ #-}
-
-interpretTAllFH ::
-    forall g t ehs efs fr u c.
-    (MonadFreer c fr, Union u, MonadTrans t, c (t g), HFunctor (u ehs)) =>
-    u ehs (t g) ~> t g ->
-    u efs Nop ~> t g ->
-    Eff u fr ehs efs ~> t g
-interpretTAllFH fh ff =
-    interpretAllFH_ (fh . hfmap (interpretTAllFH fh ff)) ff
-{-# INLINE interpretTAllFH #-}
-
-interpretTAllFH_ ::
-    forall g t ehs efs fr u c.
-    (MonadFreer c fr, Union u, MonadTrans t, c (t g)) =>
-    u ehs (Eff u fr ehs efs) ~> t g ->
-    u efs Nop ~> t g ->
-    Eff u fr ehs efs ~> t g
-interpretTAllFH_ = interpretAllFH_
-{-# INLINE interpretTAllFH_ #-}
 
 interpretAllRec ::
     forall efs' ehs efs fr u c.

@@ -17,91 +17,145 @@ See [README.md](https://github.com/sayo-hs/heftia/blob/master/README.md).
 module Control.Effect.Handler.Heftia.Writer where
 
 import Control.Effect (type (~>))
-import Control.Effect.Hefty (Eff, Elab, interposeT, interpretK, interpretT, rewrite)
+import Control.Effect.Hefty (Eff, Elab, interposeT, interpretK, interpretT, rewrite, interpretFin, interposeFin, injectF)
 import Control.Monad.Freer (MonadFreer)
-import Control.Monad.Trans.Writer.CPS (WriterT, runWriterT)
-import Control.Monad.Trans.Writer.CPS qualified as T
+import Control.Monad.Trans.Writer.CPS qualified as CPS
+import Control.Monad.Trans.Writer.Strict qualified as Strict
 import Data.Effect.HFunctor (HFunctor)
 import Data.Effect.Writer (LTell, Tell (Tell), WriterH (Censor, Listen), tell)
 import Data.Function ((&))
 import Data.Hefty.Union (Union, Member)
 import Data.Tuple (swap)
+import Control.Monad.Trans (lift)
+import Control.Freer (Freer)
 
-elaborateWriter ::
+elaborateWriterPost ::
     forall w ef fr u c.
     ( Monoid w
-    , MonadFreer c fr
+    , Freer c fr
     , Union u
     , Member u (Tell w) ef
     , HFunctor (u '[])
-    , c (WriterT w (Eff u fr '[] ef))
-    , c (Eff u fr '[] ef)
+    , Monad (Eff u fr '[] ef)
+    , c (CPS.WriterT w (Eff u fr '[] ef))
     ) =>
     Elab (WriterH w) (Eff u fr '[] ef)
-elaborateWriter = \case
+elaborateWriterPost = \case
     Listen m -> listenT m
-    Censor f m -> m & rewrite @(Tell w) \(Tell w) -> Tell $ f w
+    Censor f m -> postCensor f m
 
-elaborateWriterTransactional ::
+postCensor ::
+    forall w es fr u c.
+    ( Monoid w
+    , Freer c fr
+    , Member u (Tell w) es
+    , Union u
+    , HFunctor (u '[])
+    , Monad (Eff u fr '[] es)
+    , c (CPS.WriterT w (Eff u fr '[] es))
+    ) =>
+    (w -> w) -> Eff u fr '[] es ~> Eff u fr '[] es
+postCensor f m = do
+    (a, w) <- CPS.runWriterT $ confiscateT m
+    tell $ f w
+    pure a
+
+
+elaborateWriterPre ::
     forall w ef fr u c.
     ( Monoid w
-    , MonadFreer c fr
+    , Freer c fr
     , Union u
     , Member u (Tell w) ef
-    , c (WriterT w (Eff u fr '[] ef))
-    , c (Eff u fr '[] ef)
+    , HFunctor (u '[])
+    , Monad (Eff u fr '[] ef)
+    , c (CPS.WriterT w (Eff u fr '[] ef))
     ) =>
     Elab (WriterH w) (Eff u fr '[] ef)
-elaborateWriterTransactional = \case
+elaborateWriterPre = \case
     Listen m -> listenT m
-    Censor f m -> do
-        (a, w) <- confiscateT m
-        tell $ f w
-        pure a
+    Censor f m -> preCensor f m
+
+elaborateWriterPre' ::
+    forall w ef fr u c.
+    ( Monoid w
+    , Freer c fr
+    , Union u
+    , Member u (Tell w) ef
+    , HFunctor (u '[])
+    , Applicative (Eff u fr '[] ef)
+    , c (Strict.WriterT w (Eff u fr '[] ef))
+    ) =>
+    Elab (WriterH w) (Eff u fr '[] ef)
+elaborateWriterPre' = \case
+    Listen m -> listenT' m
+    Censor f m -> preCensor f m
+
+preCensor ::
+    forall w es fr u c. (Freer c fr, Member u (Tell w) es, Union u, HFunctor (u '[])) =>
+    (w -> w) -> Eff u fr '[] es ~> Eff u fr '[] es
+preCensor f = rewrite @(Tell w) \(Tell w) -> Tell $ f w
+
 
 listenT ::
     forall w es a fr u c.
     ( Monoid w
-    , MonadFreer c fr
+    , Freer c fr
     , Union u
     , Member u (Tell w) es
-    , c (WriterT w (Eff u fr '[] es))
-    , c (Eff u fr '[] es)
+    , Monad (Eff u fr '[] es)
+    , c (CPS.WriterT w (Eff u fr '[] es))
     ) =>
     Eff u fr '[] es a ->
-    Eff u fr '[] es (a, w)
-listenT m = do
-    (a, w) <- confiscateT m
-    tell w
-    pure (a, w)
-{-# INLINE listenT #-}
+    Eff u fr '[] es (w, a)
+listenT m =
+    swap <$> CPS.runWriterT do
+        m & interposeT @(Tell w) \(Tell w) -> do
+            lift $ tell w
+            CPS.tell w
 
-confiscateT ::
+listenT' ::
     forall w es a fr u c.
     ( Monoid w
-    , MonadFreer c fr
+    , Freer c fr
     , Union u
     , Member u (Tell w) es
-    , c (WriterT w (Eff u fr '[] es))
-    , c (Eff u fr '[] es)
+    , Applicative (Eff u fr '[] es)
+    , c (Strict.WriterT w (Eff u fr '[] es))
     ) =>
     Eff u fr '[] es a ->
-    Eff u fr '[] es (a, w)
-confiscateT = runWriterT . interposeT @(Tell w) \(Tell w) -> T.tell w
-{-# INLINE confiscateT #-}
+    Eff u fr '[] es (w, a)
+listenT' m =
+    swap <$> Strict.runWriterT do
+        m & interposeFin @(Tell w) (liftStrictWriterT . injectF) \(Tell w) -> do
+            liftStrictWriterT (tell w) *> tellStrictWriterT w
+
 
 interpretTell ::
-    (Monoid w, MonadFreer c fr, Union u, c (WriterT w (Eff u fr '[] r)), c (Eff u fr '[] r)) =>
+    (Monoid w, Freer c fr, Union u, Monad (Eff u fr '[] r), c (CPS.WriterT w (Eff u fr '[] r))) =>
     Eff u fr '[] (LTell w ': r) a ->
     Eff u fr '[] r (w, a)
-interpretTell = fmap swap . runWriterT . interpretTellT
+interpretTell = fmap swap . CPS.runWriterT . interpretTellT
 {-# INLINE interpretTell #-}
 
 interpretTellT ::
-    (Monoid w, MonadFreer c fr, Union u, c (Eff u fr '[] r), c (WriterT w (Eff u fr '[] r))) =>
-    Eff u fr '[] (LTell w ': r) ~> WriterT w (Eff u fr '[] r)
-interpretTellT = interpretT \(Tell w) -> T.tell w
+    (Monoid w, Freer c fr, Union u, Monad (Eff u fr '[] r), c (CPS.WriterT w (Eff u fr '[] r))) =>
+    Eff u fr '[] (LTell w ': r) ~> CPS.WriterT w (Eff u fr '[] r)
+interpretTellT = interpretT \(Tell w) -> CPS.tell w
 {-# INLINE interpretTellT #-}
+
+interpretTell' ::
+    (Monoid w, Freer c fr, Union u, Applicative (Eff u fr '[] r), c (Strict.WriterT w (Eff u fr '[] r))) =>
+    Eff u fr '[] (LTell w ': r) a ->
+    Eff u fr '[] r (w, a)
+interpretTell' = fmap swap . Strict.runWriterT . interpretTellT'
+{-# INLINE interpretTell' #-}
+
+interpretTellT' ::
+    (Monoid w, Freer c fr, Union u, Applicative (Eff u fr '[] r), c (Strict.WriterT w (Eff u fr '[] r))) =>
+    Eff u fr '[] (LTell w ': r) ~> Strict.WriterT w (Eff u fr '[] r)
+interpretTellT' = interpretFin (liftStrictWriterT . injectF) \(Tell w) -> tellStrictWriterT w
+{-# INLINE interpretTellT' #-}
 
 interpretTellK ::
     (Monoid w, MonadFreer c fr, Union u, c (Eff u fr '[] r)) =>
@@ -111,3 +165,43 @@ interpretTellK =
     interpretK (pure . (mempty,)) \k (Tell w) -> do
         (w', r) <- k ()
         pure (w <> w', r)
+
+
+liftStrictWriterT :: forall w f. (Monoid w, Functor f) => f ~> Strict.WriterT w f
+liftStrictWriterT = Strict.WriterT . ((,mempty) <$>)
+{-# INLINE liftStrictWriterT #-}
+
+tellStrictWriterT :: forall w f. Applicative f => w -> Strict.WriterT w f ()
+tellStrictWriterT = Strict.WriterT . pure . ((),)
+{-# INLINE tellStrictWriterT #-}
+
+
+transactWriter ::
+    forall w es a fr u c.
+    ( Monoid w
+    , Freer c fr
+    , Union u
+    , Member u (Tell w) es
+    , Monad (Eff u fr '[] es)
+    , c (CPS.WriterT w (Eff u fr '[] es))
+    ) =>
+    Eff u fr '[] es a ->
+    Eff u fr '[] es a
+transactWriter m = do
+    (a, w) <- CPS.runWriterT $ confiscateT m
+    tell @w w
+    pure a
+
+confiscateT ::
+    forall w es a fr u c.
+    ( Monoid w
+    , Freer c fr
+    , Union u
+    , Member u (Tell w) es
+    , Monad (Eff u fr '[] es)
+    , c (CPS.WriterT w (Eff u fr '[] es))
+    ) =>
+    Eff u fr '[] es a ->
+    CPS.WriterT w (Eff u fr '[] es) a
+confiscateT m =
+    m & interposeT @(Tell w) \(Tell w) -> CPS.tell w

@@ -23,11 +23,14 @@ import Control.Applicative.Free.Fast qualified as Fast
 import Control.Effect (SendIns, sendIns, type (~>))
 import Control.Monad (MonadPlus)
 import Control.Monad.Base (MonadBase)
-import Control.Monad.IO.Class (MonadIO)
+import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Effect (InsClass)
 import Data.Functor.Coyoneda (Coyoneda, hoistCoyoneda, liftCoyoneda, lowerCoyoneda)
 import Data.Kind (Type)
 import Control.Effect.Key (SendInsBy, sendInsBy)
+import Data.Effect.Fail (Fail (Fail))
+import Data.Effect.State (State, get'', put'')
+import Control.Monad.State.Class (MonadState, get, put)
 
 -- | A type class to abstract away the encoding details of the Freer carrier.
 class (forall e. c (f e)) => Freer c f | f -> c where
@@ -87,8 +90,6 @@ deriving newtype instance Alternative (fr e) => Alternative (ViaFreer fr e)
 deriving newtype instance Monad (fr e) => Monad (ViaFreer fr e)
 deriving newtype instance MonadPlus (fr e) => MonadPlus (ViaFreer fr e)
 deriving newtype instance (MonadBase b (fr e), Monad b) => MonadBase b (ViaFreer fr e)
-deriving newtype instance MonadIO (fr e) => MonadIO (ViaFreer fr e)
-deriving newtype instance MonadFail (fr e) => MonadFail (ViaFreer fr e)
 
 deriving newtype instance Foldable (fr e) => Foldable (ViaFreer fr e)
 deriving stock instance Traversable (fr e) => Traversable (ViaFreer fr e)
@@ -120,3 +121,21 @@ overFreer f = ViaFreer . f . viaFreer
 reencodeFreer :: (Freer c fr, Freer c' fr', c (fr' f)) => fr f ~> fr' f
 reencodeFreer = interpretFreer liftIns
 {-# INLINE reencodeFreer #-}
+
+
+instance
+    (Freer c fr, InjectInsBy StateKey (State s) e, Monad (fr e)) => MonadState s (ViaFreer fr e) where
+    get = get'' @StateKey
+    put = put'' @StateKey
+    {-# INLINE get #-}
+    {-# INLINE put #-}
+
+data StateKey
+
+instance (Freer c fr, InjectIns IO e, Monad (fr e)) => MonadIO (ViaFreer fr e) where
+    liftIO = ViaFreer . liftIns . injectIns
+    {-# INLINE liftIO #-}
+
+instance (Freer c fr, InjectIns Fail e, Monad (fr e)) => MonadFail (ViaFreer fr e) where
+    fail = ViaFreer . liftIns . injectIns . Fail
+    {-# INLINE fail #-}
