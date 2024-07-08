@@ -70,6 +70,8 @@ library
         Control.Effect.Handler.Heftia.Except
         Control.Effect.Handler.Heftia.ShiftReset
         Control.Effect.Handler.Heftia.Coroutine
+        Control.Effect.Handler.Heftia.Input
+        Control.Effect.Handler.Heftia.Output
         Control.Effect.Handler.Heftia.Provider
         Control.Effect.Handler.Heftia.Provider.Implicit
         Control.Effect.Handler.Heftia.Resource
