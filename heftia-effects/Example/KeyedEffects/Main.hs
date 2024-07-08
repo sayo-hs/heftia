@@ -10,10 +10,10 @@ module Main where
 import Control.Effect (SendIns (sendIns), type (~>))
 import Control.Effect.ExtensibleChurch (runEff, type (:!!))
 import Control.Effect.Hefty (interposeRec, interpretRec, unkeyEff)
-import Data.Effect.TH (makeEffectF)
-import Data.Hefty.Extensible (type (<|), MemberBy, ForallHFunctor)
-import Data.Effect.Key (type (#>), unKey)
 import Control.Effect.Key (SendInsBy)
+import Data.Effect.Key (unKey, type (#>))
+import Data.Effect.TH (makeEffectF)
+import Data.Hefty.Extensible (ForallHFunctor, MemberBy, type (<|))
 
 data Teletype a where
     ReadTTY :: Teletype String

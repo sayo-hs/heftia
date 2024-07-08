@@ -27,7 +27,7 @@ import Control.Monad.Freer (MonadFreer)
 import Control.Monad.Trans.Except (ExceptT, runExceptT, throwE)
 import Data.Effect.Except (Catch (Catch), LThrow, Throw (Throw))
 import Data.Function ((&))
-import Data.Hefty.Union (Union, Member)
+import Data.Hefty.Union (Member, Union)
 
 -- | Elaborate the t'Catch' effect using the 'ExceptT' monad transformer.
 elaborateCatch ::

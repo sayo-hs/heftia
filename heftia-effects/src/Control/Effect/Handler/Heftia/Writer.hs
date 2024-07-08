@@ -17,17 +17,17 @@ See [README.md](https://github.com/sayo-hs/heftia/blob/master/README.md).
 module Control.Effect.Handler.Heftia.Writer where
 
 import Control.Effect (type (~>))
-import Control.Effect.Hefty (Eff, Elab, interposeT, interpretK, interpretT, rewrite, interpretFin, interposeFin, injectF)
+import Control.Effect.Hefty (Eff, Elab, injectF, interposeFin, interposeT, interpretFin, interpretK, interpretT, rewrite)
+import Control.Freer (Freer)
 import Control.Monad.Freer (MonadFreer)
+import Control.Monad.Trans (lift)
 import Control.Monad.Trans.Writer.CPS qualified as CPS
 import Control.Monad.Trans.Writer.Strict qualified as Strict
 import Data.Effect.HFunctor (HFunctor)
 import Data.Effect.Writer (LTell, Tell (Tell), WriterH (Censor, Listen), tell)
 import Data.Function ((&))
-import Data.Hefty.Union (Union, Member)
+import Data.Hefty.Union (Member, Union)
 import Data.Tuple (swap)
-import Control.Monad.Trans (lift)
-import Control.Freer (Freer)
 
 elaborateWriterPost ::
     forall w ef fr u c.
@@ -54,12 +54,12 @@ postCensor ::
     , Monad (Eff u fr '[] es)
     , c (CPS.WriterT w (Eff u fr '[] es))
     ) =>
-    (w -> w) -> Eff u fr '[] es ~> Eff u fr '[] es
+    (w -> w) ->
+    Eff u fr '[] es ~> Eff u fr '[] es
 postCensor f m = do
     (a, w) <- CPS.runWriterT $ confiscateT m
     tell $ f w
     pure a
-
 
 elaborateWriterPre ::
     forall w ef fr u c.
@@ -92,10 +92,11 @@ elaborateWriterPre' = \case
     Censor f m -> preCensor f m
 
 preCensor ::
-    forall w es fr u c. (Freer c fr, Member u (Tell w) es, Union u, HFunctor (u '[])) =>
-    (w -> w) -> Eff u fr '[] es ~> Eff u fr '[] es
+    forall w es fr u c.
+    (Freer c fr, Member u (Tell w) es, Union u, HFunctor (u '[])) =>
+    (w -> w) ->
+    Eff u fr '[] es ~> Eff u fr '[] es
 preCensor f = rewrite @(Tell w) \(Tell w) -> Tell $ f w
-
 
 listenT ::
     forall w es a fr u c.
@@ -129,7 +130,6 @@ listenT' m =
     swap <$> Strict.runWriterT do
         m & interposeFin @(Tell w) (liftStrictWriterT . injectF) \(Tell w) -> do
             liftStrictWriterT (tell w) *> tellStrictWriterT w
-
 
 interpretTell ::
     (Monoid w, Freer c fr, Union u, Monad (Eff u fr '[] r), c (CPS.WriterT w (Eff u fr '[] r))) =>
@@ -166,7 +166,6 @@ interpretTellK =
         (w', r) <- k ()
         pure (w <> w', r)
 
-
 liftStrictWriterT :: forall w f. (Monoid w, Functor f) => f ~> Strict.WriterT w f
 liftStrictWriterT = Strict.WriterT . ((,mempty) <$>)
 {-# INLINE liftStrictWriterT #-}
@@ -174,7 +173,6 @@ liftStrictWriterT = Strict.WriterT . ((,mempty) <$>)
 tellStrictWriterT :: forall w f. Applicative f => w -> Strict.WriterT w f ()
 tellStrictWriterT = Strict.WriterT . pure . ((),)
 {-# INLINE tellStrictWriterT #-}
-
 
 transactWriter ::
     forall w es a fr u c.

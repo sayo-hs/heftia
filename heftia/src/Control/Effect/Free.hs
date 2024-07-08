@@ -23,7 +23,7 @@ import Control.Freer (Freer, InjectIns, ViaFreer (ViaFreer), injectIns, transfor
 import Control.Hefty (Hefty (Hefty), unHefty)
 import Data.Effect (LiftIns (LiftIns), Nop, SigClass)
 import Data.Free.Sum (pattern R1)
-import Data.Hefty.Union (U, Union, exhaust, injectRec, Member)
+import Data.Hefty.Union (Member, U, Union, exhaust, injectRec)
 
 {- |
 A common type for representing first-order extensible effectful programs that can issue effects

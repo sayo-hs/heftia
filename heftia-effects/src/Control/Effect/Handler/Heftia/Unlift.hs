@@ -11,12 +11,12 @@ Portability :  portable
 -}
 module Control.Effect.Handler.Heftia.Unlift where
 
-import Control.Freer (Freer)
-import Data.Hefty.Union (Union)
-import Control.Effect.Hefty (Eff, interpretH_, send0, runEff)
-import Data.Effect.Unlift (UnliftBase (WithRunInBase), UnliftIO)
 import Control.Effect (type (~>))
+import Control.Effect.Hefty (Eff, interpretH_, runEff, send0)
+import Control.Freer (Freer)
 import Data.Effect (LiftIns)
+import Data.Effect.Unlift (UnliftBase (WithRunInBase), UnliftIO)
+import Data.Hefty.Union (Union)
 
 runUnliftBase ::
     forall b fr u c.

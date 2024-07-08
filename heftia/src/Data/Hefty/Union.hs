@@ -1,9 +1,9 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE QuantifiedConstraints #-}
+{-# LANGUAGE TemplateHaskell #-}
+{-# LANGUAGE TypeFamilyDependencies #-}
 {-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE UndecidableSuperClasses #-}
-{-# LANGUAGE TypeFamilyDependencies #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -25,15 +25,15 @@ import Control.Effect (type (~>))
 import Control.Monad ((<=<))
 import Data.Effect (LNop, LiftIns (LiftIns), Nop, SigClass, unliftIns)
 import Data.Effect.HFunctor (HFunctor, caseH, (:+:) (Inl, Inr))
+import Data.Effect.Key (type (##>), type (#>))
 import Data.Free.Sum (type (+))
 import Data.Kind (Constraint)
 import Data.Singletons (SingI, sing)
 import Data.Singletons.TH (singletons)
 import Data.Type.Bool (If)
 import Data.Type.Equality ((:~:) (Refl))
-import GHC.TypeLits (ErrorMessage (ShowType, Text, (:$$:), (:<>:)), TypeError, Nat)
-import qualified GHC.TypeNats as N
-import Data.Effect.Key (type (#>), type (##>))
+import GHC.TypeLits (ErrorMessage (ShowType, Text, (:$$:), (:<>:)), Nat, TypeError)
+import GHC.TypeNats qualified as N
 
 {- |
 A type class representing a general open union for higher-order effects, independent of the internal
@@ -176,14 +176,16 @@ class
     where
     type ForallHFunctor u :: [SigClass] -> Constraint
 
+$( singletons
+    [d|
+        data SearchResult = FoundIn FoundLevel | NotFound
 
-$(singletons [d|
-    data SearchResult = FoundIn FoundLevel | NotFound
-    data FoundLevel = CurrentLevel | LowerLevel
-    |])
+        data FoundLevel = CurrentLevel | LowerLevel
+        |]
+ )
 
 type family FoundLevelOf found :: FoundLevel where
-    FoundLevelOf ('FoundIn l) = l
+    FoundLevelOf ( 'FoundIn l) = l
 
 type MemberH u e ehs = HasMembershipRec u e ehs
 type Member u e efs = MemberH u (LiftIns e) efs
@@ -210,7 +212,8 @@ type HasMembershipRec3_ u e es found lvl =
     )
 
 instance
-    ( SearchMemberRec es u e es, MemberFound e es (CurrentLevelSearchResult searchResult)
+    ( SearchMemberRec es u e es
+    , MemberFound e es (CurrentLevelSearchResult searchResult)
     , searchResult ~ Search u es e
     , SingI (HeadLowerSearchResult searchResult)
     , found ~ CurrentLevelSearchResult searchResult
@@ -225,7 +228,7 @@ instance
 class MemberFound e es found where
     withFound :: (forall lvl. (found ~ 'FoundIn lvl, SingI lvl) => a) -> a
 
-instance SingI lvl => MemberFound e es ('FoundIn lvl) where
+instance SingI lvl => MemberFound e es ( 'FoundIn lvl) where
     withFound a = a
     {-# INLINE withFound #-}
 
@@ -251,21 +254,22 @@ class
         (e :: SigClass)
         (es :: [SigClass])
     where
-    type family Search_ act u rest e :: SearchResults
+    type Search_ act u rest e :: SearchResults
 
     injectSMR_ ::
         searchResult ~ Search_ act u rest e =>
-        CurrentLevelSearchResult searchResult :~: 'FoundIn lvl
-        -> SSearchResult ('FoundIn lvl)
-        -> SSearchResult (HeadLowerSearchResult searchResult)
-        -> e f ~> u es f
+        CurrentLevelSearchResult searchResult :~: 'FoundIn lvl ->
+        SSearchResult ( 'FoundIn lvl) ->
+        SSearchResult (HeadLowerSearchResult searchResult) ->
+        e f ~> u es f
 
     projectSMR_ ::
         searchResult ~ Search_ act u rest e =>
-        CurrentLevelSearchResult searchResult  :~: 'FoundIn lvl
-        -> SSearchResult ('FoundIn lvl)
-        -> SSearchResult (HeadLowerSearchResult searchResult)
-        -> u es f a -> Maybe (e f a)
+        CurrentLevelSearchResult searchResult :~: 'FoundIn lvl ->
+        SSearchResult ( 'FoundIn lvl) ->
+        SSearchResult (HeadLowerSearchResult searchResult) ->
+        u es f a ->
+        Maybe (e f a)
 
 type Search u rest e = Search_ (NextSearchMemberRecAction rest u e) u rest e
 
@@ -273,7 +277,7 @@ injectSMR ::
     forall rest u e es searchResult lvl f.
     (SearchMemberRec rest u e es, searchResult ~ Search u rest e) =>
     CurrentLevelSearchResult searchResult :~: 'FoundIn lvl ->
-    SSearchResult ('FoundIn lvl) ->
+    SSearchResult ( 'FoundIn lvl) ->
     SSearchResult (HeadLowerSearchResult searchResult) ->
     e f ~> u es f
 injectSMR = injectSMR_ @(NextSearchMemberRecAction rest u e) @rest
@@ -283,7 +287,7 @@ projectSMR ::
     forall rest u e es searchResult lvl f a.
     (SearchMemberRec rest u e es, searchResult ~ Search u rest e) =>
     CurrentLevelSearchResult searchResult :~: 'FoundIn lvl ->
-    SSearchResult ('FoundIn lvl) ->
+    SSearchResult ( 'FoundIn lvl) ->
     SSearchResult (HeadLowerSearchResult searchResult) ->
     u es f a ->
     Maybe (e f a)
@@ -291,8 +295,11 @@ projectSMR = projectSMR_ @(NextSearchMemberRecAction rest u e) @rest
 {-# INLINE projectSMR #-}
 
 data SearchResults = SearchResults SearchResult SearchResult
-type family CurrentLevelSearchResult a where CurrentLevelSearchResult ('SearchResults a _) = a
-type family HeadLowerSearchResult a where HeadLowerSearchResult ('SearchResults _ a) = a
+type family CurrentLevelSearchResult a where
+    CurrentLevelSearchResult ( 'SearchResults a _) = a
+
+type family HeadLowerSearchResult a where
+    HeadLowerSearchResult ( 'SearchResults _ a) = a
 
 data SearchMemberRecAction = SmrStop | SmrRight | SmrDown
 
@@ -305,7 +312,7 @@ instance
     (HasMembership u e es, Union u) =>
     SearchMemberRec_ 'SmrStop (e ': _tail) u e es
     where
-    type Search_ _ _ (e ': _tail) e = 'SearchResults ('FoundIn 'CurrentLevel) 'NotFound
+    type Search_ _ _ (e ': _tail) e = 'SearchResults ( 'FoundIn 'CurrentLevel) 'NotFound
 
     injectSMR_ _ _ _ = inject
     projectSMR_ _ _ _ = project
@@ -313,7 +320,7 @@ instance
     {-# INLINE projectSMR_ #-}
 
 type family IsFound found where
-    IsFound ('FoundIn _) = 'True
+    IsFound ( 'FoundIn _) = 'True
     IsFound 'NotFound = 'False
 
 instance
@@ -329,10 +336,15 @@ instance
     ) =>
     SearchMemberRec_ 'SmrDown (u es' ': tail) u e es
     where
-    type Search_ _ _ (u es' ': tail) e =
-        SearchResultsOnSmrDown u es' tail e
-            (CurrentLevelSearchResult (Search u es' e))
-            (CurrentLevelSearchResult (Search u tail e))
+    type
+        Search_ _ _ (u es' ': tail) e =
+            SearchResultsOnSmrDown
+                u
+                es'
+                tail
+                e
+                (CurrentLevelSearchResult (Search u es' e))
+                (CurrentLevelSearchResult (Search u tail e))
 
     injectSMR_ Refl found = \case
         SFoundIn lvl -> inject . injectSMR @es' @u @_ @es' Refl (SFoundIn lvl) sing
@@ -347,7 +359,7 @@ instance
 
 type SearchResultsOnSmrDown u es' tail e foundInHead foundInTail =
     'SearchResults
-        ( If (IsFound foundInHead) ('FoundIn 'LowerLevel) foundInTail )
+        (If (IsFound foundInHead) ( 'FoundIn 'LowerLevel) foundInTail)
         foundInHead
 
 instance
@@ -380,14 +392,14 @@ instance SearchMemberRec_ act '[] u e es where
     {-# INLINE injectSMR_ #-}
     {-# INLINE projectSMR_ #-}
 
-
 -- A hack to avoid the "Quantified predicate must have a class or type variable head" error.
 
 type HasMembershipWhenCurrentLevel lvl u e es =
     HasMembershipWhenCurrentLevel_ (HasMembership u e es) lvl u e es
 class
     (lvl ~ 'CurrentLevel => c, c ~ HasMembership u e es) =>
-    HasMembershipWhenCurrentLevel_ c lvl u e es | u e es -> c
+    HasMembershipWhenCurrentLevel_ c lvl u e es
+        | u e es -> c
 instance
     (lvl ~ 'CurrentLevel => c, c ~ HasMembership u e es) =>
     HasMembershipWhenCurrentLevel_ c lvl u e es
@@ -396,11 +408,11 @@ type SearchMemberRecWhenLowerLevel lvl rest u e =
     SearchMemberRecWhenLowerLevel_ (SearchMemberRec rest u e rest) lvl rest u e
 class
     (lvl ~ 'LowerLevel => c, c ~ SearchMemberRec rest u e rest) =>
-    SearchMemberRecWhenLowerLevel_ c lvl rest u e | rest u e -> c
+    SearchMemberRecWhenLowerLevel_ c lvl rest u e
+        | rest u e -> c
 instance
     (lvl ~ 'LowerLevel => c, c ~ SearchMemberRec rest u e rest) =>
     SearchMemberRecWhenLowerLevel_ c lvl rest u e
-
 
 infixr 5 |+
 (|+) :: Union u => (e a -> r) -> (u es f a -> r) -> u (LiftIns e ': es) f a -> r
@@ -500,8 +512,7 @@ type family ClassIndex (es :: [SigClass]) (e :: SigClass) :: Nat where
     ClassIndex (_ ': es) e = 1 N.+ ClassIndex es e
     ClassIndex '[] e =
         TypeError
-            ('Text "The effect class ‘" ':<>: 'ShowType e ':<>: 'Text "’ was not found in the list.")
-
+            ( 'Text "The effect class ‘" ':<>: 'ShowType e ':<>: 'Text "’ was not found in the list.")
 
 -- keyed effects
 
@@ -516,5 +527,5 @@ type family Lookup (key :: k) es :: Maybe SigClass where
     Lookup key '[] = 'Nothing
 
 type family OrElse (a :: Maybe k) (b :: Maybe k) :: Maybe k where
-    OrElse ('Just a) _ = 'Just a
+    OrElse ( 'Just a) _ = 'Just a
     OrElse 'Nothing a = a

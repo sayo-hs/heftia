@@ -1,6 +1,6 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
 
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -10,29 +10,29 @@ module Control.Hefty where
 
 import Control.Applicative (Alternative)
 import Control.Effect (SendIns (..), SendSig (..), type (~>))
-import Control.Freer (Freer (liftIns), InjectIns, injectIns, InjectInsBy, injectInsBy, StateKey)
+import Control.Effect.Key (ByKey (ByKey), SendInsBy, SendSigBy, key, sendInsBy, sendSigBy)
+import Control.Freer (Freer (liftIns), InjectIns, InjectInsBy, StateKey, injectIns, injectInsBy)
 import Control.Monad (MonadPlus)
 import Control.Monad.Base (MonadBase)
-import Control.Monad.IO.Class (MonadIO, liftIO)
-import Data.Effect (InsClass, SigClass)
-import Data.Kind (Type)
-import Control.Effect.Key (SendInsBy, sendInsBy, SendSigBy, sendSigBy, key, ByKey (ByKey))
-import Data.Effect.Fail (Fail)
 import Control.Monad.Fix (MonadFix, mfix)
-import Data.Effect.Fix (Fix)
-import UnliftIO (MonadUnliftIO, withRunInIO)
-import Data.Effect.Unlift (UnliftIO, pattern WithRunInIO)
-import Data.Effect.Reader (Ask, Local, ask'', local'')
-import Control.Monad.Reader.Class (MonadReader, ask, local)
-import qualified Data.Effect.Fail as E
-import qualified Data.Effect.Fix as E
-import Control.Monad.Writer.Class (MonadWriter, tell, listen, pass)
-import Data.Effect.Writer (tell'', Tell, WriterH, listen'')
-import Data.Tuple (swap)
-import Data.Function ((&))
-import Data.Effect.State (State, get'', put'')
-import Control.Monad.State.Class (MonadState, get, put)
+import Control.Monad.IO.Class (MonadIO, liftIO)
 import Control.Monad.RWS.Class (MonadRWS)
+import Control.Monad.Reader.Class (MonadReader, ask, local)
+import Control.Monad.State.Class (MonadState, get, put)
+import Control.Monad.Writer.Class (MonadWriter, listen, pass, tell)
+import Data.Effect (InsClass, SigClass)
+import Data.Effect.Fail (Fail)
+import Data.Effect.Fail qualified as E
+import Data.Effect.Fix (Fix)
+import Data.Effect.Fix qualified as E
+import Data.Effect.Reader (Ask, Local, ask'', local'')
+import Data.Effect.State (State, get'', put'')
+import Data.Effect.Unlift (UnliftIO, pattern WithRunInIO)
+import Data.Effect.Writer (Tell, WriterH, listen'', tell'')
+import Data.Function ((&))
+import Data.Kind (Type)
+import Data.Tuple (swap)
+import UnliftIO (MonadUnliftIO, withRunInIO)
 
 newtype
     Hefty
@@ -84,13 +84,14 @@ instance (Freer c fr, InjectSigBy key e e') => SendSigBy key e (Hefty fr e') whe
 class InjectSigBy key e (e' :: SigClass) | key e' -> e where
     injectSigBy :: e f ~> e' f
 
-
 instance
     ( Freer c fr
     , InjectInsBy ReaderKey (Ask r) (e (Hefty fr e))
     , InjectSigBy ReaderKey (Local r) e
     , Monad (fr (e (Hefty fr e)))
-    ) => MonadReader r (Hefty fr e) where
+    ) =>
+    MonadReader r (Hefty fr e)
+    where
     ask = ask'' @ReaderKey
     local = local'' @ReaderKey
     {-# INLINE ask #-}
@@ -104,7 +105,9 @@ instance
     , InjectSigBy WriterKey (WriterH w) e
     , Monoid w
     , Monad (fr (e (Hefty fr e)))
-    ) => MonadWriter w (Hefty fr e) where
+    ) =>
+    MonadWriter w (Hefty fr e)
+    where
     tell = tell'' @WriterKey
     listen = fmap swap . listen'' @WriterKey
     pass m = pass (ByKey m) & key @WriterKey
@@ -115,7 +118,8 @@ data WriterKey
 
 instance
     (Freer c fr, InjectInsBy StateKey (State s) (e (Hefty fr e)), Monad (fr (e (Hefty fr e)))) =>
-    MonadState s (Hefty fr e) where
+    MonadState s (Hefty fr e)
+    where
     get = get'' @StateKey
     put = put'' @StateKey
     {-# INLINE get #-}
@@ -130,8 +134,8 @@ instance
     , InjectInsBy StateKey (State s) (e (Hefty fr e))
     , Monoid w
     , Monad (fr (e (Hefty fr e)))
-    ) => MonadRWS r w s (Hefty fr e)
-
+    ) =>
+    MonadRWS r w s (Hefty fr e)
 
 instance (Freer c fr, InjectIns IO (e (Hefty fr e)), Monad (fr (e (Hefty fr e)))) => MonadIO (Hefty fr e) where
     liftIO = sendIns
@@ -150,6 +154,8 @@ instance
     , InjectIns IO (e (Hefty fr e))
     , InjectSig UnliftIO e
     , Monad (fr (e (Hefty fr e)))
-    ) => MonadUnliftIO (Hefty fr e) where
+    ) =>
+    MonadUnliftIO (Hefty fr e)
+    where
     withRunInIO f = Hefty . liftIns . injectSig $ WithRunInIO f
     {-# INLINE withRunInIO #-}

@@ -1,5 +1,5 @@
-{-# LANGUAGE TemplateHaskell #-}
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE TemplateHaskell #-}
 
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -7,12 +7,12 @@
 
 module Main where
 
-import Data.Effect.TH (makeEffectF, makeEffectH)
-import Control.Effect.ExtensibleChurch (runEff, type (:!!))
 import Control.Effect (SendIns (sendIns), type (~>))
-import Control.Effect.Hefty (interpretRec, interposeK, interpretH)
-import Data.Hefty.Extensible (ForallHFunctor, type (<|))
+import Control.Effect.ExtensibleChurch (runEff, type (:!!))
+import Control.Effect.Hefty (interposeK, interpretH, interpretRec)
+import Data.Effect.TH (makeEffectF, makeEffectH)
 import Data.Function ((&))
+import Data.Hefty.Extensible (ForallHFunctor, type (<|))
 
 type ForkID = Int
 
@@ -36,9 +36,9 @@ applyResetFork numberOfFork (ResetFork m) =
 main :: IO ()
 main =
     runEff
-      . runForkSingle
-      . interpretH (applyResetFork 4)
-      $ do
+        . runForkSingle
+        . interpretH (applyResetFork 4)
+        $ do
             sendIns . putStrLn . (("[out of scope] " ++) . show) =<< fork
             s <- resetFork do
                 fid1 <- fork

@@ -17,8 +17,8 @@ on [@classy-effects@](https://hackage.haskell.org/package/classy-effects).
 module Control.Effect.Hefty where
 
 import Control.Effect (type (~>))
-import Control.Freer (Freer, InjectIns, injectIns, interpretFreer, liftIns, transformFreer, InjectInsBy, injectInsBy)
-import Control.Hefty (Hefty (Hefty), InjectSig, injectSig, overHefty, unHefty, InjectSigBy, injectSigBy)
+import Control.Freer (Freer, InjectIns, InjectInsBy, injectIns, injectInsBy, interpretFreer, liftIns, transformFreer)
+import Control.Hefty (Hefty (Hefty), InjectSig, InjectSigBy, injectSig, injectSigBy, overHefty, unHefty)
 import Control.Monad.Cont (Cont, ContT (ContT), lift, runContT)
 import Control.Monad.Freer (MonadFreer, interpretFreerK)
 import Control.Monad.Identity (Identity (Identity))
@@ -26,6 +26,7 @@ import Control.Monad.Trans (MonadTrans)
 import Data.Coerce (coerce)
 import Data.Effect (LiftIns (LiftIns), Nop, SigClass, unliftIns)
 import Data.Effect.HFunctor (HFunctor, caseH, hfmap, (:+:))
+import Data.Effect.Key (Key (Key), unKey, unKeyH, type (##>), type (#>))
 import Data.Effect.Tag (Tag (unTag), TagH (unTagH), type (#), type (##))
 import Data.Free.Sum (caseF, pattern L1, pattern R1, type (+))
 import Data.Hefty.Union (
@@ -33,6 +34,9 @@ import Data.Hefty.Union (
     HFunctorUnion_ (ForallHFunctor),
     HeadIns,
     LiftInsIfSingle (liftInsIfSingle, unliftInsIfSingle),
+    Lookup,
+    Member,
+    MemberH,
     MemberRec,
     U,
     UH,
@@ -42,11 +46,10 @@ import Data.Hefty.Union (
     injectRec,
     projectRec,
     weaken2,
-    (|+), Lookup, Member, MemberH
+    (|+),
  )
 import Data.Kind (Type)
 import Data.Maybe.Singletons (FromJust)
-import Data.Effect.Key (type (#>), type (##>), unKey, unKeyH, Key (Key))
 
 {- |
 A common type for representing first-order and higher-order extensible effectful programs that can
@@ -223,7 +226,7 @@ interpretContTH_ i = interpretContTAllH_ $ i |+: exhaust
 -- | Interpret the leading first-order effect class into the carrier @f@.
 interpretFin ::
     forall e r f fr u c.
-    (Freer c fr , Union u, HeadIns e, c f) =>
+    (Freer c fr, Union u, HeadIns e, c f) =>
     (u r Nop ~> f) ->
     UnliftIfSingle e ~> f ->
     Eff u fr '[] (e ': r) ~> f
@@ -970,18 +973,19 @@ untagEffH ::
 untagEffH = transformH unTagH
 {-# INLINE untagEffH #-}
 
-
 -- keyed effects
 
 instance
     (MemberRec u (LiftIns (key #> e)) efs, LiftIns (key #> e) ~ FromJust (Lookup key efs)) =>
-    InjectInsBy key e (EffUnion u ehs efs f) where
+    InjectInsBy key e (EffUnion u ehs efs f)
+    where
     injectInsBy = EffUnion . R1 . injectRec . LiftIns . Key @key
     {-# INLINE injectInsBy #-}
 
 instance
     (MemberRec u e ehs, e ~ FromJust (Lookup key ehs)) =>
-    InjectSigBy key e (EffUnion u ehs efs) where
+    InjectSigBy key e (EffUnion u ehs efs)
+    where
     injectSigBy = EffUnion . L1 . injectRec
     {-# INLINE injectSigBy #-}
 

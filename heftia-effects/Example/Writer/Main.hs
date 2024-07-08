@@ -19,12 +19,12 @@ censorHello :: (Tell String <: m, WriterH String <<: m, Monad m) => m ()
 censorHello =
     censor
         ( \s ->
-            if s == "Hello" then
-                "Goodbye"
-            else if s == "Hello world!" then
-                "Hello world!!"
-            else
-                s
+            if s == "Hello"
+                then "Goodbye"
+                else
+                    if s == "Hello world!"
+                        then "Hello world!!"
+                        else s
         )
         hello
 

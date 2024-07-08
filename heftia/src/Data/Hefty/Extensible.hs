@@ -1,5 +1,5 @@
-{-# LANGUAGE UndecidableInstances #-}
 {-# LANGUAGE ImpredicativeTypes #-}
+{-# LANGUAGE UndecidableInstances #-}
 
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -18,8 +18,7 @@ the [extensible](https://hackage.haskell.org/package/extensible) package as a ba
 module Data.Hefty.Extensible (
     module Data.Hefty.Extensible,
     Forall,
-)
-where
+) where
 
 import Data.Effect (SigClass)
 import Data.Effect.HFunctor (HFunctor, hfmap)
@@ -27,6 +26,7 @@ import Data.Extensible (Forall, Match (Match), htabulateFor, match)
 import Data.Extensible.Sum (strikeAt, (<:|), type (:/) (EmbedAt))
 import Data.Extensible.Sum qualified as E
 import Data.Hefty.Union (
+    ClassIndex,
     HFunctorUnion_ (ForallHFunctor),
     Union (
         HasMembership,
@@ -36,8 +36,10 @@ import Data.Hefty.Union (
         project,
         weaken,
         (|+:)
-    ), ClassIndex,
+    ),
  )
+import Data.Hefty.Union qualified as U
+import Data.Hefty.Union qualified as Union
 import Data.Proxy (Proxy (Proxy))
 import Data.Type.Equality ((:~:) (Refl))
 import GHC.TypeNats (KnownNat)
@@ -45,14 +47,12 @@ import Type.Membership.Internal (
     Elaborate,
     Elaborated (Expecting),
     FindType,
-    membership,
     Membership,
     leadership,
+    membership,
     nextMembership,
  )
 import Unsafe.Coerce (unsafeCoerce)
-import qualified Data.Hefty.Union as Union
-import qualified Data.Hefty.Union as U
 
 {- |
 An implementation of an open union for higher-order effects using

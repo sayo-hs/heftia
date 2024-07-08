@@ -18,7 +18,8 @@ module Control.Effect.Handler.Heftia.State where
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
 import Control.Effect.Handler.Heftia.Reader (interpretAsk)
-import Control.Effect.Hefty (Eff, interpose, interpretK, raiseUnder, interposeT, interpretFin, injectF)
+import Control.Effect.Hefty (Eff, injectF, interpose, interposeT, interpretFin, interpretK, raiseUnder)
+import Control.Freer (Freer)
 import Control.Monad.Freer (MonadFreer)
 import Control.Monad.State (StateT)
 import Control.Monad.Trans.State (runStateT)
@@ -28,9 +29,8 @@ import Data.Effect.Reader (Ask (Ask), LAsk, ask)
 import Data.Effect.State (LState, State (Get, Put), get, put)
 import Data.Function ((&))
 import Data.Functor ((<&>))
-import Data.Hefty.Union (Union, Member)
+import Data.Hefty.Union (Member, Union)
 import Data.Tuple (swap)
-import Control.Freer (Freer)
 
 -- | Interpret the 'Get'/'Put' effects using the 'StateT' monad transformer.
 interpretState ::

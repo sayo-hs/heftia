@@ -16,7 +16,7 @@ import Control.Effect.ExtensibleChurch (runEff, type (:!!))
 import Control.Effect.Hefty (interposeRec, interpretRec, untagEff)
 import Data.Effect.TH (makeEffectF)
 import Data.Effect.Tag (Tag (unTag), type (#))
-import Data.Hefty.Extensible (type (<|), ForallHFunctor)
+import Data.Hefty.Extensible (ForallHFunctor, type (<|))
 
 data Teletype a where
     ReadTTY :: Teletype String

@@ -1,6 +1,6 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE QuantifiedConstraints #-}
 {-# LANGUAGE UndecidableInstances #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
 
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -21,16 +21,16 @@ import Control.Applicative (Alternative)
 import Control.Applicative.Free (Ap, liftAp, runAp)
 import Control.Applicative.Free.Fast qualified as Fast
 import Control.Effect (SendIns, sendIns, type (~>))
+import Control.Effect.Key (SendInsBy, sendInsBy)
 import Control.Monad (MonadPlus)
 import Control.Monad.Base (MonadBase)
 import Control.Monad.IO.Class (MonadIO, liftIO)
+import Control.Monad.State.Class (MonadState, get, put)
 import Data.Effect (InsClass)
-import Data.Functor.Coyoneda (Coyoneda, hoistCoyoneda, liftCoyoneda, lowerCoyoneda)
-import Data.Kind (Type)
-import Control.Effect.Key (SendInsBy, sendInsBy)
 import Data.Effect.Fail (Fail (Fail))
 import Data.Effect.State (State, get'', put'')
-import Control.Monad.State.Class (MonadState, get, put)
+import Data.Functor.Coyoneda (Coyoneda, hoistCoyoneda, liftCoyoneda, lowerCoyoneda)
+import Data.Kind (Type)
 
 -- | A type class to abstract away the encoding details of the Freer carrier.
 class (forall e. c (f e)) => Freer c f | f -> c where
@@ -122,9 +122,7 @@ reencodeFreer :: (Freer c fr, Freer c' fr', c (fr' f)) => fr f ~> fr' f
 reencodeFreer = interpretFreer liftIns
 {-# INLINE reencodeFreer #-}
 
-
-instance
-    (Freer c fr, InjectInsBy StateKey (State s) e, Monad (fr e)) => MonadState s (ViaFreer fr e) where
+instance (Freer c fr, InjectInsBy StateKey (State s) e, Monad (fr e)) => MonadState s (ViaFreer fr e) where
     get = get'' @StateKey
     put = put'' @StateKey
     {-# INLINE get #-}

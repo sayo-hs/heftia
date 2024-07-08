@@ -1,30 +1,31 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# LANGUAGE AllowAmbiguousTypes #-}
 
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 module Main where
-import Data.Text (Text)
-import Data.Kind (Type)
-import Data.Effect.TH (makeEffectF, makeEffectH)
-import Data.Hefty.Extensible (type (<|), type (<<|), ForallHFunctor)
-import Control.Effect.ExtensibleChurch (runEff, type (:!!))
-import Control.Effect (type (~>), sendIns, type (<:), type (<<:))
-import Control.Effect.Hefty (interpretRec, interposeRec, interpretRecH, interposeRec, raise, raiseH, interposeRecH)
-import qualified Data.Text.IO as T
-import Data.Time (UTCTime, getCurrentTime)
-import qualified Data.Text as T
-import Data.Effect.State (get, modify)
-import Control.Effect.Handler.Heftia.State (evalState)
-import Data.Function ((&))
-import Control.Monad (when)
-import Control.Effect.Handler.Heftia.Reader (interpretReader)
-import Data.Effect.Reader (local, ask)
-import Data.Time.Format.ISO8601 (iso8601Show)
+
 import Control.Arrow ((>>>))
+import Control.Effect (sendIns, type (<:), type (<<:), type (~>))
+import Control.Effect.ExtensibleChurch (runEff, type (:!!))
+import Control.Effect.Handler.Heftia.Reader (interpretReader)
+import Control.Effect.Handler.Heftia.State (evalState)
+import Control.Effect.Hefty (interposeRec, interposeRecH, interpretRec, interpretRecH, raise, raiseH)
+import Control.Monad (when)
+import Data.Effect.Reader (ask, local)
+import Data.Effect.State (get, modify)
+import Data.Effect.TH (makeEffectF, makeEffectH)
+import Data.Function ((&))
+import Data.Hefty.Extensible (ForallHFunctor, type (<<|), type (<|))
+import Data.Kind (Type)
+import Data.Text (Text)
+import Data.Text qualified as T
+import Data.Text.IO qualified as T
+import Data.Time (UTCTime, getCurrentTime)
+import Data.Time.Format.ISO8601 (iso8601Show)
 
 data Log a where
     Logging :: Text -> Log ()
@@ -62,9 +63,11 @@ runLogChunk :: ForallHFunctor eh => LogChunk ': eh :!! ef ~> eh :!! ef
 runLogChunk = interpretRecH \(LogChunk _ m) -> m
 
 -- | Limit the number of logs in a log chunk to the first @n@ logs.
-limitLogChunk
-    ::  forall eh ef. (LogChunk <<| eh, Log <| ef) =>
-        Int -> LogChunk ('[] :!! ef) ~> LogChunk ('[] :!! ef)
+limitLogChunk ::
+    forall eh ef.
+    (LogChunk <<| eh, Log <| ef) =>
+    Int ->
+    LogChunk ('[] :!! ef) ~> LogChunk ('[] :!! ef)
 limitLogChunk n (LogChunk chunkName a) =
     LogChunk chunkName . evalState @Int 0 $
         raise a & interposeRec \(Logging msg) -> do
@@ -90,12 +93,13 @@ runDummyFS = interpretRec \case
         sendIns $ putStrLn $ "<runDummyFS> writeToFile " <> path <> " : " <> content
 
 -- | Create directories according to the log-chunk structure and save one log in one file.
-saveLogChunk
-    :: forall eh ef. (LogChunk <<| eh, Log <| ef, FileSystem <| ef, Time <| ef, ForallHFunctor eh) =>
-        eh :!! ef ~> eh :!! ef
+saveLogChunk ::
+    forall eh ef.
+    (LogChunk <<| eh, Log <| ef, FileSystem <| ef, Time <| ef, ForallHFunctor eh) =>
+    eh :!! ef ~> eh :!! ef
 saveLogChunk =
-        raise >>> raiseH
-    >>> (   interposeRecH \(LogChunk chunkName a) -> do
+    raise >>> raiseH
+        >>> ( interposeRecH \(LogChunk chunkName a) -> do
                 chunkBeginAt <- currentTime
                 let dirName = iso8601Show chunkBeginAt ++ "-" ++ T.unpack chunkName
                 local @FilePath (++ dirName ++ "/") do
@@ -105,8 +109,8 @@ saveLogChunk =
                         logAt <- currentTime
                         logging msg
                         writeToFile (logChunkPath ++ iso8601Show logAt ++ ".log") (show msg)
-        )
-    >>> interpretReader @FilePath "./log/"
+            )
+        >>> interpretReader @FilePath "./log/"
 
 logExample :: (LogChunk <<: m, Log <: m, IO <: m, Monad m) => m ()
 logExample =
@@ -132,14 +136,14 @@ logExample =
 main :: IO ()
 main =
     runEff
-      . logToIO
-      . timeToIO
-      . logWithTime
-      . runDummyFS
-      . runLogChunk
-      . saveLogChunk
-      $ do
-        logExample
+        . logToIO
+        . timeToIO
+        . logWithTime
+        . runDummyFS
+        . runLogChunk
+        . saveLogChunk
+        $ do
+            logExample
 
 {-
 <runDummyFS> mkdir ./log/2024-07-06T13:56:23.447829919Z-scope1/

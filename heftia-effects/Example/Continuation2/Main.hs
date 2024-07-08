@@ -6,8 +6,8 @@ module Main where
 
 import Control.Effect (sendIns)
 import Control.Effect.ExtensibleChurch (runEff, type (!!))
-import Control.Effect.Handler.Heftia.ShiftReset (Shift, Shift_, getCC, getCC_, runShift, runShift_)
 import Control.Effect.Handler.Heftia.Reader (elaborateLocal, interpretAsk)
+import Control.Effect.Handler.Heftia.ShiftReset (Shift, Shift_, getCC, getCC_, runShift, runShift_)
 import Control.Effect.Handler.Heftia.State (evalState)
 import Control.Effect.Hefty (interpretH, send1, type ($))
 import Control.Monad.Extra (whenM)
