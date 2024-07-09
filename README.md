@@ -21,71 +21,83 @@ types in several ways to enable tuning in pursuit of high performance.
 
 Please note that this library is currently in the experimental stage. There may be significant changes and potential bugs.
 
+## Getting Started
+To run the [Writer example](https://github.com/sayo-hs/heftia?tab=readme-ov-file#two-interpretations-of-the-censor-effect-for-writer):
+```console
+$ git clone https://github.com/sayo-hs/heftia
+$ cd heftia/heftia-effects
+$ cabal run exe:Writer
+...
+Pre-applying: Goodbye world!
+Post-applying: Hello world!!
+$
+```
+
 ## Example
 
 Compared to existing Effect System libraries in Haskell that handle higher-order effects, this
 library's approach allows for a more effortless and flexible handling of higher-order effects. Here
 are some examples:
 
-* Extracting Multi-shot Delimited Continuations
+### Extracting Multi-shot Delimited Continuations
 
-    In handling higher-order effects, it's easy to work with **multi-shot delimited continuations**.
-    This enables an almost complete emulation of "Algebraic Effects and Handlers".
-    For more details, please refer to
-    the [example code](heftia-effects/Example/Continuation/Main.hs).
+In handling higher-order effects, it's easy to work with **multi-shot delimited continuations**.
+This enables an almost complete emulation of "Algebraic Effects and Handlers".
+For more details, please refer to
+the [example code](heftia-effects/Example/Continuation/Main.hs).
 
-* Two interpretations of the `censor` effect for Writer
+### Two interpretations of the `censor` effect for Writer
 
-    Let's consider the following Writer effectful program:
+Let's consider the following Writer effectful program:
 
-    ```hs
-    hello :: (Tell String <: m, Monad m) => m ()
-    hello = do
-        tell "Hello"
-        tell " world!"
+```hs
+hello :: (Tell String <: m, Monad m) => m ()
+hello = do
+    tell "Hello"
+    tell " world!"
 
-    censorHello :: (Tell String <: m, WriterH String <<: m, Monad m) => m ()
-    censorHello =
-        censor
-            ( \s ->
-                if s == "Hello" then
-                    "Goodbye"
-                else if s == "Hello world!" then
-                    "Hello world!!"
-                else
-                    s
-            )
-            hello
-    ```
+censorHello :: (Tell String <: m, WriterH String <<: m, Monad m) => m ()
+censorHello =
+    censor
+        ( \s ->
+            if s == "Hello" then
+                "Goodbye"
+            else if s == "Hello world!" then
+                "Hello world!!"
+            else
+                s
+        )
+        hello
+```
 
-    For `censorHello`, should the final written string be `"Goodbye world!"` (Pre-applying behavior) ?
-    Or should it be `"Hello world!!"` (Post-applying behavior) ?
-    With Heftia, **you can freely choose either behavior depending on which higher-order effect interpreter (which we call an elaborator) you use**.
+For `censorHello`, should the final written string be `"Goodbye world!"` (Pre-applying behavior) ?
+Or should it be `"Hello world!!"` (Post-applying behavior) ?
+With Heftia, **you can freely choose either behavior depending on which higher-order effect interpreter (which we call an elaborator) you use**.
 
-    ```hs
-    main :: IO ()
-    main = runEff do
-        (sPre, _) <-
-            interpretTell
-                . interpretH (elaborateWriterPre @String)
-                $ censorHello
+```hs
+main :: IO ()
+main = runEff do
+    (sPre, _) <-
+        interpretTell
+            . interpretH (elaborateWriterPre @String)
+            $ censorHello
 
-        (sPost, _) <-
-            interpretTell
-                . interpretH (elaborateWriterPost @String)
-                $ censorHello
+    (sPost, _) <-
+        interpretTell
+            . interpretH (elaborateWriterPost @String)
+            $ censorHello
 
-        liftIO $ putStrLn $ "Pre-applying: " <> sPre
-        liftIO $ putStrLn $ "Post-applying: " <> sPost
-    ```
+    liftIO $ putStrLn $ "Pre-applying: " <> sPre
+    liftIO $ putStrLn $ "Post-applying: " <> sPost
+```
 
-    Using the `elaborateWriterPre` elaborator, you'll get "Goodbye world!", whereas with the `elaborateWriterPost` elaborator, you'll get "Hello world!!".
-    ```
-    Pre-applying: Goodbye world!
-    Post-applying: Hello world!!
-    ```
+Using the `elaborateWriterPre` elaborator, you'll get "Goodbye world!", whereas with the `elaborateWriterPost` elaborator, you'll get "Hello world!!".
+```
+Pre-applying: Goodbye world!
+Post-applying: Hello world!!
+```
 
-    For more details, please refer to the [complete code](https://github.com/sayo-hs/heftia/blob/develop/heftia-effects/Example/Writer/Main.hs) and the [implementation of the elaborator](https://github.com/sayo-hs/heftia/blob/develop/heftia-effects/src/Control/Effect/Handler/Heftia/Writer.hs).
+For more details, please refer to the [complete code](https://github.com/sayo-hs/heftia/blob/develop/heftia-effects/Example/Writer/Main.hs) and the [implementation of the elaborator](https://github.com/sayo-hs/heftia/blob/develop/heftia-effects/src/Control/Effect/Handler/Heftia/Writer.hs).
 
 Furthermore, the structure of Heftia is theoretically straightforward, with ad-hoc elements being
 eliminated.
