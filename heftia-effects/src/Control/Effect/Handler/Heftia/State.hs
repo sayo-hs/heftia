@@ -18,7 +18,7 @@ module Control.Effect.Handler.Heftia.State where
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
 import Control.Effect.Handler.Heftia.Reader (interpretAsk)
-import Control.Effect.Hefty (Eff, injectF, interpose, interposeT, interpretFin, interpretK, raiseUnder)
+import Control.Effect.Hefty (Eff, injectF, interpose, interposeT, interpret, interpretFin, interpretK, raiseUnder)
 import Control.Freer (Freer)
 import Control.Monad.Freer (MonadFreer)
 import Control.Monad.State (StateT)
@@ -31,6 +31,7 @@ import Data.Function ((&))
 import Data.Functor ((<&>))
 import Data.Hefty.Union (Member, Union)
 import Data.Tuple (swap)
+import UnliftIO (MonadIO, newIORef, readIORef, writeIORef)
 
 -- | Interpret the 'Get'/'Put' effects using the 'StateT' monad transformer.
 interpretState ::
@@ -89,6 +90,20 @@ interpretStateK initialState =
                 Put s -> k () & interpose @(Ask s) \Ask -> pure s
             )
         >>> interpretAsk initialState
+
+runStateIORef ::
+    forall s r a fr u c.
+    (Freer c fr, Union u, MonadIO (Eff u fr '[] r)) =>
+    s ->
+    Eff u fr '[] (LState s ': r) a ->
+    Eff u fr '[] r (s, a)
+runStateIORef s m = do
+    ref <- newIORef s
+    a <-
+        m & interpret \case
+            Get -> readIORef ref
+            Put s' -> writeIORef ref s'
+    readIORef ref <&> (,a)
 
 transactState ::
     forall s r fr u c.
