@@ -30,6 +30,7 @@ import Data.Map (Map)
 import Data.Map qualified as Map
 
 runKVStorePure ::
+    forall k v r a fr u c.
     ( Ord k
     , Freer c fr
     , Union u
@@ -58,7 +59,7 @@ runKVStoreAsState ::
     , Monad (Eff u fr '[] r)
     , HFunctor (u '[])
     ) =>
-    Eff u fr '[] (LKVStore k v : r) ~> Eff u fr '[] r
+    Eff u fr '[] (LKVStore k v ': r) ~> Eff u fr '[] r
 runKVStoreAsState = interpret \case
     LookupKV k -> get <&> Map.lookup k
     UpdateKV k v -> modify $ Map.update (const v) k
