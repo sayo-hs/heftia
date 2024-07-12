@@ -78,6 +78,7 @@ library
         Control.Effect.Handler.Heftia.Unlift
         Control.Effect.Handler.Heftia.KVStore
         Control.Effect.Handler.Heftia.Fresh
+        Control.Effect.Handler.Heftia.Fail
 
     reexported-modules:
         Control.Effect.Hefty,
@@ -122,6 +123,7 @@ library
         Data.Effect.Unlift,
         Data.Effect.KVStore,
         Data.Effect.Fresh,
+        Data.Effect.Fail,
 
     -- Modules included in this executable, other than Main.
     -- other-modules:
