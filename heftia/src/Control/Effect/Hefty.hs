@@ -43,9 +43,15 @@ import Data.Hefty.Union (
     Union (HasMembership, exhaust, inject0, weaken, weakenUnder, (|+:)),
     UnliftIfSingle,
     flipUnion,
+    flipUnion3,
+    flipUnionUnder,
     injectRec,
     projectRec,
     weaken2,
+    weaken2Under2,
+    weaken3Under,
+    weakenUnder2,
+    weakenUnder3,
     (|+),
  )
 import Data.Kind (Type)
@@ -872,12 +878,68 @@ raiseUnder ::
 raiseUnder = transformAll weakenUnder
 {-# INLINE raiseUnder #-}
 
+raiseUnder2 ::
+    forall e1 e2 e3 r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs (e3 ': e2 ': r) ~> Eff u fr ehs (e3 ': e2 ': e1 ': r)
+raiseUnder2 = transformAll weakenUnder2
+{-# INLINE raiseUnder2 #-}
+
+raiseUnder3 ::
+    forall e1 e2 e3 e4 r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs (e4 ': e3 ': e2 ': r) ~> Eff u fr ehs (e4 ': e3 ': e2 ': e1 ': r)
+raiseUnder3 = transformAll weakenUnder3
+{-# INLINE raiseUnder3 #-}
+
+raise2Under2 ::
+    forall e1 e2 e3 e4 r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs (e4 ': e3 ': r) ~> Eff u fr ehs (e4 ': e3 ': e2 ': e1 ': r)
+raise2Under2 = transformAll weaken2Under2
+{-# INLINE raise2Under2 #-}
+
+raise3Under ::
+    forall e1 e2 e3 e4 r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs (e4 ': r) ~> Eff u fr ehs (e4 ': e3 ': e2 ': e1 ': r)
+raise3Under = transformAll weaken3Under
+{-# INLINE raise3Under #-}
+
 raiseUnderH ::
     forall e1 e2 r efs fr u c.
     (Freer c fr, Union u, HFunctor (u (e2 ': r))) =>
     Eff u fr (e2 ': r) efs ~> Eff u fr (e2 ': e1 ': r) efs
 raiseUnderH = transformAllH weakenUnder
 {-# INLINE raiseUnderH #-}
+
+raiseUnder2H ::
+    forall e1 e2 e3 r efs fr u c.
+    (Freer c fr, Union u, HFunctor (u (e3 ': e2 ': r))) =>
+    Eff u fr (e3 ': e2 ': r) efs ~> Eff u fr (e3 ': e2 ': e1 ': r) efs
+raiseUnder2H = transformAllH weakenUnder2
+{-# INLINE raiseUnder2H #-}
+
+raiseUnder3H ::
+    forall e1 e2 e3 e4 r efs fr u c.
+    (Freer c fr, Union u, HFunctor (u (e4 ': e3 ': e2 ': r))) =>
+    Eff u fr (e4 ': e3 ': e2 ': r) efs ~> Eff u fr (e4 ': e3 ': e2 ': e1 ': r) efs
+raiseUnder3H = transformAllH weakenUnder3
+{-# INLINE raiseUnder3H #-}
+
+raise2Under2H ::
+    forall e1 e2 e3 e4 r efs fr u c.
+    (Freer c fr, Union u, HFunctor (u (e4 ': e3 ': r))) =>
+    Eff u fr (e4 ': e3 ': r) efs ~> Eff u fr (e4 ': e3 ': e2 ': e1 ': r) efs
+raise2Under2H = transformAllH weaken2Under2
+{-# INLINE raise2Under2H #-}
+
+raise3UnderH ::
+    forall e1 e2 e3 e4 r efs fr u c.
+    (Freer c fr, Union u, HFunctor (u (e4 ': r))) =>
+    Eff u fr (e4 ': r) efs ~> Eff u fr (e4 ': e3 ': e2 ': e1 ': r) efs
+raise3UnderH = transformAllH weaken3Under
+{-# INLINE raise3UnderH #-}
 
 raiseAll ::
     forall ehs efs fr u c.
@@ -900,12 +962,40 @@ flipEff ::
 flipEff = transformAll flipUnion
 {-# INLINE flipEff #-}
 
+flipEff3 ::
+    forall e1 e2 e3 r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs (e1 ': e2 ': e3 ': r) ~> Eff u fr ehs (e3 ': e2 ': e1 ': r)
+flipEff3 = transformAll flipUnion3
+{-# INLINE flipEff3 #-}
+
+flipEffUnder ::
+    forall e1 e2 e3 r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs (e3 ': e1 ': e2 ': r) ~> Eff u fr ehs (e3 ': e2 ': e1 ': r)
+flipEffUnder = transformAll flipUnionUnder
+{-# INLINE flipEffUnder #-}
+
 flipEffH ::
     forall e1 e2 r efs fr u c.
     (Freer c fr, Union u, HFunctor (u (e1 ': e2 ': r))) =>
     Eff u fr (e1 ': e2 ': r) efs ~> Eff u fr (e2 ': e1 ': r) efs
 flipEffH = transformAllH flipUnion
 {-# INLINE flipEffH #-}
+
+flipEff3H ::
+    forall e1 e2 e3 r efs fr u c.
+    (Freer c fr, Union u, HFunctor (u (e1 ': e2 ': e3 ': r))) =>
+    Eff u fr (e1 ': e2 ': e3 ': r) efs ~> Eff u fr (e3 ': e2 ': e1 ': r) efs
+flipEff3H = transformAllH flipUnion3
+{-# INLINE flipEff3H #-}
+
+flipEffUnderH ::
+    forall e1 e2 e3 r efs fr u c.
+    (Freer c fr, Union u, HFunctor (u (e3 ': e1 ': e2 ': r))) =>
+    Eff u fr (e3 ': e1 ': e2 ': r) efs ~> Eff u fr (e3 ': e2 ': e1 ': r) efs
+flipEffUnderH = transformAllH flipUnionUnder
+{-# INLINE flipEffUnderH #-}
 
 splitEff ::
     forall fr' e r ehs fr u c.
