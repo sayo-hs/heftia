@@ -77,6 +77,7 @@ library
         Control.Effect.Handler.Heftia.Resource
         Control.Effect.Handler.Heftia.Unlift
         Control.Effect.Handler.Heftia.KVStore
+        Control.Effect.Handler.Heftia.Fresh
 
     reexported-modules:
         Control.Effect.Hefty,
@@ -120,6 +121,7 @@ library
         Data.Effect.Resource,
         Data.Effect.Unlift,
         Data.Effect.KVStore,
+        Data.Effect.Fresh,
 
     -- Modules included in this executable, other than Main.
     -- other-modules:
