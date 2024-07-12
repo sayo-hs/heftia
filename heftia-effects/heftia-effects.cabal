@@ -76,6 +76,7 @@ library
         Control.Effect.Handler.Heftia.Provider.Implicit
         Control.Effect.Handler.Heftia.Resource
         Control.Effect.Handler.Heftia.Unlift
+        Control.Effect.Handler.Heftia.KVStore
 
     reexported-modules:
         Control.Effect.Hefty,
@@ -118,6 +119,7 @@ library
         Data.Effect.Provider.Implicit,
         Data.Effect.Resource,
         Data.Effect.Unlift,
+        Data.Effect.KVStore,
 
     -- Modules included in this executable, other than Main.
     -- other-modules:
@@ -130,6 +132,7 @@ library
         extensible                    ^>= 0.9,
         unliftio                      ^>= 0.2.0,
         free                          ^>= 5.2,
+        containers                    ,
 
     hs-source-dirs:   src
 
