@@ -17,7 +17,7 @@ on [@classy-effects@](https://hackage.haskell.org/package/classy-effects).
 -}
 module Control.Effect.Hefty where
 
-import Control.Effect (sendIns, sendSig, type (~>))
+import Control.Effect (type (~>))
 import Control.Effect.Key (sendInsBy, sendSigBy)
 import Control.Freer (Freer, InjectIns, InjectInsBy, injectIns, injectInsBy, interpretFreer, liftIns, transformFreer)
 import Control.Hefty (Hefty (Hefty), InjectSig, InjectSigBy, injectSig, injectSigBy, overHefty, unHefty)

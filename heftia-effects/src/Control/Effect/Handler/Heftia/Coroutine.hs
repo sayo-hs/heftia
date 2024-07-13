@@ -4,9 +4,9 @@
 
 module Control.Effect.Handler.Heftia.Coroutine where
 
-import Control.Effect.Hefty (Eff, interpretK, interpretKH_)
+import Control.Effect.Hefty (Eff, interpretK)
 import Control.Monad.Freer (MonadFreer)
-import Data.Effect.Coroutine (LYield, Status (Coroutine, Done), YieldH (YieldH), continueStatus, replyCoroutine)
+import Data.Effect.Coroutine (LYield, Status (Coroutine, Done), Yield (Yield))
 import Data.Hefty.Union (Union)
 
 runCoroutine ::
@@ -14,14 +14,4 @@ runCoroutine ::
     (MonadFreer c fr, Union u, c (Eff u fr '[] er)) =>
     Eff u fr '[] (LYield a b ': er) r ->
     Eff u fr '[] er (Status (Eff u fr '[] er) a b r)
-runCoroutine = interpretK (pure . Done) (\kk y -> pure $ replyCoroutine y kk)
-
-runCoroutineH ::
-    forall a b r ef fr u c.
-    (MonadFreer c fr, Union u, c (Eff u fr '[] ef)) =>
-    Eff u fr '[YieldH a b] ef r ->
-    Eff u fr '[] ef (Status (Eff u fr '[] ef) a b r)
-runCoroutineH =
-    interpretKH_ (pure . Done) \kk (YieldH a k) ->
-        pure $ Coroutine a \b ->
-            runCoroutineH (k b) >>= continueStatus kk
+runCoroutine = interpretK (pure . Done) (\kk (Yield a) -> pure $ Coroutine a kk)
