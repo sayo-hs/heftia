@@ -114,6 +114,28 @@ Also, the following *HeftWorld* example: https://github.com/sayo-hs/HeftWorld
 ~~Examples with explanations can be found in the [docs/examples/](https://github.com/sayo-hs/heftia/tree/master/docs/examples) directory.~~ Documents have become outdated.
 Please wait for the documentation for the new version to be written.
 
+## Comparison
+
+| Library or Language | Higher-Order Effects | Delimited Continuation | Statically Typed Effect Set                     | Purely Monadic                    | Dynamic Effect Rewriting | Performance (TODO) |
+| ------------------- | -------------------- | ---------------------- | ----------------------------------------------- | --------------------------------- | ------------------------ | ------------------ |
+| Heftia              | Yes                  | Multi-shot [^1]        | Yes                                             | Yes (also Applicative and others) | Yes                      | ?                  |
+| freer-simple        | No                   | Multi-shot             | Yes                                             | Yes                               | Yes                      | ?                  |
+| Polysemy            | Yes                  | No                     | Yes                                             | Yes                               | Yes                      | ?                  |
+| Effectful           | Yes                  | No                     | Yes                                             | No (based on the `IO` monad)      | Yes                      | ?                  |
+| eff                 | Yes                  | No                     | Yes                                             | No (based on the `IO` monad)      | Yes                      | Fast               |
+| mtl                 | Yes                  | Multi-shot (`ContT`)   | Yes                                             | Yes                               | No                       | ?                  |
+| fused-effects       | Yes                  | No?                    | Yes                                             | Yes                               | No                       | ?                  |
+| koka-lang           | No?                  | Multi-shot             | Yes                                             | No (language built-in)            | ?                        | ?                  |
+| OCaml-lang 5        | Yes                  | One-shot               | No [^2]                                         | No (language built-in)            | ?                        | ?                  |
+
+[^1]: but delimited within the scope of higher-order effects.
+When attempting to interpret an effect while there are unhandled higher-order effects present, you cannot obtain delimited continuations beyond the action scope held by these unhandled higher-order effects. It appears as if a *reset* (in the sense of *shift/reset*) is applied to each of the scopes still held by the remaining unhandled higher-order effects.
+For more details, please refer to the documentation of the `interpretRec` family of functions.
+
+[^2]: potential for 'unhandled' runtime errors
+
+Heftia can simply be described as a higher-order version of freer-simple.
+This is indeed true in terms of its internal mechanisms as well.
 
 ## Future Plans
 * Benchmarking
