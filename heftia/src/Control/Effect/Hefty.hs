@@ -53,6 +53,7 @@ import Data.Hefty.Union (
     injectRec,
     projectRec,
     weaken2,
+    weaken2Under,
     weaken2Under2,
     weaken3Under,
     weakenUnder2,
@@ -904,6 +905,13 @@ raise2Under2 ::
 raise2Under2 = transformAll weaken2Under2
 {-# INLINE raise2Under2 #-}
 
+raise2Under ::
+    forall e1 e2 e3 r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs (e3 ': r) ~> Eff u fr ehs (e3 ': e2 ': e1 ': r)
+raise2Under = transformAll weaken2Under
+{-# INLINE raise2Under #-}
+
 raise3Under ::
     forall e1 e2 e3 e4 r ehs fr u c.
     (Freer c fr, Union u, HFunctor (u ehs)) =>
@@ -938,6 +946,13 @@ raise2Under2H ::
     Eff u fr (e4 ': e3 ': r) efs ~> Eff u fr (e4 ': e3 ': e2 ': e1 ': r) efs
 raise2Under2H = transformAllH weaken2Under2
 {-# INLINE raise2Under2H #-}
+
+raise2UnderH ::
+    forall e1 e2 e3 r efs fr u c.
+    (Freer c fr, Union u, HFunctor (u (e3 ': r))) =>
+    Eff u fr (e3 ': r) efs ~> Eff u fr (e3 ': e2 ': e1 ': r) efs
+raise2UnderH = transformAllH weaken2Under
+{-# INLINE raise2UnderH #-}
 
 raise3UnderH ::
     forall e1 e2 e3 e4 r efs fr u c.
