@@ -17,7 +17,7 @@ on [@classy-effects@](https://hackage.haskell.org/package/classy-effects).
 -}
 module Control.Effect.Hefty where
 
-import Control.Effect (type (~>))
+import Control.Effect (sendIns, sendSig, type (~>))
 import Control.Effect.Key (sendInsBy, sendSigBy)
 import Control.Freer (Freer, InjectIns, InjectInsBy, injectIns, injectInsBy, interpretFreer, liftIns, transformFreer)
 import Control.Hefty (Hefty (Hefty), InjectSig, InjectSigBy, injectSig, injectSigBy, overHefty, unHefty)
@@ -49,6 +49,7 @@ import Data.Hefty.Union (
     flipUnion,
     flipUnion3,
     flipUnionUnder,
+    inject,
     injectRec,
     projectRec,
     weaken2,
@@ -1000,6 +1001,20 @@ flipEffUnderH ::
     Eff u fr (e3 ': e1 ': e2 ': r) efs ~> Eff u fr (e3 ': e2 ': e1 ': r) efs
 flipEffUnderH = transformAllH flipUnionUnder
 {-# INLINE flipEffUnderH #-}
+
+subsume ::
+    forall e r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs), HasMembership u e r) =>
+    Eff u fr ehs (e ': r) ~> Eff u fr ehs r
+subsume = transformAll $ inject |+: id
+{-# INLINE subsume #-}
+
+subsumeH ::
+    forall e r efs fr u c.
+    (Freer c fr, Union u, HFunctor (u (e ': r)), HasMembership u e r) =>
+    Eff u fr (e ': r) efs ~> Eff u fr r efs
+subsumeH = transformAllH $ inject |+: id
+{-# INLINE subsumeH #-}
 
 splitEff ::
     forall fr' e r ehs fr u c.
