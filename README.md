@@ -109,6 +109,7 @@ Heftia is the current main focus of the [Sayo Project](https://github.com/sayo-h
 
 ## Documentation
 The example codes are located in the [heftia-effects/Example/](heftia-effects/Example/) directory.
+Also, the following *HeftWorld* example: https://github.com/sayo-hs/HeftWorld
 
 ~~Examples with explanations can be found in the [docs/examples/](https://github.com/sayo-hs/heftia/tree/master/docs/examples) directory.~~ Documents have become outdated.
 Please wait for the documentation for the new version to be written.
