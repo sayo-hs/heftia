@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 -- This Source Code Form is subject to the terms of the Mozilla Public
@@ -17,6 +18,7 @@ on [@classy-effects@](https://hackage.haskell.org/package/classy-effects).
 module Control.Effect.Hefty where
 
 import Control.Effect (type (~>))
+import Control.Effect.Key (sendInsBy, sendSigBy)
 import Control.Freer (Freer, InjectIns, InjectInsBy, injectIns, injectInsBy, interpretFreer, liftIns, transformFreer)
 import Control.Hefty (Hefty (Hefty), InjectSig, InjectSigBy, injectSig, injectSigBy, overHefty, unHefty)
 import Control.Monad.Cont (Cont, ContT (ContT), lift, runContT)
@@ -26,7 +28,7 @@ import Control.Monad.Trans (MonadTrans)
 import Data.Coerce (coerce)
 import Data.Effect (LiftIns (LiftIns), Nop, SigClass, unliftIns)
 import Data.Effect.HFunctor (HFunctor, caseH, hfmap, (:+:))
-import Data.Effect.Key (Key (Key), unKey, unKeyH, type (##>), type (#>))
+import Data.Effect.Key (Key (Key), KeyH (KeyH), unKey, unKeyH, type (##>), type (#>))
 import Data.Effect.Tag (Tag (unTag), TagH (unTagH), type (#), type (##))
 import Data.Free.Sum (caseF, pattern L1, pattern R1, type (+))
 import Data.Hefty.Union (
@@ -36,7 +38,9 @@ import Data.Hefty.Union (
     LiftInsIfSingle (liftInsIfSingle, unliftInsIfSingle),
     Lookup,
     Member,
+    MemberBy,
     MemberH,
+    MemberHBy,
     MemberRec,
     U,
     UH,
@@ -1087,8 +1091,22 @@ unkeyEff = transform unKey
 {-# INLINE unkeyEff #-}
 
 unkeyEffH ::
-    forall tag e r efs fr u c.
-    (Freer c fr, Union u, HFunctor (u (tag ##> e ': r))) =>
-    Eff u fr (tag ##> e ': r) efs ~> Eff u fr (e ': r) efs
+    forall key e r efs fr u c.
+    (Freer c fr, Union u, HFunctor (u (key ##> e ': r))) =>
+    Eff u fr (key ##> e ': r) efs ~> Eff u fr (e ': r) efs
 unkeyEffH = transformH unKeyH
 {-# INLINE unkeyEffH #-}
+
+keySubsume ::
+    forall key e r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs), MemberBy u key e r) =>
+    Eff u fr ehs (LiftIns e ': r) ~> Eff u fr ehs r
+keySubsume = interpretRec $ sendInsBy @key
+{-# INLINE keySubsume #-}
+
+keySubsumeH ::
+    forall key e r efs fr u c.
+    (Freer c fr, HFunctorUnion u, HFunctor e, ForallHFunctor u r, MemberHBy u key e r) =>
+    Eff u fr (e ': r) efs ~> Eff u fr r efs
+keySubsumeH = interpretRecH $ sendSigBy @key . KeyH
+{-# INLINE keySubsumeH #-}
