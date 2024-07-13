@@ -1,14 +1,11 @@
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
-{-# LANGUAGE AllowAmbiguousTypes #-}
-{-# LANGUAGE QuantifiedConstraints #-}
-{-# LANGUAGE TemplateHaskell #-}
 
 module Control.Effect.Handler.Heftia.ShiftReset where
 
 import Control.Arrow ((>>>))
-import Control.Effect (type (<<:), type (~>))
+import Control.Effect (type (~>))
 import Control.Effect.Hefty (
     Eff,
     injectH,
@@ -19,25 +16,12 @@ import Control.Effect.Hefty (
     runEff,
  )
 import Control.Freer (Freer)
-import Control.Monad (void, (<=<), (>=>))
+import Control.Monad ((<=<))
 import Control.Monad.Freer (MonadFreer)
 import Data.Effect (LiftIns)
 import Data.Effect.HFunctor (HFunctor, hfmap)
-import Data.Effect.TH (
-    Default (def),
-    makeEffect',
-    makeEffectH,
-    noDeriveHFunctor,
-    noExtTemplate,
-    (&),
- )
+import Data.Effect.ShiftReset (Reset (Reset), Shift (Shift), Shift_ (Shift_))
 import Data.Hefty.Union (HFunctorUnion, HFunctorUnion_ (ForallHFunctor), Union ((|+:)))
-import Data.Kind (Type)
-
-data Shift (r :: Type) m a where
-    Shift :: forall r m a. ((a -> m r) -> m r) -> Shift r m a
-
-makeEffect' (def & noDeriveHFunctor) noExtTemplate [] [''Shift]
 
 runShift ::
     (MonadFreer c fr, Union u, c (Eff u fr '[] ef), HFunctor (u '[])) =>
@@ -48,15 +32,6 @@ runShift =
         let k' = raiseH . k
          in runShift . \case
                 Shift f -> f k'
-
-callCC :: forall r m a. (Shift r <<: m, Monad m) => ((a -> m r) -> m a) -> m a
-callCC f = shift @r \k -> f (k >=> exit) >>= k
-
-exit :: (Shift r <<: f, Applicative f) => r -> f a
-exit r = shift \_ -> pure r
-
-getCC :: (Shift r <<: m, Monad m) => m (m r)
-getCC = callCC \exit' -> let a = exit' a in pure a
 
 withShift ::
     ( MonadFreer c fr
@@ -69,16 +44,6 @@ withShift ::
     Eff u fr eh ef r
 withShift = runShift >>> runEff
 {-# INLINE withShift #-}
-
-data Shift_ m a where
-    Shift_ :: (forall (r :: Type). (a -> m r) -> m r) -> Shift_ m a
-
-makeEffect' (def & noDeriveHFunctor) noExtTemplate [] [''Shift_]
-
-data Reset m (a :: Type) where
-    Reset :: m a -> Reset m a
-
-makeEffectH [''Reset]
 
 runShift_ ::
     (MonadFreer c fr, Union u, c (Eff u fr eh ef), HFunctor (u eh)) =>
@@ -93,6 +58,3 @@ runReset ::
     Eff u fr (Reset ': eh) ef ~> Eff u fr eh ef
 runReset = interpretRecH \(Reset a) -> a
 {-# INLINE runReset #-}
-
-getCC_ :: (Shift_ <<: m, Monad m) => m (m ())
-getCC_ = shift_ \k -> let k' = k $ void k' in k'
