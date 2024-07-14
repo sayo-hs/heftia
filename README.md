@@ -128,13 +128,20 @@ For more details, please refer to the documentation of the `interpretRec` family
 
 ## Comparison
 
-| Library or Language | Higher-Order Effects | Delimited Continuation | Statically Typed Effect Set                     | Purely Monadic                    | Dynamic Effect Rewriting | Performance (TODO) |
+* Higher-Order Effects: Does it support higher-order effects?
+* Delimited Continuation: The ability to manipulate delimited continuations.
+* Statically Typed Set of Effects: For a term representing an effectful program, is it possible to statically decidable a type that enumerates all the effects the program may produce?
+* Purely Monadic: Is an effectful program represented as a transparent data structure that is a monad, and can it be interpreted into other data types using only pure operations without side effects or `unsafePerformIO`?
+* Dynamic Effect Rewriting: Can an effectful program have its internal effects altered afterwards by functions (typically referred to as `intercept`, `interpose`, `transform`, `translate`, or `rewrite`) ?
+* Performance: Time complexity or space complexity.
+
+| Library or Language | Higher-Order Effects | Delimited Continuation | Statically Typed Set of Effects                 | Purely Monadic                    | Dynamic Effect Rewriting | Performance (TODO) |
 | ------------------- | -------------------- | ---------------------- | ----------------------------------------------- | --------------------------------- | ------------------------ | ------------------ |
 | Heftia              | Yes [^1]             | Multi-shot             | Yes                                             | Yes (also Applicative and others) | Yes                      | ?                  |
 | freer-simple        | No                   | Multi-shot             | Yes                                             | Yes                               | Yes                      | ?                  |
 | Polysemy            | Yes                  | No                     | Yes                                             | Yes                               | Yes                      | ?                  |
 | Effectful           | Yes                  | No                     | Yes                                             | No (based on the `IO` monad)      | Yes                      | ?                  |
-| eff                 | Yes                  | No                     | Yes                                             | No (based on the `IO` monad)      | Yes                      | Fast               |
+| eff                 | Yes                  | Multi-shot?            | Yes                                             | No (based on the `IO` monad)      | Yes                      | Fast               |
 | mtl                 | Yes                  | Multi-shot (`ContT`)   | Yes                                             | Yes                               | No                       | ?                  |
 | fused-effects       | Yes                  | No?                    | Yes                                             | Yes                               | No                       | ?                  |
 | koka-lang           | No?                  | Multi-shot             | Yes                                             | No (language built-in)            | ?                        | ?                  |
