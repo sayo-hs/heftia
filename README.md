@@ -114,11 +114,23 @@ Also, the following *HeftWorld* example: https://github.com/sayo-hs/HeftWorld
 ~~Examples with explanations can be found in the [docs/examples/](https://github.com/sayo-hs/heftia/tree/master/docs/examples) directory.~~ Documents have become outdated.
 Please wait for the documentation for the new version to be written.
 
+## Limitation and how to avoid it
+### The *reset* behavior of the scopes held by unhandled higher-order effects
+When attempting to interpret an effect while there are unhandled higher-order effects present, you cannot obtain delimited continuations beyond the action scope held by these unhandled higher-order effects.
+It appears as if a *reset* (in the sense of *shift/reset*) is applied to each of the scopes still held by the remaining unhandled higher-order effects.
+
+In other words, to obtain delimited continuations that span across scopes or to maintain state across scopes,
+it is necessary to first handle and eliminate all higher-order effects that hold those scopes,
+and then handle the effect targeted for stateful interpretation in that order.
+For this, it may be necessary to perform *multi-layering* as needed. For an example of multi-layering,
+see [Example/Continuation2](https://github.com/sayo-hs/heftia/blob/f4989e92c31ae2632762afcff306ffa48c307c56/heftia-effects/Example/Continuation2/Main.hs).
+For more details, please refer to the documentation of the `interpretRec` family of functions.
+
 ## Comparison
 
 | Library or Language | Higher-Order Effects | Delimited Continuation | Statically Typed Effect Set                     | Purely Monadic                    | Dynamic Effect Rewriting | Performance (TODO) |
 | ------------------- | -------------------- | ---------------------- | ----------------------------------------------- | --------------------------------- | ------------------------ | ------------------ |
-| Heftia              | Yes                  | Multi-shot [^1]        | Yes                                             | Yes (also Applicative and others) | Yes                      | ?                  |
+| Heftia              | Yes [^1]             | Multi-shot             | Yes                                             | Yes (also Applicative and others) | Yes                      | ?                  |
 | freer-simple        | No                   | Multi-shot             | Yes                                             | Yes                               | Yes                      | ?                  |
 | Polysemy            | Yes                  | No                     | Yes                                             | Yes                               | Yes                      | ?                  |
 | Effectful           | Yes                  | No                     | Yes                                             | No (based on the `IO` monad)      | Yes                      | ?                  |
@@ -128,11 +140,7 @@ Please wait for the documentation for the new version to be written.
 | koka-lang           | No?                  | Multi-shot             | Yes                                             | No (language built-in)            | ?                        | ?                  |
 | OCaml-lang 5        | Yes                  | One-shot               | No [^2]                                         | No (language built-in)            | ?                        | ?                  |
 
-[^1]: but delimited within the scope of unhandled higher-order effects.
-When attempting to interpret an effect while there are unhandled higher-order effects present, you cannot obtain delimited continuations beyond the action scope held by these unhandled higher-order effects. It appears as if a *reset* (in the sense of *shift/reset*) is applied to each of the scopes still held by the remaining unhandled higher-order effects.
-In other words, to obtain delimited continuations that span across scopes or to maintain state across scopes, it is necessary to first handle and eliminate all higher-order effects that hold those scopes, and then handle the effect targeted for stateful interpretation in that order. For this, it may be necessary to perform *multi-layering* as needed. For an example of multi-layering, see [Example/Continuation2](https://github.com/sayo-hs/heftia/blob/f4989e92c31ae2632762afcff306ffa48c307c56/heftia-effects/Example/Continuation2/Main.hs).
-For more details, please refer to the documentation of the `interpretRec` family of functions.
-
+[^1]: limitation: https://github.com/sayo-hs/heftia?tab=readme-ov-file#the-reset-behavior-of-the-scopes-held-by-unhandled-higher-order-effects
 [^2]: potential for 'unhandled' runtime errors
 
 Heftia can simply be described as a higher-order version of freer-simple.
