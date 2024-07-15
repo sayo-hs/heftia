@@ -8,7 +8,7 @@
 
 module Control.Hefty where
 
-import Control.Applicative (Alternative)
+import Control.Applicative (Alternative, empty, (<|>))
 import Control.Effect (SendIns (..), SendSig (..), type (~>))
 import Control.Effect.Key (ByKey (ByKey), SendInsBy, SendSigBy, key, sendInsBy, sendSigBy)
 import Control.Freer (Freer (liftIns), InjectIns, InjectInsBy, StateKey, injectIns, injectInsBy)
@@ -25,6 +25,8 @@ import Data.Effect.Fail (Fail)
 import Data.Effect.Fail qualified as E
 import Data.Effect.Fix (Fix)
 import Data.Effect.Fix qualified as E
+import Data.Effect.NonDet (Choose, Empty, choose)
+import Data.Effect.NonDet qualified as NonDet
 import Data.Effect.Reader (Ask, Local, ask'', local'')
 import Data.Effect.State (State, get'', put'')
 import Data.Effect.Unlift (UnliftIO, pattern WithRunInIO)
@@ -43,9 +45,7 @@ newtype
 
 deriving newtype instance Functor (f (e (Hefty f e))) => Functor (Hefty f e)
 deriving newtype instance Applicative (f (e (Hefty f e))) => Applicative (Hefty f e)
-deriving newtype instance Alternative (f (e (Hefty f e))) => Alternative (Hefty f e)
 deriving newtype instance Monad (f (e (Hefty f e))) => Monad (Hefty f e)
-deriving newtype instance MonadPlus (f (e (Hefty f e))) => MonadPlus (Hefty f e)
 deriving newtype instance (MonadBase b (f (e (Hefty f e))), Monad b) => MonadBase b (Hefty f e)
 
 deriving newtype instance Foldable (f (e (Hefty f e))) => Foldable (Hefty f e)
@@ -136,6 +136,27 @@ instance
     , Monad (fr (e (Hefty fr e)))
     ) =>
     MonadRWS r w s (Hefty fr e)
+
+instance
+    ( Freer c fr
+    , InjectIns Empty (e (Hefty fr e))
+    , InjectSig Choose e
+    , Applicative (fr (e (Hefty fr e)))
+    ) =>
+    Alternative (Hefty fr e)
+    where
+    empty = NonDet.empty
+    a <|> b = choose a b
+    {-# INLINE empty #-}
+    {-# INLINE (<|>) #-}
+
+instance
+    ( Freer c fr
+    , InjectIns Empty (e (Hefty fr e))
+    , InjectSig Choose e
+    , Monad (fr (e (Hefty fr e)))
+    ) =>
+    MonadPlus (Hefty fr e)
 
 instance (Freer c fr, InjectIns IO (e (Hefty fr e)), Monad (fr (e (Hefty fr e)))) => MonadIO (Hefty fr e) where
     liftIO = sendIns
