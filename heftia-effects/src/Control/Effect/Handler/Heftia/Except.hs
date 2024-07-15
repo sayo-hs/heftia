@@ -14,23 +14,56 @@ classes.
 -}
 module Control.Effect.Handler.Heftia.Except where
 
+import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
 import Control.Effect.Hefty (
     Eff,
     Elab,
     interposeK,
     interposeT,
+    interpretH,
     interpretK,
     interpretT,
  )
 import Control.Monad.Freer (MonadFreer)
 import Control.Monad.Trans.Except (ExceptT, runExceptT, throwE)
 import Data.Effect.Except (Catch (Catch), LThrow, Throw (Throw))
+import Data.Effect.HFunctor (HFunctor)
 import Data.Function ((&))
 import Data.Hefty.Union (Member, Union)
 
--- | Elaborate the t'Catch' effect using the 'ExceptT' monad transformer.
+-- | Interpret the "Data.Effect.Except" effects using the 'ExceptT' monad transformer internally.
+runExcept ::
+    forall e a ef fr u c.
+    ( Member u (Throw e) (LThrow e ': ef)
+    , MonadFreer c fr
+    , Union u
+    , c (Eff u fr '[] (LThrow e ': ef))
+    , c (ExceptT e (Eff u fr '[] (LThrow e ': ef)))
+    , HFunctor (u '[Catch e])
+    , c (Eff u fr '[] ef)
+    , c (ExceptT e (Eff u fr '[] ef))
+    ) =>
+    Eff u fr '[Catch e] (LThrow e ': ef) a ->
+    Eff u fr '[] ef (Either e a)
+runExcept = runCatch >>> runThrow
+{-# INLINE runExcept #-}
+
+-- | Elaborate the t'Catch' effect using the 'ExceptT' monad transformer internally.
 runCatch ::
+    forall e ef fr u c.
+    ( Member u (Throw e) ef
+    , MonadFreer c fr
+    , Union u
+    , c (Eff u fr '[] ef)
+    , c (ExceptT e (Eff u fr '[] ef))
+    , HFunctor (u '[Catch e])
+    ) =>
+    Eff u fr '[Catch e] ef ~> Eff u fr '[] ef
+runCatch = interpretH elabCatch
+{-# INLINE runCatch #-}
+
+elabCatch ::
     forall e ef fr u c.
     ( Member u (Throw e) ef
     , MonadFreer c fr
@@ -39,18 +72,18 @@ runCatch ::
     , c (ExceptT e (Eff u fr '[] ef))
     ) =>
     Elab (Catch e) (Eff u fr '[] ef)
-runCatch (Catch action hdl) = do
+elabCatch (Catch action hdl) = do
     r <- runExceptT $ action & interposeT \(Throw e) -> throwE e
     case r of
         Left e -> hdl e
         Right a -> pure a
 
 -- | Elaborate the 'Catch' effect using a delimited continuation.
-runCatchK ::
+elabCatchK ::
     forall e ef fr u c.
     (Member u (Throw e) ef, MonadFreer c fr, Union u, c (Eff u fr '[] ef)) =>
     Elab (Catch e) (Eff u fr '[] ef)
-runCatchK (Catch action hdl) =
+elabCatchK (Catch action hdl) =
     action & interposeK pure \_ (Throw e) -> hdl e
 
 -- | Interpret the 'Throw' effect using the 'ExceptT' monad transformer.
