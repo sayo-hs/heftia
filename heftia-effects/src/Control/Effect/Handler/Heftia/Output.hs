@@ -14,7 +14,7 @@ module Control.Effect.Handler.Heftia.Output where
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
 import Control.Effect.Handler.Heftia.State (runState)
-import Control.Effect.Handler.Heftia.Writer (runTell, runTell')
+import Control.Effect.Handler.Heftia.Writer (runTell, runTellA)
 import Control.Effect.Hefty (Eff, interpret, interpretRec, raiseUnder, send0)
 import Control.Freer (Freer)
 import Control.Monad.Trans.State (StateT)
@@ -80,7 +80,7 @@ runOutputMonoid f =
 {- | Strict version of `runOutputMonoid`.
      The constraint on the carrier has been weakened to applicative.
 -}
-runOutputMonoid' ::
+runOutputMonoidA ::
     forall o m a r fr u c.
     ( Monoid m
     , Freer c fr
@@ -92,7 +92,7 @@ runOutputMonoid' ::
     (o -> m) ->
     Eff u fr '[] (LOutput o ': r) a ->
     Eff u fr '[] r (m, a)
-runOutputMonoid' f =
+runOutputMonoidA f =
     raiseUnder
         >>> interpret (\(Output o) -> send0 $ Tell $ f o)
-        >>> runTell'
+        >>> runTellA

@@ -16,8 +16,20 @@ See [README.md](https://github.com/sayo-hs/heftia/blob/master/README.md).
 -}
 module Control.Effect.Handler.Heftia.Writer where
 
+import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
-import Control.Effect.Hefty (Eff, Elab, injectF, interposeFin, interposeT, interpretFin, interpretK, interpretT, rewrite)
+import Control.Effect.Hefty (
+    Eff,
+    Elab,
+    injectF,
+    interposeFin,
+    interposeT,
+    interpretFin,
+    interpretH,
+    interpretK,
+    interpretT,
+    rewrite,
+ )
 import Control.Freer (Freer)
 import Control.Monad.Freer (MonadFreer)
 import Control.Monad.Trans (lift)
@@ -28,6 +40,40 @@ import Data.Effect.Writer (LTell, Tell (Tell), WriterH (Censor, Listen), tell)
 import Data.Function ((&))
 import Data.Hefty.Union (Member, Union)
 import Data.Tuple (swap)
+
+-- | 'Writer' effect handler with post-applying censor semantics for Monad use.
+runWriterPost ::
+    forall w a r fr u c.
+    ( Monoid w
+    , Freer c fr
+    , Union u
+    , HFunctor (u '[])
+    , Monad (Eff u fr '[] r)
+    , c (CPS.WriterT w (Eff u fr '[] r))
+    , Member u (Tell w) (LTell w ': r)
+    , Monad (Eff u fr '[] (LTell w ': r))
+    , c (CPS.WriterT w (Eff u fr '[] (LTell w ': r)))
+    , HFunctor (u '[WriterH w])
+    ) =>
+    Eff u fr '[WriterH w] (LTell w ': r) a ->
+    Eff u fr '[] r (w, a)
+runWriterPost = elaborateWriterPost >>> runTell
+{-# INLINE runWriterPost #-}
+
+elaborateWriterPost ::
+    forall w ef fr u c.
+    ( Monoid w
+    , Freer c fr
+    , Union u
+    , Member u (Tell w) ef
+    , HFunctor (u '[])
+    , Monad (Eff u fr '[] ef)
+    , c (CPS.WriterT w (Eff u fr '[] ef))
+    , HFunctor (u '[WriterH w])
+    ) =>
+    Eff u fr '[WriterH w] ef ~> Eff u fr '[] ef
+elaborateWriterPost = interpretH elabWriterPost
+{-# INLINE elaborateWriterPost #-}
 
 elabWriterPost ::
     forall w ef fr u c.
@@ -61,6 +107,40 @@ postCensor f m = do
     tell $ f w
     pure a
 
+-- | 'Writer' effect handler with pre-applying censor semantics for Monad use.
+runWriterPre ::
+    forall w a r fr u c.
+    ( Monoid w
+    , Freer c fr
+    , Union u
+    , HFunctor (u '[])
+    , Monad (Eff u fr '[] r)
+    , c (CPS.WriterT w (Eff u fr '[] r))
+    , Member u (Tell w) (LTell w ': r)
+    , Monad (Eff u fr '[] (LTell w ': r))
+    , c (CPS.WriterT w (Eff u fr '[] (LTell w ': r)))
+    , HFunctor (u '[WriterH w])
+    ) =>
+    Eff u fr '[WriterH w] (LTell w ': r) a ->
+    Eff u fr '[] r (w, a)
+runWriterPre = elaborateWriterPre >>> runTell
+{-# INLINE runWriterPre #-}
+
+elaborateWriterPre ::
+    forall w ef fr u c.
+    ( Monoid w
+    , Freer c fr
+    , Union u
+    , Member u (Tell w) ef
+    , HFunctor (u '[])
+    , Monad (Eff u fr '[] ef)
+    , c (CPS.WriterT w (Eff u fr '[] ef))
+    , HFunctor (u '[WriterH w])
+    ) =>
+    Eff u fr '[WriterH w] ef ~> Eff u fr '[] ef
+elaborateWriterPre = interpretH elabWriterPre
+{-# INLINE elaborateWriterPre #-}
+
 elabWriterPre ::
     forall w ef fr u c.
     ( Monoid w
@@ -76,6 +156,40 @@ elabWriterPre = \case
     Listen m -> listenT m
     Censor f m -> preCensor f m
 
+-- | 'Writer' effect handler with pre-applying censor semantics for Applicative use.
+runWriterPreA ::
+    forall w a r fr u c.
+    ( Monoid w
+    , Freer c fr
+    , Union u
+    , HFunctor (u '[])
+    , Monad (Eff u fr '[] r)
+    , c (Strict.WriterT w (Eff u fr '[] r))
+    , Member u (Tell w) (LTell w ': r)
+    , Monad (Eff u fr '[] (LTell w ': r))
+    , c (Strict.WriterT w (Eff u fr '[] (LTell w ': r)))
+    , HFunctor (u '[WriterH w])
+    ) =>
+    Eff u fr '[WriterH w] (LTell w ': r) a ->
+    Eff u fr '[] r (w, a)
+runWriterPreA = elaborateWriterPreA >>> runTellA
+{-# INLINE runWriterPreA #-}
+
+elaborateWriterPreA ::
+    forall w ef fr u c.
+    ( Monoid w
+    , Freer c fr
+    , Union u
+    , Member u (Tell w) ef
+    , HFunctor (u '[])
+    , Applicative (Eff u fr '[] ef)
+    , c (Strict.WriterT w (Eff u fr '[] ef))
+    , HFunctor (u '[WriterH w])
+    ) =>
+    Eff u fr '[WriterH w] ef ~> Eff u fr '[] ef
+elaborateWriterPreA = interpretH elabWriterPre'
+{-# INLINE elaborateWriterPreA #-}
+
 elabWriterPre' ::
     forall w ef fr u c.
     ( Monoid w
@@ -88,7 +202,7 @@ elabWriterPre' ::
     ) =>
     Elab (WriterH w) (Eff u fr '[] ef)
 elabWriterPre' = \case
-    Listen m -> listenT' m
+    Listen m -> listenTA m
     Censor f m -> preCensor f m
 
 preCensor ::
@@ -115,7 +229,7 @@ listenT m =
             lift $ tell w
             CPS.tell w
 
-listenT' ::
+listenTA ::
     forall w es a fr u c.
     ( Monoid w
     , Freer c fr
@@ -126,7 +240,7 @@ listenT' ::
     ) =>
     Eff u fr '[] es a ->
     Eff u fr '[] es (w, a)
-listenT' m =
+listenTA m =
     swap <$> Strict.runWriterT do
         m & interposeFin @(Tell w) (liftStrictWriterT . injectF) \(Tell w) -> do
             liftStrictWriterT (tell w) *> tellStrictWriterT w
@@ -144,18 +258,18 @@ runTellT ::
 runTellT = interpretT \(Tell w) -> CPS.tell w
 {-# INLINE runTellT #-}
 
-runTell' ::
+runTellA ::
     (Monoid w, Freer c fr, Union u, Applicative (Eff u fr '[] r), c (Strict.WriterT w (Eff u fr '[] r))) =>
     Eff u fr '[] (LTell w ': r) a ->
     Eff u fr '[] r (w, a)
-runTell' = fmap swap . Strict.runWriterT . runTellT'
-{-# INLINE runTell' #-}
+runTellA = fmap swap . Strict.runWriterT . runTellTA
+{-# INLINE runTellA #-}
 
-runTellT' ::
+runTellTA ::
     (Monoid w, Freer c fr, Union u, Applicative (Eff u fr '[] r), c (Strict.WriterT w (Eff u fr '[] r))) =>
     Eff u fr '[] (LTell w ': r) ~> Strict.WriterT w (Eff u fr '[] r)
-runTellT' = interpretFin (liftStrictWriterT . injectF) \(Tell w) -> tellStrictWriterT w
-{-# INLINE runTellT' #-}
+runTellTA = interpretFin (liftStrictWriterT . injectF) \(Tell w) -> tellStrictWriterT w
+{-# INLINE runTellTA #-}
 
 runTellK ::
     (Monoid w, MonadFreer c fr, Union u, c (Eff u fr '[] r)) =>
