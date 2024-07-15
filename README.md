@@ -119,10 +119,9 @@ Please wait for the documentation for the new version to be written.
 When attempting to interpret an effect while there are unhandled higher-order effects present, you cannot obtain delimited continuations beyond the action scope held by these unhandled higher-order effects.
 It appears as if a *reset* (in the sense of *shift/reset*) is applied to each of the scopes still held by the remaining unhandled higher-order effects.
 
-In other words, to obtain delimited continuations that span across scopes or to maintain state across scopes,
-it is necessary to first handle and eliminate all higher-order effects that hold those scopes,
+In other words, to obtain delimited continuations beyond their scope, it is necessary to first handle and eliminate all higher-order effects that hold those scopes,
 and then handle the effect targeted for stateful interpretation in that order.
-For this, it may be necessary to perform *multi-layering* as needed. For an example of multi-layering,
+For this purpose, it might sometimes be possible to use *multi-layering*. For an example of multi-layering,
 see [Example/Continuation2](https://github.com/sayo-hs/heftia/blob/f4989e92c31ae2632762afcff306ffa48c307c56/heftia-effects/Example/Continuation2/Main.hs).
 For more details, please refer to the documentation of the `interpretRec` family of functions.
 
@@ -132,7 +131,7 @@ For more details, please refer to the documentation of the `interpretRec` family
 * Delimited Continuation: The ability to manipulate delimited continuations.
 * Statically Typed Set of Effects: For a term representing an effectful program, is it possible to statically decidable a type that enumerates all the effects the program may produce?
 * Purely Monadic: Is an effectful program represented as a transparent data structure that is a monad, and can it be interpreted into other data types using only pure operations without side effects or `unsafePerformIO`?
-* Dynamic Effect Rewriting: Can an effectful program have its internal effects altered afterwards by functions (typically referred to as `intercept`, `interpose`, `transform`, `translate`, or `rewrite`) ?
+* Dynamic Effect Rewriting: Can an effectful program have its internal effects altered afterwards (by functions typically referred to as `handle with`, `intercept`, `interpose`, `transform`, `translate`, or `rewrite`) ?
 * Performance: Time complexity or space complexity.
 
 | Library or Language | Higher-Order Effects | Delimited Continuation | Statically Typed Set of Effects                 | Purely Monadic                    | Dynamic Effect Rewriting | Performance (TODO) |
@@ -152,6 +151,29 @@ For more details, please refer to the documentation of the `interpretRec` family
 
 Heftia can simply be described as a higher-order version of freer-simple.
 This is indeed true in terms of its internal mechanisms as well.
+
+### Compatibility with other libraries
+#### Representation of effects
+* Heftia Effects relies on [data-effects](https://github.com/sayo-hs/data-effects) for the definitions of standard effects such as `Reader`, `Writer`, and `State`.
+
+* It is generally recommended to use effects defined with automatic derivation provided by [data-effects-th](https://github.com/sayo-hs/data-effects/tree/develop/data-effects-th).
+
+* The representation of first-order effects is compatible with freer-simple.
+    Therefore, effects defined for freer-simple can be used as is in this library.
+    However, to avoid confusion between redundantly defined effects,
+    it is recommended to use the effects defined in [data-effects](https://github.com/sayo-hs/data-effects).
+
+* GADTs for higher-order effects need to be instances of the [HFunctor](https://hackage.haskell.org/package/compdata-0.13.1/docs/Data-Comp-Multi-HFunctor.html#t:HFunctor) type class for convenient usage.
+    While it is still possible to use them without being instances of `HFunctor`,
+    the `interpretRec` family of functions cannot be used when higher-order effects that are not `HFunctor` are unhandled.
+    If this issue is not a concern, the GADT representation of higher-order effects is compatible with Polysemy and fused-effects.
+    It is not compatible with Effectful and eff.
+
+#### About mtl
+* Since the representation of effectful programs in Heftia is simply a monad (`Eff`), it can be used as the base monad for transformers.
+    This means you can stack any transformer on top of it.
+
+* The `Eff` monad is an instance of `MonadIO`, `MonadError`, `MonadRWS`, etc., and these behave as the senders for the embedded `IO` or the effect GADTs defined in [data-effects](https://github.com/sayo-hs/data-effects).
 
 ## Future Plans
 * Benchmarking
