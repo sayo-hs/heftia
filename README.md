@@ -122,7 +122,8 @@ It appears as if a *reset* (in the sense of *shift/reset*) is applied to each of
 In other words, to obtain delimited continuations beyond their scope, it is necessary to first handle and eliminate all higher-order effects that hold those scopes,
 and then handle the effect targeted for stateful interpretation in that order.
 For this purpose, it might sometimes be possible to use *multi-layering*. For an example of multi-layering,
-see [Example/Continuation2](https://github.com/sayo-hs/heftia/blob/8f71a2d4e6125018b64cbbacd32151565a29046d/heftia-effects/Example/Continuation2/Main.hs).
+see `handleReaderThenShift` defined in [Example/Continuation2](https://github.com/sayo-hs/heftia/blob/8f71a2d4e6125018b64cbbacd32151565a29046d/heftia-effects/Example/Continuation2/Main.hs)
+(particularly, the type signature of `prog` within it).
 For more details, please refer to the documentation of the `interpretRec` family of functions.
 
 ## Comparison
