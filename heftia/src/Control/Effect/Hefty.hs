@@ -23,7 +23,7 @@ import Control.Freer (Freer, InjectIns, InjectInsBy, injectIns, injectInsBy, int
 import Control.Hefty (Hefty (Hefty), InjectSig, InjectSigBy, injectSig, injectSigBy, overHefty, unHefty)
 import Control.Monad.Cont (Cont, ContT (ContT), lift, runContT)
 import Control.Monad.Freer (MonadFreer, interpretFreerK)
-import Control.Monad.Identity (Identity (Identity))
+import Control.Monad.Identity (Identity (Identity), runIdentity)
 import Control.Monad.Trans (MonadTrans)
 import Data.Coerce (coerce)
 import Data.Effect (LiftIns (LiftIns), Nop, SigClass, unliftIns)
@@ -1082,6 +1082,10 @@ send1H = Hefty . liftIns . EffUnion . L1 . weaken . inject0
 runEff :: forall f fr u c. (Freer c fr, Union u, c f) => Eff u fr '[] '[LiftIns f] ~> f
 runEff = interpretAll $ id |+ exhaust
 {-# INLINE runEff #-}
+
+runPure :: forall a fr u c. (Freer c fr, Union u, c Identity) => Eff u fr '[] '[] a -> a
+runPure = runIdentity . interpretAll exhaust
+{-# INLINE runPure #-}
 
 untagEff ::
     forall tag e r ehs fr u c.

@@ -14,7 +14,7 @@ Elaborator for the t'Control.Effect.Class.Provider.Implicit.ImplicitProvider' ef
 module Control.Effect.Handler.Heftia.Provider.Implicit where
 
 import Control.Effect (type (~>))
-import Control.Effect.Handler.Heftia.Reader (interpretAsk)
+import Control.Effect.Handler.Heftia.Reader (runAsk)
 import Control.Effect.Hefty (Eff, Elab, raise)
 import Control.Freer (Freer)
 import Data.Effect.HFunctor (HFunctor)
@@ -40,5 +40,5 @@ runImplicitProvider ::
     , Applicative (Eff u fr eh ef)
     ) =>
     Elab (ImplicitProvider' c i e) (Eff u fr eh ef)
-runImplicitProvider (WithImplicit i f) = interpretAsk i $ f raise
+runImplicitProvider (WithImplicit i f) = runAsk i $ f raise
 {-# INLINE runImplicitProvider #-}

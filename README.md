@@ -78,20 +78,20 @@ With Heftia, **you can freely choose either behavior depending on which higher-o
 main :: IO ()
 main = runEff do
     (sPre, _) <-
-        interpretTell
-            . interpretH (elaborateWriterPre @String)
+        runTell
+            . interpretH (elabWriterPre @String)
             $ censorHello
 
     (sPost, _) <-
-        interpretTell
-            . interpretH (elaborateWriterPost @String)
+        runTell
+            . interpretH (elabWriterPost @String)
             $ censorHello
 
     liftIO $ putStrLn $ "Pre-applying: " <> sPre
     liftIO $ putStrLn $ "Post-applying: " <> sPost
 ```
 
-Using the `elaborateWriterPre` elaborator, you'll get "Goodbye world!", whereas with the `elaborateWriterPost` elaborator, you'll get "Hello world!!".
+Using the `elabWriterPre` elaborator, you'll get "Goodbye world!", whereas with the `elabWriterPost` elaborator, you'll get "Hello world!!".
 ```
 Pre-applying: Goodbye world!
 Post-applying: Hello world!!

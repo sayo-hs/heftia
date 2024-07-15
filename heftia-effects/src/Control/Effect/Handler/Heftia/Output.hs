@@ -13,8 +13,8 @@ module Control.Effect.Handler.Heftia.Output where
 
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
-import Control.Effect.Handler.Heftia.State (interpretState)
-import Control.Effect.Handler.Heftia.Writer (interpretTell, interpretTell')
+import Control.Effect.Handler.Heftia.State (runState)
+import Control.Effect.Handler.Heftia.Writer (runTell, runTell')
 import Control.Effect.Hefty (Eff, interpret, interpretRec, raiseUnder, send0)
 import Control.Freer (Freer)
 import Control.Monad.Trans.State (StateT)
@@ -55,7 +55,7 @@ runOutputList ::
 runOutputList =
     raiseUnder
         >>> interpret (\(Output o) -> modify (o :))
-        >>> interpretState []
+        >>> runState []
 
 {- | Run an `Output` effect by transforming into a monoid.
      The carrier is required to be a monad.
@@ -75,7 +75,7 @@ runOutputMonoid ::
 runOutputMonoid f =
     raiseUnder
         >>> interpret (\(Output o) -> send0 $ Tell $ f o)
-        >>> interpretTell
+        >>> runTell
 
 {- | Strict version of `runOutputMonoid`.
      The constraint on the carrier has been weakened to applicative.
@@ -95,4 +95,4 @@ runOutputMonoid' ::
 runOutputMonoid' f =
     raiseUnder
         >>> interpret (\(Output o) -> send0 $ Tell $ f o)
-        >>> interpretTell'
+        >>> runTell'

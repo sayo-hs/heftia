@@ -17,7 +17,7 @@ module Control.Effect.Handler.Heftia.KVStore where
 
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
-import Control.Effect.Handler.Heftia.State (interpretState)
+import Control.Effect.Handler.Heftia.State (runState)
 import Control.Effect.Hefty (Eff, interpret, raiseUnder)
 import Control.Freer (Freer)
 import Control.Monad.State (StateT)
@@ -47,7 +47,7 @@ runKVStorePure ::
 runKVStorePure initial =
     raiseUnder
         >>> runKVStoreAsState
-        >>> interpretState initial
+        >>> runState initial
 {-# INLINE runKVStorePure #-}
 
 runKVStoreAsState ::

@@ -11,7 +11,7 @@ module Main where
 import Control.Arrow ((>>>))
 import Control.Effect (type (<:), type (<<:), type (~>))
 import Control.Effect.ExtensibleChurch (runEff, type (:!!))
-import Control.Effect.Handler.Heftia.Reader (interpretReader)
+import Control.Effect.Handler.Heftia.Reader (runReader)
 import Control.Effect.Handler.Heftia.State (evalState)
 import Control.Effect.Hefty (interposeRec, interposeRecH, interpretRec, interpretRecH, raise, raiseH)
 import Control.Monad (when)
@@ -111,7 +111,7 @@ saveLogChunk =
                         logging msg
                         writeToFile (logChunkPath ++ iso8601Show logAt ++ ".log") (show msg)
             )
-        >>> interpretReader @FilePath "./log/"
+        >>> runReader @FilePath "./log/"
 
 logExample :: (LogChunk <<: m, Log <: m, MonadIO m) => m ()
 logExample =

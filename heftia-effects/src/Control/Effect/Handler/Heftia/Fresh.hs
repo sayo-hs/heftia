@@ -13,7 +13,7 @@ module Control.Effect.Handler.Heftia.Fresh where
 
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
-import Control.Effect.Handler.Heftia.State (interpretState)
+import Control.Effect.Handler.Heftia.State (runState)
 import Control.Effect.Hefty (Eff, interpret, raiseUnder)
 import Control.Freer (Freer)
 import Control.Monad.State (StateT)
@@ -38,7 +38,7 @@ runFreshNatural ::
 runFreshNatural =
     raiseUnder
         >>> runFreshNaturalAsState
-        >>> interpretState 0
+        >>> runState 0
 {-# INLINE runFreshNatural #-}
 
 runFreshNaturalAsState ::

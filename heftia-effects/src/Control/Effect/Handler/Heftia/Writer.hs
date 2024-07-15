@@ -29,7 +29,7 @@ import Data.Function ((&))
 import Data.Hefty.Union (Member, Union)
 import Data.Tuple (swap)
 
-elaborateWriterPost ::
+elabWriterPost ::
     forall w ef fr u c.
     ( Monoid w
     , Freer c fr
@@ -40,7 +40,7 @@ elaborateWriterPost ::
     , c (CPS.WriterT w (Eff u fr '[] ef))
     ) =>
     Elab (WriterH w) (Eff u fr '[] ef)
-elaborateWriterPost = \case
+elabWriterPost = \case
     Listen m -> listenT m
     Censor f m -> postCensor f m
 
@@ -61,7 +61,7 @@ postCensor f m = do
     tell $ f w
     pure a
 
-elaborateWriterPre ::
+elabWriterPre ::
     forall w ef fr u c.
     ( Monoid w
     , Freer c fr
@@ -72,11 +72,11 @@ elaborateWriterPre ::
     , c (CPS.WriterT w (Eff u fr '[] ef))
     ) =>
     Elab (WriterH w) (Eff u fr '[] ef)
-elaborateWriterPre = \case
+elabWriterPre = \case
     Listen m -> listenT m
     Censor f m -> preCensor f m
 
-elaborateWriterPre' ::
+elabWriterPre' ::
     forall w ef fr u c.
     ( Monoid w
     , Freer c fr
@@ -87,7 +87,7 @@ elaborateWriterPre' ::
     , c (Strict.WriterT w (Eff u fr '[] ef))
     ) =>
     Elab (WriterH w) (Eff u fr '[] ef)
-elaborateWriterPre' = \case
+elabWriterPre' = \case
     Listen m -> listenT' m
     Censor f m -> preCensor f m
 
@@ -131,37 +131,37 @@ listenT' m =
         m & interposeFin @(Tell w) (liftStrictWriterT . injectF) \(Tell w) -> do
             liftStrictWriterT (tell w) *> tellStrictWriterT w
 
-interpretTell ::
+runTell ::
     (Monoid w, Freer c fr, Union u, Monad (Eff u fr '[] r), c (CPS.WriterT w (Eff u fr '[] r))) =>
     Eff u fr '[] (LTell w ': r) a ->
     Eff u fr '[] r (w, a)
-interpretTell = fmap swap . CPS.runWriterT . interpretTellT
-{-# INLINE interpretTell #-}
+runTell = fmap swap . CPS.runWriterT . runTellT
+{-# INLINE runTell #-}
 
-interpretTellT ::
+runTellT ::
     (Monoid w, Freer c fr, Union u, Monad (Eff u fr '[] r), c (CPS.WriterT w (Eff u fr '[] r))) =>
     Eff u fr '[] (LTell w ': r) ~> CPS.WriterT w (Eff u fr '[] r)
-interpretTellT = interpretT \(Tell w) -> CPS.tell w
-{-# INLINE interpretTellT #-}
+runTellT = interpretT \(Tell w) -> CPS.tell w
+{-# INLINE runTellT #-}
 
-interpretTell' ::
+runTell' ::
     (Monoid w, Freer c fr, Union u, Applicative (Eff u fr '[] r), c (Strict.WriterT w (Eff u fr '[] r))) =>
     Eff u fr '[] (LTell w ': r) a ->
     Eff u fr '[] r (w, a)
-interpretTell' = fmap swap . Strict.runWriterT . interpretTellT'
-{-# INLINE interpretTell' #-}
+runTell' = fmap swap . Strict.runWriterT . runTellT'
+{-# INLINE runTell' #-}
 
-interpretTellT' ::
+runTellT' ::
     (Monoid w, Freer c fr, Union u, Applicative (Eff u fr '[] r), c (Strict.WriterT w (Eff u fr '[] r))) =>
     Eff u fr '[] (LTell w ': r) ~> Strict.WriterT w (Eff u fr '[] r)
-interpretTellT' = interpretFin (liftStrictWriterT . injectF) \(Tell w) -> tellStrictWriterT w
-{-# INLINE interpretTellT' #-}
+runTellT' = interpretFin (liftStrictWriterT . injectF) \(Tell w) -> tellStrictWriterT w
+{-# INLINE runTellT' #-}
 
-interpretTellK ::
+runTellK ::
     (Monoid w, MonadFreer c fr, Union u, c (Eff u fr '[] r)) =>
     Eff u fr '[] (LTell w ': r) a ->
     Eff u fr '[] r (w, a)
-interpretTellK =
+runTellK =
     interpretK (pure . (mempty,)) \k (Tell w) -> do
         (w', r) <- k ()
         pure (w <> w', r)

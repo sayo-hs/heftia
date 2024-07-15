@@ -29,7 +29,7 @@ import Data.Effect.Reader (Ask (..), LAsk, Local (..), ask)
 import Data.Function ((&))
 import Data.Hefty.Union (ForallHFunctor, HFunctorUnion, Member, Union)
 
-interpretReader ::
+runReader ::
     forall r rh rf fr u c.
     ( Freer c fr
     , HFunctorUnion u
@@ -40,21 +40,33 @@ interpretReader ::
     ) =>
     r ->
     Eff u fr (Local r ': rh) (LAsk r ': rf) ~> Eff u fr rh rf
-interpretReader r = interpretRecH elaborateLocal >>> interpretAsk r
-{-# INLINE interpretReader #-}
+runReader r = runLocal >>> runAsk r
+{-# INLINE runReader #-}
 
 -- | Elaborate the t'Local' effect.
-elaborateLocal ::
+runLocal ::
+    forall r rh ef fr u c.
+    ( Freer c fr
+    , HFunctorUnion u
+    , ForallHFunctor u rh
+    , Member u (Ask r) ef
+    , Functor (Eff u fr rh ef)
+    ) =>
+    Eff u fr (Local r ': rh) ef ~> Eff u fr rh ef
+runLocal = interpretRecH elabLocal
+{-# INLINE runLocal #-}
+
+elabLocal ::
     forall r eh ef fr u c.
     (Member u (Ask r) ef, Freer c fr, Union u, HFunctor (u eh), Functor (Eff u fr eh ef)) =>
     Elab (Local r) (Eff u fr eh ef)
-elaborateLocal (Local f a) = a & interposeRec @(Ask r) \Ask -> f <$> ask
+elabLocal (Local f a) = a & interposeRec @(Ask r) \Ask -> f <$> ask
 
 -- | Interpret the t'Ask' effect.
-interpretAsk ::
+runAsk ::
     forall r rs eh fr u c.
     (Freer c fr, Union u, Applicative (Eff u fr eh rs), HFunctor (u eh)) =>
     r ->
     Eff u fr eh (LAsk r ': rs) ~> Eff u fr eh rs
-interpretAsk r = interpretRec \Ask -> pure r
-{-# INLINE interpretAsk #-}
+runAsk r = interpretRec \Ask -> pure r
+{-# INLINE runAsk #-}

@@ -19,21 +19,21 @@ import Control.Monad.Trans (MonadTrans, lift)
 import Data.Effect.Provider (Provider' (Provide))
 
 -- | Elaborate the t'Control.Effect.Class.Provider.Provider' effect using the given interpreter.
-elaborateProvider ::
+runProvider ::
     (c g, e g) =>
     (f ~> g) ->
     (i -> forall x. g x -> f (ctx x)) ->
     Elab (Provider' c i ctx e) f
-elaborateProvider iLower run (Provide i f) = run i $ f iLower
-{-# INLINE elaborateProvider #-}
+runProvider iLower run (Provide i f) = run i $ f iLower
+{-# INLINE runProvider #-}
 
 {- |
 Elaborate the t'Control.Effect.Class.Provider.Provider' effect using the given interpreter for some
 monad transformer.
 -}
-elaborateProviderT ::
+runProviderT ::
     (Monad m, MonadTrans t, c (t m), e (t m)) =>
     (i -> forall x. t m x -> m (ctx x)) ->
     Elab (Provider' c i ctx e) m
-elaborateProviderT = elaborateProvider lift
-{-# INLINE elaborateProviderT #-}
+runProviderT = runProvider lift
+{-# INLINE runProviderT #-}

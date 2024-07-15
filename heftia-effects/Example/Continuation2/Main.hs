@@ -6,10 +6,10 @@ module Main where
 
 import Control.Arrow ((>>>))
 import Control.Effect.ExtensibleChurch (runEff, type (!!))
-import Control.Effect.Handler.Heftia.Reader (elaborateLocal, interpretAsk)
+import Control.Effect.Handler.Heftia.Reader (runAsk, runLocal)
 import Control.Effect.Handler.Heftia.ShiftReset (runShift, runShift_)
 import Control.Effect.Handler.Heftia.State (evalState)
-import Control.Effect.Hefty (interpretH, send1, unkeyEff, type ($))
+import Control.Effect.Hefty (send1, unkeyEff, type ($))
 import Control.Effect.Key (key)
 import Control.Monad.Extra (whenM)
 import Control.Monad.IO.Class (liftIO)
@@ -64,8 +64,8 @@ main = do
 handleReaderThenShift :: IO ()
 handleReaderThenShift =
     prog
-        & interpretH elaborateLocal
-        & interpretAsk 1
+        & runLocal
+        & runAsk 1
         & runEff
         & runShift
         & (unkeyEff >>> evalState 0)
@@ -87,8 +87,8 @@ handleShiftThenReader :: IO ()
 handleShiftThenReader = do
     prog
         & runShift_
-        & interpretH elaborateLocal
-        & interpretAsk 1
+        & runLocal
+        & runAsk 1
         & (unkeyEff >>> evalState 0)
         & runEff
   where
