@@ -52,13 +52,13 @@ nonDetPlusExcept = do
             String ->
             IO ()
         testAllPattern action name = do
-            putStr $ "( runThrow . runNonDet . runCatch . runChooseH $ " <> name <> " ) = "
-            print . runPure $
-                runThrow @() . runNonDet @[] . runCatch @() . runChooseH $ action
-
             putStr $ "( runNonDet . runThrow . runCatch . runChooseH $ " <> name <> " ) = "
             print . runPure $
                 runNonDet @[] . runThrow @() . runCatch @() . runChooseH $ action
+
+            putStr $ "( runThrow . runNonDet . runCatch . runChooseH $ " <> name <> " ) = "
+            print . runPure $
+                runThrow @() . runNonDet @[] . runCatch @() . runChooseH $ action
 
     testAllPattern action1 "action1"
     testAllPattern action2 "action2"
@@ -99,10 +99,10 @@ main = do
 ( runThrow . evalState . runCatch $ action ) = Right True
 
 # NonDet + Except
-( runThrow . runNonDet . runCatch . runChooseH $ action1 ) = Right [True,False]
 ( runNonDet . runThrow . runCatch . runChooseH $ action1 ) = [Right True,Right False]
-( runThrow . runNonDet . runCatch . runChooseH $ action2 ) = Right [False,True]
+( runThrow . runNonDet . runCatch . runChooseH $ action1 ) = Right [True,False]
 ( runNonDet . runThrow . runCatch . runChooseH $ action2 ) = [Right False,Right True]
+( runThrow . runNonDet . runCatch . runChooseH $ action2 ) = Right [False,True]
 
 # NonDet + Writer
 ( runNonDet . runTell . elaborateWriter . runChooseH $ action ) = [(3,(3,True)),(4,(4,False))]

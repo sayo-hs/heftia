@@ -33,10 +33,10 @@ $ cabal run exe:SemanticsZoo
 ( runThrow . evalState . runCatch $ action ) = Right True
 
 # NonDet + Except
-( runThrow . runNonDet . runCatch . runChooseH $ action1 ) = Right [True,False]
 ( runNonDet . runThrow . runCatch . runChooseH $ action1 ) = [Right True,Right False]
-( runThrow . runNonDet . runCatch . runChooseH $ action2 ) = Right [False,True]
+( runThrow . runNonDet . runCatch . runChooseH $ action1 ) = Right [True,False]
 ( runNonDet . runThrow . runCatch . runChooseH $ action2 ) = [Right False,Right True]
+( runThrow . runNonDet . runCatch . runChooseH $ action2 ) = Right [False,True]
 
 # NonDet + Writer
 ( runNonDet . runTell . elaborateWriter . runChooseH $ action ) = [(3,(3,True)),(4,(4,False))]
