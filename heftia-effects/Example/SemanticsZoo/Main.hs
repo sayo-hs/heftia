@@ -2,6 +2,11 @@
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
+{- |
+[lexi-lambda's semantics-zoo.md](https://github.com/lexi-lambda/eff/blob/master/notes/semantics-zoo.md).
+
+It can be confirmed that Heftia also realizes continuation-based semantics equivalent to eff.
+-}
 module Main where
 
 import Control.Applicative ((<|>))
