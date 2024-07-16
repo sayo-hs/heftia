@@ -29,18 +29,18 @@ $ cd heftia/heftia-effects
 $ cabal run exe:SemanticsZoo
 ...
 # State + Except
-[ action & runCatch & runThrow & evalState ]: Right True
-[ action & runCatch & evalState & runThrow ]: Right True
+( evalState . runThrow . runCatch $ action ) = Right True
+( runThrow . evalState . runCatch $ action ) = Right True
 
 # NonDet + Except
-[ action1 & runChooseH & runCatch & runNonDet & runThrow ]: Right [True,False]
-[ action1 & runChooseH & runCatch & runThrow & runNonDet ]: [Right True,Right False]
-[ action2 & runChooseH & runCatch & runNonDet & runThrow ]: Right [False,True]
-[ action2 & runChooseH & runCatch & runThrow & runNonDet ]: [Right False,Right True]
+( runThrow . runNonDet . runCatch . runChooseH $ action1 ) = Right [True,False]
+( runNonDet . runThrow . runCatch . runChooseH $ action1 ) = [Right True,Right False]
+( runThrow . runNonDet . runCatch . runChooseH $ action2 ) = Right [False,True]
+( runNonDet . runThrow . runCatch . runChooseH $ action2 ) = [Right False,Right True]
 
 # NonDet + Writer
-[ action & runChooseH & elaborateWriterPre & runTell & runNonDet ]: [(3,(3,True)),(4,(4,False))]
-[ action & runChooseH & elaborateWriterPre & runNonDet & runTell ]: (6,[(3,True),(4,False)])
+( runNonDet . runTell . elaborateWriter . runChooseH $ action ) = [(3,(3,True)),(4,(4,False))]
+( runTell . runNonDet . elaborateWriter . runChooseH $ action ) = (6,[(3,True),(4,False)])
 
 [Note] All other permutations will cause type errors.
 $

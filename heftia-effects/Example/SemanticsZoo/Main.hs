@@ -10,7 +10,6 @@ It can be confirmed that Heftia also realizes continuation-based semantics equiv
 module Main where
 
 import Control.Applicative ((<|>))
-import Control.Arrow ((>>>))
 import Control.Effect.ExtensibleChurch ((:!!))
 import Control.Effect.Handler.Heftia.Except (runCatch, runThrow)
 import Control.Effect.Handler.Heftia.NonDet (runChooseH, runNonDet)
@@ -21,7 +20,6 @@ import Data.Effect.Except (Catch, Throw, catch, throw)
 import Data.Effect.NonDet (ChooseH, Empty)
 import Data.Effect.State (State, get, put)
 import Data.Effect.Writer (Tell, WriterH, listen, tell)
-import Data.Function ((&))
 import Data.Functor (($>))
 import Data.Hefty.Extensible (type (<<|), type (<|))
 import Data.Monoid (Sum (Sum))
@@ -33,10 +31,10 @@ statePlusExcept = do
             (put True *> throw ()) `catch` \() -> pure ()
             get
 
-    putStr "[ action & runCatch & runThrow & evalState ]: "
-    print . runPure $ action & (runCatch @() >>> runThrow @() >>> evalState False)
-    putStr "[ action & runCatch & evalState & runThrow ]: "
-    print . runPure $ action & (runCatch @() >>> evalState False >>> runThrow @())
+    putStr "( evalState . runThrow . runCatch $ action ) = "
+    print . runPure $ evalState False . runThrow @() . runCatch @() $ action
+    putStr "( runThrow . evalState . runCatch $ action ) = "
+    print . runPure $ runThrow @() . evalState False . runCatch @() $ action
 
 nonDetPlusExcept :: IO ()
 nonDetPlusExcept = do
@@ -54,13 +52,13 @@ nonDetPlusExcept = do
             String ->
             IO ()
         testAllPattern action name = do
-            putStr $ "[ " <> name <> " & runChooseH & runCatch & runNonDet & runThrow ]: "
+            putStr $ "( runThrow . runNonDet . runCatch . runChooseH $ " <> name <> " ) = "
             print . runPure $
-                action & runChooseH & runCatch @() & runNonDet @[] & runThrow @()
+                runThrow @() . runNonDet @[] . runCatch @() . runChooseH $ action
 
-            putStr $ "[ " <> name <> " & runChooseH & runCatch & runThrow & runNonDet ]: "
+            putStr $ "( runNonDet . runThrow . runCatch . runChooseH $ " <> name <> " ) = "
             print . runPure $
-                action & runChooseH & runCatch @() & runThrow @() & runNonDet @[]
+                runNonDet @[] . runThrow @() . runCatch @() . runChooseH $ action
 
     testAllPattern action1 "action1"
     testAllPattern action2 "action2"
@@ -74,21 +72,13 @@ nonDetPlusWriter = do
           where
             add = tell . Sum @Int
 
-    putStr "[ action & runChooseH & elaborateWriterPre & runTell & runNonDet ]: "
+    putStr "( runNonDet . runTell . elaborateWriter . runChooseH $ action ) = "
     print . map (\(Sum m, (Sum n, b)) -> (m, (n, b))) . runPure $
-        action
-            & runChooseH
-            & elaborateWriterPre @(Sum Int)
-            & runTell @(Sum Int)
-            & runNonDet @[]
+        runNonDet @[] . runTell @(Sum Int) . elaborateWriterPre @(Sum Int) . runChooseH $ action
 
-    putStr "[ action & runChooseH & elaborateWriterPre & runNonDet & runTell ]: "
+    putStr "( runTell . runNonDet . elaborateWriter . runChooseH $ action ) = "
     print . (\(Sum m, xs) -> (m, map (\(Sum n, b) -> (n, b)) xs)) . runPure $
-        action
-            & runChooseH
-            & elaborateWriterPre @(Sum Int)
-            & runNonDet @[]
-            & runTell @(Sum Int)
+        runTell @(Sum Int) . runNonDet @[] . elaborateWriterPre @(Sum Int) . runChooseH $ action
 
 main :: IO ()
 main = do
@@ -105,18 +95,18 @@ main = do
 
 {-
 # State + Except
-[ action & runCatch & runThrow & evalState ]: Right True
-[ action & runCatch & evalState & runThrow ]: Right True
+( evalState . runThrow . runCatch $ action ) = Right True
+( runThrow . evalState . runCatch $ action ) = Right True
 
 # NonDet + Except
-[ action1 & runChooseH & runCatch & runNonDet & runThrow ]: Right [True,False]
-[ action1 & runChooseH & runCatch & runThrow & runNonDet ]: [Right True,Right False]
-[ action2 & runChooseH & runCatch & runNonDet & runThrow ]: Right [False,True]
-[ action2 & runChooseH & runCatch & runThrow & runNonDet ]: [Right False,Right True]
+( runThrow . runNonDet . runCatch . runChooseH $ action1 ) = Right [True,False]
+( runNonDet . runThrow . runCatch . runChooseH $ action1 ) = [Right True,Right False]
+( runThrow . runNonDet . runCatch . runChooseH $ action2 ) = Right [False,True]
+( runNonDet . runThrow . runCatch . runChooseH $ action2 ) = [Right False,Right True]
 
 # NonDet + Writer
-[ action & runChooseH & elaborateWriterPre & runTell & runNonDet ]: [(3,(3,True)),(4,(4,False))]
-[ action & runChooseH & elaborateWriterPre & runNonDet & runTell ]: (6,[(3,True),(4,False)])
+( runNonDet . runTell . elaborateWriter . runChooseH $ action ) = [(3,(3,True)),(4,(4,False))]
+( runTell . runNonDet . elaborateWriter . runChooseH $ action ) = (6,[(3,True),(4,False)])
 
 [Note] All other permutations will cause type errors.
 -}

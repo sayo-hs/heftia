@@ -100,7 +100,16 @@ runEmpty =
         (MaybeT . fmap Just . injectF)
         \Empty -> MaybeT $ pure Nothing
 
--- | 'ChooseH' effect handler for Monad use.
+{- | 'ChooseH' effect handler for Monad use.
+
+    Convert a higher-order effect of the form
+
+        @chooseH :: m a -> m a -> m a@
+
+    into a first-order effect of the form:
+
+        @choose :: m Bool@
+-}
 runChooseH ::
     ( Freer c fr
     , HFunctorUnion u
