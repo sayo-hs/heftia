@@ -1,9 +1,12 @@
-# Heftia
+# Heftia: Higher-order effects done right
 
 [![Hackage](https://img.shields.io/hackage/v/heftia.svg?logo=haskell&label=heftia)](https://hackage.haskell.org/package/heftia)
 [![Hackage](https://img.shields.io/hackage/v/heftia-effects.svg?logo=haskell&label=heftia-effects)](https://hackage.haskell.org/package/heftia-effects)
 
 Heftia is a higher-order effects version of Freer.
+
+This library provides "[continuation-based semantics](https://github.com/lexi-lambda/eff/blob/master/notes/semantics-zoo.md)" for higher-order effects, the same as [lexi-lambda's eff](https://github.com/lexi-lambda/eff).
+Instead of using the `IO` monad to implement delimited continuations for effects, this library uses `Freer` monad.
 
 The paper
 * Casper Bach Poulsen and Cas van der Rest. 2023. Hefty Algebras: Modular
