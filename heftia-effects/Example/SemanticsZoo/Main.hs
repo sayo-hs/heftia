@@ -11,7 +11,7 @@ import Control.Effect.Handler.Heftia.Except (runCatch, runThrow)
 import Control.Effect.Handler.Heftia.NonDet (runChooseH, runNonDet)
 import Control.Effect.Handler.Heftia.State (evalState)
 import Control.Effect.Handler.Heftia.Writer (elaborateWriterPre, runTell)
-import Control.Effect.Hefty (runPure)
+import Control.Effect.Hefty (runPure, type ($))
 import Data.Effect.Except (Catch, Throw, catch, throw)
 import Data.Effect.NonDet (ChooseH, Empty)
 import Data.Effect.State (State, get, put)
@@ -33,16 +33,19 @@ statePlusExcept = do
     putStr "[ action & runCatch & evalState & runThrow ]: "
     print . runPure $ action & (runCatch @() >>> evalState False >>> runThrow @())
 
-    putStrLn "-- Other orders cause a type error."
-
 nonDetPlusExcept :: IO ()
 nonDetPlusExcept = do
-    let action1, action2 :: (Empty <| ef, ChooseH <<| eh, Throw () <| ef, Catch () <<| eh) => (eh :!! ef) Bool
+    let action1
+            , action2 ::
+                (Empty <| ef, ChooseH <<| eh, Throw () <| ef, Catch () <<| eh) => eh :!! ef $ Bool
         action1 = (pure True <|> throw ()) `catch` \() -> pure False
         action2 = (throw () <|> pure True) `catch` \() -> pure False
 
         testAllPattern ::
-            (forall eh ef. (Empty <| ef, ChooseH <<| eh, Throw () <| ef, Catch () <<| eh) => (eh :!! ef) Bool) ->
+            ( forall eh ef.
+              (Empty <| ef, ChooseH <<| eh, Throw () <| ef, Catch () <<| eh) =>
+              (eh :!! ef) Bool
+            ) ->
             String ->
             IO ()
         testAllPattern action name = do
@@ -56,13 +59,12 @@ nonDetPlusExcept = do
 
     testAllPattern action1 "action1"
     testAllPattern action2 "action2"
-    putStrLn "-- Other orders cause a type error."
 
 nonDetPlusWriter :: IO ()
 nonDetPlusWriter = do
     let action ::
             (Empty <| ef, ChooseH <<| eh, Tell (Sum Int) <| ef, WriterH (Sum Int) <<| eh) =>
-            (eh :!! ef) (Sum Int, Bool)
+            eh :!! ef $ (Sum Int, Bool)
         action = listen $ add 1 *> (add 2 $> True <|> add 3 $> False)
           where
             add = tell . Sum @Int
@@ -83,8 +85,6 @@ nonDetPlusWriter = do
             & runNonDet @[]
             & runTell @(Sum Int)
 
-    putStrLn "(Other orders cause a type error.)"
-
 main :: IO ()
 main = do
     putStrLn "# State + Except"
@@ -96,20 +96,22 @@ main = do
     putStrLn "\n# NonDet + Writer"
     nonDetPlusWriter
 
+    putStrLn "\n[Note] All other permutations will cause type errors."
+
 {-
 # State + Except
 [ action & runCatch & runThrow & evalState ]: Right True
 [ action & runCatch & evalState & runThrow ]: Right True
--- Other orders cause a type error.
 
 # NonDet + Except
 [ action1 & runChooseH & runCatch & runNonDet & runThrow ]: Right [True,False]
 [ action1 & runChooseH & runCatch & runThrow & runNonDet ]: [Right True,Right False]
 [ action2 & runChooseH & runCatch & runNonDet & runThrow ]: Right [False,True]
 [ action2 & runChooseH & runCatch & runThrow & runNonDet ]: [Right False,Right True]
--- Other orders cause a type error.
 
 # NonDet + Writer
 [ action & runChooseH & elaborateWriterPre & runTell & runNonDet ]: [(3,(3,True)),(4,(4,False))]
 [ action & runChooseH & elaborateWriterPre & runNonDet & runTell ]: (6,[(3,True),(4,False)])
+
+[Note] All other permutations will cause type errors.
 -}

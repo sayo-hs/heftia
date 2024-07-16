@@ -98,8 +98,8 @@ instance MemberRec u e ehs => InjectSig e (EffUnion u ehs efs) where
 
 type HasMembershipF u e efs = HasMembership u (LiftIns e) efs
 
-infixr 4 $
-infixr 5 $$
+infixr 3 $
+infixr 4 $$
 
 -- | Type-level infix applcation for functors.
 type (f :: Type -> Type) $ a = f a
@@ -108,7 +108,6 @@ type (f :: Type -> Type) $ a = f a
 type (h :: (Type -> Type) -> Type -> Type) $$ f = h f
 
 type Elab e f = e f ~> f
-type ElabK r e f = e (ContT r f) ~> ContT r f
 
 injectH :: (Freer c f, HFunctor (u ehs)) => u ehs (Eff u f ehs efs) ~> Eff u f ehs efs
 injectH = Hefty . liftIns . EffUnion . L1
@@ -1161,21 +1160,3 @@ keySubsumeH = interpretRecH $ sendSigBy @key
 end :: Union u => u '[] f a -> x
 end = exhaust
 {-# INLINE end #-}
-
-{-
-type Elaborator u es r m a = (a -> m r) -> u es (ContT r m) a -> m r
-
-(|+!) ::
-    Union u =>
-    (e (ContT r m) a -> ContT r m a) ->
-    Elaborator u es r m a ->
-    Elaborator u (e ': es) r m a
-(|+!) elab1 elab2 k = (\e -> runContT (elab1 e) k) |+: elab2 k
-{-# INLINE (|+!) #-}
-
-infixr 5 |+!
-
-endK :: Union u => Elaborator u '[] r m a
-endK _ = exhaust
-{-# INLINE endK #-}
--}

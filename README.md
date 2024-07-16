@@ -22,14 +22,27 @@ types in several ways to enable tuning in pursuit of high performance.
 Please note that this library is currently in the experimental stage. There may be significant changes and potential bugs.
 
 ## Getting Started
-To run the [Writer example](https://github.com/sayo-hs/heftia?tab=readme-ov-file#two-interpretations-of-the-censor-effect-for-writer):
+To run the [SemanticsZoo example](heftia-effects/Example/SemanticsZoo/Main.hs):
 ```console
 $ git clone https://github.com/sayo-hs/heftia
 $ cd heftia/heftia-effects
-$ cabal run exe:Writer
+$ cabal run exe:SemanticsZoo
 ...
-Pre-applying: Goodbye world!
-Post-applying: Hello world!!
+# State + Except
+[ action & runCatch & runThrow & evalState ]: Right True
+[ action & runCatch & evalState & runThrow ]: Right True
+
+# NonDet + Except
+[ action1 & runChooseH & runCatch & runNonDet & runThrow ]: Right [True,False]
+[ action1 & runChooseH & runCatch & runThrow & runNonDet ]: [Right True,Right False]
+[ action2 & runChooseH & runCatch & runNonDet & runThrow ]: Right [False,True]
+[ action2 & runChooseH & runCatch & runThrow & runNonDet ]: [Right False,Right True]
+
+# NonDet + Writer
+[ action & runChooseH & elaborateWriterPre & runTell & runNonDet ]: [(3,(3,True)),(4,(4,False))]
+[ action & runChooseH & elaborateWriterPre & runNonDet & runTell ]: (6,[(3,True),(4,False)])
+
+[Note] All other permutations will cause type errors.
 $
 ```
 

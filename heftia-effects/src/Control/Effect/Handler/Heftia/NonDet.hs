@@ -11,7 +11,7 @@ Portability :  portable
 -}
 module Control.Effect.Handler.Heftia.NonDet where
 
-import Control.Applicative (Alternative ((<|>)), asum, empty, liftA2, (<|>))
+import Control.Applicative (Alternative ((<|>)), empty, liftA2, (<|>))
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
 import Control.Effect.Hefty (Eff, injectF, interpretFin, interpretFinH_, interpretK, interpretRecH)
@@ -114,84 +114,8 @@ runChooseH =
         world <- choose
         bool a b world
 
-{-
--- | 'NonDet' effects handler for Monad use.
-runNonDet ::
-    forall r ef a fr u c.
-    ( Monoid r
-    , MonadFreer c fr
-    , Union u
-    , c (Eff u fr '[] ef)
-    , HFunctor (u '[Choose, LEmpty])
-    ) =>
-    (a -> Eff u fr '[] ef r) ->
-    Eff u fr '[Choose, LEmpty] ef a ->
-    Eff u fr '[] ef r
-runNonDet k m = runContT (interpretContTAllH (elabNonDetThen end) m) k
-
--- | 'Choose' effect handler for Monad use.
-runChoose ::
-    forall r ef a fr u c.
-    ( Semigroup r
-    , MonadFreer c fr
-    , Union u
-    , c (Eff u fr '[] ef)
-    ) =>
-    (a -> Eff u fr '[] ef r) ->
-    Eff u fr '[Choose] ef a ->
-    Eff u fr '[] ef r
-runChoose f =
-    interpretKH_ f \k (Choose a b) ->
-        liftA2 (<>) (runChoose k a) (runChoose k b)
-
-elabChoose' ::
-    forall r ef fr u c.
-    ( Semigroup r
-    , MonadFreer c fr
-    , Union u
-    , c (Eff u fr '[] ef)
-    ) =>
-    ElabK r Choose (Eff u fr '[] ef)
-elabChoose' (Choose a b) =
-    ContT \k -> liftA2 (<>) (runContT a k) (runContT b k)
-
-elabChoose ::
-    forall r ef fr u c.
-    ( Semigroup r
-    , MonadFreer c fr
-    , Union u
-    , c (Eff u fr '[] ef)
-    ) =>
-    ElabK r Choose (Eff u fr '[] ef)
-elabChoose (Choose a b) =
-    ContT \k -> liftA2 (<>) (runContT a k) (runContT b k)
-
-elabEmpty ::
-    forall r ef fr u c.
-    ( MonadFreer c fr
-    , Union u
-    , c (Eff u fr '[] ef)
-    ) =>
-    r ->
-    ElabK r LEmpty (Eff u fr '[] ef)
-elabEmpty def LEmpty = ContT \_ -> pure def
-{-# INLINE elabEmpty #-}
-
-elabNonDetThen ::
-    forall r eh ef fr u c.
-    ( Monoid r
-    , MonadFreer c fr
-    , Union u
-    , c (Eff u fr '[] ef)
-    ) =>
-    ElabK r (u eh) (Eff u fr '[] ef) ->
-    ElabK r (u (Choose ': LEmpty ': eh)) (Eff u fr '[] ef)
-elabNonDetThen elabTail = elabChoose |+: elabEmpty mempty |+: elabTail
-{-# INLINE elabNonDetThen #-}
--}
-
--- | 'Choose' effect handler for Applicative use.
-runChooseA ::
+-- | 'NonDet' effect handler for Applicative use.
+runNonDetA ::
     forall f ef a fr u c.
     ( Alternative f
     , Freer c fr
@@ -201,11 +125,11 @@ runChooseA ::
     ) =>
     Eff u fr '[ChooseH] (LEmpty ': ef) a ->
     Eff u fr '[] ef (f a)
-runChooseA =
+runNonDetA =
     getCompose
         . interpretFinH_
             (Compose . runEmptyA . injectF)
-            (\(ChooseH a b) -> Compose $ liftA2 (<|>) (runChooseA a) (runChooseA b))
+            (\(ChooseH a b) -> Compose $ liftA2 (<|>) (runNonDetA a) (runNonDetA b))
 
 -- | 'Empty' effect handler for Applicative use.
 runEmptyA ::
