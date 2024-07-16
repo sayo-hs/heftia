@@ -20,7 +20,8 @@ import Control.Monad ((<=<))
 import Control.Monad.Freer (MonadFreer)
 import Data.Effect (LiftIns)
 import Data.Effect.HFunctor (HFunctor, hfmap)
-import Data.Effect.ShiftReset (Reset (Reset), Shift (Shift), Shift_ (Shift_))
+import Data.Effect.Key (KeyH (KeyH))
+import Data.Effect.ShiftReset (Reset (Reset), Shift, Shift' (Shift), Shift_ (Shift_))
 import Data.Hefty.Union (HFunctorUnion, HFunctorUnion_ (ForallHFunctor), Union ((|+:)))
 
 runShift ::
@@ -31,7 +32,7 @@ runShift =
     interpretKH_ pure \k ->
         let k' = raiseH . k
          in runShift . \case
-                Shift f -> f k'
+                KeyH (Shift f) -> f k'
 
 withShift ::
     ( MonadFreer c fr

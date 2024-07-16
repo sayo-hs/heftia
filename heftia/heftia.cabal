@@ -79,7 +79,7 @@ library
         Data.Effect.Key,
         Data.Effect.Key.TH,
         Data.Effect.HFunctor,
-        Data.Effect.HFunctor.HCoyoneda,
+        Data.Effect.HFunctor.HCont,
         Data.Effect.HFunctor.TH,
         Control.Effect,
         Control.Effect.Tag,

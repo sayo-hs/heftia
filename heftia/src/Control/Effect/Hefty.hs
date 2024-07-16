@@ -1111,10 +1111,10 @@ instance
     {-# INLINE injectInsBy #-}
 
 instance
-    (MemberRec u e ehs, e ~ FromJust (Lookup key ehs)) =>
+    (MemberRec u (key ##> e) ehs, key ##> e ~ FromJust (Lookup key ehs)) =>
     InjectSigBy key e (EffUnion u ehs efs)
     where
-    injectSigBy = EffUnion . L1 . injectRec
+    injectSigBy = EffUnion . L1 . injectRec . KeyH @key
     {-# INLINE injectSigBy #-}
 
 unkeyEff ::
@@ -1142,5 +1142,5 @@ keySubsumeH ::
     forall key e r efs fr u c.
     (Freer c fr, HFunctorUnion u, HFunctor e, ForallHFunctor u r, MemberHBy u key e r) =>
     Eff u fr (e ': r) efs ~> Eff u fr r efs
-keySubsumeH = interpretRecH $ sendSigBy @key . KeyH
+keySubsumeH = interpretRecH $ sendSigBy @key
 {-# INLINE keySubsumeH #-}
