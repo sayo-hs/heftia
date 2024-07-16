@@ -25,7 +25,7 @@ import Data.Effect.Fail (Fail)
 import Data.Effect.Fail qualified as E
 import Data.Effect.Fix (Fix)
 import Data.Effect.Fix qualified as E
-import Data.Effect.NonDet (Choose, Empty, choose)
+import Data.Effect.NonDet (ChooseH, Empty, chooseH)
 import Data.Effect.NonDet qualified as NonDet
 import Data.Effect.Reader (Ask, Local, ask'', local'')
 import Data.Effect.State (State, get'', put'')
@@ -140,20 +140,20 @@ instance
 instance
     ( Freer c fr
     , InjectIns Empty (e (Hefty fr e))
-    , InjectSig Choose e
+    , InjectSig ChooseH e
     , Applicative (fr (e (Hefty fr e)))
     ) =>
     Alternative (Hefty fr e)
     where
     empty = NonDet.empty
-    a <|> b = choose a b
+    a <|> b = chooseH a b
     {-# INLINE empty #-}
     {-# INLINE (<|>) #-}
 
 instance
     ( Freer c fr
     , InjectIns Empty (e (Hefty fr e))
-    , InjectSig Choose e
+    , InjectSig ChooseH e
     , Monad (fr (e (Hefty fr e)))
     ) =>
     MonadPlus (Hefty fr e)

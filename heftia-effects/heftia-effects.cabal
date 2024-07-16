@@ -70,7 +70,6 @@ library
         Control.Effect.Handler.Heftia.Except
         Control.Effect.Handler.Heftia.ShiftReset
         Control.Effect.Handler.Heftia.NonDet
-        Control.Effect.Handler.Heftia.Choice
         Control.Effect.Handler.Heftia.Coroutine
         Control.Effect.Handler.Heftia.Input
         Control.Effect.Handler.Heftia.Output
@@ -117,7 +116,6 @@ library
         Data.Effect.Except,
         Data.Effect.ShiftReset,
         Data.Effect.NonDet,
-        Data.Effect.Choice,
         Data.Effect.Coroutine,
         Data.Effect.Input,
         Data.Effect.Output,
@@ -210,5 +208,13 @@ executable Writer
 
     main-is: Main.hs
     hs-source-dirs: Example/Writer
+    build-depends:
+        heftia-effects,
+
+executable SemanticsZoo
+    import: common-base
+
+    main-is: Main.hs
+    hs-source-dirs: Example/SemanticsZoo
     build-depends:
         heftia-effects,

@@ -7,7 +7,7 @@ module Main where
 import Control.Arrow ((>>>))
 import Control.Effect.ExtensibleChurch (runEff, type (!!))
 import Control.Effect.Handler.Heftia.Reader (runAsk, runLocal)
-import Control.Effect.Handler.Heftia.ShiftReset (runShift, runShift_)
+import Control.Effect.Handler.Heftia.ShiftReset (evalShift, runShift_)
 import Control.Effect.Handler.Heftia.State (evalState)
 import Control.Effect.Hefty (send1, unkeyEff, type ($))
 import Control.Effect.Key (key)
@@ -67,7 +67,7 @@ handleReaderThenShift =
         & runLocal
         & runAsk 1
         & runEff
-        & runShift
+        & evalShift
         & (unkeyEff >>> evalState 0)
         & runEff
   where

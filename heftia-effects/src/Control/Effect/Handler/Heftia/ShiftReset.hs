@@ -24,15 +24,24 @@ import Data.Effect.Key (KeyH (KeyH))
 import Data.Effect.ShiftReset (Reset (Reset), Shift, Shift' (Shift), Shift_ (Shift_))
 import Data.Hefty.Union (HFunctorUnion, HFunctorUnion_ (ForallHFunctor), Union ((|+:)))
 
-runShift ::
+evalShift ::
     (MonadFreer c fr, Union u, c (Eff u fr '[] ef), HFunctor (u '[])) =>
     Eff u fr '[Shift r] ef r ->
     Eff u fr '[] ef r
-runShift =
-    interpretKH_ pure \k ->
+evalShift = runShift pure
+{-# INLINE evalShift #-}
+
+runShift ::
+    forall r a ef fr u c.
+    (MonadFreer c fr, Union u, c (Eff u fr '[] ef), HFunctor (u '[])) =>
+    (a -> Eff u fr '[] ef r) ->
+    Eff u fr '[Shift r] ef a ->
+    Eff u fr '[] ef r
+runShift f =
+    interpretKH_ f \k ->
         let k' = raiseH . k
-         in runShift . \case
-                KeyH (Shift f) -> f k'
+         in evalShift . \case
+                KeyH (Shift g) -> g k'
 
 withShift ::
     ( MonadFreer c fr
@@ -43,7 +52,7 @@ withShift ::
     ) =>
     Eff u fr '[Shift r] '[LiftIns (Eff u fr eh ef)] r ->
     Eff u fr eh ef r
-withShift = runShift >>> runEff
+withShift = evalShift >>> runEff
 {-# INLINE withShift #-}
 
 runShift_ ::
