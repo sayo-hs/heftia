@@ -21,8 +21,8 @@ import Control.Effect.Hefty (
     Elab,
     interposeK,
     interposeT,
-    interpretH,
     interpretK,
+    interpretRecH,
     interpretT,
  )
 import Control.Monad.Freer (MonadFreer)
@@ -43,6 +43,7 @@ runExcept ::
     , HFunctor (u '[Catch e])
     , c (Eff u fr '[] ef)
     , c (ExceptT e (Eff u fr '[] ef))
+    , HFunctor (u '[])
     ) =>
     Eff u fr '[Catch e] (LThrow e ': ef) a ->
     Eff u fr '[] ef (Either e a)
@@ -58,9 +59,10 @@ runCatch ::
     , c (Eff u fr '[] ef)
     , c (ExceptT e (Eff u fr '[] ef))
     , HFunctor (u '[Catch e])
+    , HFunctor (u '[])
     ) =>
     Eff u fr '[Catch e] ef ~> Eff u fr '[] ef
-runCatch = interpretH elabCatch
+runCatch = interpretRecH elabCatch
 {-# INLINE runCatch #-}
 
 elabCatch ::

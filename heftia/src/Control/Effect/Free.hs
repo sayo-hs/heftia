@@ -19,11 +19,11 @@ module Control.Effect.Free where
 import Control.Effect (type (~>))
 
 import Control.Effect.Hefty (Eff, EffUnion (EffUnion), caseHF)
-import Control.Freer (Freer, InjectIns, ViaFreer (ViaFreer), injectIns, transformFreer, viaFreer)
+import Control.Freer (Freer, InjectIns, ViaFreer (ViaFreer), injectIns, interpretFreer, transformFreer, viaFreer)
 import Control.Hefty (Hefty (Hefty), unHefty)
 import Data.Effect (LiftIns (LiftIns), Nop, SigClass)
 import Data.Free.Sum (pattern R1)
-import Data.Hefty.Union (Member, U, Union, exhaust, injectRec)
+import Data.Hefty.Union (Member, U, Union, exhaust, injectRec, (|+))
 
 {- |
 A common type for representing first-order extensible effectful programs that can issue effects
@@ -61,12 +61,13 @@ fromEffF =
 {-  all types of interpret-family functions:
         - interpret   :                 e  ~> E r           ->    E (e + r)  ~> E r
         - reinterpret :                 e1 ~> E (e2 + r)    ->    E (e1 + r) ~> E (e2 + r)
-        - intercept   :  e <| es  =>    e  ~> E es          ->    E es       ~> E es
+        - interpose   :  e <| es  =>    e  ~> E es          ->    E es       ~> E es
 
         all possible suffix patterns of interpret-family functions:
             - <none>
             - K
             - ContT
+            - Fin
             - T
 
     all types of transform-family functions:
@@ -74,9 +75,11 @@ fromEffF =
         - translate :  e2 <| r   =>    e1 ~> e2    ->    E (e1 + r) ~> E r
         - rewrite   :  e  <| es  =>    e  ~> e     ->    E es       ~> E es
 
-    todo patterns: all ( 4x3 + 3 = 16 functions )
+    todo patterns: all ( 5x3 + 3 = 18 functions )
+
+    + *By (for keyed effects) in interpose/translate/rewrite ( 5 + 2 = 7 functions )
 -}
 
 runEffF :: forall f fr u c. (Freer c fr, Union u, c f) => EffF u fr '[LiftIns f] ~> f
-runEffF = undefined
+runEffF (ViaFreer f) = interpretFreer ((id |+ exhaust) . unEffUnionF) f
 {-# INLINE runEffF #-}

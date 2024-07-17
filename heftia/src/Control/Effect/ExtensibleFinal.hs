@@ -33,6 +33,7 @@ type (:!) efs = EffF ExtensibleUnion (FreerFinal Monad) efs
 
 infixr 4 :!!
 infixr 3 :!
+
 runEff :: Monad f => '[] :!! '[LiftIns f] ~> f
 runEff = H.runEff
 {-# INLINE runEff #-}

@@ -33,6 +33,7 @@ type (:!) efs = EffF ExtensibleUnion (FreerFinal Applicative) efs
 
 infixr 4 :!!
 infixr 3 :!
+
 runEff :: Applicative f => '[] :!! '[LiftIns f] ~> f
 runEff = H.runEff
 {-# INLINE runEff #-}

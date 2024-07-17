@@ -14,7 +14,7 @@ module Control.Effect.Handler.Heftia.NonDet where
 import Control.Applicative (Alternative ((<|>)), empty, liftA2, (<|>))
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
-import Control.Effect.Hefty (Eff, injectF, interpretFin, interpretFinH_, interpretK, interpretRecH)
+import Control.Effect.Hefty (Eff, injectF, interpretFin, interpretFinH, interpretK, interpretRecH)
 import Control.Freer (Freer)
 import Control.Monad.Freer (MonadFreer)
 import Control.Monad.Trans.Maybe (MaybeT (MaybeT), runMaybeT)
@@ -136,7 +136,7 @@ runNonDetA ::
     Eff u fr '[] ef (f a)
 runNonDetA =
     getCompose
-        . interpretFinH_
+        . interpretFinH
             (Compose . runEmptyA . injectF)
             (\(ChooseH a b) -> Compose $ liftA2 (<|>) (runNonDetA a) (runNonDetA b))
 

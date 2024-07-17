@@ -9,7 +9,7 @@ module Main where
 
 import Control.Effect (type (~>))
 import Control.Effect.ExtensibleChurch (runEff, type (:!!))
-import Control.Effect.Hefty (interposeK, interpretH, interpretRec)
+import Control.Effect.Hefty (interposeK, interpretRec, interpretRecH)
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect.TH (makeEffectF, makeEffectH)
 import Data.Function ((&))
@@ -38,7 +38,7 @@ main :: IO ()
 main =
     runEff
         . runForkSingle
-        . interpretH (applyResetFork 4)
+        . interpretRecH (applyResetFork 4)
         $ do
             liftIO . putStrLn . (("[out of scope] " ++) . show) =<< fork
             s <- resetFork do

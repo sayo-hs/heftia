@@ -3,12 +3,16 @@ name:               heftia
 version:            0.2.0.0
 
 -- A short (one-line) description of the package.
-synopsis: Higher-order version of Freer.
+synopsis: higher-order effects done right
 
 -- A longer description of the package.
 description:
-    Heftia, a composition of hefty trees and co-Yoneda, is a higher-order
-    effects version of Freer.
+    Heftia is a higher-order effects version of Freer.
+    .
+    This library provides "[continuation-based semantics](https://github.com/lexi-lambda/eff/blob/master/notes/semantics-zoo.md)"
+    for higher-order effects, the same as [lexi-lambda's eff](https://github.com/lexi-lambda/eff).
+    Instead of using the @IO@ monad to implement delimited continuations for effects,
+    Heftia internally uses @Freer@ monad.
     .
     The paper
     .
@@ -20,7 +24,7 @@ description:
     Hefty trees, proposed by the above paper, are extensions of free monads,
     allowing for a straightforward treatment of higher-order effects.
     .
-    This library provides Heftia monads and Freer monads, encoded into data
+    This library provides Hefty monads and Freer monads, encoded into data
     types in several ways to enable tuning in pursuit of high performance.
     .
 
@@ -35,7 +39,7 @@ maintainer:         Yamada Ryo <ymdfield@outlook.jp>
 
 -- A copyright notice.
 copyright:
-    2023 Yamada Ryo
+    2023-2024 Yamada Ryo
 category: Control, Monads
 
 extra-source-files:

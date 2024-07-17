@@ -9,8 +9,8 @@ import Control.Effect (type (~>))
 import Control.Effect.Hefty (
     Eff,
     injectH,
-    interpretKAllH_,
-    interpretKH_,
+    interpretKAllH,
+    interpretKH,
     interpretRecH,
     raiseH,
     runEff,
@@ -38,7 +38,7 @@ runShift ::
     Eff u fr '[Shift r] ef a ->
     Eff u fr '[] ef r
 runShift f =
-    interpretKH_ f \k ->
+    interpretKH f \k ->
         let k' = raiseH . k
          in evalShift . \case
                 KeyH (Shift g) -> g k'
@@ -59,7 +59,7 @@ runShift_ ::
     (MonadFreer c fr, Union u, c (Eff u fr eh ef), HFunctor (u eh)) =>
     Eff u fr (Shift_ ': eh) ef ~> Eff u fr eh ef
 runShift_ =
-    interpretKAllH_ pure \k ->
+    interpretKAllH pure \k ->
         (\(Shift_ f) -> runShift_ $ f $ raiseH . k)
             |+: (k <=< injectH . hfmap runShift_)
 

@@ -12,7 +12,7 @@ Portability :  portable
 module Control.Effect.Handler.Heftia.Unlift where
 
 import Control.Effect (type (~>))
-import Control.Effect.Hefty (Eff, interpretH_, runEff, send0)
+import Control.Effect.Hefty (Eff, interpretH, runEff, send0)
 import Control.Freer (Freer)
 import Data.Effect (LiftIns)
 import Data.Effect.Unlift (UnliftBase (WithRunInBase), UnliftIO)
@@ -23,7 +23,7 @@ runUnliftBase ::
     (Freer c fr, Union u, c b) =>
     Eff u fr '[UnliftBase b] '[LiftIns b] ~> b
 runUnliftBase =
-    runEff . interpretH_ \(WithRunInBase f) ->
+    runEff . interpretH \(WithRunInBase f) ->
         send0 $ f runUnliftBase
 
 runUnliftIO ::

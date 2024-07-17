@@ -25,8 +25,8 @@ import Control.Effect.Hefty (
     interposeFin,
     interposeT,
     interpretFin,
-    interpretH,
     interpretK,
+    interpretRecH,
     interpretT,
     rewrite,
  )
@@ -72,7 +72,7 @@ elaborateWriterPost ::
     , HFunctor (u '[WriterH w])
     ) =>
     Eff u fr '[WriterH w] ef ~> Eff u fr '[] ef
-elaborateWriterPost = interpretH elabWriterPost
+elaborateWriterPost = interpretRecH elabWriterPost
 {-# INLINE elaborateWriterPost #-}
 
 elabWriterPost ::
@@ -138,7 +138,7 @@ elaborateWriterPre ::
     , HFunctor (u '[WriterH w])
     ) =>
     Eff u fr '[WriterH w] ef ~> Eff u fr '[] ef
-elaborateWriterPre = interpretH elabWriterPre
+elaborateWriterPre = interpretRecH elabWriterPre
 {-# INLINE elaborateWriterPre #-}
 
 elabWriterPre ::
@@ -187,7 +187,7 @@ elaborateWriterPreA ::
     , HFunctor (u '[WriterH w])
     ) =>
     Eff u fr '[WriterH w] ef ~> Eff u fr '[] ef
-elaborateWriterPreA = interpretH elabWriterPre'
+elaborateWriterPreA = interpretRecH elabWriterPre'
 {-# INLINE elaborateWriterPreA #-}
 
 elabWriterPre' ::

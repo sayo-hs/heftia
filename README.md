@@ -1,4 +1,4 @@
-# Heftia: Higher-order effects done right
+# Heftia: higher-order effects done right for Haskell
 
 [![Hackage](https://img.shields.io/hackage/v/heftia.svg?logo=haskell&label=heftia)](https://hackage.haskell.org/package/heftia)
 [![Hackage](https://img.shields.io/hackage/v/heftia-effects.svg?logo=haskell&label=heftia-effects)](https://hackage.haskell.org/package/heftia-effects)
@@ -6,7 +6,7 @@
 Heftia is a higher-order effects version of Freer.
 
 This library provides "[continuation-based semantics](https://github.com/lexi-lambda/eff/blob/master/notes/semantics-zoo.md)" for higher-order effects, the same as [lexi-lambda's eff](https://github.com/lexi-lambda/eff).
-Instead of using the `IO` monad to implement delimited continuations for effects, this library uses `Freer` monad.
+Instead of using the `IO` monad to implement delimited continuations for effects, Heftia internally uses `Freer` monad.
 
 The paper
 * Casper Bach Poulsen and Cas van der Rest. 2023. Hefty Algebras: Modular
@@ -17,7 +17,7 @@ inspires this library.
 Hefty trees, proposed by the above paper, are extensions of free monads,
 allowing for a straightforward treatment of higher-order effects.
 
-This library offers Heftia monads and Freer monads, encoded into data
+This library offers Hefty monads and Freer monads, encoded into data
 types in several ways to enable tuning in pursuit of high performance.
 
 ## Status
@@ -193,12 +193,14 @@ This is indeed true in terms of its internal mechanisms as well.
 * The `Eff` monad is an instance of `MonadIO`, `MonadError`, `MonadRWS`, etc., and these behave as the senders for the embedded `IO` or the effect GADTs defined in [data-effects](https://github.com/sayo-hs/data-effects).
 
 ## Future Plans
-* Benchmarking
 * Enriching the documentation
 * Completing missing definitions such as
-    * handlers for the `Accum`, `Coroutine`, `Fresh`, `Input`, `Output` effect classes
+    * `raise`, `raiseUnder`, and `subsume` for arbitrary numbers of effects by type classes.
+    * more patterns of interpret & transform function-families.
+    * handlers for the `Accum` and others effect classes
 
     and others.
+* Benchmarking
 
 ## License
 The license is MPL 2.0. Please refer to the [NOTICE](https://github.com/sayo-hs/heftia/blob/develop/NOTICE).
