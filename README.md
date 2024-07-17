@@ -52,7 +52,7 @@ $ cabal run exe:SemanticsZoo
 $
 ```
 
-This library assumes the following GHC extensions and a plugin. Especially when using TemplateHaskell functions like `makeEffectF/H`, you will need to enable the following:
+If you are writing code from scratch, this library assumes the following GHC extensions and a plugin. Especially when using TemplateHaskell functions like `makeEffectF/H`, you will need to enable the following:
 * GHC2021
 * LambdaCase
 * DerivingStrategies
