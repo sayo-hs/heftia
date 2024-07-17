@@ -68,6 +68,8 @@ If you are writing code from scratch, this library assumes the following GHC ext
 * AllowAmbiguousTypes
 * [ghc-typelits-knownnat](https://hackage.haskell.org/package/ghc-typelits-knownnat)
 
+This library has been tested to work with GHC 9.2.8.
+
 ## Example
 
 Compared to existing Effect System libraries in Haskell that handle higher-order effects, this
