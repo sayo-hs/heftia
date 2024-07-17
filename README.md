@@ -28,7 +28,7 @@ There may be significant changes and potential bugs.
 **We are looking forward to your feedback!**
 
 ## Getting Started
-To run the [SemanticsZoo example](heftia-effects/Example/SemanticsZoo/Main.hs):
+To run the [SemanticsZoo example](https://github.com/sayo-hs/heftia/blob/232599fbdfaf13dcf009f40585369e0ec71fd0bd/heftia-effects/Example/SemanticsZoo/Main.hs):
 ```console
 $ git clone https://github.com/sayo-hs/heftia
 $ cd heftia/heftia-effects
@@ -63,7 +63,7 @@ are some examples:
 In handling higher-order effects, it's easy to work with **multi-shot delimited continuations**.
 This enables an almost complete emulation of "Algebraic Effects and Handlers".
 For more details, please refer to
-the [example code](heftia-effects/Example/Continuation/Main.hs).
+the [example code](https://github.com/sayo-hs/heftia/blob/232599fbdfaf13dcf009f40585369e0ec71fd0bd/heftia-effects/Example/Continuation/Main.hs).
 
 ### Two interpretations of the `censor` effect for Writer
 
@@ -127,7 +127,7 @@ This may be useful when writing concurrent effectful code.
 Heftia is the current main focus of the [Sayo Project](https://github.com/sayo-hs).
 
 ## Documentation
-The example codes are located in the [heftia-effects/Example/](heftia-effects/Example/) directory.
+The example codes are located in the [heftia-effects/Example/](https://github.com/sayo-hs/heftia/tree/232599fbdfaf13dcf009f40585369e0ec71fd0bd/heftia-effects/Example) directory.
 Also, the following *HeftWorld* example: https://github.com/sayo-hs/HeftWorld
 
 ~~Examples with explanations can be found in the [docs/examples/](https://github.com/sayo-hs/heftia/tree/master/docs/examples) directory.~~ Documents have become outdated.
@@ -206,12 +206,12 @@ This is indeed true in terms of its internal mechanisms as well.
 * Benchmarking
 
 ## License
-The license is MPL 2.0. Please refer to the [NOTICE](https://github.com/sayo-hs/heftia/blob/develop/NOTICE).
+The license is MPL 2.0. Please refer to the [NOTICE](https://github.com/sayo-hs/heftia/blob/232599fbdfaf13dcf009f40585369e0ec71fd0bd/NOTICE).
 Additionally, this README.md and the documents under the `docs`/`docs-ja` directory are licensed
 under CC BY-SA 4.0.
 
 ## Your contributions are welcome!
-Please see [CONTRIBUTING.md](https://github.com/sayo-hs/heftia/blob/develop/CONTRIBUTING.md).
+Please see [CONTRIBUTING.md](https://github.com/sayo-hs/heftia/blob/232599fbdfaf13dcf009f40585369e0ec71fd0bd/CONTRIBUTING.md).
 
 ## Credits
 Parts of this project have been inspired by the following resources:
