@@ -77,7 +77,7 @@ fromEffF =
 
     todo patterns: all ( 5x3 + 3 = 18 functions )
 
-    + *By (for keyed effects) in interpose/translate/rewrite ( 5 + 2 = 7 functions )
+        + *By (for keyed effects) in interpose/translate/rewrite ( 5 + 2 = 7 functions )
 -}
 
 runEffF :: forall f fr u c. (Freer c fr, Union u, c f) => EffF u fr '[LiftIns f] ~> f
