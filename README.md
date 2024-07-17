@@ -52,6 +52,22 @@ $ cabal run exe:SemanticsZoo
 $
 ```
 
+This library assumes the following GHC extensions and a plugin. Especially when using TemplateHaskell functions like `makeEffectF/H`, you will need to enable the following:
+* GHC2021
+* LambdaCase
+* DerivingStrategies
+* DataKinds
+* TypeFamilies
+* BlockArguments
+* FunctionalDependencies
+* RecordWildCards
+* DefaultSignatures
+* PatternSynonyms
+* TemplateHaskell
+* PartialTypeSignatures
+* AllowAmbiguousTypes
+* [ghc-typelits-knownnat](https://hackage.haskell.org/package/ghc-typelits-knownnat)
+
 ## Example
 
 Compared to existing Effect System libraries in Haskell that handle higher-order effects, this
