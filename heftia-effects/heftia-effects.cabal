@@ -3,12 +3,12 @@ name:               heftia-effects
 version:            0.2.0.0
 
 -- A short (one-line) description of the package.
-synopsis: Handlers for standard effects using Heftia.
+synopsis: higher-order effects done right
 
 -- A longer description of the package.
 description:
-    This library provides interpreters based
-    on [Heftia](https://hackage.haskell.org/package/heftia).
+    This library is the battery-included version of the [heftia](https://hackage.haskell.org/package/heftia) package,
+    providing interpreters for standard effects.
 
 -- A URL where users can report bugs.
 bug-reports: https://github.com/sayo-hs/heftia
@@ -138,7 +138,7 @@ library
         extensible                    ^>= 0.9,
         unliftio                      ^>= 0.2.0,
         free                          ^>= 5.2,
-        containers                    ,
+        containers                    ^>= 0.6.5,
 
     hs-source-dirs:   src
 
@@ -201,7 +201,7 @@ executable Continuation2
     hs-source-dirs: Example/Continuation2
     build-depends:
         heftia-effects,
-        extra
+        extra ^>= 1.7.14,
 
 executable Writer
     import: common-base
