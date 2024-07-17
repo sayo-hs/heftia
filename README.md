@@ -22,7 +22,10 @@ types in several ways to enable tuning in pursuit of high performance.
 
 ## Status
 
-Please note that this library is currently in the experimental stage. There may be significant changes and potential bugs.
+This library is currently in the beta stage.
+There may be significant changes and potential bugs.
+
+**We are looking forward to your feedback!**
 
 ## Getting Started
 To run the [SemanticsZoo example](heftia-effects/Example/SemanticsZoo/Main.hs):
@@ -193,7 +196,7 @@ This is indeed true in terms of its internal mechanisms as well.
 * The `Eff` monad is an instance of `MonadIO`, `MonadError`, `MonadRWS`, etc., and these behave as the senders for the embedded `IO` or the effect GADTs defined in [data-effects](https://github.com/sayo-hs/data-effects).
 
 ## Future Plans
-* Enriching the documentation
+* Enriching the documentation and tests
 * Completing missing definitions such as
     * `raise`, `raiseUnder`, and `subsume` for arbitrary numbers of effects by type classes.
     * more patterns of interpret & transform function-families.
