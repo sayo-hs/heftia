@@ -12,8 +12,8 @@ Maintainer  :  ymdfield@outlook.jp
 Stability   :  experimental
 Portability :  portable
 
-A Heftia carrier that can be used as a handler for effect systems based
-on [@classy-effects@](https://hackage.haskell.org/package/classy-effects).
+A Hefty carrier that can be used as a handler for effect systems based
+on [@data-effects@](https://hackage.haskell.org/package/data-effects).
 -}
 module Control.Effect.Hefty where
 

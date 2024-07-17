@@ -12,7 +12,7 @@ Stability   :  experimental
 Portability :  portable
 
 A Freer carrier that can be used as a handler for effect systems based
-on [@classy-effects@](https://hackage.haskell.org/package/classy-effects).
+on [@data-effects@](https://hackage.haskell.org/package/data-effects).
 -}
 module Control.Effect.Free where
 
