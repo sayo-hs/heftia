@@ -17,6 +17,7 @@ on [@data-effects@](https://hackage.haskell.org/package/data-effects).
 -}
 module Control.Effect.Hefty where
 
+import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
 import Control.Effect.Key (sendInsBy, sendSigBy)
 import Control.Freer (Freer, InjectIns, InjectInsBy, injectIns, injectInsBy, interpretFreer, liftIns, transformFreer)
@@ -27,9 +28,9 @@ import Control.Monad.Identity (Identity (Identity), runIdentity)
 import Control.Monad.Trans (MonadTrans)
 import Data.Coerce (coerce)
 import Data.Effect (LiftIns (LiftIns), Nop, SigClass, unliftIns)
-import Data.Effect.HFunctor (HFunctor, caseH, hfmap, (:+:))
+import Data.Effect.HFunctor (HFunctor, caseH, hfmap, (:+:) (Inl, Inr))
 import Data.Effect.Key (Key (Key), KeyH (KeyH), unKey, unKeyH, type (##>), type (#>))
-import Data.Effect.Tag (Tag (unTag), TagH (unTagH), type (#), type (##))
+import Data.Effect.Tag (Tag (Tag, unTag), TagH (TagH, unTagH), type (#), type (##))
 import Data.Free.Sum (caseF, pattern L1, pattern R1, type (+))
 import Data.Hefty.Union (
     HFunctorUnion,
@@ -983,6 +984,88 @@ subsumeH ::
 subsumeH = transformAllH $ injectRec |+: id
 {-# INLINE subsumeH #-}
 
+copyEff ::
+    forall e r ehs fr u c.
+    ( Freer c fr
+    , Union u
+    , HFunctor (u ehs)
+    , Applicative (Eff u fr ehs (e ': r))
+    , HeadIns e
+    , HasMembershipRec u e r
+    ) =>
+    Eff u fr ehs (e ': r) ~> Eff u fr ehs (e ': r)
+copyEff = reinterpretRec \e ->
+    send0 e *> liftEff (weaken $ injectRec $ liftInsIfSingle @_ @e e)
+
+copyEffH ::
+    forall e r ef fr u c.
+    ( Freer c fr
+    , Union u
+    , HFunctorUnion u
+    , HFunctor e
+    , ForallHFunctor u r
+    , Applicative (Eff u fr (e ': r) ef)
+    , HasMembershipRec u e r
+    ) =>
+    Eff u fr (e ': r) ef ~> Eff u fr (e ': r) ef
+copyEffH = reinterpretRecH \e -> send0H e *> liftEffH (weaken $ injectRec e)
+
+dupEff ::
+    forall e r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs), Applicative (Eff u fr ehs (e ': e ': r)), HeadIns e) =>
+    Eff u fr ehs (e ': r) ~> Eff u fr ehs (e ': e ': r)
+dupEff = raiseUnder >>> reinterpretRec \e -> send0 e *> send1 e
+{-# INLINE dupEff #-}
+
+dupEffH ::
+    forall e r ef fr u c.
+    ( Freer c fr
+    , Union u
+    , Applicative (Eff u fr (e ': e ': r) ef)
+    , HFunctorUnion u
+    , HFunctor e
+    , ForallHFunctor u r
+    ) =>
+    Eff u fr (e ': r) ef ~> Eff u fr (e ': e ': r) ef
+dupEffH = raiseUnderH >>> reinterpretRecH \e -> send0H e *> send1H e
+{-# INLINE dupEffH #-}
+
+bundle ::
+    forall e r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs (e ': r) ~> Eff u fr ehs (u '[e] ': r)
+bundle = transformAll $ inject0 . inject0 |+: weaken
+
+unbundle ::
+    forall e r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs (u '[e] ': r) ~> Eff u fr ehs (e ': r)
+unbundle = transformAll $ inject0 . (id |+: end) |+: weaken
+
+pushBundle ::
+    forall e r1 r2 ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs (u r1 ': e ': r2) ~> Eff u fr ehs (u (e ': r1) ': r2)
+pushBundle = transformAll $ inject0 . weaken |+: inject0 . inject0 |+: weaken
+
+popBundle ::
+    forall e r1 r2 ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs (u (e ': r1) ': r2) ~> Eff u fr ehs (u r1 ': e ': r2)
+popBundle = transformAll $ (weaken . inject0 |+: inject0) |+: weaken2
+
+enqueSum ::
+    forall e1 e2 r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs (e1 ': e2 ': r) ~> Eff u fr ehs (e1 :+: e2 ': r)
+enqueSum = transformAll $ inject0 . Inl |+: inject0 . Inr |+: weaken
+
+dequeSum ::
+    forall e1 e2 r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs (e1 :+: e2 ': r) ~> Eff u fr ehs (e1 ': e2 ': r)
+dequeSum = transformAll $ caseH inject0 (weaken . inject0) |+: weaken2
+
 liftInsEff ::
     forall e eh ef fr u c.
     (Freer c fr, Union u, HFunctor (u eh), HFunctor e) =>
@@ -1028,20 +1111,28 @@ mergeEffH =
         . unHefty
 
 send0 :: (Freer c fr, Union u, HeadIns e) => UnliftIfSingle e ~> Eff u fr eh (e ': r)
-send0 = Hefty . liftIns . EffUnion . R1 . inject0 . liftInsIfSingle
+send0 = liftEff . inject0 . liftInsIfSingle
 {-# INLINE send0 #-}
 
 send1 :: (Freer c fr, Union u, HeadIns e1) => UnliftIfSingle e1 ~> Eff u fr eh (e2 ': e1 ': r)
-send1 = Hefty . liftIns . EffUnion . R1 . weaken . inject0 . liftInsIfSingle
+send1 = liftEff . weaken . inject0 . liftInsIfSingle
 {-# INLINE send1 #-}
 
 send0H :: (Freer c fr, Union u) => e (Eff u fr (e ': r) ef) ~> Eff u fr (e ': r) ef
-send0H = Hefty . liftIns . EffUnion . L1 . inject0
+send0H = liftEffH . inject0
 {-# INLINE send0H #-}
 
 send1H :: (Freer c fr, Union u) => e1 (Eff u fr (e2 ': e1 ': r) ef) ~> Eff u fr (e2 ': e1 ': r) ef
-send1H = Hefty . liftIns . EffUnion . L1 . weaken . inject0
+send1H = liftEffH . weaken . inject0
 {-# INLINE send1H #-}
+
+liftEff :: (Freer c fr, Union u) => u ef Nop ~> Eff u fr eh ef
+liftEff = Hefty . liftIns . EffUnion . R1
+{-# INLINE liftEff #-}
+
+liftEffH :: (Freer c fr, Union u) => u eh (Eff u fr eh ef) ~> Eff u fr eh ef
+liftEffH = Hefty . liftIns . EffUnion . L1
+{-# INLINE liftEffH #-}
 
 runEff :: forall f fr u c. (Freer c fr, Union u, c f) => Eff u fr '[] '[LiftIns f] ~> f
 runEff = interpretAll $ id |+ exhaust
@@ -1050,6 +1141,20 @@ runEff = interpretAll $ id |+ exhaust
 runPure :: forall a fr u c. (Freer c fr, Union u, c Identity) => Eff u fr '[] '[] a -> a
 runPure = runIdentity . interpretAll exhaust
 {-# INLINE runPure #-}
+
+tagEff ::
+    forall tag e r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs (LiftIns e ': r) ~> Eff u fr ehs (LiftIns (e # tag) ': r)
+tagEff = transform Tag
+{-# INLINE tagEff #-}
+
+tagEffH ::
+    forall tag e r efs fr u c.
+    (Freer c fr, Union u, HFunctor (u (e ': r))) =>
+    Eff u fr (e ': r) efs ~> Eff u fr (e ## tag ': r) efs
+tagEffH = transformH TagH
+{-# INLINE tagEffH #-}
 
 untagEff ::
     forall tag e r ehs fr u c.

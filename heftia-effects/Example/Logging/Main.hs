@@ -10,15 +10,28 @@ module Main where
 
 import Control.Arrow ((>>>))
 import Control.Effect (type (<:), type (<<:), type (~>))
-import Control.Effect.ExtensibleChurch (runEff, type (:!!))
+import Control.Effect.ExtensibleChurch (runEff, type (!!), type (:!!))
 import Control.Effect.Handler.Heftia.Reader (runReader)
 import Control.Effect.Handler.Heftia.State (evalState)
-import Control.Effect.Hefty (interposeRec, interposeRecH, interpretRec, interpretRecH, raise, raiseH)
+import Control.Effect.Hefty (
+    Elab,
+    copyEff,
+    interposeRec,
+    interposeRecH,
+    interpretRec,
+    interpretRecH,
+    raise,
+    raiseH,
+    raiseUnder,
+    reinterpretRecH,
+    subsume,
+ )
 import Control.Monad (when)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Effect.Reader (ask, local)
 import Data.Effect.State (get, modify)
 import Data.Effect.TH (makeEffectF, makeEffectH)
+import Data.Free.Sum (type (+))
 import Data.Function ((&))
 import Data.Hefty.Extensible (ForallHFunctor, type (<<|), type (<|))
 import Data.Kind (Type)
@@ -64,21 +77,28 @@ runLogChunk :: ForallHFunctor eh => LogChunk ': eh :!! ef ~> eh :!! ef
 runLogChunk = interpretRecH \(LogChunk _ m) -> m
 
 -- | Limit the number of logs in a log chunk to the first @n@ logs.
-limitLogChunk ::
-    forall eh ef.
-    (LogChunk <<| eh, Log <| ef) =>
-    Int ->
-    LogChunk ('[] :!! ef) ~> LogChunk ('[] :!! ef)
-limitLogChunk n (LogChunk chunkName a) =
-    LogChunk chunkName . evalState @Int 0 $
-        raise a & interposeRec \(Logging msg) -> do
-            count <- get
-            when (count <= n) do
-                if count == n
-                    then logging "LOG OMITTED..."
-                    else logging msg
+limitLogChunk :: Log <| ef => Int -> '[LogChunk] :!! LLog ': ef ~> '[LogChunk] :!! LLog ': ef
+limitLogChunk n = reinterpretRecH $ elabLimitLogChunk n
 
-                modify @Int (+ 1)
+elabLimitLogChunk :: Log <| ef => Int -> Elab LogChunk ('[LogChunk] :!! LLog ': ef)
+elabLimitLogChunk n (LogChunk name a) =
+    logChunk name do
+        raise . raiseH $ limitLog $ runLogChunk $ limitLogChunk n a
+  where
+    limitLog ::
+        forall ef.
+        Log <| ef =>
+        '[] :!! LLog ': ef ~> '[] :!! ef
+    limitLog a' =
+        evalState @Int 0 $
+            raiseUnder a' & interpretRec \(Logging msg) -> do
+                count <- get
+                when (count < n) do
+                    logging msg
+                    when (count == n - 1) do
+                        logging "Subsequent logs are omitted..."
+
+                    modify @Int (+ 1)
 
 data FileSystem a where
     Mkdir :: FilePath -> FileSystem ()
@@ -96,11 +116,11 @@ runDummyFS = interpretRec \case
 -- | Create directories according to the log-chunk structure and save one log in one file.
 saveLogChunk ::
     forall eh ef.
-    (LogChunk <<| eh, Log <| ef, FileSystem <| ef, Time <| ef, ForallHFunctor eh) =>
-    eh :!! ef ~> eh :!! ef
+    (LogChunk <<| eh, FileSystem <| ef, Time <| ef, ForallHFunctor eh) =>
+    eh :!! (LLog ': ef) ~> eh :!! ef
 saveLogChunk =
     raise >>> raiseH
-        >>> ( interposeRecH \(LogChunk chunkName a) -> do
+        >>> ( interposeRecH \(LogChunk chunkName a) -> logChunk chunkName do
                 chunkBeginAt <- currentTime
                 let dirName = iso8601Show chunkBeginAt ++ "-" ++ T.unpack chunkName
                 local @FilePath (++ dirName ++ "/") do
@@ -108,71 +128,124 @@ saveLogChunk =
                     mkdir logChunkPath
                     a & interposeRec \(Logging msg) -> do
                         logAt <- currentTime
-                        logging msg
                         writeToFile (logChunkPath ++ iso8601Show logAt ++ ".log") (show msg)
             )
         >>> runReader @FilePath "./log/"
+        >>> discardLog
+
+discardLog :: ForallHFunctor eh => eh :!! LLog ': r ~> eh :!! r
+discardLog = interpretRec \(Logging _) -> pure ()
 
 logExample :: (LogChunk <<: m, Log <: m, MonadIO m) => m ()
-logExample =
+logExample = do
+    logging "out of chunk scope 1"
+    logging "out of chunk scope 2"
+    logging "out of chunk scope 3"
+    logging "out of chunk scope 4"
+
+    liftIO $ putStrLn "------"
+
     logChunk "scope1" do
-        logging "foo"
-        logging "bar"
-        logging "baz"
-        logging "qux"
+        logging "in scope1 1"
+        logging "in scope1 2"
+        logging "in scope1 3"
+        logging "in scope1 4"
 
         liftIO $ putStrLn "------"
 
         logChunk "scope2" do
-            logging "hoge"
-            logging "piyo"
-            logging "fuga"
-            logging "hogera"
+            logging "in scope2 1"
+            logging "in scope2 2"
+            logging "in scope2 3"
+            logging "in scope2 4"
 
         liftIO $ putStrLn "------"
 
-        logging "quux"
-        logging "foobar"
+        logging "in scope1 5"
+        logging "in scope1 6"
+
+saveThenLimit :: IO ()
+saveThenLimit =
+    logExample
+        & copyEff
+        & saveLogChunk
+        & limitLogChunk 2
+        & subsume
+        & runApp
+
+limitThenSave :: IO ()
+limitThenSave =
+    logExample
+        & limitLogChunk 2
+        & subsume
+        & copyEff
+        & saveLogChunk
+        & runApp
+
+runApp :: LogChunk !! FileSystem + Time + Log + IO ~> IO
+runApp =
+    runLogChunk
+        >>> runDummyFS
+        >>> logWithTime
+        >>> timeToIO
+        >>> logToIO
+        >>> runEff
 
 main :: IO ()
-main =
-    runEff
-        . logToIO
-        . timeToIO
-        . logWithTime
-        . runDummyFS
-        . runLogChunk
-        . saveLogChunk
-        $ do
-            logExample
+main = do
+    putStrLn "# saveThenLimit"
+    saveThenLimit
+    putStrLn ""
+    putStrLn "# limitThenSave"
+    limitThenSave
 
 {-
-<runDummyFS> mkdir ./log/2024-07-06T13:56:23.447829919Z-scope1/
-[2024-07-06 13:56:23.448628515 UTC] foo
-<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.448625419Z.log : "foo"
-[2024-07-06 13:56:23.448932798 UTC] bar
-<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.448930113Z.log : "bar"
-[2024-07-06 13:56:23.448989065 UTC] baz
-<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.448986289Z.log : "baz"
-[2024-07-06 13:56:23.449036674 UTC] qux
-<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449035743Z.log : "qux"
+# saveThenLimit
+[2024-07-18 08:08:51.172881738 UTC] out of chunk scope 1
+[2024-07-18 08:08:51.172960947 UTC] out of chunk scope 2
+[2024-07-18 08:08:51.172977057 UTC] out of chunk scope 3
+[2024-07-18 08:08:51.172991414 UTC] out of chunk scope 4
 ------
-<runDummyFS> mkdir ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449090566Z-scope2/
-[2024-07-06 13:56:23.44913009 UTC] hoge
-<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449127986Z.log : "hoge"
-<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449090566Z-scope2/2024-07-06T13:56:23.449125371Z.log : "hoge"
-[2024-07-06 13:56:23.449215892 UTC] piyo
-<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449213508Z.log : "piyo"
-<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449090566Z-scope2/2024-07-06T13:56:23.449210612Z.log : "piyo"
-[2024-07-06 13:56:23.449303087 UTC] fuga
-<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449300221Z.log : "fuga"
-<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449090566Z-scope2/2024-07-06T13:56:23.449298909Z.log : "fuga"
-[2024-07-06 13:56:23.449383799 UTC] hogera
-<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449380502Z.log : "hogera"
-<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449090566Z-scope2/2024-07-06T13:56:23.44937926Z.log : "hogera"
+<runDummyFS> mkdir ./log/2024-07-18T08:08:51.17303165Z-scope1/
+<runDummyFS> writeToFile ./log/2024-07-18T08:08:51.17303165Z-scope1/2024-07-18T08:08:51.173071515Z.log : "in scope1 1"
+[2024-07-18 08:08:51.173099437 UTC] in scope1 1
+<runDummyFS> writeToFile ./log/2024-07-18T08:08:51.17303165Z-scope1/2024-07-18T08:08:51.173117962Z.log : "in scope1 2"
+[2024-07-18 08:08:51.173143159 UTC] in scope1 2
+[2024-07-18 08:08:51.173157136 UTC] Subsequent logs are omitted...
+<runDummyFS> writeToFile ./log/2024-07-18T08:08:51.17303165Z-scope1/2024-07-18T08:08:51.173174057Z.log : "in scope1 3"
+<runDummyFS> writeToFile ./log/2024-07-18T08:08:51.17303165Z-scope1/2024-07-18T08:08:51.173208753Z.log : "in scope1 4"
 ------
-[2024-07-06 13:56:23.449513012 UTC] quux
-<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449510688Z.log : "quux"
-[2024-07-06 13:56:23.449560241 UTC] foobar
-<runDummyFS> writeToFile ./log/2024-07-06T13:56:23.447829919Z-scope1/2024-07-06T13:56:23.449558087Z.log : "foobar"
+<runDummyFS> mkdir ./log/2024-07-18T08:08:51.17303165Z-scope1/2024-07-18T08:08:51.173252996Z-scope2/
+<runDummyFS> writeToFile ./log/2024-07-18T08:08:51.17303165Z-scope1/2024-07-18T08:08:51.173252996Z-scope2/2024-07-18T08:08:51.17328742Z.log : "in scope2 1"
+[2024-07-18 08:08:51.173320152 UTC] in scope2 1
+<runDummyFS> writeToFile ./log/2024-07-18T08:08:51.17303165Z-scope1/2024-07-18T08:08:51.173252996Z-scope2/2024-07-18T08:08:51.173340811Z.log : "in scope2 2"
+[2024-07-18 08:08:51.173380014 UTC] in scope2 2
+[2024-07-18 08:08:51.173395143 UTC] Subsequent logs are omitted...
+<runDummyFS> writeToFile ./log/2024-07-18T08:08:51.17303165Z-scope1/2024-07-18T08:08:51.173252996Z-scope2/2024-07-18T08:08:51.173416954Z.log : "in scope2 3"
+<runDummyFS> writeToFile ./log/2024-07-18T08:08:51.17303165Z-scope1/2024-07-18T08:08:51.173252996Z-scope2/2024-07-18T08:08:51.173453883Z.log : "in scope2 4"
+------
+<runDummyFS> writeToFile ./log/2024-07-18T08:08:51.17303165Z-scope1/2024-07-18T08:08:51.173494499Z.log : "in scope1 5"
+<runDummyFS> writeToFile ./log/2024-07-18T08:08:51.17303165Z-scope1/2024-07-18T08:08:51.173522993Z.log : "in scope1 6"
+
+# limitThenSave
+[2024-07-18 08:08:51.173568508 UTC] out of chunk scope 1
+[2024-07-18 08:08:51.173584158 UTC] out of chunk scope 2
+[2024-07-18 08:08:51.173597743 UTC] out of chunk scope 3
+[2024-07-18 08:08:51.173611569 UTC] out of chunk scope 4
+------
+<runDummyFS> mkdir ./log/2024-07-18T08:08:51.173632088Z-scope1/
+<runDummyFS> writeToFile ./log/2024-07-18T08:08:51.173632088Z-scope1/2024-07-18T08:08:51.173661753Z.log : "in scope1 1"
+[2024-07-18 08:08:51.173684326 UTC] in scope1 1
+<runDummyFS> writeToFile ./log/2024-07-18T08:08:51.173632088Z-scope1/2024-07-18T08:08:51.17370233Z.log : "in scope1 2"
+[2024-07-18 08:08:51.173728749 UTC] in scope1 2
+<runDummyFS> writeToFile ./log/2024-07-18T08:08:51.173632088Z-scope1/2024-07-18T08:08:51.173743437Z.log : "Subsequent logs are omitted..."
+[2024-07-18 08:08:51.173763865 UTC] Subsequent logs are omitted...
+------
+<runDummyFS> writeToFile ./log/2024-07-18T08:08:51.173632088Z-scope1/2024-07-18T08:08:51.173799091Z.log : "in scope2 1"
+[2024-07-18 08:08:51.173821103 UTC] in scope2 1
+<runDummyFS> writeToFile ./log/2024-07-18T08:08:51.173632088Z-scope1/2024-07-18T08:08:51.173841321Z.log : "in scope2 2"
+[2024-07-18 08:08:51.173861538 UTC] in scope2 2
+<runDummyFS> writeToFile ./log/2024-07-18T08:08:51.173632088Z-scope1/2024-07-18T08:08:51.173878871Z.log : "Subsequent logs are omitted..."
+[2024-07-18 08:08:51.173905952 UTC] Subsequent logs are omitted...
+------
 -}
