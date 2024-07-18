@@ -421,7 +421,7 @@ interposeRecH ::
     e (Eff u fr ehs efs) ~> Eff u fr ehs efs ->
     Eff u fr ehs efs ~> Eff u fr ehs efs
 interposeRecH f =
-    interpretAllH
+    interpretAllRecH
         \u -> case projectRec u of
             Just e -> f e
             Nothing -> injectH u
