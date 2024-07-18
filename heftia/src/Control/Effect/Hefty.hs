@@ -34,6 +34,7 @@ import Data.Free.Sum (caseF, pattern L1, pattern R1, type (+))
 import Data.Hefty.Union (
     HFunctorUnion,
     HFunctorUnion_ (ForallHFunctor),
+    HasMembershipRec,
     HeadIns,
     LiftInsIfSingle (liftInsIfSingle, unliftInsIfSingle),
     Lookup,
@@ -49,7 +50,6 @@ import Data.Hefty.Union (
     flipUnion,
     flipUnion3,
     flipUnionUnder,
-    inject,
     injectRec,
     projectRec,
     weaken2,
@@ -971,16 +971,16 @@ flipEffUnderH = transformAllH flipUnionUnder
 
 subsume ::
     forall e r ehs fr u c.
-    (Freer c fr, Union u, HFunctor (u ehs), HasMembership u e r) =>
+    (Freer c fr, Union u, HFunctor (u ehs), HasMembershipRec u e r) =>
     Eff u fr ehs (e ': r) ~> Eff u fr ehs r
-subsume = transformAll $ inject |+: id
+subsume = transformAll $ injectRec |+: id
 {-# INLINE subsume #-}
 
 subsumeH ::
     forall e r efs fr u c.
-    (Freer c fr, Union u, HFunctor (u (e ': r)), HasMembership u e r) =>
+    (Freer c fr, Union u, HFunctor (u (e ': r)), HasMembershipRec u e r) =>
     Eff u fr (e ': r) efs ~> Eff u fr r efs
-subsumeH = transformAllH $ inject |+: id
+subsumeH = transformAllH $ injectRec |+: id
 {-# INLINE subsumeH #-}
 
 liftInsEff ::
