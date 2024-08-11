@@ -57,6 +57,9 @@ common common-base
         ghc-typelits-knownnat ^>= 0.7,
         data-effects ^>= 0.1,
         heftia ^>= 0.2,
+        lens,
+        async,
+        data-default,
 
     ghc-options: -Wall -fplugin GHC.TypeLits.KnownNat.Solver
 
@@ -80,6 +83,8 @@ library
         Control.Effect.Handler.Heftia.KVStore
         Control.Effect.Handler.Heftia.Fresh
         Control.Effect.Handler.Heftia.Fail
+        Control.Effect.Handler.Heftia.Concurrent.Pipe.MVar
+        Control.Effect.Handler.Heftia.Concurrent.Pipe.Async
 
     reexported-modules:
         Control.Effect.Hefty,
@@ -126,6 +131,10 @@ library
         Data.Effect.KVStore,
         Data.Effect.Fresh,
         Data.Effect.Fail,
+        Data.Effect.Concurrent.Pipe,
+        Data.Effect.Concurrent.Timer,
+        Data.Effect.Shell,
+        Data.Effect.Foldl,
 
     -- Modules included in this executable, other than Main.
     -- other-modules:
@@ -216,5 +225,13 @@ executable SemanticsZoo
 
     main-is: Main.hs
     hs-source-dirs: Example/SemanticsZoo
+    build-depends:
+        heftia-effects,
+
+executable Pipe
+    import: common-base
+
+    main-is: Main.hs
+    hs-source-dirs: Example/Pipe
     build-depends:
         heftia-effects,
