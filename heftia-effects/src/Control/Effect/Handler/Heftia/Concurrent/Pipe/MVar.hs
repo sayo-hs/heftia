@@ -19,17 +19,39 @@ import Control.Effect.Hefty (
     interpretRec,
     interpretRecH,
     raiseUnder2,
+    raiseUnder3,
     raiseUnderH,
     type ($),
  )
 import Control.Lens (makeLenses, (.~), (?~), (^.))
 import Control.Monad (forever, liftM2)
 import Control.Monad.IO.Class (MonadIO, liftIO)
-import Data.Effect.Concurrent.Pipe
+import Data.Effect.Concurrent.Pipe (
+    Consume (..),
+    Feed (..),
+    LConsume,
+    LFeed,
+    LPipeLineF,
+    PipeF (..),
+    PipeH (..),
+    PipeLine (..),
+    PipeLineF (IsPipeMasked),
+    Yield,
+    defaultPassthrough,
+    fstWaitPipeTo,
+    pipeTo,
+    race,
+    racePipeTo,
+    sndWaitPipeTo,
+    thenStop,
+    waitBoth,
+    (*|*),
+    (*||),
+ )
 import Data.Effect.Reader (Ask (..), Local (..), asks, local)
 import Data.Function ((&))
 import Data.Hefty.Extensible (ForallHFunctor, type (<<|), type (<|))
-import GHC.Conc (atomically)
+import GHC.Conc (TVar, atomically)
 import GHC.Generics (Generic)
 
 data MVarPipeEnv p = MVarPipeEnv
@@ -43,9 +65,11 @@ makeLenses ''MVarPipeEnv
 runMVarPipeLine ::
     forall p eh ef.
     (PipeH <<| eh, PipeF <| ef, Yield <| ef, IO <| ef, ForallHFunctor eh) =>
-    PipeLine p ': eh :!! LFeed p ': LConsume p ': ef ~> eh :!! ef
+    PipeLine p ': eh :!! LPipeLineF p ': LFeed p ': LConsume p ': ef ~> eh :!! ef
 runMVarPipeLine =
-    (raiseUnderH >>> raiseUnder2)
+    (raiseUnderH >>> raiseUnder3)
+        >>> interpretRec \case
+            IsPipeMasked -> asks $ _pipeMasked @p
         >>> interpretRecH \case
             UnmaskPipe a -> local (pipeMasked @p .~ False) a
             MaskPipe a -> local (pipeMasked @p .~ True) a
@@ -59,7 +83,7 @@ runMVarPipeLine =
         >>> interpretRec \case
             TryConsume -> maybe (pure Nothing) (liftIO . tryReadMVar) =<< asks (^. inputMVar @p)
             Consume -> liftIO . maybe (atomically empty) readMVar =<< asks (^. inputMVar @p)
-        >>> runReader @(MVarPipeEnv p) (MVarPipeEnv Nothing Nothing True)
+        >>> runReader (MVarPipeEnv @p Nothing Nothing True)
 
 applyPipeMVar ::
     forall p eh ef.
