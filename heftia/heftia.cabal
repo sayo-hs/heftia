@@ -73,6 +73,8 @@ library
         Control.Monad.Freer.Church
         Control.Monad.Freer.Tree
         Data.Hefty.Union
+        Data.Hefty.Union.Weaken
+        Data.Hefty.Union.Strengthen
         Data.Hefty.Extensible
         Data.Free.Sum
 

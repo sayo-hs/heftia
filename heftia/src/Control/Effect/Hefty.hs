@@ -56,11 +56,15 @@ import Data.Hefty.Union (
     weaken2,
     weaken2Under,
     weaken2Under2,
+    weaken3,
     weaken3Under,
+    weaken4,
     weakenUnder2,
     weakenUnder3,
     (|+),
  )
+import Data.Hefty.Union.Strengthen (Strengthen, StrengthenUnder, strengthenN, strengthenNUnderM)
+import Data.Hefty.Union.Weaken (Weaken, WeakenUnder, weakenN, weakenNUnderM)
 import Data.Kind (Type)
 import Data.Maybe.Singletons (FromJust)
 
@@ -809,12 +813,81 @@ transformAllFH fh ff =
                     (L1 . fh . hfmap (transformAllFH fh ff))
                     (R1 . ff)
 
+raiseN ::
+    forall n ef' eh fr u c ef.
+    (Weaken n ef ef', Freer c fr, Union u, HFunctor (u eh)) =>
+    Eff u fr eh ef ~> Eff u fr eh ef'
+raiseN = transformAll $ weakenN @n
+
+raiseNH ::
+    forall n eh' ef fr u c eh.
+    (Weaken n eh eh', Freer c fr, Union u, HFunctor (u eh)) =>
+    Eff u fr eh ef ~> Eff u fr eh' ef
+raiseNH = transformAllH $ weakenN @n
+
+raiseNUnderM ::
+    forall n m ef' eh fr u c ef.
+    (WeakenUnder n m ef ef', Freer c fr, Union u, HFunctor (u eh)) =>
+    Eff u fr eh ef ~> Eff u fr eh ef'
+raiseNUnderM = transformAll $ weakenNUnderM @n @m
+
+raiseNUnderMH ::
+    forall n m eh' ef fr u c eh.
+    (WeakenUnder n m eh eh', Freer c fr, Union u, HFunctor (u eh)) =>
+    Eff u fr eh ef ~> Eff u fr eh' ef
+raiseNUnderMH = transformAllH $ weakenNUnderM @n @m
+
+subsumeN ::
+    forall n ef' eh fr u c ef.
+    (Strengthen n u ef ef', Freer c fr, Union u, HFunctor (u eh)) =>
+    Eff u fr eh ef ~> Eff u fr eh ef'
+subsumeN = transformAll $ strengthenN @n
+
+subsumeNH ::
+    forall n eh' ef fr u c eh.
+    (Strengthen n u eh eh', Freer c fr, Union u, HFunctor (u eh)) =>
+    Eff u fr eh ef ~> Eff u fr eh' ef
+subsumeNH = transformAllH $ strengthenN @n
+
+subsumeNUnderM ::
+    forall n m ef' eh fr u c ef.
+    (StrengthenUnder n m u ef ef', Freer c fr, Union u, HFunctor (u eh)) =>
+    Eff u fr eh ef ~> Eff u fr eh ef'
+subsumeNUnderM = transformAll $ strengthenNUnderM @n @m
+
+subsumeNUnderMH ::
+    forall n m eh' ef fr u c eh.
+    (StrengthenUnder n m u eh eh', Freer c fr, Union u, HFunctor (u eh)) =>
+    Eff u fr eh ef ~> Eff u fr eh' ef
+subsumeNUnderMH = transformAllH $ strengthenNUnderM @n @m
+
 raise ::
     forall e r ehs fr u c.
     (Freer c fr, Union u, HFunctor (u ehs)) =>
     Eff u fr ehs r ~> Eff u fr ehs (e ': r)
 raise = transformAll weaken
 {-# INLINE raise #-}
+
+raise2 ::
+    forall e2 e1 r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs r ~> Eff u fr ehs (e2 ': e1 ': r)
+raise2 = transformAll weaken2
+{-# INLINE raise2 #-}
+
+raise3 ::
+    forall e3 e2 e1 r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs r ~> Eff u fr ehs (e3 ': e2 ': e1 ': r)
+raise3 = transformAll weaken3
+{-# INLINE raise3 #-}
+
+raise4 ::
+    forall e4 e3 e2 e1 r ehs fr u c.
+    (Freer c fr, Union u, HFunctor (u ehs)) =>
+    Eff u fr ehs r ~> Eff u fr ehs (e4 ': e3 ': e2 ': e1 ': r)
+raise4 = transformAll weaken4
+{-# INLINE raise4 #-}
 
 raiseH ::
     forall e r efs fr u c.
@@ -829,6 +902,20 @@ raise2H ::
     Eff u fr r efs ~> Eff u fr (e2 ': e1 ': r) efs
 raise2H = transformAllH weaken2
 {-# INLINE raise2H #-}
+
+raise3H ::
+    forall e3 e2 e1 r efs fr u c.
+    (Freer c fr, Union u, HFunctor (u r)) =>
+    Eff u fr r efs ~> Eff u fr (e3 ': e2 ': e1 ': r) efs
+raise3H = transformAllH weaken3
+{-# INLINE raise3H #-}
+
+raise4H ::
+    forall e4 e3 e2 e1 r efs fr u c.
+    (Freer c fr, Union u, HFunctor (u r)) =>
+    Eff u fr r efs ~> Eff u fr (e4 ': e3 ': e2 ': e1 ': r) efs
+raise4H = transformAllH weaken4
+{-# INLINE raise4H #-}
 
 raiseUnder ::
     forall e1 e2 r ehs fr u c.

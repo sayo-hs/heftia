@@ -216,7 +216,6 @@ This is indeed true in terms of its internal mechanisms as well.
 ## Future Plans
 * Enriching the documentation and tests
 * Completing missing definitions such as
-    * `raise`, `raiseUnder`, and `subsume` for arbitrary numbers of effects by type classes.
     * more patterns of interpret & transform function-families.
     * handlers for the `Accum` and others effect classes
 
