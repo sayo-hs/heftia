@@ -4,8 +4,9 @@
 
 module Main where
 
-import Control.Effect.Handler.Heftia.Concurrent.Pipe.Async (runAsyncPipe)
-import Control.Effect.Handler.Heftia.Concurrent.Pipe.MVar (runMVarPipeLine)
+import Control.Concurrent (newEmptyMVar)
+import Control.Effect.Handler.Heftia.Concurrent.Pipe.IO (runAsyncPipe)
+import Control.Effect.Handler.Heftia.Concurrent.Pipe.IO.TVar.MVar (runMVarPipeLine)
 import Control.Effect.Handler.Heftia.Unlift (runUnliftIO)
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect.Concurrent.Pipe (
@@ -13,24 +14,31 @@ import Data.Effect.Concurrent.Pipe (
     feed,
     passthrough,
     pipeLoop,
-    unmaskPipe,
+    unmaskPipe_,
+    (*|*>),
     (*|>),
     (|*>),
-    (|>),
  )
 
 main :: IO ()
-main = runUnliftIO
-    . runAsyncPipe
-    . runMVarPipeLine @String
-    $ do
-        unmaskPipe @String do
-            _ <- feed "direct pipe test" |> (liftIO . putStrLn =<< consume)
-            _ <- feed "passthrough test" *|> passthrough |*> (liftIO . putStrLn =<< consume)
-            _ <- pipeLoop @String do
-                feed "loop test"
-                liftIO . putStrLn =<< consume
-            pure ()
+main = do
+    v <- newEmptyMVar
+
+    runUnliftIO
+        . runAsyncPipe
+        . runMVarPipeLine @String v v
+        $ do
+            unmaskPipe_ @String do
+                _ <- feed "direct pipe test" *|*> (liftIO . putStrLn =<< consume)
+                _ <-
+                    feed "passthrough test"
+                        *|> passthrough
+                        *|*> passthrough
+                        |*> (liftIO . putStrLn =<< consume)
+                _ <- pipeLoop @String do
+                    feed "loop test"
+                    liftIO . putStrLn =<< consume
+                pure ()
 
 {- result:
 direct pipe test

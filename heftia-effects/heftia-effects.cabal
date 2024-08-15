@@ -83,8 +83,9 @@ library
         Control.Effect.Handler.Heftia.KVStore
         Control.Effect.Handler.Heftia.Fresh
         Control.Effect.Handler.Heftia.Fail
-        Control.Effect.Handler.Heftia.Concurrent.Pipe.MVar
-        Control.Effect.Handler.Heftia.Concurrent.Pipe.Async
+        Control.Effect.Handler.Heftia.Concurrent.Pipe.IO
+        Control.Effect.Handler.Heftia.Concurrent.Pipe.IO.TVar
+        Control.Effect.Handler.Heftia.Concurrent.Pipe.IO.TVar.MVar
 
     reexported-modules:
         Control.Effect.Hefty,
@@ -148,6 +149,7 @@ library
         unliftio                      ^>= 0.2.0,
         free                          ^>= 5.2,
         containers                    ^>= 0.6.5,
+        extra,
 
     hs-source-dirs:   src
 
@@ -155,11 +157,17 @@ test-suite test
     import: common-base
 
     main-is: Driver.hs
+    other-modules:
+        Test.Pipe.MVar
+
     hs-source-dirs: test
+
     build-depends:
         heftia-effects,
         tasty                         ^>= 1.4,
-        tasty-hunit                   ^>= 0.10,
+        tasty-hspec,
+        hspec,
+        unliftio,
 
     build-tool-depends:
         tasty-discover:tasty-discover
