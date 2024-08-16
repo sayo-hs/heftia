@@ -86,6 +86,7 @@ library
         Control.Effect.Handler.Heftia.Concurrent.Pipe.IO
         Control.Effect.Handler.Heftia.Concurrent.Pipe.IO.TVar
         Control.Effect.Handler.Heftia.Concurrent.Pipe.IO.TVar.MVar
+        Control.Effect.Handler.Heftia.Concurrent.Timer
 
     reexported-modules:
         Control.Effect.Hefty,
@@ -150,6 +151,8 @@ library
         free                          ^>= 5.2,
         containers                    ^>= 0.6.5,
         extra,
+        time,
+        unbounded-delays,
 
     hs-source-dirs:   src
 
