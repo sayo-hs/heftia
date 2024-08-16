@@ -22,15 +22,22 @@ import Control.Effect.Hefty (
     interposeK,
     interposeT,
     interpretK,
+    interpretRec,
     interpretRecH,
     interpretT,
  )
+import Control.Exception (Exception)
 import Control.Monad.Freer (MonadFreer)
 import Control.Monad.Trans.Except (ExceptT, runExceptT, throwE)
 import Data.Effect.Except (Catch (Catch), LThrow, Throw (Throw))
 import Data.Effect.HFunctor (HFunctor)
+import Data.Effect.Unlift (UnliftIO)
 import Data.Function ((&))
+import Data.Hefty.Extensible (ForallHFunctor, type (<<|), type (<|))
+import Data.Hefty.Extensible qualified as Ex
 import Data.Hefty.Union (Member, Union)
+import UnliftIO (throwIO)
+import UnliftIO qualified as IO
 
 -- | Interpret the "Data.Effect.Except" effects using the 'ExceptT' monad transformer internally.
 runExcept ::
@@ -112,3 +119,17 @@ runThrowK ::
     Eff u fr '[] (LThrow e ': r) a ->
     Eff u fr '[] r (Either e a)
 runThrowK = interpretK (pure . Right) \_ (Throw e) -> pure $ Left e
+
+runThrowIO ::
+    forall e eh ef fr c.
+    (MonadFreer c fr, IO <| ef, ForallHFunctor eh, Exception e) =>
+    Ex.Eff fr eh (LThrow e ': ef) ~> Ex.Eff fr eh ef
+runThrowIO = interpretRec \(Throw e) -> throwIO e
+{-# INLINE runThrowIO #-}
+
+runCatchIO ::
+    forall e eh ef fr c.
+    (MonadFreer c fr, UnliftIO <<| eh, IO <| ef, ForallHFunctor eh, Exception e) =>
+    Ex.Eff fr (Catch e ': eh) ef ~> Ex.Eff fr eh ef
+runCatchIO = interpretRecH \(Catch action hdl) -> IO.catch action hdl
+{-# INLINE runCatchIO #-}

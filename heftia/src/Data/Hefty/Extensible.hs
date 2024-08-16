@@ -20,6 +20,8 @@ module Data.Hefty.Extensible (
     Forall,
 ) where
 
+import Control.Effect.Free qualified as E
+import Control.Effect.Hefty qualified as E
 import Data.Effect (SigClass)
 import Data.Effect.HFunctor (HFunctor, hfmap)
 import Data.Extensible (Forall, Match (Match), htabulateFor, match)
@@ -125,3 +127,6 @@ type UH eh = Union.UH ExtensibleUnion eh
 
 type S ef = Union.S ExtensibleUnion ef
 type SH eh = Union.SH ExtensibleUnion eh
+
+type Eff fr eh ef = E.Eff ExtensibleUnion fr eh ef
+type EffF fr es = E.EffF ExtensibleUnion fr es
