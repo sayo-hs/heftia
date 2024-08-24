@@ -27,6 +27,58 @@ There may be significant changes and potential bugs.
 
 **We are looking forward to your feedback!**
 
+## Installation
+1.
+    ```console
+    $ cabal update
+    ```
+2. Add `heftia-effects ^>= 0.2` and `ghc-typelits-knownnat ^>= 0.7` to the build dependencies. Enable the [ghc-typelits-knownnat](https://hackage.haskell.org/package/ghc-typelits-knownnat) plugin, `GHC2021`, and the following language extensions as needed:
+
+    * `LambdaCase`
+    * `DerivingStrategies`
+    * `DataKinds`
+    * `TypeFamilies`
+    * `BlockArguments`
+    * `FunctionalDependencies`
+    * `RecordWildCards`
+    * `DefaultSignatures`
+    * `PatternSynonyms`
+    * `TemplateHaskell`
+    * `PartialTypeSignatures`
+    * `AllowAmbiguousTypes`
+
+Example .cabal:
+
+```
+...
+    build-depends:
+        ...
+        heftia-effects ^>= 0.2,
+        ghc-typelits-knownnat ^>= 0.7,
+
+    default-language: GHC2021
+
+    default-extensions:
+        ...
+        LambdaCase,
+        DerivingStrategies,
+        DataKinds,
+        TypeFamilies,
+        BlockArguments,
+        FunctionalDependencies,
+        RecordWildCards,
+        DefaultSignatures,
+        PatternSynonyms,
+        TemplateHaskell,
+        PartialTypeSignatures,
+        AllowAmbiguousTypes
+
+    ghc-options: ... -fplugin GHC.TypeLits.KnownNat.Solver
+...
+```
+
+This library has been tested to work with GHC 9.2.8.
+
 ## Getting Started
 To run the [SemanticsZoo example](https://github.com/sayo-hs/heftia/blob/232599fbdfaf13dcf009f40585369e0ec71fd0bd/heftia-effects/Example/SemanticsZoo/Main.hs):
 ```console
@@ -51,24 +103,6 @@ $ cabal run exe:SemanticsZoo
 [Note] All other permutations will cause type errors.
 $
 ```
-
-If you are writing code from scratch, this library assumes the following GHC extensions and a plugin. Especially when using TemplateHaskell functions like `makeEffectF/H`, you will need to enable the following:
-* GHC2021
-* LambdaCase
-* DerivingStrategies
-* DataKinds
-* TypeFamilies
-* BlockArguments
-* FunctionalDependencies
-* RecordWildCards
-* DefaultSignatures
-* PatternSynonyms
-* TemplateHaskell
-* PartialTypeSignatures
-* AllowAmbiguousTypes
-* [ghc-typelits-knownnat](https://hackage.haskell.org/package/ghc-typelits-knownnat)
-
-This library has been tested to work with GHC 9.2.8.
 
 ## Example
 
