@@ -220,7 +220,7 @@ For more details, please refer to the documentation of the `interpretRec` family
 
 [^1]: limitation: https://github.com/sayo-hs/heftia?tab=readme-ov-file#the-reset-behavior-of-the-scopes-held-by-unhandled-higher-order-effects
 [^2]: https://gist.github.com/ymdryo/6fb2f7f4020c6fcda98ccc67c090dc75
-[^3]: potential for 'unhandled' runtime errors
+[^3]: Effects do not appear in the type signature and can potentially cause unhandled errors at runtime
 
 Heftia can simply be described as a higher-order version of freer-simple.
 This is indeed true in terms of its internal mechanisms as well.
