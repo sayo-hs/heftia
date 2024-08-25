@@ -201,25 +201,26 @@ For more details, please refer to the documentation of the `interpretRec` family
 
 * Higher-Order Effects: Does it support higher-order effects?
 * Delimited Continuation: The ability to manipulate delimited continuations.
-* Statically Typed Set of Effects: For a term representing an effectful program, is it possible to statically decidable a type that enumerates all the effects the program may produce?
+* Effect System: For a term representing an effectful program, is it possible to statically decidable a type that enumerates all the effects the program may produce?
 * Purely Monadic: Is an effectful program represented as a transparent data structure that is a monad, and can it be interpreted into other data types using only pure operations without side effects or `unsafePerformIO`?
 * Dynamic Effect Rewriting: Can an effectful program have its internal effects altered afterwards (by functions typically referred to as `handle with`, `intercept`, `interpose`, `transform`, `translate`, or `rewrite`) ?
 * Performance: Time complexity or space complexity.
 
-| Library or Language | Higher-Order Effects | Delimited Continuation | Statically Typed Set of Effects                 | Purely Monadic                    | Dynamic Effect Rewriting | Performance (TODO) |
-| ------------------- | -------------------- | ---------------------- | ----------------------------------------------- | --------------------------------- | ------------------------ | ------------------ |
-| Heftia              | Yes [^1]             | Multi-shot             | Yes                                             | Yes (also Applicative and others) | Yes                      | ?                  |
-| freer-simple        | No                   | Multi-shot             | Yes                                             | Yes                               | Yes                      | ?                  |
-| Polysemy            | Yes                  | No                     | Yes                                             | Yes                               | Yes                      | ?                  |
-| Effectful           | Yes                  | No                     | Yes                                             | No (based on the `IO` monad)      | Yes                      | ?                  |
-| eff                 | Yes                  | Multi-shot?            | Yes                                             | No (based on the `IO` monad)      | Yes                      | Fast               |
-| mtl                 | Yes                  | Multi-shot (`ContT`)   | Yes                                             | Yes                               | No                       | ?                  |
-| fused-effects       | Yes                  | No?                    | Yes                                             | Yes                               | No                       | ?                  |
-| koka-lang           | No?                  | Multi-shot             | Yes                                             | No (language built-in)            | ?                        | ?                  |
-| OCaml-lang 5        | Yes                  | One-shot               | No [^2]                                         | No (language built-in)            | ?                        | ?                  |
+| Library or Language | Higher-Order Effects | Delimited Continuation | Effect System | Purely Monadic                    | Dynamic Effect Rewriting | Performance (TODO) |
+| ------------------- | -------------------- | ---------------------- | --------------| --------------------------------- | ------------------------ | ------------------ |
+| Heftia              | Yes [^1]             | Multi-shot             | Yes           | Yes (also Applicative and others) | Yes                      | ?                  |
+| freer-simple        | No                   | Multi-shot             | Yes           | Yes                               | Yes                      | ?                  |
+| Polysemy            | Yes                  | No                     | Yes           | Yes                               | Yes                      | ?                  |
+| Effectful           | Yes                  | No                     | Yes           | No (based on the `IO` monad)      | Yes                      | ?                  |
+| eff                 | Yes                  | Multi-shot?            | Yes           | No (based on the `IO` monad)      | Yes                      | Fast               |
+| mtl                 | Yes                  | Multi-shot (`ContT`)   | Yes           | Yes                               | No                       | ?                  |
+| fused-effects       | Yes                  | No?                    | Yes           | Yes                               | No                       | ?                  |
+| koka-lang           | No [^2]              | Multi-shot             | Yes           | No (language built-in)            | Yes                      | ?                  |
+| OCaml-lang 5        | ?                    | One-shot               | No [^3]       | No (language built-in)            | ?                        | ?                  |
 
 [^1]: limitation: https://github.com/sayo-hs/heftia?tab=readme-ov-file#the-reset-behavior-of-the-scopes-held-by-unhandled-higher-order-effects
-[^2]: potential for 'unhandled' runtime errors
+[^2]: https://gist.github.com/ymdryo/6fb2f7f4020c6fcda98ccc67c090dc75
+[^3]: potential for 'unhandled' runtime errors
 
 Heftia can simply be described as a higher-order version of freer-simple.
 This is indeed true in terms of its internal mechanisms as well.
