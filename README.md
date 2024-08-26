@@ -43,9 +43,6 @@ There may be significant changes and potential bugs.
     * `RecordWildCards`
     * `DefaultSignatures`
     * `PatternSynonyms`
-    * `TemplateHaskell`
-    * `PartialTypeSignatures`
-    * `AllowAmbiguousTypes`
 
 Example .cabal:
 
