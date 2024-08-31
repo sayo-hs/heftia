@@ -179,8 +179,7 @@ Heftia is the current main focus of the [Sayo Project](https://github.com/sayo-h
 The example codes are located in the [heftia-effects/Example/](https://github.com/sayo-hs/heftia/tree/232599fbdfaf13dcf009f40585369e0ec71fd0bd/heftia-effects/Example) directory.
 Also, the following *HeftWorld* example: https://github.com/sayo-hs/HeftWorld
 
-~~Examples with explanations can be found in the [docs/examples/](https://github.com/sayo-hs/heftia/tree/master/docs/examples) directory.~~ Documents have become outdated.
-Please wait for the documentation for the new version to be written.
+Examples with explanations in Japanese can be found in the [docs-ja/examples/](https://github.com/sayo-hs/heftia/tree/master/docs-ja/examples) directory.
 
 ## Limitation and how to avoid it
 ### The *reset* behavior of the scopes held by unhandled higher-order effects
@@ -256,7 +255,7 @@ This is indeed true in terms of its internal mechanisms as well.
 
 ## License
 The license is MPL 2.0. Please refer to the [NOTICE](https://github.com/sayo-hs/heftia/blob/232599fbdfaf13dcf009f40585369e0ec71fd0bd/NOTICE).
-Additionally, this README.md and the documents under the `docs`/`docs-ja` directory are licensed
+Additionally, this README.md and the documents under the `docs-ja` directory are licensed
 under CC BY-SA 4.0.
 
 ## Your contributions are welcome!
