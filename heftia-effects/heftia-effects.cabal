@@ -203,8 +203,6 @@ executable Logging
         heftia-effects,
         text ^>= 1.2.5,
         time ^>= 1.11.1,
-        loglevel ^>= 0.1.0,
-        extra ^>= 1.7.14,
 
 executable Continuation
     import: common-base
