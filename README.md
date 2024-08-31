@@ -181,18 +181,6 @@ Also, the following *HeftWorld* example: https://github.com/sayo-hs/HeftWorld
 
 Examples with explanations in Japanese can be found in the [docs-ja/examples/](https://github.com/sayo-hs/heftia/tree/master/docs-ja/examples) directory.
 
-## Limitation and how to avoid it
-### The *reset* behavior of the scopes held by unhandled higher-order effects
-When attempting to interpret an effect while there are unhandled higher-order effects present, you cannot obtain delimited continuations beyond the action scope held by these unhandled higher-order effects.
-It appears as if a *reset* (in the sense of *shift/reset*) is applied to each of the scopes still held by the remaining unhandled higher-order effects.
-
-In other words, to obtain delimited continuations beyond their scope, it is necessary to first handle and eliminate all higher-order effects that hold those scopes,
-and then handle the effect targeted for stateful interpretation in that order.
-For this purpose, it might sometimes be possible to use *multi-layering*. For an example of multi-layering,
-see `handleReaderThenShift` defined in [Example/Continuation2](https://github.com/sayo-hs/heftia/blob/8f71a2d4e6125018b64cbbacd32151565a29046d/heftia-effects/Example/Continuation2/Main.hs)
-(particularly, the type signature of `prog` within it).
-For more details, please refer to the documentation of the `interpretRec` family of functions.
-
 ## Comparison
 
 * Higher-Order Effects: Does it support higher-order effects?
@@ -204,7 +192,7 @@ For more details, please refer to the documentation of the `interpretRec` family
 
 | Library or Language | Higher-Order Effects | Delimited Continuation | Effect System | Purely Monadic                    | Dynamic Effect Rewriting | Performance (TODO) |
 | ------------------- | -------------------- | ---------------------- | --------------| --------------------------------- | ------------------------ | ------------------ |
-| Heftia              | Yes [^1]             | Multi-shot             | Yes           | Yes (also Applicative and others) | Yes                      | ?                  |
+| Heftia              | Yes                  | Multi-shot             | Yes           | Yes (also Applicative and others) | Yes                      | ?                  |
 | freer-simple        | No                   | Multi-shot             | Yes           | Yes                               | Yes                      | ?                  |
 | Polysemy            | Yes                  | No                     | Yes           | Yes                               | Yes                      | ?                  |
 | Effectful           | Yes                  | No                     | Yes           | No (based on the `IO` monad)      | Yes                      | ?                  |
@@ -214,7 +202,6 @@ For more details, please refer to the documentation of the `interpretRec` family
 | koka-lang           | No [^2]              | Multi-shot             | Yes           | No (language built-in)            | Yes                      | ?                  |
 | OCaml-lang 5        | ?                    | One-shot               | No [^3]       | No (language built-in)            | ?                        | ?                  |
 
-[^1]: limitation: https://github.com/sayo-hs/heftia?tab=readme-ov-file#the-reset-behavior-of-the-scopes-held-by-unhandled-higher-order-effects
 [^2]: https://gist.github.com/ymdryo/6fb2f7f4020c6fcda98ccc67c090dc75
 [^3]: Effects do not appear in the type signature and can potentially cause unhandled errors at runtime
 
@@ -234,7 +221,7 @@ This is indeed true in terms of its internal mechanisms as well.
 
 * GADTs for higher-order effects need to be instances of the [HFunctor](https://hackage.haskell.org/package/compdata-0.13.1/docs/Data-Comp-Multi-HFunctor.html#t:HFunctor) type class for convenient usage.
     While it is still possible to use them without being instances of `HFunctor`,
-    the `interpretRec` family of functions cannot be used when higher-order effects that are not `HFunctor` are unhandled.
+    the `interpretRec` family of functions cannot be used when higher-order effects that are not `HFunctor` are unelaborated.
     If this issue is not a concern, the GADT representation of higher-order effects is compatible with Polysemy and fused-effects.
     It is not compatible with Effectful and eff.
 
@@ -248,7 +235,7 @@ This is indeed true in terms of its internal mechanisms as well.
 * Enriching the documentation and tests
 * Completing missing definitions such as
     * more patterns of interpret & transform function-families.
-    * handlers for the `Accum` and others effect classes
+    * interpreters for the `Accum` and others effect classes
 
     and others.
 * Benchmarking
