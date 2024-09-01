@@ -9,7 +9,7 @@ module Main where
 
 import Control.Effect (type (~>))
 import Control.Effect.ExtensibleChurch (runEff, type (:!!))
-import Control.Effect.Hefty (interposeK, interpretRec, interpretRecH)
+import Control.Effect.Hefty (Elab, interposeK, interpretRec, interpretRecH)
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect.TH (makeEffectF, makeEffectH)
 import Data.Function ((&))
@@ -28,10 +28,10 @@ data ResetFork f a where
     ResetFork :: Monoid w => f w -> ResetFork f w
 makeEffectH [''ResetFork]
 
-applyResetFork :: Fork <| r => Int -> ResetFork ('[] :!! r) ~> '[] :!! r
+applyResetFork :: Fork <| r => Int -> Elab ResetFork ('[] :!! r)
 applyResetFork numberOfFork (ResetFork m) =
-    m & interposeK pure \k Fork -> do
-        r <- mapM k [1 .. numberOfFork]
+    m & interposeK pure \resume Fork -> do
+        r <- mapM resume [1 .. numberOfFork]
         pure $ mconcat r
 
 main :: IO ()
