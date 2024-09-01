@@ -9,7 +9,7 @@
 * Redesign from scratch.
 * Released as a beta version.
 
-## 0.2.1.0 -- 2024-09-01
+## 0.3.0.0 -- 2024-09-01
 
 * Fixed #7: bug on `interposeRecH`. https://github.com/sayo-hs/heftia/issues/7
 * Fixed #8: bug on `subsume`. https://github.com/sayo-hs/heftia/issues/8

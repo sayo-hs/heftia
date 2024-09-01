@@ -1,6 +1,6 @@
 cabal-version:      2.4
 name:               heftia-effects
-version:            0.2.0.0
+version:            0.3.0.0
 
 -- A short (one-line) description of the package.
 synopsis: higher-order effects done right
@@ -56,7 +56,7 @@ common common-base
         base ^>= 4.16,
         ghc-typelits-knownnat ^>= 0.7,
         data-effects ^>= 0.1.1,
-        heftia ^>= 0.2,
+        heftia ^>= 0.3,
 
     ghc-options: -Wall -fplugin GHC.TypeLits.KnownNat.Solver
 
@@ -141,9 +141,9 @@ library
         unliftio                      ^>= 0.2.0,
         free                          ^>= 5.2,
         containers                    ^>= 0.6.5,
-        extra,
-        time,
-        unbounded-delays,
+        extra                         ^>= 1.7.14,
+        time                          ^>= 1.11.1,
+        unbounded-delays              ^>= 0.1.1,
 
     hs-source-dirs:   src
 
