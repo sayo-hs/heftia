@@ -165,7 +165,7 @@ Pre-applying: Goodbye world!
 Post-applying: Hello world!!
 ```
 
-For more details, please refer to the [complete code](https://github.com/sayo-hs/heftia/blob/develop/heftia-effects/Example/Writer/Main.hs) and the [implementation of the elaborator](https://github.com/sayo-hs/heftia/blob/develop/heftia-effects/src/Control/Effect/Handler/Heftia/Writer.hs).
+For more details, please refer to the [complete code](https://github.com/sayo-hs/heftia/blob/develop/heftia-effects/Example/Writer/Main.hs) and the [implementation of the elaborator](https://github.com/sayo-hs/heftia/blob/develop/heftia-effects/src/Control/Effect/Interpreter/Heftia/Writer.hs).
 
 Furthermore, the structure of Heftia is theoretically straightforward, with ad-hoc elements being
 eliminated.

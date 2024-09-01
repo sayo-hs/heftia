@@ -13,7 +13,7 @@ Portability :  portable
 
 An elaborator for the t'Control.Effect.Class.Resource.Resource' effect class.
 -}
-module Control.Effect.Handler.Heftia.Resource where
+module Control.Effect.Interpreter.Heftia.Resource where
 
 import Control.Effect.Hefty (Elab)
 import Data.Effect.Resource (Resource (Bracket, BracketOnExcept))

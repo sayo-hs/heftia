@@ -2,7 +2,7 @@
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-module Control.Effect.Handler.Heftia.Coroutine where
+module Control.Effect.Interpreter.Heftia.Coroutine where
 
 import Control.Effect.Hefty (Eff, interpretK)
 import Control.Monad.Freer (MonadFreer)

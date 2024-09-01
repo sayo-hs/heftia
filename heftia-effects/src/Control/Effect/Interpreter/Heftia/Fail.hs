@@ -9,7 +9,7 @@ Maintainer  :  ymdfield@outlook.jp
 Stability   :  experimental
 Portability :  portable
 -}
-module Control.Effect.Handler.Heftia.Fail where
+module Control.Effect.Interpreter.Heftia.Fail where
 
 import Control.Effect (sendIns, type (~>))
 import Control.Effect.Hefty (Eff, interpret)
