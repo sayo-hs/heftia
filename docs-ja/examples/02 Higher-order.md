@@ -742,4 +742,5 @@ liftIO $ putStrLn "------"
 
 ---
 
-パートの例で使用したコードの全体は[GitHub](TODO)にある。
+本パートの例で使用したコードの全体は[heftia-effects/Example/Logging/](https://github.com/sayo-hs/heftia/blob/v0.3.0/heftia-effects/Example/Logging/Main.hs)にある。
+

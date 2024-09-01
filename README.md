@@ -77,7 +77,7 @@ Example .cabal:
 This library has been tested to work with GHC 9.2.8.
 
 ## Getting Started
-To run the [SemanticsZoo example](https://github.com/sayo-hs/heftia/blob/232599fbdfaf13dcf009f40585369e0ec71fd0bd/heftia-effects/Example/SemanticsZoo/Main.hs):
+To run the [SemanticsZoo example](https://github.com/sayo-hs/heftia/blob/v0.3.0/heftia-effects/Example/SemanticsZoo/Main.hs):
 ```console
 $ git clone https://github.com/sayo-hs/heftia
 $ cd heftia/heftia-effects
@@ -112,7 +112,7 @@ are some examples:
 In handling higher-order effects, it's easy to work with **multi-shot delimited continuations**.
 This enables an almost complete emulation of "Algebraic Effects and Handlers".
 For more details, please refer to
-the [example code](https://github.com/sayo-hs/heftia/blob/232599fbdfaf13dcf009f40585369e0ec71fd0bd/heftia-effects/Example/Continuation/Main.hs).
+the [example code](https://github.com/sayo-hs/heftia/blob/v0.3.0/heftia-effects/Example/Continuation/Main.hs).
 
 ### Two interpretations of the `censor` effect for Writer
 
@@ -165,7 +165,7 @@ Pre-applying: Goodbye world!
 Post-applying: Hello world!!
 ```
 
-For more details, please refer to the [complete code](https://github.com/sayo-hs/heftia/blob/develop/heftia-effects/Example/Writer/Main.hs) and the [implementation of the elaborator](https://github.com/sayo-hs/heftia/blob/develop/heftia-effects/src/Control/Effect/Interpreter/Heftia/Writer.hs).
+For more details, please refer to the [complete code](https://github.com/sayo-hs/heftia/blob/v0.3.0/heftia-effects/Example/Writer/Main.hs) and the [implementation of the elaborator](https://github.com/sayo-hs/heftia/blob/v0.3.0/heftia-effects/src/Control/Effect/Interpreter/Heftia/Writer.hs).
 
 Furthermore, the structure of Heftia is theoretically straightforward, with ad-hoc elements being
 eliminated.
@@ -176,10 +176,10 @@ This may be useful when writing concurrent effectful code.
 Heftia is the current main focus of the [Sayo Project](https://github.com/sayo-hs).
 
 ## Documentation
-The example codes are located in the [heftia-effects/Example/](https://github.com/sayo-hs/heftia/tree/232599fbdfaf13dcf009f40585369e0ec71fd0bd/heftia-effects/Example) directory.
+The example codes are located in the [heftia-effects/Example/](https://github.com/sayo-hs/heftia/tree/v0.3.0/heftia-effects/Example) directory.
 Also, the following *HeftWorld* example: https://github.com/sayo-hs/HeftWorld
 
-Examples with explanations in Japanese can be found in the [docs-ja/examples/](https://github.com/sayo-hs/heftia/tree/master/docs-ja/examples) directory.
+Examples with explanations in Japanese can be found in the [docs-ja/examples/](https://github.com/sayo-hs/heftia/tree/v0.3.0/docs-ja/examples) directory.
 
 ## Comparison
 
@@ -241,12 +241,12 @@ This is indeed true in terms of its internal mechanisms as well.
 * Benchmarking
 
 ## License
-The license is MPL 2.0. Please refer to the [NOTICE](https://github.com/sayo-hs/heftia/blob/232599fbdfaf13dcf009f40585369e0ec71fd0bd/NOTICE).
+The license is MPL 2.0. Please refer to the [NOTICE](https://github.com/sayo-hs/heftia/blob/v0.3.0/NOTICE).
 Additionally, this README.md and the documents under the `docs-ja` directory are licensed
 under CC BY-SA 4.0.
 
 ## Your contributions are welcome!
-Please see [CONTRIBUTING.md](https://github.com/sayo-hs/heftia/blob/232599fbdfaf13dcf009f40585369e0ec71fd0bd/CONTRIBUTING.md).
+Please see [CONTRIBUTING.md](https://github.com/sayo-hs/heftia/blob/v0.3.0/CONTRIBUTING.md).
 
 ## Credits
 Parts of this project have been inspired by the following resources:

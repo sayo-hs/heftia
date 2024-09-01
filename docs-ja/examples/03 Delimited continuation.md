@@ -108,10 +108,5 @@ scope exited. result: (1,1)(1,2)(1,3)(1,4)(2,1)(2,2)(2,3)(2,4)(3,1)(3,2)(3,3)(3,
 
 Haskell上でEffect Systemを実現するライブラリは数多くあるが、いわゆる「Algebraic Effects and Handlers」で可能なこと（限定継続の取り出しとそれを用いたモジュラーな高階エフェクトのハンドリング）をほぼフルでエミュレートできるのは、Hefty Algebrasに基づくElaboration方式のみのようだ。
 
-以上で、本ライブラリの入門編は終わりになる。本ライブラリの"感覚"を掴むための最低限の説明をしたつもりだ。まだまだ説明できなかった事柄がたくさんあるので、各自Haddockを辿るか、次のシリーズである応用編が書かれるのを待ってほしい！Haddockに関してはほとんどドキュメントは書けていない。ドキュメントの整備を手伝ってくれる人は大歓迎だ！
+本パートの例で使用したコードの全体は[heftia-effects/Example/Continuation/](https://github.com/sayo-hs/heftia/blob/v0.3.0/heftia-effects/Example/Continuation/Main.hs)にある。
 
-本シリーズを英訳してくれる人も募集中です。
-
----
-
-本パートの例で使用したコードの全体は[GitHub](TODO)にある。
