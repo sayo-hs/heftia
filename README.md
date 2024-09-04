@@ -222,7 +222,7 @@ Additionally, this library provides a consistent *continuation-based* semantics 
 On the other hand, in libraries like in-other-words, mtl, and fused-effects, the semantics of the code depend on the effect and, in part, the carrier inferred by type inference.
 Fixing the semantics to a *continuation-based* model helps improve the predictability of the behavior (interpretation result) of the code.
 
-In situations where types are implicit, this may lead to unexpected behavior for the code reader.
+Carrier-dependent semantics can lead to unexpected behavior for code readers, particularly in situations where the types become implicit.
 Particularly, attention should be given to the fact that due to type inference, semantic changes may propagate beyond the blocks enclosed by `interpret` or `interpose`.
 In the case of carrier-independent semantics, especially with Freer-based effects, `interpret` and `interpose` do not alter the semantics by intervening in type inference or instance resolution of the carrier.
 Instead, they function as traditional functions, simply transforming the content of the data structure.
