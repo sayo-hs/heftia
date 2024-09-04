@@ -205,7 +205,7 @@ Examples with explanations in Japanese can be found in the [docs-ja/examples/](h
 | freer-simple        | No                   | Multi-shot             | Yes           | Yes                               | Yes                      | continuation-based               | ?                  |
 | Polysemy            | Yes                  | No                     | Yes           | Yes                               | Yes                      | weaving-based (functorial state) | ?                  |
 | Effectful           | Yes                  | No                     | Yes           | No (based on the `IO` monad)      | Yes                      | IO-based                         | ?                  |
-| eff                 | Yes                  | Multi-shot?            | Yes           | No (based on the `IO` monad)      | Yes                      | continuation-based (IO-fused)    | Fast               |
+| eff                 | Yes                  | Multi-shot?            | Yes           | No (based on the `IO` monad)      | Yes                      | continuation-based (IO-fused)    | ?                  |
 | in-other-words      | Yes                  | Multi-shot?            | Yes           | Yes                               | No?                      | carrier dependent                | ?                  |
 | mtl                 | Yes                  | Multi-shot (`ContT`)   | Yes           | Yes                               | No                       | carrier dependent                | ?                  |
 | fused-effects       | Yes                  | No?                    | Yes           | Yes                               | No                       | carrier dependent & weaving-based (functorial state) | ?                  |
