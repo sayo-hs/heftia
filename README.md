@@ -32,7 +32,7 @@ There may be significant changes and potential bugs.
     ```console
     $ cabal update
     ```
-2. Add `heftia-effects ^>= 0.2` and `ghc-typelits-knownnat ^>= 0.7` to the build dependencies. Enable the [ghc-typelits-knownnat](https://hackage.haskell.org/package/ghc-typelits-knownnat) plugin, `GHC2021`, and the following language extensions as needed:
+2. Add `heftia-effects ^>= 0.3.1` and `ghc-typelits-knownnat ^>= 0.7` to the build dependencies. Enable the [ghc-typelits-knownnat](https://hackage.haskell.org/package/ghc-typelits-knownnat) plugin, `GHC2021`, and the following language extensions as needed:
 
     * `LambdaCase`
     * `DerivingStrategies`
@@ -50,7 +50,7 @@ Example .cabal:
 ...
     build-depends:
         ...
-        heftia-effects ^>= 0.2,
+        heftia-effects ^>= 0.3.1,
         ghc-typelits-knownnat ^>= 0.7,
 
     default-language: GHC2021
