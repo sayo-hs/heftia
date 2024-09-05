@@ -179,6 +179,8 @@ Heftia is the current main focus of the [Sayo Project](https://github.com/sayo-h
 The example codes are located in the [heftia-effects/Example/](https://github.com/sayo-hs/heftia/tree/v0.3.0/heftia-effects/Example) directory.
 Also, the following *HeftWorld* example: https://github.com/sayo-hs/HeftWorld
 
+About the internal mechanism: https://sayo-hs.github.io/jekyll/update/2024/09/04/how-the-heftia-extensible-effects-library-works.html
+
 Examples with explanations in Japanese can be found in the [docs-ja/examples/](https://github.com/sayo-hs/heftia/tree/v0.3.0/docs-ja/examples) directory.
 
 ## Comparison
