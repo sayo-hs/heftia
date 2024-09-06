@@ -13,12 +13,12 @@ This module provides handlers for the t`KVStore` effect, comes
 from [@Polysemy.KVStore@](https://hackage.haskell.org/package/polysemy-kvstore-0.1.3.0/docs/Polysemy-KVStore.html)
 in the @polysemy-kvstore@ package.
 -}
-module Control.Effect.Handler.Heftia.KVStore where
+module Control.Effect.Interpreter.Heftia.KVStore where
 
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
-import Control.Effect.Handler.Heftia.State (runState)
 import Control.Effect.Hefty (Eff, interpret, raiseUnder)
+import Control.Effect.Interpreter.Heftia.State (runState)
 import Control.Freer (Freer)
 import Control.Monad.State (StateT)
 import Data.Effect.HFunctor (HFunctor)

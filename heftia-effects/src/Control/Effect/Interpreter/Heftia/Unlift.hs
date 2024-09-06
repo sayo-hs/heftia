@@ -9,7 +9,7 @@ Maintainer  :  ymdfield@outlook.jp
 Stability   :  experimental
 Portability :  portable
 -}
-module Control.Effect.Handler.Heftia.Unlift where
+module Control.Effect.Interpreter.Heftia.Unlift where
 
 import Control.Effect (type (~>))
 import Control.Effect.Hefty (Eff, interpretH, runEff, send0)

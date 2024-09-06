@@ -1,6 +1,6 @@
 cabal-version:      2.4
 name:               heftia
-version:            0.2.0.0
+version:            0.3.1.0
 
 -- A short (one-line) description of the package.
 synopsis: higher-order effects done right
@@ -98,7 +98,7 @@ library
     -- other-extensions:
     build-depends:
         base                          ^>= 4.16.4.0,
-        data-effects                ^>= 0.1,
+        data-effects                ^>= 0.1.2,
         mtl ^>= 2.2.2,
         free ^>= 5.2,
         kan-extensions ^>= 5.2.5,

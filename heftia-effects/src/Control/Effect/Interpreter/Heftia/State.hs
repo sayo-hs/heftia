@@ -13,12 +13,12 @@ Portability :  portable
 
 Interpreter for the t'Control.Effect.Class.State.State' effect class.
 -}
-module Control.Effect.Handler.Heftia.State where
+module Control.Effect.Interpreter.Heftia.State where
 
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
-import Control.Effect.Handler.Heftia.Reader (runAsk)
 import Control.Effect.Hefty (Eff, injectF, interpose, interposeT, interpret, interpretFin, interpretK, raiseUnder)
+import Control.Effect.Interpreter.Heftia.Reader (runAsk)
 import Control.Freer (Freer)
 import Control.Monad.Freer (MonadFreer)
 import Control.Monad.State (StateT)

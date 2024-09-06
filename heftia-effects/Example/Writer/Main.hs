@@ -6,8 +6,8 @@ module Main where
 
 import Control.Effect (type (<:), type (<<:))
 import Control.Effect.ExtensibleChurch (runEff)
-import Control.Effect.Handler.Heftia.Writer (elabWriterPost, elabWriterPre, runTell)
 import Control.Effect.Hefty (interpretRecH)
+import Control.Effect.Interpreter.Heftia.Writer (elabWriterPost, elabWriterPre, runTell)
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect.Writer (Tell, WriterH, censor, tell)
 

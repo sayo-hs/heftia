@@ -6,9 +6,9 @@ module Test.Pipe.MVar where
 
 import Control.Effect (type (~>))
 import Control.Effect.ExtensibleFinal (type (!!))
-import Control.Effect.Handler.Heftia.Concurrent.Pipe.IO (runAsyncPipe)
-import Control.Effect.Handler.Heftia.Concurrent.Pipe.IO.TVar.MVar (runMVarPipeLine)
-import Control.Effect.Handler.Heftia.Unlift (runUnliftIO)
+import Control.Effect.Interpreter.Heftia.Concurrent.Pipe.IO (runAsyncPipe)
+import Control.Effect.Interpreter.Heftia.Concurrent.Pipe.IO.TVar.MVar (runMVarPipeLine)
+import Control.Effect.Interpreter.Heftia.Unlift (runUnliftIO)
 import Control.Exception (BlockedIndefinitelyOnMVar (BlockedIndefinitelyOnMVar))
 import Data.Effect.Concurrent.Pipe (
     Consume,

@@ -5,9 +5,9 @@
 module Main where
 
 import Control.Concurrent (newEmptyMVar)
-import Control.Effect.Handler.Heftia.Concurrent.Pipe.IO (runAsyncPipe)
-import Control.Effect.Handler.Heftia.Concurrent.Pipe.IO.TVar.MVar (runMVarPipeLine)
-import Control.Effect.Handler.Heftia.Unlift (runUnliftIO)
+import Control.Effect.Interpreter.Heftia.Concurrent.Pipe.IO (runAsyncPipe)
+import Control.Effect.Interpreter.Heftia.Concurrent.Pipe.IO.TVar.MVar (runMVarPipeLine)
+import Control.Effect.Interpreter.Heftia.Unlift (runUnliftIO)
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect.Concurrent.Pipe (
     consume,

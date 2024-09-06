@@ -9,7 +9,7 @@ Maintainer  :  ymdfield@outlook.jp
 Stability   :  experimental
 Portability :  portable
 -}
-module Control.Effect.Handler.Heftia.NonDet where
+module Control.Effect.Interpreter.Heftia.NonDet where
 
 import Control.Applicative (Alternative ((<|>)), empty, liftA2, (<|>))
 import Control.Arrow ((>>>))

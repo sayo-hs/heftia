@@ -11,7 +11,7 @@ Portability :  portable
 
 Elaborator for the t'Control.Effect.Class.Provider.Provider' effect class.
 -}
-module Control.Effect.Handler.Heftia.Provider where
+module Control.Effect.Interpreter.Heftia.Provider where
 
 import Control.Effect (type (~>))
 import Control.Effect.Hefty (Elab)

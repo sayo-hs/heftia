@@ -2,14 +2,14 @@
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-module Control.Effect.Handler.Heftia.Concurrent.Timer where
+module Control.Effect.Interpreter.Heftia.Concurrent.Timer where
 
 import Control.Concurrent.Thread.Delay qualified as Thread
 import Control.Effect (sendIns, type (~>))
 import Control.Effect.ExtensibleFinal (type (:!!))
-import Control.Effect.Handler.Heftia.Coroutine (runCoroutine)
-import Control.Effect.Handler.Heftia.State (evalState)
 import Control.Effect.Hefty (interposeRec, interpret, interpretRec, raise, raiseUnder)
+import Control.Effect.Interpreter.Heftia.Coroutine (runCoroutine)
+import Control.Effect.Interpreter.Heftia.State (evalState)
 import Data.Effect.Concurrent.Timer (CyclicTimer (Wait), LCyclicTimer, LTimer, Timer (..), clock, cyclicTimer)
 import Data.Effect.Coroutine (Status (Coroutine, Done))
 import Data.Effect.State (get, put)

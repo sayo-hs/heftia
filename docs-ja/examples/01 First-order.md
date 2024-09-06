@@ -363,7 +363,7 @@ prog'' :: ('[] :!! '[B]) a
 
 ## コード全体
 
-コードの全体は以下のようになる。タグ付きエフェクトのコードは[GitHub](https://github.com/sayo-hs/heftia/blob/9639e3aeb3fcfd641f19b7cdccc10e686e6fca5d/heftia-effects/Example/Teletype/Main.hs)にある。
+コードの全体は以下のようになる。タグ付きエフェクトのコードは[heftia-effects/Example/Teletype/](https://github.com/sayo-hs/heftia/blob/v0.3.0/heftia-effects/Example/Teletype/Main.hs)にある。
 
 ```haskell
 {-# LANGUAGE AllowAmbiguousTypes #-}

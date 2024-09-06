@@ -9,12 +9,12 @@ Maintainer  :  ymdfield@outlook.jp
 Stability   :  experimental
 Portability :  portable
 -}
-module Control.Effect.Handler.Heftia.Fresh where
+module Control.Effect.Interpreter.Heftia.Fresh where
 
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
-import Control.Effect.Handler.Heftia.State (runState)
 import Control.Effect.Hefty (Eff, interpret, raiseUnder)
+import Control.Effect.Interpreter.Heftia.State (runState)
 import Control.Freer (Freer)
 import Control.Monad.State (StateT)
 import Data.Effect.Fresh (Fresh (Fresh), LFresh)

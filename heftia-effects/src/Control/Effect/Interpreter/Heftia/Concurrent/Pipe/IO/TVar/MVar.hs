@@ -2,13 +2,13 @@
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-module Control.Effect.Handler.Heftia.Concurrent.Pipe.IO.TVar.MVar where
+module Control.Effect.Interpreter.Heftia.Concurrent.Pipe.IO.TVar.MVar where
 
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
 import Control.Effect.ExtensibleFinal ((:!!))
-import Control.Effect.Handler.Heftia.Concurrent.Pipe.IO.TVar (LTVarPipeDuplicator, LTVarPipeF, TVarPipeDuplicator (..), TVarPipeF (..), defaultPipeDuplicator, runPipeLineBasedTVar)
 import Control.Effect.Hefty (interpretRec, raiseUnder3)
+import Control.Effect.Interpreter.Heftia.Concurrent.Pipe.IO.TVar (LTVarPipeDuplicator, LTVarPipeF, TVarPipeDuplicator (..), TVarPipeF (..), defaultPipeDuplicator, runPipeLineBasedTVar)
 import Data.Effect.Concurrent.Pipe (
     LConsume,
     LFeed,

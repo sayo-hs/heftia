@@ -11,8 +11,6 @@ module Main where
 import Control.Arrow ((>>>))
 import Control.Effect (type (<:), type (<<:), type (~>))
 import Control.Effect.ExtensibleFinal (runEff, type (!!), type (:!!))
-import Control.Effect.Handler.Heftia.Reader (runReader)
-import Control.Effect.Handler.Heftia.State (evalState)
 import Control.Effect.Hefty (
     Elab,
     interposeRec,
@@ -25,6 +23,8 @@ import Control.Effect.Hefty (
     reinterpretRecH,
     subsume,
  )
+import Control.Effect.Interpreter.Heftia.Reader (runReader)
+import Control.Effect.Interpreter.Heftia.State (evalState)
 import Control.Monad (when)
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Effect.Reader (LAsk, Local, ask, local)

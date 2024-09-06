@@ -11,11 +11,11 @@ Portability :  portable
 
 Elaborator for the t'Control.Effect.Class.Provider.Implicit.ImplicitProvider' effect class.
 -}
-module Control.Effect.Handler.Heftia.Provider.Implicit where
+module Control.Effect.Interpreter.Heftia.Provider.Implicit where
 
 import Control.Effect (type (~>))
-import Control.Effect.Handler.Heftia.Reader (runAsk)
 import Control.Effect.Hefty (Eff, Elab, raise)
+import Control.Effect.Interpreter.Heftia.Reader (runAsk)
 import Control.Freer (Freer)
 import Data.Effect.HFunctor (HFunctor)
 import Data.Effect.Provider.Implicit (ImplicitProvider' (WithImplicit))

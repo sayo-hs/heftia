@@ -12,7 +12,7 @@ Portability :  portable
 Interpreter and elaborator for the t'Data.Effect.Except.Throw' / t'Data.Effect.Except.Catch' effect
 classes.
 -}
-module Control.Effect.Handler.Heftia.Except where
+module Control.Effect.Interpreter.Heftia.Except where
 
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))

@@ -9,12 +9,12 @@ Maintainer  :  ymdfield@outlook.jp
 Stability   :  experimental
 Portability :  portable
 -}
-module Control.Effect.Handler.Heftia.Input where
+module Control.Effect.Interpreter.Heftia.Input where
 
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
-import Control.Effect.Handler.Heftia.State (evalState)
 import Control.Effect.Hefty (Eff, interpret, interpretRec, raiseUnder)
+import Control.Effect.Interpreter.Heftia.State (evalState)
 import Control.Freer (Freer)
 import Control.Monad.State (StateT)
 import Data.Effect.HFunctor (HFunctor)

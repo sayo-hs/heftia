@@ -9,13 +9,13 @@ Maintainer  :  ymdfield@outlook.jp
 Stability   :  experimental
 Portability :  portable
 -}
-module Control.Effect.Handler.Heftia.Output where
+module Control.Effect.Interpreter.Heftia.Output where
 
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
-import Control.Effect.Handler.Heftia.State (runState)
-import Control.Effect.Handler.Heftia.Writer (runTell, runTellA)
 import Control.Effect.Hefty (Eff, interpret, interpretRec, raiseUnder, send0)
+import Control.Effect.Interpreter.Heftia.State (runState)
+import Control.Effect.Interpreter.Heftia.Writer (runTell, runTellA)
 import Control.Freer (Freer)
 import Control.Monad.Trans.State (StateT)
 import Control.Monad.Trans.Writer.CPS qualified as CPS

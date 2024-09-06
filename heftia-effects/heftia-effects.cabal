@@ -1,6 +1,6 @@
 cabal-version:      2.4
 name:               heftia-effects
-version:            0.2.0.0
+version:            0.3.1.0
 
 -- A short (one-line) description of the package.
 synopsis: higher-order effects done right
@@ -20,7 +20,7 @@ author:             Yamada Ryo <ymdfield@outlook.jp>
 maintainer:         Yamada Ryo <ymdfield@outlook.jp>
 
 -- A copyright notice.
-copyright: 2023 Yamada Ryo
+copyright: 2023-2024 Yamada Ryo
 category: Control, Effect, Monads
 
 extra-source-files:
@@ -55,11 +55,11 @@ common common-base
     build-depends:
         base ^>= 4.16,
         ghc-typelits-knownnat ^>= 0.7,
-        data-effects ^>= 0.1,
-        heftia ^>= 0.2,
+        data-effects ^>= 0.1.2,
+        heftia ^>= 0.3.1,
+        data-default,
         lens,
         async,
-        data-default,
 
     ghc-options: -Wall -fplugin GHC.TypeLits.KnownNat.Solver
 
@@ -67,26 +67,26 @@ library
     import: common-base
 
     exposed-modules:
-        Control.Effect.Handler.Heftia.Reader
-        Control.Effect.Handler.Heftia.Writer
-        Control.Effect.Handler.Heftia.State
-        Control.Effect.Handler.Heftia.Except
-        Control.Effect.Handler.Heftia.ShiftReset
-        Control.Effect.Handler.Heftia.NonDet
-        Control.Effect.Handler.Heftia.Coroutine
-        Control.Effect.Handler.Heftia.Input
-        Control.Effect.Handler.Heftia.Output
-        Control.Effect.Handler.Heftia.Provider
-        Control.Effect.Handler.Heftia.Provider.Implicit
-        Control.Effect.Handler.Heftia.Resource
-        Control.Effect.Handler.Heftia.Unlift
-        Control.Effect.Handler.Heftia.KVStore
-        Control.Effect.Handler.Heftia.Fresh
-        Control.Effect.Handler.Heftia.Fail
-        Control.Effect.Handler.Heftia.Concurrent.Pipe.IO
-        Control.Effect.Handler.Heftia.Concurrent.Pipe.IO.TVar
-        Control.Effect.Handler.Heftia.Concurrent.Pipe.IO.TVar.MVar
-        Control.Effect.Handler.Heftia.Concurrent.Timer
+        Control.Effect.Interpreter.Heftia.Reader
+        Control.Effect.Interpreter.Heftia.Writer
+        Control.Effect.Interpreter.Heftia.State
+        Control.Effect.Interpreter.Heftia.Except
+        Control.Effect.Interpreter.Heftia.ShiftReset
+        Control.Effect.Interpreter.Heftia.NonDet
+        Control.Effect.Interpreter.Heftia.Coroutine
+        Control.Effect.Interpreter.Heftia.Input
+        Control.Effect.Interpreter.Heftia.Output
+        Control.Effect.Interpreter.Heftia.Provider
+        Control.Effect.Interpreter.Heftia.Provider.Implicit
+        Control.Effect.Interpreter.Heftia.Resource
+        Control.Effect.Interpreter.Heftia.Unlift
+        Control.Effect.Interpreter.Heftia.KVStore
+        Control.Effect.Interpreter.Heftia.Fresh
+        Control.Effect.Interpreter.Heftia.Fail
+        Control.Effect.Interpreter.Heftia.Concurrent.Pipe.IO
+        Control.Effect.Interpreter.Heftia.Concurrent.Pipe.IO.TVar
+        Control.Effect.Interpreter.Heftia.Concurrent.Pipe.IO.TVar.MVar
+        Control.Effect.Interpreter.Heftia.Concurrent.Timer
 
     reexported-modules:
         Control.Effect.Hefty,
@@ -150,9 +150,9 @@ library
         unliftio                      ^>= 0.2.0,
         free                          ^>= 5.2,
         containers                    ^>= 0.6.5,
-        extra,
-        time,
-        unbounded-delays,
+        extra                         ^>= 1.7.14,
+        time                          ^>= 1.11.1,
+        unbounded-delays              ^>= 0.1.1,
 
     hs-source-dirs:   src
 
@@ -201,7 +201,7 @@ executable Logging
     hs-source-dirs: Example/Logging
     build-depends:
         heftia-effects,
-        text ^>= 1.2.5,
+        text >= 2.0 && < 2.2,
         time ^>= 1.11.1,
 
 executable Continuation

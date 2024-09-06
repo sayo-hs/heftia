@@ -5,11 +5,10 @@
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-module Control.Effect.Handler.Heftia.Concurrent.Pipe.IO.TVar where
+module Control.Effect.Interpreter.Heftia.Concurrent.Pipe.IO.TVar where
 
 import Control.Effect (sendIns, type (<:), type (<<:), type (~>))
 import Control.Effect.ExtensibleFinal ((:!!))
-import Control.Effect.Handler.Heftia.Reader (runReader)
 import Control.Effect.Hefty (
     interposeRec,
     interposeRecH,
@@ -19,6 +18,7 @@ import Control.Effect.Hefty (
     raiseUnderH,
     type ($),
  )
+import Control.Effect.Interpreter.Heftia.Reader (runReader)
 import Control.Lens (Getter, makeLenses, (%~), (.~), (?~), (^.))
 import Control.Monad (forever, when)
 import Control.Monad.Free (Free (Free, Pure), foldFree)

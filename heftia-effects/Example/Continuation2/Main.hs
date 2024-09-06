@@ -6,10 +6,10 @@ module Main where
 
 import Control.Arrow ((>>>))
 import Control.Effect.ExtensibleChurch (runEff, type (!!))
-import Control.Effect.Handler.Heftia.Reader (runAsk, runLocal)
-import Control.Effect.Handler.Heftia.ShiftReset (evalShift, runShift_)
-import Control.Effect.Handler.Heftia.State (evalState)
 import Control.Effect.Hefty (send1, unkeyEff, type ($))
+import Control.Effect.Interpreter.Heftia.Reader (runAsk, runLocal)
+import Control.Effect.Interpreter.Heftia.ShiftReset (evalShift, runShift_)
+import Control.Effect.Interpreter.Heftia.State (evalState)
 import Control.Effect.Key (key)
 import Control.Monad.Extra (whenM)
 import Control.Monad.IO.Class (liftIO)

@@ -205,7 +205,7 @@ runDummyFS = interpretRec \case
 ```haskell
 import Control.Effect.Hefty (raise, raiseH, interposeRec, interposeRecH)
 import Data.Effect.Reader (LAsk, Local, ask, local)
-import Control.Effect.Handler.Heftia.Reader (runReader)
+import Control.Effect.Interpreter.Heftia.Reader (runReader)
 
 -- | Create directories according to the log-chunk structure and save one log in one file.
 saveLogChunk ::
@@ -355,7 +355,7 @@ main = runApp . saveLogChunk $ logExample
 ```haskell
 import Control.Effect.Hefty (raiseUnder)
 import Data.Effect.State (get, modify)
-import Control.Effect.Handler.Heftia.State (evalState)
+import Control.Effect.Interpreter.Heftia.State (evalState)
 import Control.Effect.Hefty (Elab)
 
 -- | Limit the number of logs in a log chunk to the first @n@ logs.
@@ -742,4 +742,5 @@ liftIO $ putStrLn "------"
 
 ---
 
-パートの例で使用したコードの全体は[GitHub](TODO)にある。
+本パートの例で使用したコードの全体は[heftia-effects/Example/Logging/](https://github.com/sayo-hs/heftia/blob/v0.3.0/heftia-effects/Example/Logging/Main.hs)にある。
+

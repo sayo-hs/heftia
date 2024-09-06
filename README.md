@@ -32,7 +32,7 @@ There may be significant changes and potential bugs.
     ```console
     $ cabal update
     ```
-2. Add `heftia-effects ^>= 0.2` and `ghc-typelits-knownnat ^>= 0.7` to the build dependencies. Enable the [ghc-typelits-knownnat](https://hackage.haskell.org/package/ghc-typelits-knownnat) plugin, `GHC2021`, and the following language extensions as needed:
+2. Add `heftia-effects ^>= 0.3.1` and `ghc-typelits-knownnat ^>= 0.7` to the build dependencies. Enable the [ghc-typelits-knownnat](https://hackage.haskell.org/package/ghc-typelits-knownnat) plugin, `GHC2021`, and the following language extensions as needed:
 
     * `LambdaCase`
     * `DerivingStrategies`
@@ -50,7 +50,7 @@ Example .cabal:
 ...
     build-depends:
         ...
-        heftia-effects ^>= 0.2,
+        heftia-effects ^>= 0.3.1,
         ghc-typelits-knownnat ^>= 0.7,
 
     default-language: GHC2021
@@ -77,7 +77,7 @@ Example .cabal:
 This library has been tested to work with GHC 9.2.8.
 
 ## Getting Started
-To run the [SemanticsZoo example](https://github.com/sayo-hs/heftia/blob/232599fbdfaf13dcf009f40585369e0ec71fd0bd/heftia-effects/Example/SemanticsZoo/Main.hs):
+To run the [SemanticsZoo example](https://github.com/sayo-hs/heftia/blob/v0.3.0/heftia-effects/Example/SemanticsZoo/Main.hs):
 ```console
 $ git clone https://github.com/sayo-hs/heftia
 $ cd heftia/heftia-effects
@@ -112,7 +112,7 @@ are some examples:
 In handling higher-order effects, it's easy to work with **multi-shot delimited continuations**.
 This enables an almost complete emulation of "Algebraic Effects and Handlers".
 For more details, please refer to
-the [example code](https://github.com/sayo-hs/heftia/blob/232599fbdfaf13dcf009f40585369e0ec71fd0bd/heftia-effects/Example/Continuation/Main.hs).
+the [example code](https://github.com/sayo-hs/heftia/blob/v0.3.0/heftia-effects/Example/Continuation/Main.hs).
 
 ### Two interpretations of the `censor` effect for Writer
 
@@ -165,7 +165,7 @@ Pre-applying: Goodbye world!
 Post-applying: Hello world!!
 ```
 
-For more details, please refer to the [complete code](https://github.com/sayo-hs/heftia/blob/develop/heftia-effects/Example/Writer/Main.hs) and the [implementation of the elaborator](https://github.com/sayo-hs/heftia/blob/develop/heftia-effects/src/Control/Effect/Handler/Heftia/Writer.hs).
+For more details, please refer to the [complete code](https://github.com/sayo-hs/heftia/blob/v0.3.0/heftia-effects/Example/Writer/Main.hs) and the [implementation of the elaborator](https://github.com/sayo-hs/heftia/blob/v0.3.0/heftia-effects/src/Control/Effect/Interpreter/Heftia/Writer.hs).
 
 Furthermore, the structure of Heftia is theoretically straightforward, with ad-hoc elements being
 eliminated.
@@ -176,10 +176,12 @@ This may be useful when writing concurrent effectful code.
 Heftia is the current main focus of the [Sayo Project](https://github.com/sayo-hs).
 
 ## Documentation
-The example codes are located in the [heftia-effects/Example/](https://github.com/sayo-hs/heftia/tree/232599fbdfaf13dcf009f40585369e0ec71fd0bd/heftia-effects/Example) directory.
+The example codes are located in the [heftia-effects/Example/](https://github.com/sayo-hs/heftia/tree/v0.3.0/heftia-effects/Example) directory.
 Also, the following *HeftWorld* example: https://github.com/sayo-hs/HeftWorld
 
-Examples with explanations in Japanese can be found in the [docs-ja/examples/](https://github.com/sayo-hs/heftia/tree/master/docs-ja/examples) directory.
+About the internal mechanism: https://sayo-hs.github.io/jekyll/update/2024/09/04/how-the-heftia-extensible-effects-library-works.html
+
+Examples with explanations in Japanese can be found in the [docs-ja/examples/](https://github.com/sayo-hs/heftia/tree/v0.3.0/docs-ja/examples) directory.
 
 ## Comparison
 
@@ -188,25 +190,45 @@ Examples with explanations in Japanese can be found in the [docs-ja/examples/](h
 * Effect System: For a term representing an effectful program, is it possible to statically decidable a type that enumerates all the effects the program may produce?
 * Purely Monadic: Is an effectful program represented as a transparent data structure that is a monad, and can it be interpreted into other data types using only pure operations without side effects or `unsafePerformIO`?
 * Dynamic Effect Rewriting: Can an effectful program have its internal effects altered afterwards (by functions typically referred to as `handle with`, `intercept`, `interpose`, `transform`, `translate`, or `rewrite`) ?
+
+    For example, would it be possible to apply `interpose` as many times as the number of values input by the user at runtime?
+
+* Semantics: Classification of behaviors resulting from the interpretation of effects.
+
+    * continuation-based: The same as Algebraic Effects and Handlers.
+    * IO-based: IO + Reader pattern.
+    * carrier dependent: The behavior depends on the specific type inference result of the monad. Tagless-final style.
+
 * Performance: Time complexity or space complexity.
 
-| Library or Language | Higher-Order Effects | Delimited Continuation | Effect System | Purely Monadic                    | Dynamic Effect Rewriting | Performance (TODO) |
-| ------------------- | -------------------- | ---------------------- | --------------| --------------------------------- | ------------------------ | ------------------ |
-| Heftia              | Yes                  | Multi-shot             | Yes           | Yes (also Applicative and others) | Yes                      | ?                  |
-| freer-simple        | No                   | Multi-shot             | Yes           | Yes                               | Yes                      | ?                  |
-| Polysemy            | Yes                  | No                     | Yes           | Yes                               | Yes                      | ?                  |
-| Effectful           | Yes                  | No                     | Yes           | No (based on the `IO` monad)      | Yes                      | ?                  |
-| eff                 | Yes                  | Multi-shot?            | Yes           | No (based on the `IO` monad)      | Yes                      | Fast               |
-| mtl                 | Yes                  | Multi-shot (`ContT`)   | Yes           | Yes                               | No                       | ?                  |
-| fused-effects       | Yes                  | No?                    | Yes           | Yes                               | No                       | ?                  |
-| koka-lang           | No [^2]              | Multi-shot             | Yes           | No (language built-in)            | Yes                      | ?                  |
-| OCaml-lang 5        | ?                    | One-shot               | No [^3]       | No (language built-in)            | ?                        | ?                  |
+| Library or Language | Higher-Order Effects | Delimited Continuation | Effect System | Purely Monadic                    | Dynamic Effect Rewriting | Semantics                        | Performance (TODO) |
+| ------------------- | -------------------- | ---------------------- | --------------| --------------------------------- | ------------------------ | -------------------------------- | ------------------ |
+| Heftia              | Yes                  | Multi-shot             | Yes           | Yes (also Applicative and others) | Yes                      | continuation-based               | ?                  |
+| freer-simple        | No                   | Multi-shot             | Yes           | Yes                               | Yes                      | continuation-based               | ?                  |
+| Polysemy            | Yes                  | No                     | Yes           | Yes                               | Yes                      | weaving-based (functorial state) | ?                  |
+| Effectful           | Yes                  | No                     | Yes           | No (based on the `IO` monad)      | Yes                      | IO-based                         | ?                  |
+| eff                 | Yes                  | Multi-shot?            | Yes           | No (based on the `IO` monad)      | Yes                      | continuation-based (IO-fused)    | ?                  |
+| in-other-words      | Yes                  | Multi-shot?            | Yes           | Yes                               | No?                      | carrier dependent                | ?                  |
+| mtl                 | Yes                  | Multi-shot (`ContT`)   | Yes           | Yes                               | No                       | carrier dependent                | ?                  |
+| fused-effects       | Yes                  | No?                    | Yes           | Yes                               | No                       | carrier dependent & weaving-based (functorial state) | ?                  |
+| koka-lang           | No [^2]              | Multi-shot             | Yes           | No (language built-in)            | Yes                      | continuation-based               | ?                  |
+| OCaml-lang 5        | ?                    | One-shot               | No [^3]       | No (language built-in)            | ?                        | continuation-based?              | ?                  |
 
 [^2]: https://gist.github.com/ymdryo/6fb2f7f4020c6fcda98ccc67c090dc75
 [^3]: Effects do not appear in the type signature and can potentially cause unhandled errors at runtime
 
 Heftia can simply be described as a higher-order version of freer-simple.
 This is indeed true in terms of its internal mechanisms as well.
+
+Additionally, this library provides a consistent *continuation-based* semantics that is independent of carriers and effects.
+On the other hand, in libraries like in-other-words, mtl, and fused-effects, the semantics of the code depend on the effect and, in part, the carrier inferred by type inference.
+Fixing the semantics to a *continuation-based* model helps improve the predictability of the behavior (interpretation result) of the code.
+
+Carrier-dependent semantics can lead to unexpected behavior for code readers, particularly in situations where the types become implicit.
+Particularly, attention should be given to the fact that due to type inference, semantic changes may propagate beyond the blocks enclosed by `interpret` or `interpose`.
+In the case of carrier-independent semantics, especially with Freer-based effects, `interpret` and `interpose` do not alter the semantics by intervening in type inference or instance resolution of the carrier.
+Instead, they function as traditional functions, simply transforming the content of the data structure.
+This results in minimal surprise to the mental model of the code reader.
 
 ### Compatibility with other libraries
 #### Representation of effects
@@ -241,12 +263,12 @@ This is indeed true in terms of its internal mechanisms as well.
 * Benchmarking
 
 ## License
-The license is MPL 2.0. Please refer to the [NOTICE](https://github.com/sayo-hs/heftia/blob/232599fbdfaf13dcf009f40585369e0ec71fd0bd/NOTICE).
+The license is MPL 2.0. Please refer to the [NOTICE](https://github.com/sayo-hs/heftia/blob/v0.3.0/NOTICE).
 Additionally, this README.md and the documents under the `docs-ja` directory are licensed
 under CC BY-SA 4.0.
 
 ## Your contributions are welcome!
-Please see [CONTRIBUTING.md](https://github.com/sayo-hs/heftia/blob/232599fbdfaf13dcf009f40585369e0ec71fd0bd/CONTRIBUTING.md).
+Please see [CONTRIBUTING.md](https://github.com/sayo-hs/heftia/blob/v0.3.0/CONTRIBUTING.md).
 
 ## Credits
 Parts of this project have been inspired by the following resources:

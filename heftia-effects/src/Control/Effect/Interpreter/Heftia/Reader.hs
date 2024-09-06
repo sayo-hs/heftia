@@ -12,7 +12,7 @@ Portability :  portable
 Interpreter and elaborator for the t'Data.Effect.Reader.Local' / t'Data.Effect.Reader.Catch' effect
 classes.
 -}
-module Control.Effect.Handler.Heftia.Reader where
+module Control.Effect.Interpreter.Heftia.Reader where
 
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
