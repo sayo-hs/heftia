@@ -255,6 +255,7 @@ This results in minimal surprise to the mental model of the code reader.
 
 ## Future Plans
 * Enriching the documentation and tests
+* Translate [`docs-ja/examples`](https://github.com/sayo-hs/heftia/tree/v0.3.1/docs-ja/examples) to English
 * Completing missing definitions such as
     * more patterns of interpret & transform function-families.
     * interpreters for the `Accum` and others effect classes
