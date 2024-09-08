@@ -261,7 +261,7 @@ This results in minimal surprise to the mental model of the code reader.
     * interpreters for the `Accum` and others effect classes
 
     and others.
-* Benchmarking
+* Improve performance
 
 ## License
 The license is MPL 2.0. Please refer to the [NOTICE](https://github.com/sayo-hs/heftia/blob/v0.3.0/NOTICE).
