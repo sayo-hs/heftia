@@ -270,9 +270,20 @@ under CC BY-SA 4.0.
 ## Your contributions are welcome!
 Please see [CONTRIBUTING.md](https://github.com/sayo-hs/heftia/blob/v0.3.0/CONTRIBUTING.md).
 
-## Credits
-Parts of this project have been inspired by the following resources:
+## Acknowledgements, citations, and related work
+The following is a non-exhaustive list of people and works that have had a significant impact, directly or indirectly, on Heftia’s design and implementation:
 
-* **[Hefty Algebras -- The Artifact](https://github.com/heft-lang/POPL2023)**
-    * **Copyright** (c) 2023 Casper Bach Poulsen and Cas van der Rest
-    * **License**: MIT
+- Oleg Kiselyov, Amr Sabry, and Cameron Swords — [Extensible Effects: An alternative to monad transfomers][oleg:exteff]
+- Oleg Kiselyov and Hiromi Ishii — [Freer Monads, More Extensible Effects][oleg:more]
+- Rob Rix, Patrick Thomson, and other contributors — [`fused-effects`][gh:fused-effects]
+- Sandy Maguire and other contributors — [`polysemy`][gh:polysemy]
+- Alexis King and other contributors — [`freer-simple`][gh:freer-simple], [`eff`][gh:eff]
+- Casper Bach Poulsen and Cas van der Rest — [Hefty Algebras: Modular Elaboration of Higher-Order Algebraic Effects][casper:hefty]
+
+[gh:fused-effects]: https://github.com/fused-effects/fused-effects
+[gh:polysemy]: https://github.com/polysemy-research/polysemy
+[oleg:exteff]: http://okmij.org/ftp/Haskell/extensible/exteff.pdf
+[oleg:more]: http://okmij.org/ftp/Haskell/extensible/more.pdf
+[casper:hefty]: https://dl.acm.org/doi/10.1145/3571255
+[gh:freer-simple]: https://github.com/lexi-lambda/freer-simple
+[gh:eff]: https://github.com/lexi-lambda/eff
