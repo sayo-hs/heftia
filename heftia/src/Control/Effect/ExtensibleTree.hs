@@ -20,16 +20,16 @@ import Control.Effect.Hefty (Eff, Effectful)
 import Control.Effect.Hefty qualified as H
 import Control.Monad.Freer.Tree (FreerTree)
 import Data.Effect (LiftIns)
-import Data.Hefty.OpenUnion (OpenUnion)
+import Data.Hefty.Extensible (ExtensibleUnion)
 
-type eh !! ef = Effectful OpenUnion FreerTree eh ef
-type (!) ef = EffectfulF OpenUnion FreerTree ef
+type eh !! ef = Effectful ExtensibleUnion FreerTree eh ef
+type (!) ef = EffectfulF ExtensibleUnion FreerTree ef
 
 infixr 5 !!
 infixr 4 !
 
-type ehs :!! efs = Eff OpenUnion FreerTree ehs efs
-type (:!) efs = EffF OpenUnion FreerTree efs
+type ehs :!! efs = Eff ExtensibleUnion FreerTree ehs efs
+type (:!) efs = EffF ExtensibleUnion FreerTree efs
 
 infixr 4 :!!
 infixr 3 :!
