@@ -14,7 +14,7 @@ import Data.Effect.Concurrent.Timer (CyclicTimer (Wait), LCyclicTimer, LTimer, T
 import Data.Effect.Coroutine (Status (Coroutine, Done))
 import Data.Effect.State (get, put)
 import Data.Function ((&))
-import Data.Hefty.Extensible (ForallHFunctor, type (<|))
+import Data.Hefty.OpenUnion (ForallHFunctor, type (<|))
 import Data.Time (DiffTime)
 import Data.Time.Clock (diffTimeToPicoseconds, picosecondsToDiffTime)
 import Data.Void (Void, absurd)

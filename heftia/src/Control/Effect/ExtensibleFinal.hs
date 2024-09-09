@@ -20,16 +20,16 @@ import Control.Effect.Hefty (Eff, Effectful)
 import Control.Effect.Hefty qualified as H
 import Control.Freer.Final (FreerFinal)
 import Data.Effect (LiftIns)
-import Data.Hefty.Extensible (ExtensibleUnion)
+import Data.Hefty.OpenUnion (OpenUnion)
 
-type eh !! ef = Effectful ExtensibleUnion (FreerFinal Monad) eh ef
-type (!) ef = EffectfulF ExtensibleUnion (FreerFinal Monad) ef
+type eh !! ef = Effectful OpenUnion (FreerFinal Monad) eh ef
+type (!) ef = EffectfulF OpenUnion (FreerFinal Monad) ef
 
 infixr 5 !!
 infixr 4 !
 
-type ehs :!! efs = Eff ExtensibleUnion (FreerFinal Monad) ehs efs
-type (:!) efs = EffF ExtensibleUnion (FreerFinal Monad) efs
+type ehs :!! efs = Eff OpenUnion (FreerFinal Monad) ehs efs
+type (:!) efs = EffF OpenUnion (FreerFinal Monad) efs
 
 infixr 4 :!!
 infixr 3 :!

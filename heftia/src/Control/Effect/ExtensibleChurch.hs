@@ -20,16 +20,16 @@ import Control.Effect.Hefty (Eff, Effectful)
 import Control.Effect.Hefty qualified as H
 import Control.Monad.Freer.Church (FreerChurch)
 import Data.Effect (LiftIns)
-import Data.Hefty.Extensible (ExtensibleUnion)
+import Data.Hefty.OpenUnion (OpenUnion)
 
-type eh !! ef = Effectful ExtensibleUnion FreerChurch eh ef
-type (!) ef = EffectfulF ExtensibleUnion FreerChurch ef
+type eh !! ef = Effectful OpenUnion FreerChurch eh ef
+type (!) ef = EffectfulF OpenUnion FreerChurch ef
 
 infixr 5 !!
 infixr 4 !
 
-type ehs :!! efs = Eff ExtensibleUnion FreerChurch ehs efs
-type (:!) efs = EffF ExtensibleUnion FreerChurch efs
+type ehs :!! efs = Eff OpenUnion FreerChurch ehs efs
+type (:!) efs = EffF OpenUnion FreerChurch efs
 
 infixr 4 :!!
 infixr 3 :!
