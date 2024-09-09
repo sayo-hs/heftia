@@ -63,6 +63,7 @@ library
         Control.Effect.ExtensibleFinal
         Control.Effect.ExtensibleChurch
         Control.Effect.ExtensibleTree
+        Control.Effect.ExtensibleFTCQueue
         Control.Effect.ExtensibleFinalA
         Control.Effect.ExtensibleTreeA
         Control.Effect.ExtensibleFastA
@@ -72,6 +73,7 @@ library
         Control.Monad.Freer
         Control.Monad.Freer.Church
         Control.Monad.Freer.Tree
+        Control.Monad.Freer.FTCQueue
         Data.Hefty.Union
         Data.Hefty.Union.Weaken
         Data.Hefty.Union.Strengthen
@@ -110,6 +112,7 @@ library
         singletons-base ^>= 3.1,
         singletons-th ^>= 3.1,
         unliftio ^>= 0.2,
+        freer-simple
 
     hs-source-dirs:   src
     ghc-options:      -Wall
