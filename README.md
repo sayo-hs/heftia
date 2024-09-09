@@ -99,6 +99,10 @@ $ cabal run exe:SemanticsZoo
 ( runNonDet . runTell . elaborateWriter . runChooseH $ action ) = [(3,(3,True)),(4,(4,False))]
 ( runTell . runNonDet . elaborateWriter . runChooseH $ action ) = (6,[(3,True),(4,False)])
 
+# https://github.com/hasura/eff/issues/12
+interpret SomeEff then runCatch : ( runThrow . runCatch . runSomeEff $ action ) = Right "caught"
+runCatch then interpret SomeEff : ( runThrow . runSomeEff . runCatch $ action ) = Left "not caught"
+
 [Note] All other permutations will cause type errors.
 $
 ```
