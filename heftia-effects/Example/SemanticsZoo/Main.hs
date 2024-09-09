@@ -1,3 +1,6 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE TemplateHaskell #-}
+
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -10,8 +13,9 @@ It can be confirmed that Heftia also realizes continuation-based semantics equiv
 module Main where
 
 import Control.Applicative ((<|>))
+import Control.Effect (type (~>))
 import Control.Effect.ExtensibleChurch ((:!!))
-import Control.Effect.Hefty (runPure, type ($))
+import Control.Effect.Hefty (interpretRec, runPure, type ($))
 import Control.Effect.Interpreter.Heftia.Except (runCatch, runThrow)
 import Control.Effect.Interpreter.Heftia.NonDet (runChooseH, runNonDet)
 import Control.Effect.Interpreter.Heftia.State (evalState)
@@ -19,9 +23,10 @@ import Control.Effect.Interpreter.Heftia.Writer (elaborateWriterPre, runTell)
 import Data.Effect.Except (Catch, Throw, catch, throw)
 import Data.Effect.NonDet (ChooseH, Empty)
 import Data.Effect.State (State, get, put)
+import Data.Effect.TH (makeEffectF)
 import Data.Effect.Writer (Tell, WriterH, listen, tell)
 import Data.Functor (($>))
-import Data.Hefty.Extensible (type (<<|), type (<|))
+import Data.Hefty.Extensible (ForallHFunctor, type (<<|), type (<|))
 import Data.Monoid (Sum (Sum))
 
 statePlusExcept :: IO ()
@@ -80,6 +85,24 @@ nonDetPlusWriter = do
     print . (\(Sum m, xs) -> (m, map (\(Sum n, b) -> (n, b)) xs)) . runPure $
         runTell @(Sum Int) . runNonDet @[] . elaborateWriterPre @(Sum Int) . runChooseH $ action
 
+data SomeEff a where
+    SomeAction :: SomeEff String
+makeEffectF [''SomeEff]
+
+theIssue12 :: IO ()
+theIssue12 = do
+    let action :: (Catch String <<| eh, Throw String <| ef, SomeEff <| ef) => eh :!! ef $ String
+        action = someAction `catch` \(_ :: String) -> pure "caught"
+
+        runSomeEff :: (ForallHFunctor eh, Throw String <| ef) => eh :!! LSomeEff ': ef ~> eh :!! ef
+        runSomeEff = interpretRec (\SomeAction -> throw "not caught")
+
+    putStr "interpret SomeEff then runCatch : ( runThrow . runCatch . runSomeEff $ action ) = "
+    print $ runPure $ runThrow @String . runCatch @String . runSomeEff $ action
+
+    putStr "runCatch then interpret SomeEff : ( runThrow . runSomeEff . runCatch $ action ) = "
+    print $ runPure $ runThrow @String . runSomeEff . runCatch @String $ action
+
 main :: IO ()
 main = do
     putStrLn "# State + Except"
@@ -90,6 +113,9 @@ main = do
 
     putStrLn "\n# NonDet + Writer"
     nonDetPlusWriter
+
+    putStrLn "\n# https://github.com/hasura/eff/issues/12"
+    theIssue12
 
     putStrLn "\n[Note] All other permutations will cause type errors."
 
@@ -107,6 +133,10 @@ main = do
 # NonDet + Writer
 ( runNonDet . runTell . elaborateWriter . runChooseH $ action ) = [(3,(3,True)),(4,(4,False))]
 ( runTell . runNonDet . elaborateWriter . runChooseH $ action ) = (6,[(3,True),(4,False)])
+
+# https://github.com/hasura/eff/issues/12
+interpret SomeEff then runCatch : ( runThrow . runCatch . runSomeEff $ action ) = Right "caught"
+runCatch then interpret SomeEff : ( runThrow . runSomeEff . runCatch $ action ) = Left "not caught"
 
 [Note] All other permutations will cause type errors.
 -}
