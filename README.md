@@ -25,6 +25,8 @@ types in several ways to enable tuning in pursuit of high performance.
 This library is currently in the beta stage.
 There may be significant changes and potential bugs.
 
+Specifically, significant performance improvements are required: https://github.com/sayo-hs/heftia/issues/12
+
 **We are looking forward to your feedback!**
 
 ## Installation
