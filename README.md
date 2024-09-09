@@ -79,7 +79,7 @@ Example .cabal:
 This library has been tested to work with GHC 9.2.8.
 
 ## Getting Started
-To run the [SemanticsZoo example](https://github.com/sayo-hs/heftia/blob/v0.3.0/heftia-effects/Example/SemanticsZoo/Main.hs):
+To run the [SemanticsZoo example](https://github.com/sayo-hs/heftia/blob/08f5cfe6a8f5c0383ea2b02e93326552400f7fd3/heftia-effects/Example/SemanticsZoo/Main.hs):
 ```console
 $ git clone https://github.com/sayo-hs/heftia
 $ cd heftia/heftia-effects
@@ -182,7 +182,7 @@ This may be useful when writing concurrent effectful code.
 Heftia is the current main focus of the [Sayo Project](https://github.com/sayo-hs).
 
 ## Documentation
-The example codes are located in the [heftia-effects/Example/](https://github.com/sayo-hs/heftia/tree/v0.3.0/heftia-effects/Example) directory.
+The example codes are located in the [heftia-effects/Example/](https://github.com/sayo-hs/heftia/tree/08f5cfe6a8f5c0383ea2b02e93326552400f7fd3/heftia-effects/Example) directory.
 Also, the following *HeftWorld* example: https://github.com/sayo-hs/HeftWorld
 
 About the internal mechanism: https://sayo-hs.github.io/jekyll/update/2024/09/04/how-the-heftia-extensible-effects-library-works.html
