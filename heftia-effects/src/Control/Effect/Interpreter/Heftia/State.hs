@@ -17,7 +17,16 @@ module Control.Effect.Interpreter.Heftia.State where
 
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
-import Control.Effect.Hefty (Eff, injectF, interpose, interposeT, interpret, interpretFin, interpretK, raiseUnder)
+import Control.Effect.Hefty (
+    Eff,
+    injectF,
+    interpose,
+    interposeT,
+    interpretFin,
+    interpretK,
+    interpretRec,
+    raiseUnder,
+ )
 import Control.Effect.Interpreter.Heftia.Reader (runAsk)
 import Control.Freer (Freer)
 import Control.Monad.Freer (MonadFreer)
@@ -91,15 +100,15 @@ runStateK initialState =
         >>> runAsk initialState
 
 runStateIORef ::
-    forall s r a fr u c.
-    (Freer c fr, Union u, MonadIO (Eff u fr '[] r)) =>
+    forall s r eh a fr u c.
+    (Freer c fr, Union u, HFunctor (u eh), MonadIO (Eff u fr eh r)) =>
     s ->
-    Eff u fr '[] (LState s ': r) a ->
-    Eff u fr '[] r (s, a)
+    Eff u fr eh (LState s ': r) a ->
+    Eff u fr eh r (s, a)
 runStateIORef s m = do
     ref <- newIORef s
     a <-
-        m & interpret \case
+        m & interpretRec \case
             Get -> readIORef ref
             Put s' -> writeIORef ref s'
     readIORef ref <&> (,a)
