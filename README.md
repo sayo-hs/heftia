@@ -77,6 +77,9 @@ Example .cabal:
 ```
 
 This library has been tested to work with GHC 9.2.8.
+Versions of `base` 4.17 and later (GHC 9.4.1 and later) are not currently supported.
+Please wait for an update.
+https://github.com/sayo-hs/heftia/issues/11#issue-2509400153
 
 ## Getting Started
 To run the [SemanticsZoo example](https://github.com/sayo-hs/heftia/blob/08f5cfe6a8f5c0383ea2b02e93326552400f7fd3/heftia-effects/Example/SemanticsZoo/Main.hs):
