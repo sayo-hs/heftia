@@ -205,26 +205,29 @@ Examples with explanations in Japanese can be found in the [docs-ja/examples/](h
 * Semantics: Classification of behaviors resulting from the interpretation of effects.
 
     * continuation-based: The same as Algebraic Effects and Handlers.
-    * IO-based: IO + Reader pattern.
+    * IO-fused: IO + Reader pattern.
     * carrier dependent: The behavior depends on the specific type inference result of the monad. Tagless-final style.
 
-* Performance: Time complexity or space complexity.
+* Performance: Speed, particularly when the effect stack becomes deep.
 
-| Library or Language | Higher-Order Effects | Delimited Continuation | Effect System | Purely Monadic                    | Dynamic Effect Rewriting | Semantics                        | Performance (TODO) |
+| Library or Language | Higher-Order Effects | Delimited Continuation | Effect System | Purely Monadic                    | Dynamic Effect Rewriting | Semantics                        | Performance        |
 | ------------------- | -------------------- | ---------------------- | --------------| --------------------------------- | ------------------------ | -------------------------------- | ------------------ |
-| Heftia              | Yes                  | Multi-shot             | Yes           | Yes (also Applicative and others) | Yes                      | continuation-based               | ?                  |
-| freer-simple        | No                   | Multi-shot             | Yes           | Yes                               | Yes                      | continuation-based               | ?                  |
-| Polysemy            | Yes                  | No                     | Yes           | Yes                               | Yes                      | weaving-based (functorial state) | ?                  |
-| Effectful           | Yes                  | No                     | Yes           | No (based on the `IO` monad)      | Yes                      | IO-based                         | ?                  |
-| eff                 | Yes                  | Multi-shot?            | Yes           | No (based on the `IO` monad)      | Yes                      | continuation-based (IO-fused)    | ?                  |
+| Heftia              | Yes                  | Multi-shot             | Yes           | Yes (also Applicative and others) | Yes                      | continuation-based               | Slow [^5]          |
+| freer-simple        | No                   | Multi-shot             | Yes           | Yes                               | Yes                      | continuation-based               | Medium             |
+| Polysemy            | Yes                  | No                     | Yes           | Yes                               | Yes                      | weaving-based (functorial state) | Slow               |
+| Effectful           | Yes                  | No                     | Yes           | No (based on the `IO` monad)      | Yes                      | IO-fused                         | Fast               |
+| eff                 | Yes                  | Multi-shot? (restriction?: [^4])           | Yes           | No (based on the `IO` monad)      | Yes                      | continuation-based & IO-fused    | Fast?              |
+| speff               | Yes                  | Multi-shot (restriction: [^4]) | Yes   | No (based on the `IO` monad)      | Yes                      | continuation-based & IO-fused    | Fast               |
 | in-other-words      | Yes                  | Multi-shot?            | Yes           | Yes                               | No?                      | carrier dependent                | ?                  |
-| mtl                 | Yes                  | Multi-shot (`ContT`)   | Yes           | Yes                               | No                       | carrier dependent                | ?                  |
-| fused-effects       | Yes                  | No?                    | Yes           | Yes                               | No                       | carrier dependent & weaving-based (functorial state) | ?                  |
-| koka-lang           | No [^2]              | Multi-shot             | Yes           | No (language built-in)            | Yes                      | continuation-based               | ?                  |
+| mtl                 | Yes                  | Multi-shot (`ContT`)   | Yes           | Yes                               | No                       | carrier dependent                | Slow               |
+| fused-effects       | Yes                  | No?                    | Yes           | Yes                               | No                       | carrier dependent & weaving-based (functorial state) | Slow               |
+| koka-lang           | No [^2]              | Multi-shot             | Yes           | No (language built-in)            | Yes                      | continuation-based               | Fast               |
 | OCaml-lang 5        | ?                    | One-shot               | No [^3]       | No (language built-in)            | ?                        | continuation-based?              | ?                  |
 
 [^2]: https://gist.github.com/ymdryo/6fb2f7f4020c6fcda98ccc67c090dc75
 [^3]: Effects do not appear in the type signature and can potentially cause unhandled errors at runtime
+[^4]: Scoped Resumption only. e.g. Coroutines are not supported.
+[^5]: https://github.com/sayo-hs/heftia/issues/12
 
 Heftia can simply be described as a higher-order version of freer-simple.
 This is indeed true in terms of its internal mechanisms as well.
