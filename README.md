@@ -212,16 +212,16 @@ Examples with explanations in Japanese can be found in the [docs-ja/examples/](h
 
 | Library or Language | Higher-Order Effects | Delimited Continuation | Effect System | Purely Monadic                    | Dynamic Effect Rewriting | Semantics                        | Performance        |
 | ------------------- | -------------------- | ---------------------- | --------------| --------------------------------- | ------------------------ | -------------------------------- | ------------------ |
-| Heftia              | Yes                  | Multi-shot             | Yes           | Yes (also Applicative and others) | Yes                      | continuation-based               | Slow [^5]          |
-| freer-simple        | No                   | Multi-shot             | Yes           | Yes                               | Yes                      | continuation-based               | Medium             |
-| Polysemy            | Yes                  | No                     | Yes           | Yes                               | Yes                      | weaving-based (functorial state) | Slow               |
-| Effectful           | Yes                  | No                     | Yes           | No (based on the `IO` monad)      | Yes                      | IO-fused                         | Fast               |
-| eff                 | Yes                  | Multi-shot             | Yes           | No (based on the `IO` monad)      | Yes                      | continuation-based & IO-fused [^6]   | Fast?              |
-| speff               | Yes                  | Multi-shot (restriction: [^4]) | Yes   | No (based on the `IO` monad)      | Yes                      | continuation-based & IO-fused    | Fast               |
+| Heftia              | Yes                  | Multi-shot             | Yes           | Yes (also Applicative and others) | Yes                      | continuation-based               | [^5]          |
+| freer-simple        | No                   | Multi-shot             | Yes           | Yes                               | Yes                      | continuation-based               | ?             |
+| Polysemy            | Yes                  | No                     | Yes           | Yes                               | Yes                      | weaving-based (functorial state) | ?               |
+| Effectful           | Yes                  | No                     | Yes           | No (based on the `IO` monad)      | Yes                      | IO-fused                         | ?               |
+| eff                 | Yes                  | Multi-shot             | Yes           | No (based on the `IO` monad)      | Yes                      | continuation-based & IO-fused [^6]   | ?              |
+| speff               | Yes                  | Multi-shot (restriction: [^4]) | Yes   | No (based on the `IO` monad)      | Yes                      | continuation-based & IO-fused    | ?               |
 | in-other-words      | Yes                  | Multi-shot?            | Yes           | Yes                               | No?                      | carrier dependent                | ?                  |
-| mtl                 | Yes                  | Multi-shot (`ContT`)   | Yes           | Yes                               | No                       | carrier dependent                | Slow               |
-| fused-effects       | Yes                  | No?                    | Yes           | Yes                               | No                       | carrier dependent & weaving-based (functorial state) | Slow               |
-| koka-lang           | No [^2]              | Multi-shot             | Yes           | No (language built-in)            | Yes                      | continuation-based               | Fast               |
+| mtl                 | Yes                  | Multi-shot (`ContT`)   | Yes           | Yes                               | No                       | carrier dependent                | ?               |
+| fused-effects       | Yes                  | No?                    | Yes           | Yes                               | No                       | carrier dependent & weaving-based (functorial state) | ?               |
+| koka-lang           | No [^2]              | Multi-shot             | Yes           | No (language built-in)            | Yes                      | continuation-based               | ?               |
 | OCaml-lang 5        | ?                    | One-shot               | No [^3]       | No (language built-in)            | ?                        | continuation-based?              | ?                  |
 
 [^2]: https://gist.github.com/ymdryo/6fb2f7f4020c6fcda98ccc67c090dc75
