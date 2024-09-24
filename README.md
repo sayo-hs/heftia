@@ -264,7 +264,7 @@ This results in minimal surprise to the mental model of the code reader.
 * Since the representation of effectful programs in Heftia is simply a monad (`Eff`), it can be used as the base monad for transformers.
     This means you can stack any transformer on top of it.
 
-* The `Eff` monad is an instance of `MonadIO`, `MonadError`, `MonadRWS`, etc., and these behave as the senders for the embedded `IO` or the effect GADTs defined in [data-effects](https://github.com/sayo-hs/data-effects).
+* The `Eff` monad is an instance of `MonadIO`, `MonadUnliftIO`, `Alternative`, etc., and these behave as the senders for the embedded `IO` or the effect GADTs defined in [data-effects](https://github.com/sayo-hs/data-effects).
 
 ## Future Plans
 * Enriching the documentation and tests
