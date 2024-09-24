@@ -216,7 +216,7 @@ Examples with explanations in Japanese can be found in the [docs-ja/examples/](h
 | freer-simple        | No                   | Multi-shot             | Yes           | Yes                               | Yes                      | continuation-based               | Medium             |
 | Polysemy            | Yes                  | No                     | Yes           | Yes                               | Yes                      | weaving-based (functorial state) | Slow               |
 | Effectful           | Yes                  | No                     | Yes           | No (based on the `IO` monad)      | Yes                      | IO-fused                         | Fast               |
-| eff                 | Yes                  | Multi-shot? (restriction?: [^4])           | Yes           | No (based on the `IO` monad)      | Yes                      | continuation-based & IO-fused    | Fast?              |
+| eff                 | Yes                  | Multi-shot             | Yes           | No (based on the `IO` monad)      | Yes                      | continuation-based & IO-fused [^6]   | Fast?              |
 | speff               | Yes                  | Multi-shot (restriction: [^4]) | Yes   | No (based on the `IO` monad)      | Yes                      | continuation-based & IO-fused    | Fast               |
 | in-other-words      | Yes                  | Multi-shot?            | Yes           | Yes                               | No?                      | carrier dependent                | ?                  |
 | mtl                 | Yes                  | Multi-shot (`ContT`)   | Yes           | Yes                               | No                       | carrier dependent                | Slow               |
@@ -228,6 +228,7 @@ Examples with explanations in Japanese can be found in the [docs-ja/examples/](h
 [^3]: Effects do not appear in the type signature and can potentially cause unhandled errors at runtime
 [^4]: Scoped Resumption only. e.g. Coroutines are not supported.
 [^5]: https://github.com/sayo-hs/heftia/issues/12
+[^6]: https://github.com/hasura/eff/issues/12
 
 Heftia can simply be described as a higher-order version of freer-simple.
 This is indeed true in terms of its internal mechanisms as well.
