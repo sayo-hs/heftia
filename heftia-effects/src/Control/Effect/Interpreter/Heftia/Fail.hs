@@ -3,8 +3,8 @@
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 {- |
-Copyright   :  (c) 2024 Yamada Ryo
-License     :  MPL-2.0 (see the file LICENSE)
+Copyright   :  (c) 2024 Sayo Koyoneda
+License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 Stability   :  experimental
 Portability :  portable
@@ -18,9 +18,9 @@ import Data.Effect.Fail (Fail (Fail), LFail)
 import Data.Effect.HFunctor (HFunctor)
 import Data.Hefty.Union (Member, Union)
 
-runFailAsIO ::
-    forall r fr u c.
-    (Freer c fr, Union u, HFunctor (u '[]), Member u IO r) =>
-    Eff u fr '[] (LFail ': r) ~> Eff u fr '[] r
+runFailAsIO
+    :: forall r fr u c
+     . (Freer c fr, Union u, HFunctor (u '[]), Member u IO r)
+    => Eff u fr '[] (LFail ': r) ~> Eff u fr '[] r
 runFailAsIO = interpret \(Fail s) -> sendIns @IO $ fail s
 {-# INLINE runFailAsIO #-}

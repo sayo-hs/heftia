@@ -3,10 +3,10 @@
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 {- |
-Copyright   :  (c) 2023 Yamada Ryo
+Copyright   :  (c) 2023 Sayo Koyoneda
                (c) 2017 FP Complete
                (c) 2022 Fumiaki Kinoshita
-License     :  MPL-2.0 (see the file LICENSE)
+License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 Stability   :  experimental
 Portability :  portable
@@ -20,7 +20,7 @@ import Data.Effect.Resource (Resource (Bracket, BracketOnExcept))
 import UnliftIO (MonadUnliftIO, bracket, bracketOnError)
 
 -- | Elaborates the `Resource` effect under the `MonadUnliftIO` context.
-resourceToIO :: MonadUnliftIO m => Elab Resource m
+resourceToIO :: (MonadUnliftIO m) => Elab Resource m
 resourceToIO = \case
     Bracket acquire release thing -> bracket acquire release thing
     BracketOnExcept acquire onError thing -> bracketOnError acquire onError thing

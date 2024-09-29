@@ -3,8 +3,8 @@
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 {- |
-Copyright   :  (c) 2024 Yamada Ryo
-License     :  MPL-2.0 (see the file LICENSE)
+Copyright   :  (c) 2024 Sayo Koyoneda
+License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 Stability   :  experimental
 Portability :  portable
@@ -23,32 +23,32 @@ import Data.Effect.State (LState, State, get, modify)
 import Data.Hefty.Union (Member, Union)
 import Numeric.Natural (Natural)
 
-runFreshNatural ::
-    ( Freer c fr
-    , Union u
-    , HFunctor (u '[])
-    , Member u (State Natural) (LState Natural ': r)
-    , c (Eff u fr '[] r)
-    , c (StateT Natural (Eff u fr '[] r))
-    , Monad (Eff u fr '[] r)
-    , Monad (Eff u fr '[] (LState Natural ': r))
-    ) =>
-    Eff u fr '[] (LFresh Natural ': r) a ->
-    Eff u fr '[] r (Natural, a)
+runFreshNatural
+    :: ( Freer c fr
+       , Union u
+       , HFunctor (u '[])
+       , Member u (State Natural) (LState Natural ': r)
+       , c (Eff u fr '[] r)
+       , c (StateT Natural (Eff u fr '[] r))
+       , Monad (Eff u fr '[] r)
+       , Monad (Eff u fr '[] (LState Natural ': r))
+       )
+    => Eff u fr '[] (LFresh Natural ': r) a
+    -> Eff u fr '[] r (Natural, a)
 runFreshNatural =
     raiseUnder
         >>> runFreshNaturalAsState
         >>> runState 0
 {-# INLINE runFreshNatural #-}
 
-runFreshNaturalAsState ::
-    forall r fr u c.
-    ( Freer c fr
-    , Union u
-    , Member u (State Natural) r
-    , Monad (Eff u fr '[] r)
-    , HFunctor (u '[])
-    ) =>
-    Eff u fr '[] (LFresh Natural ': r) ~> Eff u fr '[] r
+runFreshNaturalAsState
+    :: forall r fr u c
+     . ( Freer c fr
+       , Union u
+       , Member u (State Natural) r
+       , Monad (Eff u fr '[] r)
+       , HFunctor (u '[])
+       )
+    => Eff u fr '[] (LFresh Natural ': r) ~> Eff u fr '[] r
 runFreshNaturalAsState =
     interpret \Fresh -> get @Natural <* modify @Natural (+ 1)

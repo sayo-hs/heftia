@@ -3,8 +3,8 @@
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 {- |
-Copyright   :  (c) 2024 Yamada Ryo
-License     :  MPL-2.0 (see the file LICENSE)
+Copyright   :  (c) 2024 Sayo Koyoneda
+License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 Stability   :  experimental
 Portability :  portable
@@ -23,35 +23,35 @@ import Data.Effect.State (LState, State, gets, put)
 import Data.Hefty.Union (Member, Union)
 import Data.List (uncons)
 
-runInputEff ::
-    forall i r eh fr u c.
-    (Freer c fr, Union u, Applicative (Eff u fr eh r), HFunctor (u eh)) =>
-    Eff u fr eh r i ->
-    Eff u fr eh (LInput i ': r) ~> Eff u fr eh r
+runInputEff
+    :: forall i r eh fr u c
+     . (Freer c fr, Union u, Applicative (Eff u fr eh r), HFunctor (u eh))
+    => Eff u fr eh r i
+    -> Eff u fr eh (LInput i ': r) ~> Eff u fr eh r
 runInputEff a = interpretRec \Input -> a
 {-# INLINE runInputEff #-}
 
-runInputConst ::
-    forall i r eh fr u c.
-    (Freer c fr, Union u, Applicative (Eff u fr eh r), HFunctor (u eh)) =>
-    i ->
-    Eff u fr eh (LInput i ': r) ~> Eff u fr eh r
+runInputConst
+    :: forall i r eh fr u c
+     . (Freer c fr, Union u, Applicative (Eff u fr eh r), HFunctor (u eh))
+    => i
+    -> Eff u fr eh (LInput i ': r) ~> Eff u fr eh r
 runInputConst i = interpretRec \Input -> pure i
 {-# INLINE runInputConst #-}
 
-runInputList ::
-    forall i r fr u c.
-    ( Freer c fr
-    , Union u
-    , Applicative (Eff u fr '[] r)
-    , Monad (Eff u fr '[] (LState [i] ': r))
-    , c (Eff u fr '[] r)
-    , c (StateT [i] (Eff u fr '[] r))
-    , Member u (State [i]) (LState [i] ': r)
-    , HFunctor (u '[])
-    ) =>
-    [i] ->
-    Eff u fr '[] (LInput (Maybe i) ': r) ~> Eff u fr '[] r
+runInputList
+    :: forall i r fr u c
+     . ( Freer c fr
+       , Union u
+       , Applicative (Eff u fr '[] r)
+       , Monad (Eff u fr '[] (LState [i] ': r))
+       , c (Eff u fr '[] r)
+       , c (StateT [i] (Eff u fr '[] r))
+       , Member u (State [i]) (LState [i] ': r)
+       , HFunctor (u '[])
+       )
+    => [i]
+    -> Eff u fr '[] (LInput (Maybe i) ': r) ~> Eff u fr '[] r
 runInputList is =
     raiseUnder
         >>> ( interpret \Input -> do

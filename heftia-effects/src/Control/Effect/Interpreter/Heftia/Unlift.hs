@@ -3,8 +3,8 @@
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 {- |
-Copyright   :  (c) 2024 Yamada Ryo
-License     :  MPL-2.0 (see the file LICENSE)
+Copyright   :  (c) 2024 Sayo Koyoneda
+License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 Stability   :  experimental
 Portability :  portable
@@ -18,17 +18,17 @@ import Data.Effect (LiftIns)
 import Data.Effect.Unlift (UnliftBase (WithRunInBase), UnliftIO)
 import Data.Hefty.Union (Union)
 
-runUnliftBase ::
-    forall b fr u c.
-    (Freer c fr, Union u, c b) =>
-    Eff u fr '[UnliftBase b] '[LiftIns b] ~> b
+runUnliftBase
+    :: forall b fr u c
+     . (Freer c fr, Union u, c b)
+    => Eff u fr '[UnliftBase b] '[LiftIns b] ~> b
 runUnliftBase =
     runEff . interpretH \(WithRunInBase f) ->
         send0 $ f runUnliftBase
 
-runUnliftIO ::
-    forall fr u c.
-    (Freer c fr, Union u, c IO) =>
-    Eff u fr '[UnliftIO] '[LiftIns IO] ~> IO
+runUnliftIO
+    :: forall fr u c
+     . (Freer c fr, Union u, c IO)
+    => Eff u fr '[UnliftIO] '[LiftIns IO] ~> IO
 runUnliftIO = runUnliftBase
 {-# INLINE runUnliftIO #-}

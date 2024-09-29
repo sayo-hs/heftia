@@ -3,8 +3,8 @@
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 {- |
-Copyright   :  (c) 2023 Yamada Ryo
-License     :  MPL-2.0 (see the file LICENSE)
+Copyright   :  (c) 2023 Sayo Koyoneda
+License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 Stability   :  experimental
 Portability :  portable
@@ -29,44 +29,44 @@ import Data.Effect.Reader (Ask (..), LAsk, Local (..), ask)
 import Data.Function ((&))
 import Data.Hefty.Union (ForallHFunctor, HFunctorUnion, Member, Union)
 
-runReader ::
-    forall r rh rf fr u c.
-    ( Freer c fr
-    , HFunctorUnion u
-    , ForallHFunctor u rh
-    , Member u (Ask r) (LAsk r ': rf)
-    , Functor (Eff u fr rh (LAsk r ': rf))
-    , Applicative (Eff u fr rh rf)
-    ) =>
-    r ->
-    Eff u fr (Local r ': rh) (LAsk r ': rf) ~> Eff u fr rh rf
+runReader
+    :: forall r rh rf fr u c
+     . ( Freer c fr
+       , HFunctorUnion u
+       , ForallHFunctor u rh
+       , Member u (Ask r) (LAsk r ': rf)
+       , Functor (Eff u fr rh (LAsk r ': rf))
+       , Applicative (Eff u fr rh rf)
+       )
+    => r
+    -> Eff u fr (Local r ': rh) (LAsk r ': rf) ~> Eff u fr rh rf
 runReader r = runLocal >>> runAsk r
 {-# INLINE runReader #-}
 
 -- | Elaborate the t'Local' effect.
-runLocal ::
-    forall r rh ef fr u c.
-    ( Freer c fr
-    , HFunctorUnion u
-    , ForallHFunctor u rh
-    , Member u (Ask r) ef
-    , Functor (Eff u fr rh ef)
-    ) =>
-    Eff u fr (Local r ': rh) ef ~> Eff u fr rh ef
+runLocal
+    :: forall r rh ef fr u c
+     . ( Freer c fr
+       , HFunctorUnion u
+       , ForallHFunctor u rh
+       , Member u (Ask r) ef
+       , Functor (Eff u fr rh ef)
+       )
+    => Eff u fr (Local r ': rh) ef ~> Eff u fr rh ef
 runLocal = interpretRecH elabLocal
 {-# INLINE runLocal #-}
 
-elabLocal ::
-    forall r eh ef fr u c.
-    (Member u (Ask r) ef, Freer c fr, Union u, HFunctor (u eh), Functor (Eff u fr eh ef)) =>
-    Elab (Local r) (Eff u fr eh ef)
+elabLocal
+    :: forall r eh ef fr u c
+     . (Member u (Ask r) ef, Freer c fr, Union u, HFunctor (u eh), Functor (Eff u fr eh ef))
+    => Elab (Local r) (Eff u fr eh ef)
 elabLocal (Local f a) = a & interposeRec @(Ask r) \Ask -> f <$> ask
 
 -- | Interpret the t'Ask' effect.
-runAsk ::
-    forall r rs eh fr u c.
-    (Freer c fr, Union u, Applicative (Eff u fr eh rs), HFunctor (u eh)) =>
-    r ->
-    Eff u fr eh (LAsk r ': rs) ~> Eff u fr eh rs
+runAsk
+    :: forall r rs eh fr u c
+     . (Freer c fr, Union u, Applicative (Eff u fr eh rs), HFunctor (u eh))
+    => r
+    -> Eff u fr eh (LAsk r ': rs) ~> Eff u fr eh rs
 runAsk r = interpretRec \Ask -> pure r
 {-# INLINE runAsk #-}

@@ -3,8 +3,8 @@
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 {- |
-Copyright   :  (c) 2023 Yamada Ryo
-License     :  MPL-2.0 (see the file LICENSE)
+Copyright   :  (c) 2023 Sayo Koyoneda
+License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 Stability   :  experimental
 Portability :  portable
@@ -23,22 +23,22 @@ import Data.Effect.Reader (LAsk)
 import Data.Hefty.Union (Union)
 
 -- | Elaborate the t'ImplicitProvider'' effect using the given interpreter.
-elaborateImplicitProvider ::
-    (c g, e g) =>
-    (f ~> g) ->
-    (i -> forall x. g x -> f x) ->
-    Elab (ImplicitProvider' c i e) f
+elaborateImplicitProvider
+    :: (c g, e g)
+    => (f ~> g)
+    -> (i -> forall x. g x -> f x)
+    -> Elab (ImplicitProvider' c i e) f
 elaborateImplicitProvider iLower run (WithImplicit i f) = run i $ f iLower
 {-# INLINE elaborateImplicitProvider #-}
 
-runImplicitProvider ::
-    ( e (Eff u fr eh (LAsk i ': ef))
-    , c (Eff u fr eh (LAsk i ': ef))
-    , Freer c fr
-    , Union u
-    , HFunctor (u eh)
-    , Applicative (Eff u fr eh ef)
-    ) =>
-    Elab (ImplicitProvider' c i e) (Eff u fr eh ef)
+runImplicitProvider
+    :: ( e (Eff u fr eh (LAsk i ': ef))
+       , c (Eff u fr eh (LAsk i ': ef))
+       , Freer c fr
+       , Union u
+       , HFunctor (u eh)
+       , Applicative (Eff u fr eh ef)
+       )
+    => Elab (ImplicitProvider' c i e) (Eff u fr eh ef)
 runImplicitProvider (WithImplicit i f) = runAsk i $ f raise
 {-# INLINE runImplicitProvider #-}

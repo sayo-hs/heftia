@@ -1,6 +1,6 @@
 cabal-version:      2.4
 name:               heftia-effects
-version:            0.3.1.0
+version:            0.4.0.0
 
 -- A short (one-line) description of the package.
 synopsis: higher-order effects done right
@@ -16,11 +16,11 @@ bug-reports: https://github.com/sayo-hs/heftia
 -- The license under which the package is released.
 license:            MPL-2.0
 license-file:       LICENSE
-author:             Yamada Ryo <ymdfield@outlook.jp>
-maintainer:         Yamada Ryo <ymdfield@outlook.jp>
+author:             Sayo Koyoneda <ymdfield@outlook.jp>
+maintainer:         Sayo Koyoneda <ymdfield@outlook.jp>
 
 -- A copyright notice.
-copyright: 2023-2024 Yamada Ryo
+copyright: 2023-2024 Sayo Koyoneda
 category: Control, Effect, Monads
 
 extra-source-files:
@@ -53,10 +53,9 @@ common common-base
         PatternSynonyms
 
     build-depends:
-        base ^>= 4.16,
-        ghc-typelits-knownnat ^>= 0.7,
+        base >= 4.16 && < 4.21,
         data-effects ^>= 0.1.2,
-        heftia ^>= 0.3.1,
+        heftia ^>= 0.4,
 
     ghc-options: -Wall -fplugin GHC.TypeLits.KnownNat.Solver
 
@@ -83,23 +82,8 @@ library
         Control.Effect.Interpreter.Heftia.Concurrent.Timer
 
     reexported-modules:
-        Control.Effect.Hefty,
-        Control.Effect.Free,
-        Control.Effect.ExtensibleFinal,
-        Control.Effect.ExtensibleChurch,
-        Control.Effect.ExtensibleTree,
-        Control.Effect.ExtensibleFinalA,
-        Control.Effect.ExtensibleTreeA,
-        Control.Effect.ExtensibleFastA,
-        Control.Hefty,
-        Control.Freer,
-        Control.Freer.Final,
-        Control.Monad.Freer,
-        Control.Monad.Freer.Church,
-        Control.Monad.Freer.Tree,
-        Data.Hefty.Union,
-        Data.Hefty.Extensible,
-        Data.Free.Sum,
+        Control.Monad.Hefty,
+        Data.Effect.OpenUnion,
         Data.Effect,
         Data.Effect.TH,
         Data.Effect.Tag,
@@ -135,15 +119,6 @@ library
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:
-        mtl                           ^>= 2.2.2,
-        transformers                  ^>= 0.5.6,
-        extensible                    ^>= 0.9,
-        unliftio                      ^>= 0.2.0,
-        free                          ^>= 5.2,
-        containers                    ^>= 0.6.5,
-        extra                         ^>= 1.7.14,
-        time                          ^>= 1.11.1,
-        unbounded-delays              ^>= 0.1.1,
 
     hs-source-dirs:   src
 
