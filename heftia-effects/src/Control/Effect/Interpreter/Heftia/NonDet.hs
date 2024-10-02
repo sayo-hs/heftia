@@ -77,7 +77,9 @@ runEmpty =
 
         @choose :: m Bool@
 -}
-runChooseH :: (Choose <| ef) => Eff (ChooseH ': eh) ef ~> Eff eh ef
+runChooseH
+    :: (Choose <| ef, HFunctors eh)
+    => Eff (ChooseH ': eh) ef ~> Eff eh ef
 runChooseH =
     interpretRecH \(ChooseH a b) -> do
         world <- choose

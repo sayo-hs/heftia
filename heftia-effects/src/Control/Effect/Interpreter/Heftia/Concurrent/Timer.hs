@@ -6,7 +6,7 @@ import Control.Concurrent.Thread.Delay qualified as Thread
 import Control.Effect (sendIns, type (~>))
 import Control.Effect.Interpreter.Heftia.Coroutine (runCoroutine)
 import Control.Effect.Interpreter.Heftia.State (evalState)
-import Control.Monad.Hefty (interposeRec, interpret, interpretRec, raiseN, raiseNUnder, (:!!), type (<|))
+import Control.Monad.Hefty (HFunctors, interposeRec, interpret, interpretRec, raiseN, raiseNUnder, (:!!), type (<|))
 import Data.Effect.Concurrent.Timer (CyclicTimer (Wait), Timer (..), clock, cyclicTimer)
 import Data.Effect.Coroutine (Status (Coroutine, Done))
 import Data.Effect.State (get, put)
@@ -19,7 +19,7 @@ import UnliftIO (liftIO)
 
 runTimerIO
     :: forall eh ef
-     . (IO <| ef)
+     . (IO <| ef, HFunctors eh)
     => eh :!! Timer ': ef ~> eh :!! ef
 runTimerIO =
     interpretRec \case
@@ -41,7 +41,7 @@ runCyclicTimer a = do
                     Coroutine () k -> put =<< raiseN @1 (k delta)
         & evalState timer0
 
-restartClock :: (Timer <| ef) => eh :!! ef ~> eh :!! ef
+restartClock :: (Timer <| ef, HFunctors eh) => eh :!! ef ~> eh :!! ef
 restartClock a = do
     t0 <- clock
     a & interposeRec \case

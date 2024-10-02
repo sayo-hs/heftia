@@ -70,16 +70,22 @@ import Data.Effect.OpenUnion.Internal.FO (
  )
 import Data.Effect.OpenUnion.Internal.HO (
     EffectH,
+    HFunctors,
+    IsHFunctors,
     LookupH,
     MemberH,
     MemberHBy,
+    NotHFunctor,
     UnionH,
     bundleAllUnionH,
     bundleUnionH,
     bundleUnionUnderH,
     decomp0H,
+    decomp0H_,
     decompH,
+    decompH_,
     extractH,
+    extractH_,
     flipAllUnionH,
     flipUnionH,
     flipUnionUnderH,
@@ -89,6 +95,7 @@ import Data.Effect.OpenUnion.Internal.HO (
     prefixUnionH,
     prefixUnionUnderH,
     prjH,
+    prjH_,
     strengthenNH,
     strengthenNUnderH,
     suffixUnionH,
@@ -103,6 +110,7 @@ import Data.Effect.OpenUnion.Internal.HO (
     weakensH,
     weakensUnderH,
     (!!+),
+    (!!+.),
     type (<<|),
  )
 

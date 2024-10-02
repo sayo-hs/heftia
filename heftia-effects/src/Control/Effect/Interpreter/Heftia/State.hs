@@ -14,6 +14,7 @@ Interpreter for the t'Data.Effect.State.State' effect.
 module Control.Effect.Interpreter.Heftia.State where
 
 import Control.Effect (type (~>))
+import Control.Monad.Hefty (HFunctors)
 import Control.Monad.Hefty.Interpret (interpretRec)
 import Control.Monad.Hefty.Interpret.State (
     StateInterpreter,
@@ -29,16 +30,16 @@ import Data.Functor ((<&>))
 import UnliftIO (newIORef, readIORef, writeIORef)
 
 -- | Interpret the 'Get'/'Put' effects.
-runState :: forall s r a. s -> Eff '[] (State s ': r) a -> Eff '[] r (s, a)
+runState :: forall s ef a. s -> Eff '[] (State s ': ef) a -> Eff '[] ef (s, a)
 runState s0 = interpretStateBy s0 (curry pure) handleState
 
-evalState :: forall s r a. s -> Eff '[] (State s ': r) a -> Eff '[] r a
+evalState :: forall s ef a. s -> Eff '[] (State s ': ef) a -> Eff '[] ef a
 evalState s0 = interpretStateBy s0 (const pure) handleState
 
-execState :: forall s r a. s -> Eff '[] (State s ': r) a -> Eff '[] r s
+execState :: forall s ef a. s -> Eff '[] (State s ': ef) a -> Eff '[] ef s
 execState s0 = interpretStateBy s0 (\s _ -> pure s) handleState
 
-runStateRec :: forall s r. s -> Eff '[] (State s ': r) ~> Eff '[] r
+runStateRec :: forall s ef. s -> Eff '[] (State s ': ef) ~> Eff '[] ef
 runStateRec s0 = interpretStateRecWith s0 handleState
 
 handleState :: StateInterpreter s (State s) (Eff '[] r) ans
@@ -48,11 +49,11 @@ handleState = \case
 {-# INLINE handleState #-}
 
 runStateIORef
-    :: forall s r eh a
-     . (IO <| r)
+    :: forall s ef eh a
+     . (IO <| ef, HFunctors eh)
     => s
-    -> Eff eh (State s ': r) a
-    -> Eff eh r (s, a)
+    -> Eff eh (State s ': ef) a
+    -> Eff eh ef (s, a)
 runStateIORef s0 m = do
     ref <- newIORef s0
     a <-

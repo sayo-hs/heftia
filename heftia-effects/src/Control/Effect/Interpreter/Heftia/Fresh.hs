@@ -14,6 +14,7 @@ module Control.Effect.Interpreter.Heftia.Fresh where
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
 import Control.Effect.Interpreter.Heftia.State (runState)
+import Control.Monad.Hefty (HFunctors)
 import Control.Monad.Hefty.Interpret (interpretRec)
 import Control.Monad.Hefty.Transform (raiseUnder)
 import Control.Monad.Hefty.Types (Eff)
@@ -27,7 +28,7 @@ runFreshNatural =
     raiseUnder >>> runFreshNaturalAsState >>> runState 0
 
 runFreshNaturalAsState
-    :: (State Natural <| r)
+    :: (State Natural <| r, HFunctors eh)
     => Eff eh (Fresh Natural ': r) ~> Eff eh r
 runFreshNaturalAsState =
     interpretRec \Fresh -> get @Natural <* modify @Natural (+ 1)

@@ -14,79 +14,49 @@ module Control.Effect.Interpreter.Heftia.Output where
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
 import Control.Effect.Interpreter.Heftia.State (runState)
-import Control.Effect.Interpreter.Heftia.Writer (runTell, runTellA)
-import Data.Effect.HFunctor (HFunctor)
-import Data.Effect.Output (LOutput, Output (Output))
-import Data.Effect.State (LState, State, modify)
+import Control.Effect.Interpreter.Heftia.Writer (handleTell)
+import Control.Monad.Hefty (
+    Eff,
+    HFunctors,
+    interpret,
+    interpretRec,
+    interpretStateBy,
+    raiseUnder,
+ )
+import Data.Effect.Output (Output (Output))
+import Data.Effect.State (modify)
 import Data.Effect.Writer (Tell (Tell))
 
 runOutputEff
-    :: (Freer c fr, Union u, HFunctor (u eh))
-    => (o -> Eff u fr eh r ())
-    -> Eff u fr eh (LOutput o ': r) ~> Eff u fr eh r
+    :: forall o ef eh
+     . (HFunctors eh)
+    => (o -> Eff eh ef ())
+    -> Eff eh (Output o ': ef) ~> Eff eh ef
 runOutputEff f = interpretRec \(Output o) -> f o
-{-# INLINE runOutputEff #-}
 
 ignoreOutput
-    :: (Freer c fr, Union u, HFunctor (u eh), Applicative (Eff u fr eh r))
-    => Eff u fr eh (LOutput o ': r) ~> Eff u fr eh r
+    :: forall o ef eh
+     . (HFunctors eh)
+    => Eff eh (Output o ': ef) ~> Eff eh ef
 ignoreOutput = runOutputEff $ const $ pure ()
-{-# INLINE ignoreOutput #-}
 
 runOutputList
-    :: forall o a r fr u c
-     . ( Freer c fr
-       , Union u
-       , c (Eff u fr '[] r)
-       , c (StateT [o] (Eff u fr '[] r))
-       , Applicative (Eff u fr '[] r)
-       , Monad (Eff u fr '[] (LState [o] ': r))
-       , Member u (State [o]) (LState [o] ': r)
-       , HFunctor (u '[])
-       )
-    => Eff u fr '[] (LOutput o ': r) a
-    -> Eff u fr '[] r ([o], a)
+    :: forall o a ef
+     . Eff '[] (Output o ': ef) a
+    -> Eff '[] ef ([o], a)
 runOutputList =
     raiseUnder
         >>> interpret (\(Output o) -> modify (o :))
         >>> runState []
 
-{- | Run an `Output` effect by transforming into a monoid.
-     The carrier is required to be a monad.
--}
+-- | Run an `Output` effect by transforming into a monoid.
 runOutputMonoid
-    :: forall o m a r fr u c
-     . ( Monoid m
-       , Freer c fr
-       , Union u
-       , Monad (Eff u fr '[] r)
-       , c (CPS.WriterT m (Eff u fr '[] r))
-       , HFunctor (u '[])
+    :: forall o w a ef
+     . ( Monoid w
        )
-    => (o -> m)
-    -> Eff u fr '[] (LOutput o ': r) a
-    -> Eff u fr '[] r (m, a)
+    => (o -> w)
+    -> Eff '[] (Output o ': ef) a
+    -> Eff '[] ef (w, a)
 runOutputMonoid f =
-    raiseUnder
-        >>> interpret (\(Output o) -> send0 $ Tell $ f o)
-        >>> runTell
-
-{- | Strict version of `runOutputMonoid`.
-     The constraint on the carrier has been weakened to applicative.
--}
-runOutputMonoidA
-    :: forall o m a r fr u c
-     . ( Monoid m
-       , Freer c fr
-       , Union u
-       , Applicative (Eff u fr '[] r)
-       , c (Strict.WriterT m (Eff u fr '[] r))
-       , HFunctor (u '[])
-       )
-    => (o -> m)
-    -> Eff u fr '[] (LOutput o ': r) a
-    -> Eff u fr '[] r (m, a)
-runOutputMonoidA f =
-    raiseUnder
-        >>> interpret (\(Output o) -> send0 $ Tell $ f o)
-        >>> runTellA
+    interpretStateBy mempty (curry pure) \(Output o) ->
+        handleTell $ Tell $ f o
