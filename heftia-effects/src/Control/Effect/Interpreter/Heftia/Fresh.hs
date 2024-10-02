@@ -13,42 +13,21 @@ module Control.Effect.Interpreter.Heftia.Fresh where
 
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
-import Control.Effect.Hefty (Eff, interpret, raiseUnder)
 import Control.Effect.Interpreter.Heftia.State (runState)
-import Control.Freer (Freer)
-import Control.Monad.State (StateT)
-import Data.Effect.Fresh (Fresh (Fresh), LFresh)
-import Data.Effect.HFunctor (HFunctor)
-import Data.Effect.State (LState, State, get, modify)
-import Data.Hefty.Union (Member, Union)
+import Control.Monad.Hefty.Interpret (interpretRec)
+import Control.Monad.Hefty.Transform (raiseUnder)
+import Control.Monad.Hefty.Types (Eff)
+import Data.Effect.Fresh (Fresh (Fresh))
+import Data.Effect.OpenUnion.Internal.FO (type (<|))
+import Data.Effect.State (State, get, modify)
 import Numeric.Natural (Natural)
 
-runFreshNatural
-    :: ( Freer c fr
-       , Union u
-       , HFunctor (u '[])
-       , Member u (State Natural) (LState Natural ': r)
-       , c (Eff u fr '[] r)
-       , c (StateT Natural (Eff u fr '[] r))
-       , Monad (Eff u fr '[] r)
-       , Monad (Eff u fr '[] (LState Natural ': r))
-       )
-    => Eff u fr '[] (LFresh Natural ': r) a
-    -> Eff u fr '[] r (Natural, a)
+runFreshNatural :: Eff '[] (Fresh Natural ': r) a -> Eff '[] r (Natural, a)
 runFreshNatural =
-    raiseUnder
-        >>> runFreshNaturalAsState
-        >>> runState 0
-{-# INLINE runFreshNatural #-}
+    raiseUnder >>> runFreshNaturalAsState >>> runState 0
 
 runFreshNaturalAsState
-    :: forall r fr u c
-     . ( Freer c fr
-       , Union u
-       , Member u (State Natural) r
-       , Monad (Eff u fr '[] r)
-       , HFunctor (u '[])
-       )
-    => Eff u fr '[] (LFresh Natural ': r) ~> Eff u fr '[] r
+    :: (State Natural <| r)
+    => Eff eh (Fresh Natural ': r) ~> Eff eh r
 runFreshNaturalAsState =
-    interpret \Fresh -> get @Natural <* modify @Natural (+ 1)
+    interpretRec \Fresh -> get @Natural <* modify @Natural (+ 1)

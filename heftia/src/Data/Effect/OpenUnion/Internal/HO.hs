@@ -61,15 +61,19 @@ module Data.Effect.OpenUnion.Internal.HO where
 
 import Control.Effect (type (~>))
 import Data.Coerce (coerce)
+import Data.Effect (IsHFunctor)
 import Data.Effect.HFunctor (HFunctor, hfmap)
+import Data.Effect.Key (type (##>))
 import Data.Effect.OpenUnion.Internal (
     BundleUnder,
     Drop,
+    ElemIndex,
     FindElem,
     IfNotFound,
     IsSuffixOf,
     KnownLength,
     Length,
+    LookupError,
     P (unP),
     PrefixLength,
     Reverse,
@@ -81,6 +85,7 @@ import Data.Effect.OpenUnion.Internal (
     Take,
     WeakenN,
     WeakenNUnder,
+    WeakenUnder,
     elemNo,
     prefixLen,
     reifyLength,
@@ -90,6 +95,7 @@ import Data.Effect.OpenUnion.Internal (
     type (++),
  )
 import Data.Kind (Type)
+import Data.Type.Bool (type (&&))
 import GHC.TypeNats (KnownNat, type (-))
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -107,11 +113,19 @@ data UnionH (es :: [EffectH]) (f :: Type -> Type) (a :: Type) where
         -- ^ Continuation of interpretation. Due to this component, this open union becomes a free 'HFunctor', which contributes to performance improvement.
         -> UnionH es f a
 
-hfmapUnion :: (f ~> g) -> UnionH es f a -> UnionH es g a
+class HFunctors es
+instance HFunctors '[]
+instance (IsHFunctor e ~ 'True, HFunctors es) => HFunctors (e ': es)
+
+type family IsHFunctors es where
+    IsHFunctors '[] = 'True
+    IsHFunctors (e ': es) = IsHFunctor e && IsHFunctors es
+
+hfmapUnion :: (HFunctors es) => (f ~> g) -> UnionH es f a -> UnionH es g a
 hfmapUnion phi (UnionH n e koi) = UnionH n e (phi . koi)
 {-# INLINE hfmapUnion #-}
 
-instance HFunctor (UnionH es) where
+instance (HFunctors es) => HFunctor (UnionH es) where
     hfmap f = hfmapUnion f
     {-# INLINE hfmap #-}
 
@@ -136,8 +150,17 @@ instance (FindElem e es, IfNotFound e es es) => MemberH e es where
     prjH = unsafePrjH $ unP (elemNo :: P e es)
     {-# INLINE prjH #-}
 
-infix 3 <!!
-type (<!!) = MemberH
+infix 3 <<|
+type (<<|) = MemberH
+
+type MemberHBy key es = LookupH key es <<| es
+
+type LookupH key es = LookupH_ key es es
+
+type family LookupH_ (key :: k) r w :: EffectH where
+    LookupH_ key (key ##> e ': _) w = key ##> e
+    LookupH_ key (_ ': r) w = LookupH_ key r w
+    LookupH_ key '[] w = LookupError key w
 
 decompH :: (HFunctor e) => UnionH (e ': es) f a -> Either (UnionH es f a) (e f a)
 decompH (UnionH 0 a koi) = Right $ hfmap koi $ unsafeCoerce a
@@ -160,7 +183,7 @@ extractH :: (HFunctor e) => UnionH '[e] f a -> e f a
 extractH (UnionH _ a koi) = hfmap koi $ unsafeCoerce a
 {-# INLINE extractH #-}
 
-weakenH :: UnionH es f a -> UnionH (any ': es) f a
+weakenH :: forall any es f a. UnionH es f a -> UnionH (any ': es) f a
 weakenH (UnionH n a koi) = UnionH (n + 1) a koi
 {-# INLINE weakenH #-}
 
@@ -172,6 +195,16 @@ weakenNH :: forall len es es' f a. (WeakenN len es es') => UnionH es f a -> Unio
 weakenNH (UnionH n a koi) = UnionH (n + wordVal @len) a koi
 {-# INLINE weakenNH #-}
 
+weakenUnderH :: forall any e es f a. UnionH (e ': es) f a -> UnionH (e ': any ': es) f a
+weakenUnderH u@(UnionH n a koi)
+    | n == 0 = coerce u
+    | otherwise = UnionH (n + 1) a koi
+{-# INLINE weakenUnderH #-}
+
+weakensUnderH :: forall offset es es' f a. (WeakenUnder offset es es') => UnionH es f a -> UnionH es' f a
+weakensUnderH = weakenNUnderH @(PrefixLength es es') @offset
+{-# INLINE weakensUnderH #-}
+
 weakenNUnderH
     :: forall len offset es es' f a
      . (WeakenNUnder len offset es es')
@@ -182,6 +215,12 @@ weakenNUnderH u@(UnionH n a koi)
     | otherwise = UnionH (n + wordVal @len) a koi
 {-# INLINE weakenNUnderH #-}
 
+strengthenH :: forall e es f a. (e <<| es) => UnionH (e ': es) f a -> UnionH es f a
+strengthenH (UnionH n a koi)
+    | n == 0 = UnionH (wordVal @(ElemIndex e es)) a koi
+    | otherwise = UnionH (n - 1) a koi
+{-# INLINE strengthenH #-}
+
 strengthensH :: forall es es' f a. (Strengthen es es') => UnionH es f a -> UnionH es' f a
 strengthensH = strengthenNH @(PrefixLength es' es)
 {-# INLINE strengthensH #-}
@@ -189,6 +228,13 @@ strengthensH = strengthenNH @(PrefixLength es' es)
 strengthenNH :: forall len es es' f a. (StrengthenN len es es') => UnionH es f a -> UnionH es' f a
 strengthenNH (UnionH n a koi) = UnionH (strengthenMap @_ @_ @len @es @es' n) a koi
 {-# INLINE strengthenNH #-}
+
+strengthenUnderH :: forall e2 e1 es f a. (e2 <<| es) => UnionH (e1 ': e2 ': es) f a -> UnionH (e1 ': es) f a
+strengthenUnderH u@(UnionH n a koi)
+    | n == 0 = coerce u
+    | n == 1 = UnionH (1 + wordVal @(ElemIndex e2 es)) a koi
+    | otherwise = UnionH (n - 1) a koi
+{-# INLINE strengthenUnderH #-}
 
 strengthensUnderH
     :: forall offset es es' f a
@@ -300,7 +346,7 @@ bundleAllUnionH :: UnionH es f a -> UnionH '[UnionH es] f a
 bundleAllUnionH u = UnionH 0 u id
 {-# INLINE bundleAllUnionH #-}
 
-unbundleAllUnionH :: UnionH '[UnionH es] f a -> UnionH es f a
+unbundleAllUnionH :: (HFunctors es) => UnionH '[UnionH es] f a -> UnionH es f a
 unbundleAllUnionH = extractH
 {-# INLINE unbundleAllUnionH #-}
 

@@ -5,6 +5,7 @@ module Control.Monad.Hefty (
     module Control.Monad.Hefty.Interpret,
     module Control.Monad.Hefty.Interpret.State,
     module Control.Monad.Hefty.Transform,
+    module Data.Effect.OpenUnion,
 ) where
 
 import Control.Monad.Hefty.Interpret (
@@ -58,6 +59,7 @@ import Control.Monad.Hefty.Interpret (
 import Control.Monad.Hefty.Interpret.State (
     StateElaborator,
     StateInterpreter,
+    interposeStateBy,
     interpretStateBy,
     iterStateAllEffHFBy,
     reinterpretStateBy,
@@ -70,18 +72,27 @@ import Control.Monad.Hefty.Transform (
     bundleN,
     bundleUnder,
     bundleUnderH,
+    raise,
+    raiseH,
     raiseN,
     raiseNH,
     raiseNUnder,
     raiseNUnderH,
+    raiseUnder,
+    raiseUnderH,
     raises,
     raisesH,
+    raisesUnder,
     rewrite,
     rewriteH,
+    subsume,
+    subsumeH,
     subsumeN,
     subsumeNH,
     subsumeNUnder,
     subsumeNUnderH,
+    subsumeUnder,
+    subsumeUnderH,
     subsumes,
     subsumesH,
     subsumesUnder,
@@ -117,3 +128,4 @@ import Control.Monad.Hefty.Types (
     type ($$),
     type (:!!),
  )
+import Data.Effect.OpenUnion

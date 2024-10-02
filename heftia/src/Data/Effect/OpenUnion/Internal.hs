@@ -98,6 +98,14 @@ lexi-lambda/freer-simple#3, which describes the motivation in more detail.
 -}
 instance {-# INCOHERENT #-} IfNotFound e r w
 
+type LookupError (key :: kk) (w :: [ke]) =
+    TypeError
+        ( 'Text "The key ‘"
+            ':<>: 'ShowType key
+            ':<>: 'Text "’ does not exist in the type-level list"
+            ':$$: 'Text "  ‘" ':<>: 'ShowType w ':<>: 'Text "’"
+        )
+
 infixr 5 ++
 type family xs ++ ys where
     '[] ++ ys = ys
@@ -106,6 +114,15 @@ type family xs ++ ys where
 wordVal :: forall n. (KnownNat n) => Word
 wordVal = fromIntegral $ natVal @n Proxy
 {-# INLINE wordVal #-}
+
+class IsSuffixOf es es' where
+    prefixLen :: Word
+
+instance IsSuffixOf es es where
+    prefixLen = 0
+
+instance {-# INCOHERENT #-} (IsSuffixOf es es') => IsSuffixOf es (e ': es') where
+    prefixLen = prefixLen @es @es' + 1
 
 type family Length es where
     Length '[] = 0
@@ -124,15 +141,10 @@ type family PrefixLength es es' where
 
 -- fixme: Use type class with functional dependencies instaed of type family for readable compile error and compile speed.
 
-type IsSuffixOf_ es es' = KnownNat (PrefixLength es es')
-class (IsSuffixOf_ es es') => IsSuffixOf es es'
-instance (IsSuffixOf_ es es') => IsSuffixOf es es'
-
-prefixLen :: forall es es'. (es `IsSuffixOf` es') => Word
-prefixLen = wordVal @(PrefixLength es es')
-{-# INLINE prefixLen #-}
-
 type WeakenN len es es' = (es ~ Drop len es', KnownNat len)
+
+type WeakenUnder offset es es' =
+    (WeakenNUnder (PrefixLength es es') offset es es', KnownNat (PrefixLength es es'))
 
 type WeakenNUnder len offset es es' =
     (WeakenN len (Drop offset es) (Drop offset es'), KnownNat offset)
@@ -165,7 +177,7 @@ instance
     => StrengthenMap_ 'False len (e ': es) es'
     where
     strengthenMap = \case
-        0 -> unP $ elemNo @e @es
+        0 -> wordVal @(ElemIndex e es)
         n -> strengthenMap @_ @_ @(len - 1) @es @es' $ n - 1
     {-# INLINE strengthenMap #-}
 

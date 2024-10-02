@@ -56,6 +56,11 @@ common common-base
         base >= 4.16 && < 4.21,
         data-effects ^>= 0.1.2,
         heftia ^>= 0.4,
+        time,
+        unliftio,
+        unbounded-delays,
+        ghc-typelits-knownnat,
+        containers,
 
     ghc-options: -Wall -fplugin GHC.TypeLits.KnownNat.Solver
 
@@ -72,8 +77,6 @@ library
         Control.Effect.Interpreter.Heftia.Coroutine
         Control.Effect.Interpreter.Heftia.Input
         Control.Effect.Interpreter.Heftia.Output
-        Control.Effect.Interpreter.Heftia.Provider
-        Control.Effect.Interpreter.Heftia.Provider.Implicit
         Control.Effect.Interpreter.Heftia.Resource
         Control.Effect.Interpreter.Heftia.Unlift
         Control.Effect.Interpreter.Heftia.KVStore
@@ -167,7 +170,7 @@ executable Logging
     build-depends:
         heftia-effects,
         text >= 2.0 && < 2.2,
-        time ^>= 1.11.1,
+        time,
 
 executable Continuation
     import: common-base

@@ -27,11 +27,14 @@ import Data.Effect.OpenUnion.Internal (
     Take,
     WeakenN,
     WeakenNUnder,
+    WeakenUnder,
     type (++),
  )
 import Data.Effect.OpenUnion.Internal.FO (
     EffectF,
+    Lookup,
     Member,
+    MemberBy,
     Union,
     bundleAllUnion,
     bundleUnion,
@@ -47,8 +50,10 @@ import Data.Effect.OpenUnion.Internal.FO (
     prefixUnion,
     prefixUnionUnder,
     prj,
+    strengthen,
     strengthenN,
     strengthenNUnder,
+    strengthenUnder,
     suffixUnion,
     suffixUnionOverN,
     unbundleAllUnion,
@@ -57,13 +62,17 @@ import Data.Effect.OpenUnion.Internal.FO (
     weaken,
     weakenN,
     weakenNUnder,
+    weakenUnder,
     weakens,
+    weakensUnder,
     (!+),
-    type (<!),
+    type (<|),
  )
 import Data.Effect.OpenUnion.Internal.HO (
     EffectH,
+    LookupH,
     MemberH,
+    MemberHBy,
     UnionH,
     bundleAllUnionH,
     bundleUnionH,
@@ -90,9 +99,11 @@ import Data.Effect.OpenUnion.Internal.HO (
     weakenH,
     weakenNH,
     weakenNUnderH,
+    weakenUnderH,
     weakensH,
+    weakensUnderH,
     (!!+),
-    type (<!!),
+    type (<<|),
  )
 
 -- TODO: add injN/prjN/move/swap/insert/rotate functions.

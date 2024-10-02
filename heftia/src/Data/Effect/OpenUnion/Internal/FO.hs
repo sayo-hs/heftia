@@ -57,14 +57,17 @@ Based on [the open union in freer-simple](https://hackage.haskell.org/package/fr
 module Data.Effect.OpenUnion.Internal.FO where
 
 import Data.Coerce (coerce)
+import Data.Effect.Key (type (#>))
 import Data.Effect.OpenUnion.Internal (
     BundleUnder,
     Drop,
+    ElemIndex,
     FindElem,
     IfNotFound,
     IsSuffixOf,
     KnownLength,
     Length,
+    LookupError,
     P (unP),
     PrefixLength,
     Reverse,
@@ -76,6 +79,7 @@ import Data.Effect.OpenUnion.Internal (
     Take,
     WeakenN,
     WeakenNUnder,
+    WeakenUnder,
     elemNo,
     prefixLen,
     reifyLength,
@@ -181,8 +185,17 @@ instance (FindElem e es, IfNotFound e es es) => Member e es where
     prj = unsafePrj $ unP (elemNo :: P e es)
     {-# INLINE prj #-}
 
-infix 3 <!
-type (<!) = Member
+infix 3 <|
+type (<|) = Member
+
+type MemberBy key es = Lookup key es <| es
+
+type Lookup key es = Lookup_ key es es
+
+type family Lookup_ (key :: k) r w :: EffectF where
+    Lookup_ key (key #> e ': _) w = key #> e
+    Lookup_ key (_ ': r) w = Lookup_ key r w
+    Lookup_ key '[] w = LookupError key w
 
 {- | Orthogonal decomposition of a @'Union' (e ': es) :: 'EffectF'@. 'Right' value
 is returned if the @'Union' (e ': es) :: 'EffectF'@ contains @e :: 'EffectF'@, and
@@ -230,7 +243,7 @@ more summand.
 
 /O(1)/
 -}
-weaken :: Union es a -> Union (any ': es) a
+weaken :: forall any es a. Union es a -> Union (any ': es) a
 weaken (Union n a) = Union (n + 1) a
 {-# INLINE weaken #-}
 
@@ -242,6 +255,16 @@ weakenN :: forall len es es' a. (WeakenN len es es') => Union es a -> Union es' 
 weakenN (Union n a) = Union (n + wordVal @len) a
 {-# INLINE weakenN #-}
 
+weakenUnder :: forall any e es a. Union (e ': es) a -> Union (e ': any ': es) a
+weakenUnder u@(Union n a)
+    | n == 0 = coerce u
+    | otherwise = Union (n + 1) a
+{-# INLINE weakenUnder #-}
+
+weakensUnder :: forall offset es es' a. (WeakenUnder offset es es') => Union es a -> Union es' a
+weakensUnder = weakenNUnder @(PrefixLength es es') @offset
+{-# INLINE weakensUnder #-}
+
 weakenNUnder
     :: forall len offset es es' a
      . (WeakenNUnder len offset es es')
@@ -252,6 +275,12 @@ weakenNUnder u@(Union n a)
     | otherwise = Union (n + wordVal @len) a
 {-# INLINE weakenNUnder #-}
 
+strengthen :: forall e es a. (e <| es) => Union (e ': es) a -> Union es a
+strengthen (Union n a)
+    | n == 0 = Union (wordVal @(ElemIndex e es)) a
+    | otherwise = Union (n - 1) a
+{-# INLINE strengthen #-}
+
 strengthens :: forall es es' a. (Strengthen es es') => Union es a -> Union es' a
 strengthens = strengthenN @(PrefixLength es' es)
 {-# INLINE strengthens #-}
@@ -259,6 +288,13 @@ strengthens = strengthenN @(PrefixLength es' es)
 strengthenN :: forall len es es' a. (StrengthenN len es es') => Union es a -> Union es' a
 strengthenN (Union n a) = Union (strengthenMap @_ @_ @len @es @es' n) a
 {-# INLINE strengthenN #-}
+
+strengthenUnder :: forall e2 e1 es a. (e2 <| es) => Union (e1 ': e2 ': es) a -> Union (e1 ': es) a
+strengthenUnder u@(Union n a)
+    | n == 0 = coerce u
+    | n == 1 = Union (1 + wordVal @(ElemIndex e2 es)) a
+    | otherwise = Union (n - 1) a
+{-# INLINE strengthenUnder #-}
 
 strengthensUnder :: forall offset es es' a. (StrengthenUnder offset es es') => Union es a -> Union es' a
 strengthensUnder = strengthenNUnder @(PrefixLength es' es) @offset

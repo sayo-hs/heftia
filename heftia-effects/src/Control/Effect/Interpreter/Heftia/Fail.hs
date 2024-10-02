@@ -11,16 +11,12 @@ Portability :  portable
 -}
 module Control.Effect.Interpreter.Heftia.Fail where
 
-import Control.Effect (sendIns, type (~>))
-import Control.Effect.Hefty (Eff, interpret)
-import Control.Freer (Freer)
-import Data.Effect.Fail (Fail (Fail), LFail)
-import Data.Effect.HFunctor (HFunctor)
-import Data.Hefty.Union (Member, Union)
+import Control.Effect (type (~>))
+import Control.Monad.Hefty.Interpret (interpretRec)
+import Control.Monad.Hefty.Types (Eff)
+import Control.Monad.IO.Class (liftIO)
+import Data.Effect.Fail (Fail (Fail))
+import Data.Effect.OpenUnion.Internal.FO (type (<|))
 
-runFailAsIO
-    :: forall r fr u c
-     . (Freer c fr, Union u, HFunctor (u '[]), Member u IO r)
-    => Eff u fr '[] (LFail ': r) ~> Eff u fr '[] r
-runFailAsIO = interpret \(Fail s) -> sendIns @IO $ fail s
-{-# INLINE runFailAsIO #-}
+runFailIO :: (IO <| r) => Eff eh (Fail ': r) ~> Eff eh r
+runFailIO = interpretRec \(Fail s) -> liftIO $ fail s

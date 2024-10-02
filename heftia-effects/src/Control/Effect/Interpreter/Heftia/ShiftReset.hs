@@ -4,67 +4,26 @@
 
 module Control.Effect.Interpreter.Heftia.ShiftReset where
 
-import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
-import Control.Effect.Hefty (
-    Eff,
-    injectH,
-    interpretKAllH,
-    interpretKH,
-    interpretRecH,
-    raiseH,
-    runEff,
- )
-import Control.Freer (Freer)
-import Control.Monad ((<=<))
-import Control.Monad.Freer (MonadFreer)
-import Data.Effect (LiftIns)
-import Data.Effect.HFunctor (HFunctor, hfmap)
-import Data.Effect.Key (KeyH (KeyH))
-import Data.Effect.ShiftReset (Reset (Reset), Shift, Shift' (Shift), Shift_ (Shift_))
-import Data.Hefty.Union (HFunctorUnion, HFunctorUnion_ (ForallHFunctor), Union ((|+:)))
+import Control.Monad.Hefty.Interpret (interpretRecH, iterAllEffHFBy)
+import Control.Monad.Hefty.Transform (raiseH)
+import Control.Monad.Hefty.Types (Eff, sendUnionBy, sendUnionHBy)
+import Data.Effect.HFunctor.HCont (HCont (HCont))
+import Data.Effect.OpenUnion.Internal.HO (hfmapUnion, (!!+))
+import Data.Effect.ShiftReset (Reset (Reset), Shift_ (Shift_))
 
-evalShift ::
-    (MonadFreer c fr, Union u, c (Eff u fr '[] ef), HFunctor (u '[])) =>
-    Eff u fr '[Shift r] ef r ->
-    Eff u fr '[] ef r
-evalShift = runShift pure
-{-# INLINE evalShift #-}
-
-runShift ::
-    forall r a ef fr u c.
-    (MonadFreer c fr, Union u, c (Eff u fr '[] ef), HFunctor (u '[])) =>
-    (a -> Eff u fr '[] ef r) ->
-    Eff u fr '[Shift r] ef a ->
-    Eff u fr '[] ef r
-runShift f =
-    interpretKH f \k ->
-        let k' = raiseH . k
-         in evalShift . \case
-                KeyH (Shift g) -> g k'
-
-withShift ::
-    ( MonadFreer c fr
-    , Union u
-    , c (Eff u fr '[] '[LiftIns (Eff u fr eh ef)])
-    , c (Eff u fr eh ef)
-    , HFunctor (u '[])
-    ) =>
-    Eff u fr '[Shift r] '[LiftIns (Eff u fr eh ef)] r ->
-    Eff u fr eh ef r
-withShift = evalShift >>> runEff
-{-# INLINE withShift #-}
-
-runShift_ ::
-    (MonadFreer c fr, Union u, c (Eff u fr eh ef), HFunctor (u eh)) =>
-    Eff u fr (Shift_ ': eh) ef ~> Eff u fr eh ef
+runShift_ :: forall r ef. Eff (HCont Shift_ (Eff r ef) ': r) ef ~> Eff r ef
 runShift_ =
-    interpretKAllH pure \k ->
-        (\(Shift_ f) -> runShift_ $ f $ raiseH . k)
-            |+: (k <=< injectH . hfmap runShift_)
+    iterAllEffHFBy
+        pure
+        ( ( \(HCont g) k ->
+                case g runShift_ of
+                    Shift_ f -> runShift_ $ raiseH $ f k
+          )
+            !!+ (flip sendUnionHBy . hfmapUnion runShift_)
+        )
+        (flip sendUnionBy)
 
-runReset ::
-    (Freer c fr, HFunctorUnion u, ForallHFunctor u eh) =>
-    Eff u fr (Reset ': eh) ef ~> Eff u fr eh ef
+runReset :: forall r ef. Eff (Reset ': r) ef ~> Eff r ef
 runReset = interpretRecH \(Reset a) -> a
 {-# INLINE runReset #-}

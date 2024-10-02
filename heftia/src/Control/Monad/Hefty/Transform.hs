@@ -20,6 +20,7 @@ import Data.Effect.OpenUnion.Internal (
     Take,
     WeakenN,
     WeakenNUnder,
+    WeakenUnder,
  )
 import Data.Effect.OpenUnion.Internal.FO (
     Union,
@@ -30,18 +31,23 @@ import Data.Effect.OpenUnion.Internal.FO (
     decomp,
     inj,
     prj,
+    strengthen,
     strengthenN,
     strengthenNUnder,
+    strengthenUnder,
     strengthens,
     strengthensUnder,
     unbundleAllUnion,
     unbundleUnion,
     unbundleUnionN,
     unbundleUnionUnder,
+    weaken,
     weakenN,
     weakenNUnder,
+    weakenUnder,
     weakens,
-    type (<!),
+    weakensUnder,
+    type (<|),
  )
 import Data.Effect.OpenUnion.Internal.HO (
     UnionH,
@@ -52,8 +58,10 @@ import Data.Effect.OpenUnion.Internal.HO (
     hfmapUnion,
     injH,
     prjH,
+    strengthenH,
     strengthenNH,
     strengthenNUnderH,
+    strengthenUnderH,
     strengthensH,
     unbundleAllUnionH,
     unbundleUnionH,
@@ -61,8 +69,9 @@ import Data.Effect.OpenUnion.Internal.HO (
     weakenH,
     weakenNH,
     weakenNUnderH,
+    weakenUnderH,
     weakensH,
-    type (<!!),
+    type (<<|),
  )
 import GHC.TypeNats (KnownNat)
 
@@ -78,29 +87,33 @@ transformH
 transformH f = transEffH (either weakenH (injH . f) . decompH)
 {-# INLINE transformH #-}
 
-translate :: forall e e' ef eh. (e' <! ef) => (e ~> e') -> Eff eh (e ': ef) ~> Eff eh ef
+translate :: forall e e' ef eh. (e' <| ef) => (e ~> e') -> Eff eh (e ': ef) ~> Eff eh ef
 translate f = transEff (either id (inj . f) . decomp)
 {-# INLINE translate #-}
 
 translateH
     :: forall e e' eh ef
-     . (e' <!! eh, HFunctor e)
+     . (e' <<| eh, HFunctor e)
     => (e (Eff eh ef) ~> e' (Eff eh ef))
     -> Eff (e ': eh) ef ~> Eff eh ef
 translateH f = transEffH (either id (injH . f) . decompH)
 {-# INLINE translateH #-}
 
-rewrite :: forall e ef eh. (e <! ef) => (e ~> e) -> Eff eh ef ~> Eff eh ef
+rewrite :: forall e ef eh. (e <| ef) => (e ~> e) -> Eff eh ef ~> Eff eh ef
 rewrite f = transEff \u -> maybe u (inj . f) $ prj @e u
 {-# INLINE rewrite #-}
 
 rewriteH
     :: forall e eh ef
-     . (e <!! eh, HFunctor e)
+     . (e <<| eh, HFunctor e)
     => (e (Eff eh ef) ~> e (Eff eh ef))
     -> Eff eh ef ~> Eff eh ef
 rewriteH f = transEffH \u -> maybe u (injH . f) $ prjH @e u
 {-# INLINE rewriteH #-}
+
+raise :: forall e ef eh. Eff eh ef ~> Eff eh (e ': ef)
+raise = transEff weaken
+{-# INLINE raise #-}
 
 raises :: (ef `IsSuffixOf` ef') => Eff eh ef ~> Eff eh ef'
 raises = transEff weakens
@@ -110,12 +123,27 @@ raiseN :: forall len ef ef' eh. (WeakenN len ef ef') => Eff eh ef ~> Eff eh ef'
 raiseN = transEff (weakenN @len)
 {-# INLINE raiseN #-}
 
+raiseUnder :: forall e1 e2 ef eh. Eff eh (e1 ': ef) ~> Eff eh (e1 ': e2 ': ef)
+raiseUnder = transEff weakenUnder
+{-# INLINE raiseUnder #-}
+
+raisesUnder
+    :: forall offset ef ef' eh
+     . (WeakenUnder offset ef ef')
+    => Eff eh ef ~> Eff eh ef'
+raisesUnder = transEff (weakensUnder @offset)
+{-# INLINE raisesUnder #-}
+
 raiseNUnder
     :: forall len offset ef ef' eh
      . (WeakenNUnder len offset ef ef')
     => Eff eh ef ~> Eff eh ef'
 raiseNUnder = transEff (weakenNUnder @len @offset)
 {-# INLINE raiseNUnder #-}
+
+raiseH :: forall e eh ef. Eff eh ef ~> Eff (e ': eh) ef
+raiseH = transEffH weakenH
+{-# INLINE raiseH #-}
 
 raisesH :: (eh `IsSuffixOf` eh') => Eff eh ef ~> Eff eh' ef
 raisesH = transEffH weakensH
@@ -125,12 +153,20 @@ raiseNH :: forall len eh eh' ef. (WeakenN len eh eh') => Eff eh ef ~> Eff eh' ef
 raiseNH = transEffH (weakenNH @len)
 {-# INLINE raiseNH #-}
 
+raiseUnderH :: forall e1 e2 eh ef. Eff (e1 ': eh) ef ~> Eff (e1 ': e2 ': eh) ef
+raiseUnderH = transEffH weakenUnderH
+{-# INLINE raiseUnderH #-}
+
 raiseNUnderH
     :: forall len offset eh eh' ef
      . (WeakenNUnder len offset eh eh')
     => Eff eh ef ~> Eff eh' ef
 raiseNUnderH = transEffH (weakenNUnderH @len @offset)
 {-# INLINE raiseNUnderH #-}
+
+subsume :: forall e ef eh. (e <| ef) => Eff eh (e ': ef) ~> Eff eh ef
+subsume = transEff strengthen
+{-# INLINE subsume #-}
 
 subsumes :: forall ef ef' eh. (Strengthen ef ef') => Eff eh ef ~> Eff eh ef'
 subsumes = transEff strengthens
@@ -139,6 +175,10 @@ subsumes = transEff strengthens
 subsumeN :: forall len ef ef' eh. (StrengthenN len ef ef') => Eff eh ef ~> Eff eh ef'
 subsumeN = transEff (strengthenN @len)
 {-# INLINE subsumeN #-}
+
+subsumeUnder :: forall e2 e1 ef eh. (e2 <| ef) => Eff eh (e1 ': e2 ': ef) ~> Eff eh (e1 ': ef)
+subsumeUnder = transEff strengthenUnder
+{-# INLINE subsumeUnder #-}
 
 subsumesUnder
     :: forall offset ef ef' eh
@@ -154,6 +194,10 @@ subsumeNUnder
 subsumeNUnder = transEff (strengthenNUnder @len @offset)
 {-# INLINE subsumeNUnder #-}
 
+subsumeH :: forall e eh ef. (e <<| eh) => Eff (e ': eh) ef ~> Eff eh ef
+subsumeH = transEffH strengthenH
+{-# INLINE subsumeH #-}
+
 subsumesH :: forall eh eh' ef. (Strengthen eh eh') => Eff eh ef ~> Eff eh' ef
 subsumesH = transEffH strengthensH
 {-# INLINE subsumesH #-}
@@ -162,14 +206,16 @@ subsumeNH :: forall len eh eh' ef. (StrengthenN len eh eh') => Eff eh ef ~> Eff 
 subsumeNH = transEffH (strengthenNH @len)
 {-# INLINE subsumeNH #-}
 
+subsumeUnderH :: forall e2 e1 eh ef. (e2 <<| eh) => Eff (e1 ': e2 ': eh) ef ~> Eff (e1 ': eh) ef
+subsumeUnderH = transEffH strengthenUnderH
+{-# INLINE subsumeUnderH #-}
+
 subsumeNUnderH
     :: forall len offset eh eh' ef
      . (StrengthenNUnder len offset eh eh')
     => Eff eh ef ~> Eff eh' ef
 subsumeNUnderH = transEffH (strengthenNUnderH @len @offset)
 {-# INLINE subsumeNUnderH #-}
-
--- TODO: add raiseUnder(H), subsume(H), subsumeUnder(H)
 
 bundle
     :: forall ef bundle rest eh
