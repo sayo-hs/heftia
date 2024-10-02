@@ -14,6 +14,7 @@ module Control.Effect.Interpreter.Heftia.Input where
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
 import Control.Effect.Interpreter.Heftia.State (evalState)
+import Control.Monad.Hefty (HFunctors)
 import Control.Monad.Hefty.Interpret (interpret, interpretRec)
 import Control.Monad.Hefty.Transform (raiseUnder)
 import Control.Monad.Hefty.Types (Eff)
@@ -21,10 +22,18 @@ import Data.Effect.Input (Input (Input))
 import Data.Effect.State (gets, put)
 import Data.List (uncons)
 
-runInputEff :: forall i r eh. Eff eh r i -> Eff eh (Input i ': r) ~> Eff eh r
+runInputEff
+    :: forall i ef eh
+     . (HFunctors eh)
+    => Eff eh ef i
+    -> Eff eh (Input i ': ef) ~> Eff eh ef
 runInputEff a = interpretRec \Input -> a
 
-runInputConst :: forall i r eh. i -> Eff eh (Input i ': r) ~> Eff eh r
+runInputConst
+    :: forall i ef eh
+     . (HFunctors eh)
+    => i
+    -> Eff eh (Input i ': ef) ~> Eff eh ef
 runInputConst i = interpretRec \Input -> pure i
 
 runInputList :: forall i r. [i] -> Eff '[] (Input (Maybe i) ': r) ~> Eff '[] r

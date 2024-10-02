@@ -61,6 +61,7 @@ module Data.Effect.OpenUnion.Internal.HO where
 
 import Control.Effect (type (~>))
 import Data.Coerce (coerce)
+import Data.Effect (IsHFunctor)
 import Data.Effect.HFunctor (HFunctor, hfmap)
 import Data.Effect.Key (type (##>))
 import Data.Effect.OpenUnion.Internal (
@@ -94,6 +95,7 @@ import Data.Effect.OpenUnion.Internal (
     type (++),
  )
 import Data.Kind (Type)
+import Data.Type.Bool (type (&&))
 import GHC.TypeNats (KnownNat, type (-))
 import Unsafe.Coerce (unsafeCoerce)
 
@@ -111,13 +113,25 @@ data UnionH (es :: [EffectH]) (f :: Type -> Type) (a :: Type) where
         -- ^ Continuation of interpretation. Due to this component, this open union becomes a free 'HFunctor', which contributes to performance improvement.
         -> UnionH es f a
 
-hfmapUnion :: (f ~> g) -> UnionH es f a -> UnionH es g a
+class (IsHFunctors es ~ 'True) => HFunctors es
+instance HFunctors '[]
+instance (IsHFunctor e ~ 'True, HFunctors es) => HFunctors (e ': es)
+
+type NotHFunctor e = IsHFunctor e ~ 'False
+
+type family IsHFunctors es where
+    IsHFunctors '[] = 'True
+    IsHFunctors (e ': es) = IsHFunctor e && IsHFunctors es
+
+hfmapUnion :: (HFunctors es) => (f ~> g) -> UnionH es f a -> UnionH es g a
 hfmapUnion phi (UnionH n e koi) = UnionH n e (phi . koi)
 {-# INLINE hfmapUnion #-}
 
-instance HFunctor (UnionH es) where
+instance (HFunctors es) => HFunctor (UnionH es) where
     hfmap f = hfmapUnion f
     {-# INLINE hfmap #-}
+
+type instance IsHFunctor (UnionH es) = IsHFunctors es
 
 unsafeInjH :: Word -> e f a -> UnionH es f a
 unsafeInjH n e = UnionH n e id
@@ -129,9 +143,16 @@ unsafePrjH n (UnionH n' e koi)
     | otherwise = Nothing
 {-# INLINE unsafePrjH #-}
 
+unsafePrjH_ :: (NotHFunctor e) => Word -> UnionH es f a -> Maybe (e f a)
+unsafePrjH_ n (UnionH n' e _)
+    | n == n' = Just (unsafeCoerce e)
+    | otherwise = Nothing
+{-# INLINE unsafePrjH_ #-}
+
 class (FindElem e es) => MemberH (e :: EffectH) es where
     injH :: e f a -> UnionH es f a
     prjH :: (HFunctor e) => UnionH es f a -> Maybe (e f a)
+    prjH_ :: (NotHFunctor e) => UnionH es f a -> Maybe (e f a)
 
 instance (FindElem e es, IfNotFound e es es) => MemberH e es where
     injH = unsafeInjH $ unP (elemNo :: P e es)
@@ -139,6 +160,9 @@ instance (FindElem e es, IfNotFound e es es) => MemberH e es where
 
     prjH = unsafePrjH $ unP (elemNo :: P e es)
     {-# INLINE prjH #-}
+
+    prjH_ = unsafePrjH_ $ unP (elemNo :: P e es)
+    {-# INLINE prjH_ #-}
 
 infix 3 <<|
 type (<<|) = MemberH
@@ -169,9 +193,30 @@ infixr 5 !!+
     Right x -> f x
 {-# INLINE (!!+) #-}
 
+decompH_ :: (NotHFunctor e) => UnionH (e ': es) f a -> Either (UnionH es f a) (e f a)
+decompH_ (UnionH 0 a _) = Right $ unsafeCoerce a
+decompH_ (UnionH n a koi) = Left $ UnionH (n - 1) a koi
+{-# INLINE [2] decompH_ #-}
+
+decomp0H_ :: (NotHFunctor e) => UnionH '[e] f a -> Either (UnionH '[] f a) (e f a)
+decomp0H_ (UnionH _ a _) = Right $ unsafeCoerce a
+{-# INLINE decomp0H_ #-}
+{-# RULES "decomp/singleton" decompH_ = decomp0H_ #-}
+
+infixr 5 !!+.
+(!!+.) :: (NotHFunctor e) => (e f a -> r) -> (UnionH es f a -> r) -> UnionH (e : es) f a -> r
+(f !!+. g) u = case decompH_ u of
+    Left x -> g x
+    Right x -> f x
+{-# INLINE (!!+.) #-}
+
 extractH :: (HFunctor e) => UnionH '[e] f a -> e f a
 extractH (UnionH _ a koi) = hfmap koi $ unsafeCoerce a
 {-# INLINE extractH #-}
+
+extractH_ :: (NotHFunctor e) => UnionH '[e] f a -> e f a
+extractH_ (UnionH _ a _) = unsafeCoerce a
+{-# INLINE extractH_ #-}
 
 weakenH :: forall any es f a. UnionH es f a -> UnionH (any ': es) f a
 weakenH (UnionH n a koi) = UnionH (n + 1) a koi
@@ -336,7 +381,7 @@ bundleAllUnionH :: UnionH es f a -> UnionH '[UnionH es] f a
 bundleAllUnionH u = UnionH 0 u id
 {-# INLINE bundleAllUnionH #-}
 
-unbundleAllUnionH :: UnionH '[UnionH es] f a -> UnionH es f a
+unbundleAllUnionH :: (HFunctors es) => UnionH '[UnionH es] f a -> UnionH es f a
 unbundleAllUnionH = extractH
 {-# INLINE unbundleAllUnionH #-}
 

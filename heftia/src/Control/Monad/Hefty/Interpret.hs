@@ -27,7 +27,9 @@ import Data.Effect.OpenUnion.Internal.FO (
     type (<|),
  )
 import Data.Effect.OpenUnion.Internal.HO (
+    HFunctors,
     MemberH (prjH),
+    NotHFunctor,
     UnionH,
     extractH,
     hfmapUnion,
@@ -35,6 +37,7 @@ import Data.Effect.OpenUnion.Internal.HO (
     weakenNH,
     weakensH,
     (!!+),
+    (!!+.),
     type (<<|),
  )
 import Data.FTCQueue (FTCQueue, ViewL (TOne, (:|)), tviewl, (><))
@@ -153,7 +156,8 @@ interpret = reinterpret
 
 interpretRecWith
     :: forall e ef eh a
-     . (forall ans. Interpreter e (Eff eh ef) ans)
+     . (HFunctors eh)
+    => (forall ans. Interpreter e (Eff eh ef) ans)
     -> Eff eh (e ': ef) a
     -> Eff eh ef a
 interpretRecWith = reinterpretRecWith
@@ -161,7 +165,8 @@ interpretRecWith = reinterpretRecWith
 
 interpretRec
     :: forall e ef eh
-     . (e ~> Eff eh ef)
+     . (HFunctors eh)
+    => (e ~> Eff eh ef)
     -> Eff eh (e ': ef) ~> Eff eh ef
 interpretRec = reinterpretRec
 {-# INLINE interpretRec #-}
@@ -175,6 +180,16 @@ interpretHBy
     -> Eff eh ef ans
 interpretHBy = reinterpretHBy
 {-# INLINE interpretHBy #-}
+
+interpretHBy_
+    :: forall e eh ef ans a
+     . (NotHFunctor e)
+    => (a -> Eff eh ef ans)
+    -> Interpreter (e (Eff '[e] ef)) (Eff eh ef) ans
+    -> Eff '[e] ef a
+    -> Eff eh ef ans
+interpretHBy_ = reinterpretHBy_
+{-# INLINE interpretHBy_ #-}
 
 interpretHWith
     :: forall e eh ef a
@@ -195,7 +210,7 @@ interpretH = reinterpretH
 
 interpretRecHWith
     :: forall e eh ef a
-     . (HFunctor e)
+     . (HFunctor e, HFunctors eh)
     => (forall ans. Elaborator e (Eff eh ef) ans)
     -> Eff (e ': eh) ef a
     -> Eff eh ef a
@@ -204,7 +219,7 @@ interpretRecHWith = reinterpretRecHWith
 
 interpretRecH
     :: forall e eh ef
-     . (HFunctor e)
+     . (HFunctor e, HFunctors eh)
     => Elab e (Eff eh ef)
     -> Eff (e ': eh) ef ~> Eff eh ef
 interpretRecH = reinterpretRecH
@@ -258,7 +273,7 @@ reinterpretN f = reinterpretNWith @n (plain f)
 
 reinterpretRecWith
     :: forall e ef' ef eh a
-     . (ef `IsSuffixOf` ef')
+     . (ef `IsSuffixOf` ef', HFunctors eh)
     => (forall ans. Interpreter e (Eff eh ef') ans)
     -> Eff eh (e ': ef) a
     -> Eff eh ef' a
@@ -270,7 +285,7 @@ reinterpretRecWith hdl = loop
 
 reinterpretRecNWith
     :: forall n e ef' ef eh a
-     . (WeakenN n ef ef')
+     . (WeakenN n ef ef', HFunctors eh)
     => (forall ans. Interpreter e (Eff eh ef') ans)
     -> Eff eh (e ': ef) a
     -> Eff eh ef' a
@@ -280,11 +295,19 @@ reinterpretRecNWith hdl = loop
     loop = iterAllEffHFBy pure (flip sendUnionHBy . hfmapUnion loop) (hdl !+ flip sendUnionBy . weakenN @n)
 {-# INLINE reinterpretRecNWith #-}
 
-reinterpretRec :: forall e ef' ef eh. (ef `IsSuffixOf` ef') => (e ~> Eff eh ef') -> Eff eh (e ': ef) ~> Eff eh ef'
+reinterpretRec
+    :: forall e ef' ef eh
+     . (ef `IsSuffixOf` ef', HFunctors eh)
+    => (e ~> Eff eh ef')
+    -> Eff eh (e ': ef) ~> Eff eh ef'
 reinterpretRec f = reinterpretRecWith (plain f)
 {-# INLINE reinterpretRec #-}
 
-reinterpretRecN :: forall n e ef' ef eh. (WeakenN n ef ef') => (e ~> Eff eh ef') -> Eff eh (e ': ef) ~> Eff eh ef'
+reinterpretRecN
+    :: forall n e ef' ef eh
+     . (WeakenN n ef ef', HFunctors eh)
+    => (e ~> Eff eh ef')
+    -> Eff eh (e ': ef) ~> Eff eh ef'
 reinterpretRecN f = reinterpretRecNWith @n (plain f)
 {-# INLINE reinterpretRecN #-}
 
@@ -297,6 +320,16 @@ reinterpretHBy
     -> Eff eh ef ans
 reinterpretHBy ret elb = iterAllEffHFBy ret (elb !!+ nilH) (flip sendUnionBy)
 {-# INLINE reinterpretHBy #-}
+
+reinterpretHBy_
+    :: forall e eh ef ans a
+     . (NotHFunctor e)
+    => (a -> Eff eh ef ans)
+    -> Interpreter (e (Eff '[e] ef)) (Eff eh ef) ans
+    -> Eff '[e] ef a
+    -> Eff eh ef ans
+reinterpretHBy_ ret elb = iterAllEffHFBy ret (elb !!+. nilH) (flip sendUnionBy)
+{-# INLINE reinterpretHBy_ #-}
 
 reinterpretNHBy
     :: forall n e eh ef ans a
@@ -344,7 +377,7 @@ reinterpretNH = reinterpretH
 
 reinterpretRecHWith
     :: forall e eh eh' ef a
-     . (HFunctor e, eh `IsSuffixOf` eh')
+     . (HFunctor e, eh `IsSuffixOf` eh', HFunctors eh)
     => (forall ans. Elaborator e (Eff eh' ef) ans)
     -> Eff (e ': eh) ef a
     -> Eff eh' ef a
@@ -360,7 +393,7 @@ reinterpretRecHWith elb = loop
 
 reinterpretRecNHWith
     :: forall n e eh eh' ef a
-     . (HFunctor e, WeakenN n eh eh')
+     . (HFunctor e, WeakenN n eh eh', HFunctors eh)
     => (forall ans. Elaborator e (Eff eh' ef) ans)
     -> Eff (e ': eh) ef a
     -> Eff eh' ef a
@@ -376,7 +409,7 @@ reinterpretRecNHWith elb = loop
 
 reinterpretRecH
     :: forall e eh eh' ef
-     . (HFunctor e, eh `IsSuffixOf` eh')
+     . (HFunctor e, eh `IsSuffixOf` eh', HFunctors eh)
     => Elab e (Eff eh' ef)
     -> Eff (e ': eh) ef ~> Eff eh' ef
 reinterpretRecH elb = reinterpretRecHWith (plain elb)
@@ -384,7 +417,7 @@ reinterpretRecH elb = reinterpretRecHWith (plain elb)
 
 reinterpretRecNH
     :: forall n e eh eh' ef
-     . (HFunctor e, WeakenN n eh eh')
+     . (HFunctor e, WeakenN n eh eh', HFunctors eh)
     => Elab e (Eff eh' ef)
     -> Eff (e ': eh) ef ~> Eff eh' ef
 reinterpretRecNH elb = reinterpretRecNHWith @n (plain elb)
@@ -419,7 +452,7 @@ interpose f = interposeWith (plain f)
 
 interposeRecWith
     :: forall e ef eh a
-     . (e <| ef)
+     . (e <| ef, HFunctors eh)
     => (forall ans. Interpreter e (Eff eh ef) ans)
     -> Eff eh ef a
     -> Eff eh ef a
@@ -434,7 +467,7 @@ interposeRecWith f = loop
 
 interposeRec
     :: forall e ef eh
-     . (e <| ef)
+     . (e <| ef, HFunctors eh)
     => (e ~> Eff eh ef)
     -> Eff eh ef ~> Eff eh ef
 interposeRec f = interposeRecWith (plain f)
@@ -442,7 +475,7 @@ interposeRec f = interposeRecWith (plain f)
 
 interposeRecHWith
     :: forall e eh ef a
-     . (e <<| eh, HFunctor e)
+     . (e <<| eh, HFunctor e, HFunctors eh)
     => (forall ans. Elaborator e (Eff eh ef) ans)
     -> Eff eh ef a
     -> Eff eh ef a
@@ -458,7 +491,7 @@ interposeRecHWith f = loop
 
 interposeRecH
     :: forall e eh ef
-     . (e <<| eh, HFunctor e)
+     . (e <<| eh, HFunctor e, HFunctors eh)
     => Elab e (Eff eh ef)
     -> Eff eh ef ~> Eff eh ef
 interposeRecH f = interposeRecHWith (plain f)

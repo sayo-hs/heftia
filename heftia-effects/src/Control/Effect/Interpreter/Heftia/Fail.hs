@@ -12,11 +12,12 @@ Portability :  portable
 module Control.Effect.Interpreter.Heftia.Fail where
 
 import Control.Effect (type (~>))
+import Control.Monad.Hefty (HFunctors)
 import Control.Monad.Hefty.Interpret (interpretRec)
 import Control.Monad.Hefty.Types (Eff)
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect.Fail (Fail (Fail))
 import Data.Effect.OpenUnion.Internal.FO (type (<|))
 
-runFailIO :: (IO <| r) => Eff eh (Fail ': r) ~> Eff eh r
+runFailIO :: (IO <| ef, HFunctors eh) => Eff eh (Fail ': ef) ~> Eff eh ef
 runFailIO = interpretRec \(Fail s) -> liftIO $ fail s

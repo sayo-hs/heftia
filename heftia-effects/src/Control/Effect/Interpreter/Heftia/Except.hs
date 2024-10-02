@@ -19,7 +19,7 @@ import Control.Monad.Hefty.Interpret (interposeBy, interpretBy, interpretRec, in
 import Control.Monad.Hefty.Types (Eff, Elab, Interpreter)
 import Data.Effect.Except (Catch (Catch), Throw (Throw))
 import Data.Effect.OpenUnion.Internal.FO (type (<|))
-import Data.Effect.OpenUnion.Internal.HO (type (<<|))
+import Data.Effect.OpenUnion.Internal.HO (HFunctors, type (<<|))
 import Data.Effect.Unlift (UnliftIO)
 import Data.Function ((&))
 import UnliftIO (throwIO)
@@ -44,12 +44,12 @@ elabCatch (Catch action hdl) = action & interposeBy pure \(Throw e) _ -> hdl e
 
 runThrowIO
     :: forall e eh ef
-     . (IO <| ef, Exception e)
+     . (IO <| ef, Exception e, HFunctors eh)
     => Eff eh (Throw e ': ef) ~> Eff eh ef
 runThrowIO = interpretRec \(Throw e) -> throwIO e
 
 runCatchIO
     :: forall e eh ef
-     . (UnliftIO <<| eh, IO <| ef, Exception e)
+     . (UnliftIO <<| eh, IO <| ef, Exception e, HFunctors eh)
     => Eff (Catch e ': eh) ef ~> Eff eh ef
 runCatchIO = interpretRecH \(Catch action hdl) -> IO.catch action hdl

@@ -16,6 +16,7 @@ An elaborator for the t'Control.Effect.Class.Resource.Resource' effect class.
 module Control.Effect.Interpreter.Heftia.Resource where
 
 import Control.Effect (type (~>))
+import Control.Monad.Hefty (HFunctors)
 import Control.Monad.Hefty.Interpret (interpretRecH)
 import Control.Monad.Hefty.Types (Eff, Elab)
 import Data.Effect.OpenUnion.Internal.FO (type (<|))
@@ -25,7 +26,9 @@ import Data.Effect.Unlift (UnliftIO)
 import UnliftIO (MonadUnliftIO, bracket, bracketOnError)
 
 -- | Elaborates the `Resource` effect under the `MonadUnliftIO` context.
-runResourceIO :: (UnliftIO <<| eh, IO <| ef) => Eff (Resource ': eh) ef ~> Eff eh ef
+runResourceIO
+    :: (UnliftIO <<| eh, IO <| ef, HFunctors eh)
+    => Eff (Resource ': eh) ef ~> Eff eh ef
 runResourceIO = interpretRecH elabResourceIO
 
 elabResourceIO :: (MonadUnliftIO m) => Elab Resource m
