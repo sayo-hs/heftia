@@ -11,96 +11,63 @@ Portability :  portable
 -}
 module Control.Effect.Interpreter.Heftia.NonDet where
 
-import Control.Applicative (Alternative ((<|>)), empty, liftA2, (<|>))
+import Control.Applicative (Alternative ((<|>)), empty, (<|>))
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
-import Control.Effect.Hefty (Eff, injectF, interpretFin, interpretFinH, interpretK, interpretRecH)
-import Control.Freer (Freer)
-import Control.Monad.Freer (MonadFreer)
-import Control.Monad.Trans.Maybe (MaybeT (MaybeT), runMaybeT)
+import Control.Monad.Hefty
 import Data.Bool (bool)
-import Data.Effect.HFunctor (HFunctor)
-import Data.Effect.NonDet (Choose (Choose), ChooseH (ChooseH), Empty (Empty), LChoose, LEmpty, choose)
-import Data.Functor.Compose (Compose (Compose), getCompose)
-import Data.Hefty.Union (ForallHFunctor, HFunctorUnion, Member, Union)
+import Data.Effect.NonDet (Choose (Choose), ChooseH (ChooseH), Empty (Empty), choose)
 
--- | 'NonDet' effects handler for Monad use.
+-- | 'NonDet' effects handler for alternative answer type.
 runNonDet
-    :: forall f ef a fr u c
-     . ( Alternative f
-       , MonadFreer c fr
-       , Union u
-       , c (Eff u fr '[] ef)
-       , c (Eff u fr '[] (LEmpty : ef))
-       )
-    => Eff u fr '[] (LChoose ': LEmpty ': ef) a
-    -> Eff u fr '[] ef (f a)
+    :: forall f r a
+     . (Alternative f)
+    => Eff '[] (Choose ': Empty ': r) a
+    -> Eff '[] r (f a)
 runNonDet =
-    runChoose >>> interpretK pure \_ Empty -> pure empty
-{-# INLINE runNonDet #-}
+    runChoose
+        >>> interpretBy pure \Empty _ -> pure empty
 
--- | 'NonDet' effects handler for Monad use.
-runNonDetK
-    :: forall r ef a fr u c
-     . ( Monoid r
-       , MonadFreer c fr
-       , Union u
-       , c (Eff u fr '[] ef)
-       , c (Eff u fr '[] (LEmpty ': ef))
-       , HFunctor (u '[])
-       )
-    => (a -> Eff u fr '[] (LEmpty ': ef) r)
-    -> Eff u fr '[] (LChoose ': LEmpty ': ef) a
-    -> Eff u fr '[] ef r
-runNonDetK f =
-    runChooseK f >>> interpretK pure \_ Empty -> pure mempty
-{-# INLINE runNonDetK #-}
+-- | 'NonDet' effects handler for monoidal answer type.
+runNonDetMonoid
+    :: forall ans r a
+     . (Monoid ans)
+    => (a -> Eff '[] (Empty ': r) ans)
+    -> Eff '[] (Choose ': Empty ': r) a
+    -> Eff '[] r ans
+runNonDetMonoid f =
+    runChooseMonoid f
+        >>> interpretBy pure \Empty _ -> pure mempty
 
--- | 'Choose' effect handler for Monad use.
+-- | 'Choose' effect handler for alternative answer type.
 runChoose
-    :: forall f ef a fr u c
-     . ( Alternative f
-       , MonadFreer c fr
-       , Union u
-       , c (Eff u fr '[] ef)
-       )
-    => Eff u fr '[] (LChoose ': ef) a
-    -> Eff u fr '[] ef (f a)
+    :: forall f ef a
+     . (Alternative f)
+    => Eff '[] (Choose ': ef) a
+    -> Eff '[] ef (f a)
 runChoose =
-    interpretK (pure . pure) \k Choose ->
+    interpretBy (pure . pure) \Choose k ->
         liftA2 (<|>) (k False) (k True)
 
--- | 'Choose' effect handler for Monad use.
-runChooseK
-    :: forall r ef a fr u c
-     . ( Semigroup r
-       , MonadFreer c fr
-       , Union u
-       , c (Eff u fr '[] ef)
-       )
-    => (a -> Eff u fr '[] ef r)
-    -> Eff u fr '[] (LChoose ': ef) a
-    -> Eff u fr '[] ef r
-runChooseK f =
-    interpretK f \k Choose ->
+-- | 'Choose' effect handler for monoidal answer type.
+runChooseMonoid
+    :: forall ans r a
+     . (Semigroup ans)
+    => (a -> Eff '[] r ans)
+    -> Eff '[] (Choose ': r) a
+    -> Eff '[] r ans
+runChooseMonoid f =
+    interpretBy f \Choose k ->
         liftA2 (<>) (k False) (k True)
 
--- | 'Empty' effect handler for Monad use.
-runEmpty
-    :: forall a r fr u c
-     . ( Freer c fr
-       , Union u
-       , Applicative (Eff u fr '[] r)
-       , c (MaybeT (Eff u fr '[] r))
-       )
-    => Eff u fr '[] (LEmpty ': r) a
-    -> Eff u fr '[] r (Maybe a)
+-- | 'Empty' effect handler.
+runEmpty :: forall a r. Eff '[] (Empty ': r) a -> Eff '[] r (Maybe a)
 runEmpty =
-    runMaybeT . interpretFin
-        (MaybeT . fmap Just . injectF)
-        \Empty -> MaybeT $ pure Nothing
+    interpretBy
+        (pure . Just)
+        \Empty _ -> pure Nothing
 
-{- | 'ChooseH' effect handler for Monad use.
+{- | 'ChooseH' effect elaborator.
 
     Convert a higher-order effect of the form
 
@@ -110,49 +77,8 @@ runEmpty =
 
         @choose :: m Bool@
 -}
-runChooseH
-    :: ( Freer c fr
-       , HFunctorUnion u
-       , Member u Choose ef
-       , ForallHFunctor u eh
-       , Monad (Eff u fr eh ef)
-       )
-    => Eff u fr (ChooseH ': eh) ef ~> Eff u fr eh ef
+runChooseH :: (Choose <| ef) => Eff (ChooseH ': eh) ef ~> Eff eh ef
 runChooseH =
     interpretRecH \(ChooseH a b) -> do
         world <- choose
         bool a b world
-
--- | 'NonDet' effect handler for Applicative use.
-runNonDetA
-    :: forall f ef a fr u c
-     . ( Alternative f
-       , Freer c fr
-       , Union u
-       , Applicative (Eff u fr '[] ef)
-       , c (Compose (Eff u fr '[] ef) f)
-       )
-    => Eff u fr '[ChooseH] (LEmpty ': ef) a
-    -> Eff u fr '[] ef (f a)
-runNonDetA =
-    getCompose
-        . interpretFinH
-            (Compose . runEmptyA . injectF)
-            (\(ChooseH a b) -> Compose $ liftA2 (<|>) (runNonDetA a) (runNonDetA b))
-
--- | 'Empty' effect handler for Applicative use.
-runEmptyA
-    :: forall f a r fr u c
-     . ( Alternative f
-       , Freer c fr
-       , Union u
-       , Applicative (Eff u fr '[] r)
-       , c (Compose (Eff u fr '[] r) f)
-       )
-    => Eff u fr '[] (LEmpty ': r) a
-    -> Eff u fr '[] r (f a)
-runEmptyA =
-    getCompose
-        . interpretFin
-            (Compose . fmap pure . injectF)
-            \Empty -> Compose $ pure empty

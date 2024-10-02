@@ -17,49 +17,32 @@ module Control.Effect.Interpreter.Heftia.KVStore where
 
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
-import Control.Effect.Hefty (Eff, interpret, raiseUnder)
 import Control.Effect.Interpreter.Heftia.State (runState)
-import Control.Freer (Freer)
-import Control.Monad.State (StateT)
-import Data.Effect.HFunctor (HFunctor)
-import Data.Effect.KVStore (KVStore (LookupKV, UpdateKV), LKVStore)
-import Data.Effect.State (LState, State, get, modify)
+import Control.Monad.Hefty.Interpret (interpret)
+import Control.Monad.Hefty.Transform (raiseUnder)
+import Control.Monad.Hefty.Types (Eff)
+import Data.Effect.KVStore (KVStore (LookupKV, UpdateKV))
+import Data.Effect.OpenUnion.Internal.FO (type (<|))
+import Data.Effect.State (State, get, modify)
 import Data.Functor ((<&>))
-import Data.Hefty.Union (Member, Union)
 import Data.Map (Map)
 import Data.Map qualified as Map
 
-runKVStorePure ::
-    forall k v r a fr u c.
-    ( Ord k
-    , Freer c fr
-    , Union u
-    , HFunctor (u '[])
-    , Member u (State (Map k v)) (LState (Map k v) ': r)
-    , c (Eff u fr '[] r)
-    , c (StateT (Map k v) (Eff u fr '[] r))
-    , Monad (Eff u fr '[] r)
-    , Monad (Eff u fr '[] (LState (Map k v) ': r))
-    ) =>
-    Map k v ->
-    Eff u fr '[] (LKVStore k v ': r) a ->
-    Eff u fr '[] r (Map k v, a)
+runKVStorePure
+    :: forall k v r a
+     . (Ord k)
+    => Map k v
+    -> Eff '[] (KVStore k v ': r) a
+    -> Eff '[] r (Map k v, a)
 runKVStorePure initial =
     raiseUnder
         >>> runKVStoreAsState
         >>> runState initial
-{-# INLINE runKVStorePure #-}
 
-runKVStoreAsState ::
-    forall k v r fr u c.
-    ( Ord k
-    , Freer c fr
-    , Union u
-    , Member u (State (Map k v)) r
-    , Monad (Eff u fr '[] r)
-    , HFunctor (u '[])
-    ) =>
-    Eff u fr '[] (LKVStore k v ': r) ~> Eff u fr '[] r
+runKVStoreAsState
+    :: forall k v r
+     . (Ord k, State (Map k v) <| r)
+    => Eff '[] (KVStore k v ': r) ~> Eff '[] r
 runKVStoreAsState = interpret \case
     LookupKV k -> get <&> Map.lookup k
     UpdateKV k v -> modify $ Map.update (const v) k

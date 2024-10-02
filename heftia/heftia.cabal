@@ -91,6 +91,8 @@ library
         base                          >= 4.16 && < 4.21,
         data-effects                  ^>= 0.1.2,
         freer-simple                  ^>= 1.2.1.2,
+        mtl,
+        unliftio
 
     hs-source-dirs:   src
     ghc-options:      -Wall

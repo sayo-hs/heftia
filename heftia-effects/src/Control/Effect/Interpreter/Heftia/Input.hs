@@ -13,50 +13,27 @@ module Control.Effect.Interpreter.Heftia.Input where
 
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
-import Control.Effect.Hefty (Eff, interpret, interpretRec, raiseUnder)
 import Control.Effect.Interpreter.Heftia.State (evalState)
-import Control.Freer (Freer)
-import Control.Monad.State (StateT)
-import Data.Effect.HFunctor (HFunctor)
-import Data.Effect.Input (Input (Input), LInput)
-import Data.Effect.State (LState, State, gets, put)
-import Data.Hefty.Union (Member, Union)
+import Control.Monad.Hefty.Interpret (interpret, interpretRec)
+import Control.Monad.Hefty.Transform (raiseUnder)
+import Control.Monad.Hefty.Types (Eff)
+import Data.Effect.Input (Input (Input))
+import Data.Effect.State (gets, put)
 import Data.List (uncons)
 
-runInputEff
-    :: forall i r eh fr u c
-     . (Freer c fr, Union u, Applicative (Eff u fr eh r), HFunctor (u eh))
-    => Eff u fr eh r i
-    -> Eff u fr eh (LInput i ': r) ~> Eff u fr eh r
+runInputEff :: forall i r eh. Eff eh r i -> Eff eh (Input i ': r) ~> Eff eh r
 runInputEff a = interpretRec \Input -> a
-{-# INLINE runInputEff #-}
 
-runInputConst
-    :: forall i r eh fr u c
-     . (Freer c fr, Union u, Applicative (Eff u fr eh r), HFunctor (u eh))
-    => i
-    -> Eff u fr eh (LInput i ': r) ~> Eff u fr eh r
+runInputConst :: forall i r eh. i -> Eff eh (Input i ': r) ~> Eff eh r
 runInputConst i = interpretRec \Input -> pure i
-{-# INLINE runInputConst #-}
 
-runInputList
-    :: forall i r fr u c
-     . ( Freer c fr
-       , Union u
-       , Applicative (Eff u fr '[] r)
-       , Monad (Eff u fr '[] (LState [i] ': r))
-       , c (Eff u fr '[] r)
-       , c (StateT [i] (Eff u fr '[] r))
-       , Member u (State [i]) (LState [i] ': r)
-       , HFunctor (u '[])
-       )
-    => [i]
-    -> Eff u fr '[] (LInput (Maybe i) ': r) ~> Eff u fr '[] r
+runInputList :: forall i r. [i] -> Eff '[] (Input (Maybe i) ': r) ~> Eff '[] r
 runInputList is =
     raiseUnder
-        >>> ( interpret \Input -> do
-                is' <- gets @[i] uncons
-                mapM_ (put . snd) is'
-                pure $ fst <$> is'
-            )
+        >>> int
         >>> evalState is
+  where
+    int = interpret \Input -> do
+        is' <- gets @[i] uncons
+        mapM_ (put . snd) is'
+        pure $ fst <$> is'
