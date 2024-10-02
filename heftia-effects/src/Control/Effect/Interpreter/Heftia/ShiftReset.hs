@@ -5,8 +5,7 @@
 module Control.Effect.Interpreter.Heftia.ShiftReset where
 
 import Control.Effect (type (~>))
-import Control.Monad.Hefty (runEff)
-import Control.Monad.Hefty.Interpret (interpretHBy_, interpretRecH, iterAllEffHFBy)
+import Control.Monad.Hefty.Interpret (interpretHBy_, interpretRecH, iterAllEffHFBy, runEff)
 import Control.Monad.Hefty.Transform (raiseH)
 import Control.Monad.Hefty.Types (Eff, sendUnionBy, sendUnionHBy)
 import Data.Effect.Key (KeyH (KeyH))

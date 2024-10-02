@@ -19,6 +19,7 @@ import Data.Effect.Fail (Fail)
 import Data.Effect.Fail qualified as E
 import Data.Effect.Fix (Fix)
 import Data.Effect.Fix qualified as E
+import Data.Effect.Key (Key (Key), KeyH (KeyH), type (##>), type (#>))
 import Data.Effect.NonDet (ChooseH, Empty, chooseH)
 import Data.Effect.NonDet qualified as E
 import Data.Effect.OpenUnion.Internal.FO (Lookup, MemberBy, Union, inj, type (<|))
@@ -82,12 +83,12 @@ instance (e <<| eh) => SendSig e (Eff eh ef) where
     sendSig = sendH
     {-# INLINE sendSig #-}
 
-instance (MemberBy key ef, e ~ Lookup key ef) => SendInsBy key e (Eff eh ef) where
-    sendInsBy = send
+instance (MemberBy key ef, key #> e ~ Lookup key ef) => SendInsBy key e (Eff eh ef) where
+    sendInsBy = send . Key @key
     {-# INLINE sendInsBy #-}
 
-instance (MemberHBy key eh, e ~ LookupH key eh) => SendSigBy key e (Eff eh ef) where
-    sendSigBy = sendH
+instance (MemberHBy key eh, key ##> e ~ LookupH key eh) => SendSigBy key e (Eff eh ef) where
+    sendSigBy = sendH . KeyH @key
     {-# INLINE sendSigBy #-}
 
 instance

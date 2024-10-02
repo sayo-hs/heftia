@@ -16,11 +16,10 @@ An elaborator for the t'Control.Effect.Class.Resource.Resource' effect class.
 module Control.Effect.Interpreter.Heftia.Resource where
 
 import Control.Effect (type (~>))
-import Control.Monad.Hefty (HFunctors)
 import Control.Monad.Hefty.Interpret (interpretRecH)
 import Control.Monad.Hefty.Types (Eff, Elab)
 import Data.Effect.OpenUnion.Internal.FO (type (<|))
-import Data.Effect.OpenUnion.Internal.HO (type (<<|))
+import Data.Effect.OpenUnion.Internal.HO (HFunctors, type (<<|))
 import Data.Effect.Resource (Resource (Bracket, BracketOnExcept))
 import Data.Effect.Unlift (UnliftIO)
 import UnliftIO (MonadUnliftIO, bracket, bracketOnError)

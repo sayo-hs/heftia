@@ -204,7 +204,7 @@ is returned if the @'Union' (e ': es) :: 'EffectF'@ contains @e :: 'EffectF'@, a
 
 /O(1)/
 -}
-decomp :: Union (e ': es) a -> Either (Union r a) (e a)
+decomp :: Union (e ': es) a -> Either (Union es a) (e a)
 decomp (Union 0 a) = Right $ unsafeCoerce a
 decomp (Union n a) = Left $ Union (n - 1) a
 {-# INLINE [2] decomp #-}

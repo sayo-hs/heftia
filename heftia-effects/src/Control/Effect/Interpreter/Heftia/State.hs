@@ -14,7 +14,6 @@ Interpreter for the t'Data.Effect.State.State' effect.
 module Control.Effect.Interpreter.Heftia.State where
 
 import Control.Effect (type (~>))
-import Control.Monad.Hefty (HFunctors)
 import Control.Monad.Hefty.Interpret (interpretRec)
 import Control.Monad.Hefty.Interpret.State (
     StateInterpreter,
@@ -24,6 +23,7 @@ import Control.Monad.Hefty.Interpret.State (
  )
 import Control.Monad.Hefty.Types (Eff)
 import Data.Effect.OpenUnion.Internal.FO (type (<|))
+import Data.Effect.OpenUnion.Internal.HO (HFunctors)
 import Data.Effect.State (State (Get, Put), get, put)
 import Data.Function ((&))
 import Data.Functor ((<&>))

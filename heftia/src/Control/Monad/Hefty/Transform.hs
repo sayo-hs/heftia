@@ -8,6 +8,7 @@ import Control.Effect (type (~>))
 import Control.Monad.Hefty.Interpret (iterAllEffHFBy)
 import Control.Monad.Hefty.Types (Eff, sendUnionBy, sendUnionHBy)
 import Data.Effect.HFunctor (HFunctor)
+import Data.Effect.Key
 import Data.Effect.OpenUnion.Internal (
     BundleUnder,
     Drop,
@@ -74,6 +75,7 @@ import Data.Effect.OpenUnion.Internal.HO (
     weakensH,
     type (<<|),
  )
+import Data.Effect.Tag
 import GHC.TypeNats (KnownNat)
 
 transform
@@ -81,7 +83,7 @@ transform
      . (HFunctors eh)
     => (e ~> e')
     -> Eff eh (e ': ef) ~> Eff eh (e' ': ef)
-transform f = transEff (either id (inj . f) . decomp)
+transform f = transEff (either weaken (inj . f) . decomp)
 {-# INLINE transform #-}
 
 transformH
@@ -353,6 +355,62 @@ bundleAllH = transEffH bundleAllUnionH
 unbundleAllH :: (HFunctors eh) => Eff '[UnionH eh] ef ~> Eff eh ef
 unbundleAllH = transEffH unbundleAllUnionH
 {-# INLINE unbundleAllH #-}
+
+untag
+    :: forall tag e ef eh
+     . (HFunctors eh)
+    => Eff eh (e # tag ': ef) ~> Eff eh (e ': ef)
+untag = transform unTag
+{-# INLINE untag #-}
+
+retag
+    :: forall tag' tag e ef eh
+     . (HFunctors eh)
+    => Eff eh (e # tag ': ef) ~> Eff eh (e # tag' ': ef)
+retag = transform $ Tag . unTag
+{-# INLINE retag #-}
+
+untagH
+    :: forall tag e eh ef
+     . (HFunctor e, HFunctors (e ## tag ': eh))
+    => Eff (e ## tag ': eh) ef ~> Eff (e ': eh) ef
+untagH = transformH unTagH
+{-# INLINE untagH #-}
+
+retagH
+    :: forall tag' tag e eh ef
+     . (HFunctor e, HFunctors (e ## tag ': eh))
+    => Eff (e ## tag ': eh) ef ~> Eff (e ## tag' ': eh) ef
+retagH = transformH $ TagH . unTagH
+{-# INLINE retagH #-}
+
+unkey
+    :: forall key e ef eh
+     . (HFunctors eh)
+    => Eff eh (key #> e ': ef) ~> Eff eh (e ': ef)
+unkey = transform unKey
+{-# INLINE unkey #-}
+
+rekey
+    :: forall key' key e ef eh
+     . (HFunctors eh)
+    => Eff eh (key #> e ': ef) ~> Eff eh (key' #> e ': ef)
+rekey = transform $ Key . unKey
+{-# INLINE rekey #-}
+
+unkeyH
+    :: forall key e eh ef
+     . (HFunctor e, HFunctors (key ##> e ': eh))
+    => Eff (key ##> e ': eh) ef ~> Eff (e ': eh) ef
+unkeyH = transformH unKeyH
+{-# INLINE unkeyH #-}
+
+rekeyH
+    :: forall key' key e eh ef
+     . (HFunctor e, HFunctors (key ##> e ': eh))
+    => Eff (key ##> e ': eh) ef ~> Eff (key' ##> e ': eh) ef
+rekeyH = transformH $ KeyH . unKeyH
+{-# INLINE rekeyH #-}
 
 transEff
     :: forall ef ef' eh

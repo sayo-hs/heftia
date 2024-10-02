@@ -83,6 +83,10 @@ import Control.Monad.Hefty.Transform (
     raises,
     raisesH,
     raisesUnder,
+    rekey,
+    rekeyH,
+    retag,
+    retagH,
     rewrite,
     rewriteH,
     subsume,
@@ -110,6 +114,10 @@ import Control.Monad.Hefty.Transform (
     unbundleN,
     unbundleUnder,
     unbundleUnderH,
+    unkey,
+    unkeyH,
+    untag,
+    untagH,
  )
 import Control.Monad.Hefty.Types (
     Eff (Op, Val),

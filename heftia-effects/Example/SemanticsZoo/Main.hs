@@ -14,19 +14,25 @@ module Main where
 
 import Control.Applicative ((<|>))
 import Control.Effect (type (~>))
-import Control.Effect.ExtensibleChurch ((:!!))
-import Control.Effect.Hefty (interpretRec, runPure, type ($))
 import Control.Effect.Interpreter.Heftia.Except (runCatch, runThrow)
 import Control.Effect.Interpreter.Heftia.NonDet (runChooseH, runNonDet)
 import Control.Effect.Interpreter.Heftia.State (evalState)
-import Control.Effect.Interpreter.Heftia.Writer (elaborateWriterPre, runTell)
+import Control.Effect.Interpreter.Heftia.Writer (runTell, runWriterHPre)
+import Control.Monad.Hefty (
+    HFunctors,
+    interpretRec,
+    runPure,
+    type ($),
+    type (:!!),
+    type (<<|),
+    type (<|),
+ )
 import Data.Effect.Except (Catch, Throw, catch, throw)
 import Data.Effect.NonDet (ChooseH, Empty)
 import Data.Effect.State (State, get, put)
 import Data.Effect.TH (makeEffectF)
 import Data.Effect.Writer (Tell, WriterH, listen, tell)
 import Data.Functor (($>))
-import Data.Hefty.Extensible (ForallHFunctor, type (<<|), type (<|))
 import Data.Monoid (Sum (Sum))
 
 statePlusExcept :: IO ()
@@ -44,46 +50,50 @@ statePlusExcept = do
 nonDetPlusExcept :: IO ()
 nonDetPlusExcept = do
     let action1
-            , action2 ::
-                (Empty <| ef, ChooseH <<| eh, Throw () <| ef, Catch () <<| eh) => eh :!! ef $ Bool
+            , action2
+                :: (Empty <| ef, ChooseH <<| eh, Throw () <| ef, Catch () <<| eh) => eh :!! ef $ Bool
         action1 = (pure True <|> throw ()) `catch` \() -> pure False
         action2 = (throw () <|> pure True) `catch` \() -> pure False
 
-        testAllPattern ::
-            ( forall eh ef.
-              (Empty <| ef, ChooseH <<| eh, Throw () <| ef, Catch () <<| eh) =>
-              (eh :!! ef) Bool
-            ) ->
-            String ->
-            IO ()
+        testAllPattern
+            :: ( forall eh ef
+                  . (Empty <| ef, ChooseH <<| eh, Throw () <| ef, Catch () <<| eh)
+                 => (eh :!! ef) Bool
+               )
+            -> String
+            -> IO ()
         testAllPattern action name = do
             putStr $ "( runNonDet . runThrow . runCatch . runChooseH $ " <> name <> " ) = "
             print . runPure $
-                runNonDet @[] . runThrow @() . runCatch @() . runChooseH $ action
+                runNonDet @[] . runThrow @() . runCatch @() . runChooseH $
+                    action
 
             putStr $ "( runThrow . runNonDet . runCatch . runChooseH $ " <> name <> " ) = "
             print . runPure $
-                runThrow @() . runNonDet @[] . runCatch @() . runChooseH $ action
+                runThrow @() . runNonDet @[] . runCatch @() . runChooseH $
+                    action
 
     testAllPattern action1 "action1"
     testAllPattern action2 "action2"
 
 nonDetPlusWriter :: IO ()
 nonDetPlusWriter = do
-    let action ::
-            (Empty <| ef, ChooseH <<| eh, Tell (Sum Int) <| ef, WriterH (Sum Int) <<| eh) =>
-            eh :!! ef $ (Sum Int, Bool)
+    let action
+            :: (Empty <| ef, ChooseH <<| eh, Tell (Sum Int) <| ef, WriterH (Sum Int) <<| eh)
+            => eh :!! ef $ (Sum Int, Bool)
         action = listen $ add 1 *> (add 2 $> True <|> add 3 $> False)
           where
             add = tell . Sum @Int
 
     putStr "( runNonDet . runTell . elaborateWriter . runChooseH $ action ) = "
     print . map (\(Sum m, (Sum n, b)) -> (m, (n, b))) . runPure $
-        runNonDet @[] . runTell @(Sum Int) . elaborateWriterPre @(Sum Int) . runChooseH $ action
+        runNonDet @[] . runTell @(Sum Int) . runWriterHPre @(Sum Int) . runChooseH $
+            action
 
     putStr "( runTell . runNonDet . elaborateWriter . runChooseH $ action ) = "
     print . (\(Sum m, xs) -> (m, map (\(Sum n, b) -> (n, b)) xs)) . runPure $
-        runTell @(Sum Int) . runNonDet @[] . elaborateWriterPre @(Sum Int) . runChooseH $ action
+        runTell @(Sum Int) . runNonDet @[] . runWriterHPre @(Sum Int) . runChooseH $
+            action
 
 data SomeEff a where
     SomeAction :: SomeEff String
@@ -94,7 +104,7 @@ theIssue12 = do
     let action :: (Catch String <<| eh, Throw String <| ef, SomeEff <| ef) => eh :!! ef $ String
         action = someAction `catch` \(_ :: String) -> pure "caught"
 
-        runSomeEff :: (ForallHFunctor eh, Throw String <| ef) => eh :!! LSomeEff ': ef ~> eh :!! ef
+        runSomeEff :: (HFunctors eh, Throw String <| ef) => eh :!! SomeEff ': ef ~> eh :!! ef
         runSomeEff = interpretRec (\SomeAction -> throw "not caught")
 
     putStr "interpret SomeEff then runCatch : ( runThrow . runCatch . runSomeEff $ action ) = "
