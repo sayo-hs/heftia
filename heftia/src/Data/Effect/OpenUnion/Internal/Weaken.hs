@@ -12,26 +12,28 @@ Portability :  portable
 -}
 module Data.Effect.OpenUnion.Internal.Weaken where
 
-import Data.Proxy (Proxy (Proxy))
-import GHC.TypeLits (KnownNat, natVal, type (-))
+import Data.Type.Equality (type (==))
+import GHC.TypeNats (KnownNat, Natural, type (-))
 
-class Weaken len es es' where
-    weakenLen :: Word
+type Weaken len = WeakenUnder_ 'True 0 (len == 0) len
+type WeakenUnder len offset = WeakenUnder_ (offset == 0) offset (len == 0) len
 
-instance Weaken 0 es es where
-    weakenLen = 0
+class
+    (isOffsetZero ~ (offset == 0), isLenZero ~ (len == 0), KnownNat offset, KnownNat len) =>
+    WeakenUnder_ (isOffsetZero :: Bool) (offset :: Natural) (isLenZero :: Bool) (len :: Natural) es es'
+        | es' -> es
 
-instance {-# OVERLAPPABLE #-} (Weaken (len - 1) es es', KnownNat len) => Weaken len es (e ': es') where
-    weakenLen = fromIntegral $ natVal @len Proxy
+instance
+    ( WeakenUnder n (offset - 1) es es'
+    , (offset == 0) ~ 'False
+    , isLenZero ~ (len == 0)
+    , KnownNat offset
+    , KnownNat len
+    )
+    => WeakenUnder_ 'False offset isLenZero len (e ': es) (e ': es')
 
-class WeakenUnder len offset es es' where
-    weakenUnderLen :: Word
-    weakenUnderOffset :: Word
+instance
+    (Weaken (len - 1) es es', (len == 0) ~ 'False, KnownNat len)
+    => WeakenUnder_ 'True 0 'False len es (e ': es')
 
-instance (Weaken len es es') => WeakenUnder len 0 es es' where
-    weakenUnderLen = weakenLen @len @es @es'
-    weakenUnderOffset = 0
-
-instance {-# OVERLAPPABLE #-} (WeakenUnder len (offset - 1) es es', KnownNat offset) => WeakenUnder len offset es (e ': es') where
-    weakenUnderLen = weakenUnderLen @len @(offset - 1) @es @es'
-    weakenUnderOffset = fromIntegral $ natVal @offset Proxy
+instance WeakenUnder_ 'True 0 'True 0 es es

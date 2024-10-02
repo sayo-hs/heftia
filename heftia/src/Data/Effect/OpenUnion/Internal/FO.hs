@@ -49,12 +49,8 @@ Description :  Open unions (type-indexed co-products) for extensible first-order
 
 Implementation of an open union for first-order effects.
 
-Note that since this module is internal, the API may not be preserved when the minor version
-changes. In other words, this module does not follow the Haskell Package Versioning Policy
-specification.
-
-Importing this module allows unsafe access to the data structure of the open union, so it should not
-usually be imported.
+Importing this module allows unsafe access to the data structure of the open
+union, so it should not usually be imported directly.
 
 Based on [the open union in freer-simple](https://hackage.haskell.org/package/freer-simple-1.2.1.2/docs/Data-OpenUnion-Internal.html).
 -}
@@ -62,45 +58,47 @@ module Data.Effect.OpenUnion.Internal.FO where
 
 import Data.Coerce (coerce)
 import Data.Effect.OpenUnion.Internal (
+    Drop,
     FindElem (elemNo),
     IfNotFound,
     IsSuffixOf,
-    KnownLen,
+    KnownLength,
+    Length,
     P (unP),
+    Reverse,
+    Take,
     prefixLen,
-    reifyLen,
+    reifyLength,
+    wordVal,
     type (++),
  )
+import Data.Effect.OpenUnion.Internal.Bundle (Bundle, BundleUnder)
 import Data.Effect.OpenUnion.Internal.Strengthen (
     Strengthen,
     StrengthenUnder,
-    strengthenMap,
     strengthenUnderMap,
-    strengthenUnderOffset,
  )
 import Data.Effect.OpenUnion.Internal.Weaken (
     Weaken,
     WeakenUnder,
-    weakenLen,
-    weakenUnderLen,
-    weakenUnderOffset,
  )
 import Data.Kind (Type)
+import GHC.TypeNats (KnownNat, type (-))
 import Unsafe.Coerce (unsafeCoerce)
 
 -- | Kind of first-order effects.
 type EffectF = Type -> Type
 
 -- | Open union for first-order effects.
-data UnionF (es :: [EffectF]) (a :: Type) where
-    UnionF
+data Union (es :: [EffectF]) (a :: Type) where
+    Union
         :: {-# UNPACK #-} !Word
         -- ^ A natural number tag to identify the element of the union.
         -> e a
         -- ^ The data of the higher-order effect that is an element of the union.
-        -> UnionF es a
+        -> Union es a
 
-{- | Takes a request of type @e :: 'EffectF'@, and injects it into the 'UnionF'.
+{- | Takes a request of type @e :: 'EffectF'@, and injects it into the 'Union'.
 
 Summand is assigning a specified 'Word' value, which is a position in the
 type-list @(e ': es) :: 'EffectF'@.
@@ -109,26 +107,26 @@ __This function is unsafe.__
 
 /O(1)/
 -}
-unsafeInjF :: Word -> e a -> UnionF es a
-unsafeInjF = UnionF
-{-# INLINE unsafeInjF #-}
+unsafeInj :: Word -> e a -> Union es a
+unsafeInj = Union
+{-# INLINE unsafeInj #-}
 
-{- | Project a value of type @'UnionF' (e ': es) :: 'EffectF'@ into a possible
+{- | Project a value of type @'Union' (e ': es) :: 'EffectF'@ into a possible
 summand of the type @e :: 'EffectF'@. 'Nothing' means that @e :: 'EffectF'@ is not
-the value stored in the @'UnionF' (e ': es) :: 'EffectF'@.
+the value stored in the @'Union' (e ': es) :: 'EffectF'@.
 
 It is assumed that summand is stored in the 'Union' when the 'Word' value is
-the same value as is stored in the 'UnionF'.
+the same value as is stored in the 'Union'.
 
 __This function is unsafe.__
 
 /O(1)/
 -}
-unsafePrjF :: Word -> UnionF es a -> Maybe (e a)
-unsafePrjF n (UnionF n' e)
+unsafePrj :: Word -> Union es a -> Maybe (e a)
+unsafePrj n (Union n' e)
     | n == n' = Just (unsafeCoerce e)
     | otherwise = Nothing
-{-# INLINE unsafePrjF #-}
+{-# INLINE unsafePrj #-}
 
 {- | A constraint that requires that a particular effect, @e@, is a member of
 the type-level list @es@. This is used to parameterize an
@@ -139,10 +137,10 @@ For example, a computation that only needs access to a cell of mutable state
 containing an 'Integer' would likely use the following type:
 
 @
-'MemberF' ('Data.Effect.State.State' 'Integer') ef => 'Control.Monad.Hefty.Eff' eh ef ()
+'Member' ('Data.Effect.State.State' 'Integer') ef => 'Control.Monad.Hefty.Eff' eh ef ()
 @
 -}
-class (FindElem e es) => MemberF (e :: EffectF) es where
+class (FindElem e es) => Member (e :: EffectF) es where
     -- This type class is used for two following purposes:
     --
 
@@ -151,7 +149,7 @@ class (FindElem e es) => MemberF (e :: EffectF) es where
     --   type-list @es :: ['EffectF']@.
     --
 
-    -- * Provides a way how to inject\/project @e :: 'EffectF'@ into\/from a 'UnionF',
+    -- * Provides a way how to inject\/project @e :: 'EffectF'@ into\/from a 'Union',
 
     --   respectively.
     --
@@ -162,36 +160,39 @@ class (FindElem e es) => MemberF (e :: EffectF) es where
     -- @
 
     -- | Takes a request of type @e :: 'EffectF'@, and injects it into the
-    -- 'UnionF'.
+    -- 'Union'.
     --
     -- /O(1)/
-    injF :: e a -> UnionF es a
+    inj :: e a -> Union es a
 
-    -- | Project a value of type @'UnionF' (e ': es) :: 'EffectF'@ into a possible
+    -- | Project a value of type @'Union' (e ': es) :: 'EffectF'@ into a possible
     -- summand of the type @e :: 'EffectF'@. 'Nothing' means that @e :: 'EffectF'@ is
-    -- not the value stored in the @'UnionF' (e ': es) :: 'EffectF'@.
+    -- not the value stored in the @'Union' (e ': es) :: 'EffectF'@.
     --
     -- /O(1)/
-    prjF :: UnionF es a -> Maybe (e a)
+    prj :: Union es a -> Maybe (e a)
 
-instance (FindElem e es, IfNotFound e es es) => MemberF e es where
-    injF = unsafeInjF $ unP (elemNo :: P e es)
-    {-# INLINE injF #-}
+instance (FindElem e es, IfNotFound e es es) => Member e es where
+    inj = unsafeInj $ unP (elemNo :: P e es)
+    {-# INLINE inj #-}
 
-    prjF = unsafePrjF $ unP (elemNo :: P e es)
-    {-# INLINE prjF #-}
+    prj = unsafePrj $ unP (elemNo :: P e es)
+    {-# INLINE prj #-}
 
-{- | Orthogonal decomposition of a @'UnionF' (e ': es) :: 'EffectF'@. 'Right' value
-is returned if the @'UnionF' (e ': es) :: 'EffectF'@ contains @e :: 'EffectF'@, and
+infix 3 <!
+type (<!) = Member
+
+{- | Orthogonal decomposition of a @'Union' (e ': es) :: 'EffectF'@. 'Right' value
+is returned if the @'Union' (e ': es) :: 'EffectF'@ contains @e :: 'EffectF'@, and
 'Left' when it doesn't. Notice that 'Left' value contains
-@U'nionF' es :: 'EffectF'@, i.e. it can not contain @e :: 'EffectF'@.
+@'Union' es :: 'EffectF'@, i.e. it can not contain @e :: 'EffectF'@.
 
 /O(1)/
 -}
-decompF :: UnionF (e ': es) a -> Either (UnionF r a) (t a)
-decompF (UnionF 0 a) = Right $ unsafeCoerce a
-decompF (UnionF n a) = Left $ UnionF (n - 1) a
-{-# INLINE [2] decompF #-}
+decomp :: Union (e ': es) a -> Either (Union r a) (e a)
+decomp (Union 0 a) = Right $ unsafeCoerce a
+decomp (Union n a) = Left $ Union (n - 1) a
+{-# INLINE [2] decomp #-}
 
 {- | Specialized version of 'decomp' for efficiency.
 
@@ -199,73 +200,191 @@ decompF (UnionF n a) = Left $ UnionF (n - 1) a
 
 TODO: Check that it actually adds on efficiency.
 -}
-decomp0F :: UnionF '[t] a -> Either (UnionF '[] a) (t a)
-decomp0F (UnionF _ a) = Right $ unsafeCoerce a
-{-# INLINE decomp0F #-}
+decomp0 :: Union '[e] a -> Either (Union '[] a) (e a)
+decomp0 (Union _ a) = Right $ unsafeCoerce a
+{-# INLINE decomp0 #-}
 
-{-# RULES "decomp/singleton" decompF = decomp0F #-}
+{-# RULES "decomp/singleton" decomp = decomp0 #-}
+
+infixr 5 !+
+(!+) :: (e a -> r) -> (Union es a -> r) -> Union (e : es) a -> r
+(f !+ g) u = case decomp u of
+    Left x -> g x
+    Right x -> f x
+{-# INLINE (!+) #-}
 
 {- | Specialised version of 'prj'\/'decomp' that works on an
-@'UnionF' '[e] :: 'EffectF'@ which contains only one specific summand. Hence the
+@'Union' '[e] :: 'EffectF'@ which contains only one specific summand. Hence the
 absence of 'Maybe', and 'Either'.
 
 /O(1)/
 -}
-extractF :: UnionF '[e] a -> e a
-extractF (UnionF _ a) = unsafeCoerce a
-{-# INLINE extractF #-}
+extract :: Union '[e] a -> e a
+extract (Union _ a) = unsafeCoerce a
+{-# INLINE extract #-}
 
-{- | Inject whole @'UnionF' es@ into a weaker @'UnionF' (any ': es)@ that has one
+{- | Inject whole @'Union' es@ into a weaker @'Union' (any ': es)@ that has one
 more summand.
 
 /O(1)/
 -}
-weakenF :: UnionF es a -> UnionF (any ': es) a
-weakenF (UnionF n a) = UnionF (n + 1) a
-{-# INLINE weakenF #-}
+weaken :: Union es a -> Union (any ': es) a
+weaken (Union n a) = Union (n + 1) a
+{-# INLINE weaken #-}
 
-weakensF :: forall es es' a. (es `IsSuffixOf` es') => UnionF es a -> UnionF es' a
-weakensF (UnionF n a) = UnionF (n + prefixLen @es @es') a
-{-# INLINE weakensF #-}
+weakens :: forall es es' a. (es `IsSuffixOf` es') => Union es a -> Union es' a
+weakens (Union n a) = Union (n + prefixLen @es @es') a
+{-# INLINE weakens #-}
 
-weakenNF :: forall len es es' a. (Weaken len es es') => UnionF es a -> UnionF es' a
-weakenNF (UnionF n a) = UnionF (n + weakenLen @len @es @es') a
-{-# INLINE weakenNF #-}
+weakenN :: forall len es es' a. (Weaken len es es') => Union es a -> Union es' a
+weakenN (Union n a) = Union (n + wordVal @len) a
+{-# INLINE weakenN #-}
 
-weakenNUnderMF
+weakenNUnderM
     :: forall len offset es es' a
      . (WeakenUnder len offset es es')
-    => UnionF es a
-    -> UnionF es' a
-weakenNUnderMF u@(UnionF n a)
-    | n < weakenUnderOffset @len @offset @es @es' = coerce u
-    | otherwise = UnionF (n + weakenUnderLen @len @offset @es @es') a
-{-# INLINE weakenNUnderMF #-}
+    => Union es a
+    -> Union es' a
+weakenNUnderM u@(Union n a)
+    | n < wordVal @offset = coerce u
+    | otherwise = Union (n + wordVal @len) a
+{-# INLINE weakenNUnderM #-}
 
-strengthenNF :: forall len es es' a. (Strengthen len es es') => UnionF es a -> UnionF es' a
-strengthenNF (UnionF n a) = UnionF (strengthenMap @len @es @es' n) a
-{-# INLINE strengthenNF #-}
+strengthenN :: forall len es es' a. (Strengthen len es es') => Union es a -> Union es' a
+strengthenN (Union n a) = Union (strengthenUnderMap @len @0 @es @es' n) a
+{-# INLINE strengthenN #-}
 
-strengthenNUnderMF
+strengthenNUnderM
     :: forall len offset es es' a
      . (StrengthenUnder len offset es es')
-    => UnionF es a
-    -> UnionF es' a
-strengthenNUnderMF u@(UnionF n a)
+    => Union es a
+    -> Union es' a
+strengthenNUnderM u@(Union n a)
     | n < off = coerce u
-    | otherwise = UnionF (off + strengthenUnderMap @len @offset @es @es' (n - off)) a
+    | otherwise = Union (off + strengthenUnderMap @len @offset @es @es' (n - off)) a
   where
-    off = strengthenUnderOffset @len @offset @es @es'
-{-# INLINE strengthenNUnderMF #-}
+    off = wordVal @offset
+{-# INLINE strengthenNUnderM #-}
 
-prefixF :: forall any es a. (KnownLen any) => UnionF es a -> UnionF (any ++ es) a
-prefixF (UnionF n a) = UnionF (n + reifyLen @_ @any) a
-{-# INLINE prefixF #-}
+bundleUnion
+    :: forall bundle es rest a
+     . (Bundle es bundle rest)
+    => Union es a
+    -> Union (Union bundle ': rest) a
+bundleUnion (Union n a)
+    | n < len = Union 0 $ Union n a
+    | otherwise = Union (n - len + 1) a
+  where
+    len = reifyLength @bundle
+{-# INLINE bundleUnion #-}
 
-suffixF :: forall any es a. UnionF es a -> UnionF (es ++ any) a
-suffixF = coerce
-{-# INLINE suffixF #-}
+unbundleUnion
+    :: forall bundle es rest a
+     . (Bundle es bundle rest)
+    => Union (Union bundle ': rest) a
+    -> Union es a
+unbundleUnion (Union n a)
+    | n == 0 = unsafeCoerce a
+    | otherwise = Union (n - 1 + reifyLength @bundle) a
+{-# INLINE unbundleUnion #-}
 
-exhaustF :: UnionF '[] a -> r
-exhaustF _ = error "Effect system internal error: exhaustF - An empty effect union, which should not be possible to create, has been created."
-{-# INLINE exhaustF #-}
+bundleUnionUnder
+    :: forall offset bundle es es' a
+     . (BundleUnder Union offset es es' bundle)
+    => Union es a
+    -> Union es' a
+bundleUnionUnder u@(Union n a)
+    | n < off = coerce u
+    | n' < len = Union 0 $ Union n' a
+    | otherwise = Union (n - len + 1) a
+  where
+    off = wordVal @offset
+    len = reifyLength @bundle
+    n' = n - off
+{-# INLINE bundleUnionUnder #-}
+
+unbundleUnionUnder
+    :: forall offset bundle es es' a
+     . (BundleUnder Union offset es es' bundle)
+    => Union es' a
+    -> Union es a
+unbundleUnionUnder u@(Union n a)
+    | n < off = coerce u
+    | n == off =
+        case unsafeCoerce a of
+            Union n' a' -> Union (off + n') a'
+    | otherwise = Union (n - 1 + len) a
+  where
+    off = wordVal @offset
+    len = reifyLength @bundle
+{-# INLINE unbundleUnionUnder #-}
+
+bundleAllUnion :: Union es a -> Union '[Union es] a
+bundleAllUnion = Union 0
+{-# INLINE bundleAllUnion #-}
+
+unbundleAllUnion :: Union '[Union es] a -> Union es a
+unbundleAllUnion = extract
+{-# INLINE unbundleAllUnion #-}
+
+prefixUnion :: forall any es a. (KnownLength any) => Union es a -> Union (any ++ es) a
+prefixUnion (Union n a) = Union (n + reifyLength @any) a
+{-# INLINE prefixUnion #-}
+
+prefixUnionUnder
+    :: forall any offset es a
+     . (KnownLength any, KnownNat offset)
+    => Union es a
+    -> Union (Take offset es ++ any ++ Drop offset es) a
+prefixUnionUnder u@(Union n a)
+    | n < wordVal @offset = coerce u
+    | otherwise = Union (n + reifyLength @any) a
+{-# INLINE prefixUnionUnder #-}
+
+suffixUnion :: forall any es a. Union es a -> Union (es ++ any) a
+suffixUnion = coerce
+{-# INLINE suffixUnion #-}
+
+suffixUnionOverN
+    :: forall any offset es a
+     . (KnownLength any, KnownNat offset, KnownLength es)
+    => Union es a
+    -> Union (Take (Length es - offset) es ++ any ++ Drop (Length es - offset) es) a
+suffixUnionOverN u@(Union n a)
+    | n < reifyLength @es - wordVal @offset = coerce u
+    | otherwise = Union (n + reifyLength @any) a
+{-# INLINE suffixUnionOverN #-}
+
+flipAllUnion :: forall es a. (KnownLength es) => Union es a -> Union (Reverse es) a
+flipAllUnion (Union n a) = Union (reifyLength @es - n) a
+{-# INLINE flipAllUnion #-}
+
+flipUnion
+    :: forall len es a
+     . (KnownNat len)
+    => Union es a
+    -> Union (Reverse (Take len es) ++ Drop len es) a
+flipUnion u@(Union n a)
+    | n < len = Union (len - n) a
+    | otherwise = coerce u
+  where
+    len = wordVal @len
+{-# INLINE flipUnion #-}
+
+flipUnionUnder
+    :: forall len offset es a
+     . (KnownNat len, KnownNat offset)
+    => Union es a
+    -> Union (Take offset es ++ Reverse (Take len (Drop offset es)) ++ Drop len (Drop offset es)) a
+flipUnionUnder u@(Union n a)
+    | n >= off && n' < len = Union (off + len - n') a
+    | otherwise = coerce u
+  where
+    off = wordVal @offset
+    len = wordVal @len
+    n' = n - off
+{-# INLINE flipUnionUnder #-}
+
+nil :: Union '[] a -> r
+nil _ = error "Effect system internal error: nil - An empty effect union, which should not be possible to create, has been created."
+{-# INLINE nil #-}

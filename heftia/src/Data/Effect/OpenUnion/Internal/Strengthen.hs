@@ -13,30 +13,46 @@ Portability :  portable
 module Data.Effect.OpenUnion.Internal.Strengthen where
 
 import Data.Effect.OpenUnion.Internal (FindElem (elemNo), P (unP))
-import Data.Proxy (Proxy (Proxy))
-import GHC.TypeLits (KnownNat, natVal, type (-))
+import Data.Type.Equality (type (==))
+import GHC.TypeLits (KnownNat, Natural, type (-))
 
-class Strengthen len es es' where
-    strengthenMap :: Word -> Word
+type Strengthen len = StrengthenUnder_ 'True 0 (len == 0) len
+type StrengthenUnder len offset = StrengthenUnder_ (offset == 0) offset (len == 0) len
 
-instance Strengthen 0 es es where
-    strengthenMap = id
-    {-# INLINE strengthenMap #-}
+strengthenUnderMap :: forall len offset es es'. (StrengthenUnder len offset es es') => Word -> Word
+strengthenUnderMap = strengthenUnderMap_ @_ @(offset == 0) @offset @(len == 0) @len @es @es'
 
-instance {-# OVERLAPPABLE #-} (Strengthen (len - 1) es es', FindElem e es) => Strengthen len (e ': es) es' where
-    strengthenMap = \case
+class
+    ( isOffsetZero ~ (offset == 0)
+    , isLenZero ~ (len == 0)
+    , KnownNat offset
+    , KnownNat len
+    ) =>
+    StrengthenUnder_ (isOffsetZero :: Bool) (offset :: Natural) (isLenZero :: Bool) (len :: Natural) (es :: [k]) (es' :: [k])
+        | offset len es -> es'
+    where
+    strengthenUnderMap_ :: Word -> Word
+
+instance
+    ( StrengthenUnder len (offset - 1) es es'
+    , (offset == 0) ~ 'False
+    , isLenZero ~ (len == 0)
+    , KnownNat offset
+    , KnownNat len
+    )
+    => StrengthenUnder_ 'False offset isLenZero len (e ': es) (e ': es')
+    where
+    strengthenUnderMap_ = strengthenUnderMap @len @(offset - 1) @es @es'
+
+instance
+    (Strengthen (len - 1) es es', FindElem e es, (len == 0) ~ 'False, KnownNat len)
+    => StrengthenUnder_ 'True 0 'False len (e ': es) es'
+    where
+    strengthenUnderMap_ = \case
         0 -> unP $ elemNo @_ @e @es
-        n -> strengthenMap @(len - 1) @es @es' $ n - 1
-    {-# INLINE strengthenMap #-}
+        n -> strengthenUnderMap @(len - 1) @0 @es @es' $ n - 1
+    {-# INLINE strengthenUnderMap_ #-}
 
-class StrengthenUnder len offset es es' where
-    strengthenUnderMap :: Word -> Word
-    strengthenUnderOffset :: Word
-
-instance (Strengthen len es es') => StrengthenUnder len 0 es es' where
-    strengthenUnderMap = strengthenMap @len @es @es'
-    strengthenUnderOffset = 0
-
-instance {-# OVERLAPPABLE #-} (StrengthenUnder len (offset - 1) es es', KnownNat offset) => StrengthenUnder len offset es (e ': es') where
-    strengthenUnderMap = strengthenUnderMap @len @(offset - 1) @es @es'
-    strengthenUnderOffset = fromIntegral $ natVal @offset Proxy
+instance StrengthenUnder_ 'True 0 'True 0 es es where
+    strengthenUnderMap_ = id
+    {-# INLINE strengthenUnderMap_ #-}
