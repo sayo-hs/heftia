@@ -15,6 +15,7 @@ import Control.Monad.Hefty.Types (
     sendUnionHBy,
  )
 import Data.Effect.HFunctor (HFunctor, hfmap)
+import Data.Effect.OpenUnion.Internal (IsSuffixOf, WeakenN)
 import Data.Effect.OpenUnion.Internal.FO (
     Member (prj),
     Union,
@@ -36,7 +37,6 @@ import Data.Effect.OpenUnion.Internal.HO (
     (!!+),
     type (<!!),
  )
-import Data.Effect.OpenUnion.Internal.Weaken (IsSuffixOf, Weaken)
 import Data.FTCQueue (FTCQueue, ViewL (TOne, (:|)), tviewl, (><))
 
 {- | Iteratively interprets all effects in an 'Eff' computation.
@@ -222,7 +222,7 @@ reinterpretBy ret hdl = iterAllEffHFBy ret nilH (hdl !+ flip sendUnionBy . weake
 
 reinterpretNBy
     :: forall n e ef' ef ans a
-     . (Weaken n ef ef')
+     . (WeakenN n ef ef')
     => (a -> Eff '[] ef' ans)
     -> Interpreter e (Eff '[] ef') ans
     -> Eff '[] (e ': ef) a
@@ -241,7 +241,7 @@ reinterpretWith = reinterpretBy pure
 
 reinterpretNWith
     :: forall n e ef' ef a
-     . (Weaken n ef ef')
+     . (WeakenN n ef ef')
     => Interpreter e (Eff '[] ef') a
     -> Eff '[] (e ': ef) a
     -> Eff '[] ef' a
@@ -252,7 +252,7 @@ reinterpret :: forall e ef' ef. (ef `IsSuffixOf` ef') => (e ~> Eff '[] ef') -> E
 reinterpret f = reinterpretWith (plain f)
 {-# INLINE reinterpret #-}
 
-reinterpretN :: forall n e ef' ef. (Weaken n ef ef') => (e ~> Eff '[] ef') -> Eff '[] (e ': ef) ~> Eff '[] ef'
+reinterpretN :: forall n e ef' ef. (WeakenN n ef ef') => (e ~> Eff '[] ef') -> Eff '[] (e ': ef) ~> Eff '[] ef'
 reinterpretN f = reinterpretNWith @n (plain f)
 {-# INLINE reinterpretN #-}
 
@@ -270,7 +270,7 @@ reinterpretRecWith hdl = loop
 
 reinterpretRecNWith
     :: forall n e ef' ef eh a
-     . (Weaken n ef ef')
+     . (WeakenN n ef ef')
     => (forall ans. Interpreter e (Eff eh ef') ans)
     -> Eff eh (e ': ef) a
     -> Eff eh ef' a
@@ -284,7 +284,7 @@ reinterpretRec :: forall e ef' ef eh. (ef `IsSuffixOf` ef') => (e ~> Eff eh ef')
 reinterpretRec f = reinterpretRecWith (plain f)
 {-# INLINE reinterpretRec #-}
 
-reinterpretRecN :: forall n e ef' ef eh. (Weaken n ef ef') => (e ~> Eff eh ef') -> Eff eh (e ': ef) ~> Eff eh ef'
+reinterpretRecN :: forall n e ef' ef eh. (WeakenN n ef ef') => (e ~> Eff eh ef') -> Eff eh (e ': ef) ~> Eff eh ef'
 reinterpretRecN f = reinterpretRecNWith @n (plain f)
 {-# INLINE reinterpretRecN #-}
 
@@ -300,7 +300,7 @@ reinterpretHBy ret elb = iterAllEffHFBy ret (elb !!+ nilH) (flip sendUnionBy)
 
 reinterpretNHBy
     :: forall n e eh ef ans a
-     . (HFunctor e, Weaken n '[] eh)
+     . (HFunctor e, WeakenN n '[] eh)
     => (a -> Eff eh ef ans)
     -> Interpreter (e (Eff '[e] ef)) (Eff eh ef) ans
     -> Eff '[e] ef a
@@ -319,7 +319,7 @@ reinterpretHWith = reinterpretHBy pure
 
 reinterpretNHWith
     :: forall n e eh ef a
-     . (HFunctor e, Weaken n '[] eh)
+     . (HFunctor e, WeakenN n '[] eh)
     => Interpreter (e (Eff '[e] ef)) (Eff eh ef) a
     -> Eff '[e] ef a
     -> Eff eh ef a
@@ -336,7 +336,7 @@ reinterpretH elb = reinterpretHWith (plain elb)
 
 reinterpretNH
     :: forall n e eh ef
-     . (HFunctor e, Weaken n '[] eh)
+     . (HFunctor e, WeakenN n '[] eh)
     => (e (Eff '[e] ef) ~> Eff eh ef)
     -> Eff '[e] ef ~> Eff eh ef
 reinterpretNH = reinterpretH
@@ -360,7 +360,7 @@ reinterpretRecHWith elb = loop
 
 reinterpretRecNHWith
     :: forall n e eh eh' ef a
-     . (HFunctor e, Weaken n eh eh')
+     . (HFunctor e, WeakenN n eh eh')
     => (forall ans. Elaborator e (Eff eh' ef) ans)
     -> Eff (e ': eh) ef a
     -> Eff eh' ef a
@@ -384,7 +384,7 @@ reinterpretRecH elb = reinterpretRecHWith (plain elb)
 
 reinterpretRecNH
     :: forall n e eh eh' ef
-     . (HFunctor e, Weaken n eh eh')
+     . (HFunctor e, WeakenN n eh eh')
     => Elab e (Eff eh' ef)
     -> Eff (e ': eh) ef ~> Eff eh' ef
 reinterpretRecNH elb = reinterpretRecNHWith @n (plain elb)

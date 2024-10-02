@@ -1,28 +1,45 @@
--- SPDX-License-Identifier: MPL-2.0
 {-# LANGUAGE AllowAmbiguousTypes #-}
+
+-- SPDX-License-Identifier: MPL-2.0
 
 module Control.Monad.Hefty.Transform where
 
 import Control.Effect (type (~>))
-import Control.Monad.Hefty.Interpret (interpret, iterAllEffHFBy, runPure)
+import Control.Monad.Hefty.Interpret (iterAllEffHFBy)
 import Control.Monad.Hefty.Types (Eff, sendUnionBy, sendUnionHBy)
 import Data.Effect.HFunctor (HFunctor)
-import Data.Effect.OpenUnion.Internal.Bundle (Bundle, BundleUnder)
+import Data.Effect.OpenUnion.Internal (
+    BundleUnder,
+    Drop,
+    IsSuffixOf,
+    Split,
+    Strengthen,
+    StrengthenN,
+    StrengthenNUnder,
+    StrengthenUnder,
+    Take,
+    WeakenN,
+    WeakenNUnder,
+ )
 import Data.Effect.OpenUnion.Internal.FO (
     Union,
     bundleAllUnion,
     bundleUnion,
+    bundleUnionN,
     bundleUnionUnder,
     decomp,
     inj,
     prj,
     strengthenN,
-    strengthenNUnderM,
+    strengthenNUnder,
+    strengthens,
+    strengthensUnder,
     unbundleAllUnion,
     unbundleUnion,
+    unbundleUnionN,
     unbundleUnionUnder,
     weakenN,
-    weakenNUnderM,
+    weakenNUnder,
     weakens,
     type (<!),
  )
@@ -36,22 +53,21 @@ import Data.Effect.OpenUnion.Internal.HO (
     injH,
     prjH,
     strengthenNH,
-    strengthenNUnderMH,
+    strengthenNUnderH,
+    strengthensH,
     unbundleAllUnionH,
     unbundleUnionH,
     unbundleUnionUnderH,
     weakenH,
     weakenNH,
-    weakenNUnderMH,
+    weakenNUnderH,
     weakensH,
     type (<!!),
  )
-import Data.Effect.OpenUnion.Internal.Strengthen (Strengthen, StrengthenUnder)
-import Data.Effect.OpenUnion.Internal.Weaken (IsSuffixOf, Weaken, WeakenUnder)
-import Data.Effect.State (State)
+import GHC.TypeNats (KnownNat)
 
 transform :: forall e e' ef eh. (e ~> e') -> Eff eh (e ': ef) ~> Eff eh (e' ': ef)
-transform f = transEffHF id (either id (inj . f) . decomp)
+transform f = transEff (either id (inj . f) . decomp)
 {-# INLINE transform #-}
 
 transformH
@@ -59,11 +75,11 @@ transformH
      . (HFunctor e)
     => (e (Eff (e' ': eh) ef) ~> e' (Eff (e' ': eh) ef))
     -> Eff (e ': eh) ef ~> Eff (e' ': eh) ef
-transformH f = transEffHF (either weakenH (injH . f) . decompH) id
+transformH f = transEffH (either weakenH (injH . f) . decompH)
 {-# INLINE transformH #-}
 
 translate :: forall e e' ef eh. (e' <! ef) => (e ~> e') -> Eff eh (e ': ef) ~> Eff eh ef
-translate f = transEffHF id (either id (inj . f) . decomp)
+translate f = transEff (either id (inj . f) . decomp)
 {-# INLINE translate #-}
 
 translateH
@@ -71,11 +87,11 @@ translateH
      . (e' <!! eh, HFunctor e)
     => (e (Eff eh ef) ~> e' (Eff eh ef))
     -> Eff (e ': eh) ef ~> Eff eh ef
-translateH f = transEffHF (either id (injH . f) . decompH) id
+translateH f = transEffH (either id (injH . f) . decompH)
 {-# INLINE translateH #-}
 
 rewrite :: forall e ef eh. (e <! ef) => (e ~> e) -> Eff eh ef ~> Eff eh ef
-rewrite f = transEffHF id \u -> maybe u (inj . f) $ prj @e u
+rewrite f = transEff \u -> maybe u (inj . f) $ prj @e u
 {-# INLINE rewrite #-}
 
 rewriteH
@@ -83,134 +99,179 @@ rewriteH
      . (e <!! eh, HFunctor e)
     => (e (Eff eh ef) ~> e (Eff eh ef))
     -> Eff eh ef ~> Eff eh ef
-rewriteH f = transEffHF (\u -> maybe u (injH . f) $ prjH @e u) id
+rewriteH f = transEffH \u -> maybe u (injH . f) $ prjH @e u
 {-# INLINE rewriteH #-}
 
-raise :: (ef `IsSuffixOf` ef') => Eff eh ef ~> Eff eh ef'
-raise = transEffHF id weakens
-{-# INLINE raise #-}
+raises :: (ef `IsSuffixOf` ef') => Eff eh ef ~> Eff eh ef'
+raises = transEff weakens
+{-# INLINE raises #-}
 
-raiseN :: forall len ef ef' eh. (Weaken len ef ef') => Eff eh ef ~> Eff eh ef'
-raiseN = transEffHF id (weakenN @len)
+raiseN :: forall len ef ef' eh. (WeakenN len ef ef') => Eff eh ef ~> Eff eh ef'
+raiseN = transEff (weakenN @len)
 {-# INLINE raiseN #-}
 
 raiseNUnder
     :: forall len offset ef ef' eh
-     . (WeakenUnder len offset ef ef')
+     . (WeakenNUnder len offset ef ef')
     => Eff eh ef ~> Eff eh ef'
-raiseNUnder = transEffHF id (weakenNUnderM @len @offset)
+raiseNUnder = transEff (weakenNUnder @len @offset)
 {-# INLINE raiseNUnder #-}
 
-raiseH :: (eh `IsSuffixOf` eh') => Eff eh ef ~> Eff eh' ef
-raiseH = transEffHF weakensH id
-{-# INLINE raiseH #-}
+raisesH :: (eh `IsSuffixOf` eh') => Eff eh ef ~> Eff eh' ef
+raisesH = transEffH weakensH
+{-# INLINE raisesH #-}
 
-raiseNH :: forall len eh eh' ef. (Weaken len eh eh') => Eff eh ef ~> Eff eh' ef
-raiseNH = transEffHF (weakenNH @len) id
+raiseNH :: forall len eh eh' ef. (WeakenN len eh eh') => Eff eh ef ~> Eff eh' ef
+raiseNH = transEffH (weakenNH @len)
 {-# INLINE raiseNH #-}
 
 raiseNUnderH
     :: forall len offset eh eh' ef
-     . (WeakenUnder len offset eh eh')
+     . (WeakenNUnder len offset eh eh')
     => Eff eh ef ~> Eff eh' ef
-raiseNUnderH = transEffHF (weakenNUnderMH @len @offset) id
+raiseNUnderH = transEffH (weakenNUnderH @len @offset)
 {-# INLINE raiseNUnderH #-}
 
-subsumeN :: forall len ef ef' eh. (Strengthen len ef ef') => Eff eh ef ~> Eff eh ef'
-subsumeN = transEffHF id (strengthenN @len)
+subsumes :: forall ef ef' eh. (Strengthen ef ef') => Eff eh ef ~> Eff eh ef'
+subsumes = transEff strengthens
+{-# INLINE subsumes #-}
+
+subsumeN :: forall len ef ef' eh. (StrengthenN len ef ef') => Eff eh ef ~> Eff eh ef'
+subsumeN = transEff (strengthenN @len)
 {-# INLINE subsumeN #-}
+
+subsumesUnder
+    :: forall offset ef ef' eh
+     . (StrengthenUnder offset ef ef')
+    => Eff eh ef ~> Eff eh ef'
+subsumesUnder = transEff (strengthensUnder @offset)
+{-# INLINE subsumesUnder #-}
 
 subsumeNUnder
     :: forall len offset ef ef' eh
-     . (StrengthenUnder len offset ef ef')
+     . (StrengthenNUnder len offset ef ef')
     => Eff eh ef ~> Eff eh ef'
-subsumeNUnder = transEffHF id (strengthenNUnderM @len @offset)
+subsumeNUnder = transEff (strengthenNUnder @len @offset)
 {-# INLINE subsumeNUnder #-}
 
-subsumeNH :: forall len eh eh' ef. (Strengthen len eh eh') => Eff eh ef ~> Eff eh' ef
-subsumeNH = transEffHF (strengthenNH @len) id
+subsumesH :: forall eh eh' ef. (Strengthen eh eh') => Eff eh ef ~> Eff eh' ef
+subsumesH = transEffH strengthensH
+{-# INLINE subsumesH #-}
+
+subsumeNH :: forall len eh eh' ef. (StrengthenN len eh eh') => Eff eh ef ~> Eff eh' ef
+subsumeNH = transEffH (strengthenNH @len)
 {-# INLINE subsumeNH #-}
 
 subsumeNUnderH
     :: forall len offset eh eh' ef
-     . (StrengthenUnder len offset eh eh')
+     . (StrengthenNUnder len offset eh eh')
     => Eff eh ef ~> Eff eh' ef
-subsumeNUnderH = transEffHF (strengthenNUnderMH @len @offset) id
+subsumeNUnderH = transEffH (strengthenNUnderH @len @offset)
 {-# INLINE subsumeNUnderH #-}
 
--- todo: add raiseUnder(H), subsume(H), subsumeUnder(H)
+-- TODO: add raiseUnder(H), subsume(H), subsumeUnder(H)
 
 bundle
     :: forall ef bundle rest eh
-     . (Bundle ef bundle rest)
+     . (Split ef bundle rest)
     => Eff eh ef ~> Eff eh (Union bundle ': rest)
-bundle = transEffHF id bundleUnion
+bundle = transEff bundleUnion
 {-# INLINE bundle #-}
+
+bundleN
+    :: forall len ef eh
+     . (KnownNat len)
+    => Eff eh ef ~> Eff eh (Union (Take len ef) ': Drop len ef)
+bundleN = transEff (bundleUnionN @len)
+{-# INLINE bundleN #-}
 
 unbundle
     :: forall ef bundle rest eh
-     . (Bundle ef bundle rest)
+     . (Split ef bundle rest)
     => Eff eh (Union bundle ': rest) ~> Eff eh ef
-unbundle = transEffHF id unbundleUnion
+unbundle = transEff unbundleUnion
 {-# INLINE unbundle #-}
+
+unbundleN
+    :: forall len ef eh
+     . (KnownNat len)
+    => Eff eh (Union (Take len ef) ': Drop len ef) ~> Eff eh ef
+unbundleN = transEff (unbundleUnionN @len)
+{-# INLINE unbundleN #-}
 
 bundleUnder
     :: forall offset bundle ef ef' eh
      . (BundleUnder Union offset ef ef' bundle)
     => Eff eh ef ~> Eff eh ef'
-bundleUnder = transEffHF id (bundleUnionUnder @offset)
+bundleUnder = transEff (bundleUnionUnder @offset)
 {-# INLINE bundleUnder #-}
+
+-- TODO: add *bundle*N(H) functions
 
 unbundleUnder
     :: forall offset bundle ef ef' eh
      . (BundleUnder Union offset ef ef' bundle)
     => Eff eh ef' ~> Eff eh ef
-unbundleUnder = transEffHF id (unbundleUnionUnder @offset)
+unbundleUnder = transEff (unbundleUnionUnder @offset)
 {-# INLINE unbundleUnder #-}
 
 bundleAll :: Eff eh ef ~> Eff eh '[Union ef]
-bundleAll = transEffHF id bundleAllUnion
+bundleAll = transEff bundleAllUnion
 {-# INLINE bundleAll #-}
 
 unbundleAll :: Eff eh '[Union ef] ~> Eff eh ef
-unbundleAll = transEffHF id unbundleAllUnion
+unbundleAll = transEff unbundleAllUnion
 {-# INLINE unbundleAll #-}
 
 bundleH
     :: forall eh bundle rest ef
-     . (Bundle eh bundle rest)
+     . (Split eh bundle rest)
     => Eff eh ef ~> Eff (UnionH bundle ': rest) ef
-bundleH = transEffHF bundleUnionH id
+bundleH = transEffH bundleUnionH
 {-# INLINE bundleH #-}
 
 unbundleH
     :: forall eh bundle rest ef
-     . (Bundle eh bundle rest)
+     . (Split eh bundle rest)
     => Eff (UnionH bundle ': rest) ef ~> Eff eh ef
-unbundleH = transEffHF unbundleUnionH id
+unbundleH = transEffH unbundleUnionH
 {-# INLINE unbundleH #-}
 
 bundleUnderH
     :: forall offset bundle eh eh' ef
      . (BundleUnder UnionH offset eh eh' bundle)
     => Eff eh ef ~> Eff eh' ef
-bundleUnderH = transEffHF (bundleUnionUnderH @offset) id
+bundleUnderH = transEffH (bundleUnionUnderH @offset)
 {-# INLINE bundleUnderH #-}
 
 unbundleUnderH
     :: forall offset bundle eh eh' ef
      . (BundleUnder UnionH offset eh eh' bundle)
     => Eff eh' ef ~> Eff eh ef
-unbundleUnderH = transEffHF (unbundleUnionUnderH @offset) id
+unbundleUnderH = transEffH (unbundleUnionUnderH @offset)
 {-# INLINE unbundleUnderH #-}
 
 bundleAllH :: Eff eh ef ~> Eff '[UnionH eh] ef
-bundleAllH = transEffHF bundleAllUnionH id
+bundleAllH = transEffH bundleAllUnionH
 {-# INLINE bundleAllH #-}
 
 unbundleAllH :: Eff '[UnionH eh] ef ~> Eff eh ef
-unbundleAllH = transEffHF unbundleAllUnionH id
+unbundleAllH = transEffH unbundleAllUnionH
 {-# INLINE unbundleAllH #-}
+
+transEff
+    :: forall ef ef' eh
+     . (Union ef ~> Union ef')
+    -> Eff eh ef ~> Eff eh ef'
+transEff = transEffHF id
+{-# INLINE transEff #-}
+
+transEffH
+    :: forall eh eh' ef
+     . (UnionH eh (Eff eh' ef) ~> UnionH eh' (Eff eh' ef))
+    -> Eff eh ef ~> Eff eh' ef
+transEffH f = transEffHF f id
+{-# INLINE transEffH #-}
 
 transEffHF
     :: forall eh eh' ef ef'
@@ -226,5 +287,3 @@ transEffHF fh ff = loop
             (flip sendUnionHBy . fh . hfmapUnion loop)
             (flip sendUnionBy . ff)
 {-# INLINE transEffHF #-}
-
-a = runPure $ interpret undefined $ interpret @(Union '[State Int, State Char]) undefined $ bundle $ pure @(Eff '[] '[State Int, State Char, State ()]) ()

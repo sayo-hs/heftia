@@ -10,16 +10,23 @@ module Data.Effect.OpenUnion (
     module Data.Effect.OpenUnion.Internal,
     module Data.Effect.OpenUnion.Internal.HO,
     module Data.Effect.OpenUnion.Internal.FO,
-    module Data.Effect.OpenUnion.Internal.Strengthen,
-    module Data.Effect.OpenUnion.Internal.Weaken,
 ) where
 
 import Data.Effect.OpenUnion.Internal (
+    BundleUnder,
     Drop,
+    IsSuffixOf,
     KnownLength,
     Length,
     Reverse,
+    Split,
+    Strengthen,
+    StrengthenN,
+    StrengthenNUnder,
+    StrengthenUnder,
     Take,
+    WeakenN,
+    WeakenNUnder,
     type (++),
  )
 import Data.Effect.OpenUnion.Internal.FO (
@@ -41,7 +48,7 @@ import Data.Effect.OpenUnion.Internal.FO (
     prefixUnionUnder,
     prj,
     strengthenN,
-    strengthenNUnderM,
+    strengthenNUnder,
     suffixUnion,
     suffixUnionOverN,
     unbundleAllUnion,
@@ -49,7 +56,7 @@ import Data.Effect.OpenUnion.Internal.FO (
     unbundleUnionUnder,
     weaken,
     weakenN,
-    weakenNUnderM,
+    weakenNUnder,
     weakens,
     (!+),
     type (<!),
@@ -74,7 +81,7 @@ import Data.Effect.OpenUnion.Internal.HO (
     prefixUnionUnderH,
     prjH,
     strengthenNH,
-    strengthenNUnderMH,
+    strengthenNUnderH,
     suffixUnionH,
     suffixUnionOverNH,
     unbundleAllUnionH,
@@ -82,10 +89,10 @@ import Data.Effect.OpenUnion.Internal.HO (
     unbundleUnionUnderH,
     weakenH,
     weakenNH,
-    weakenNUnderMH,
+    weakenNUnderH,
     weakensH,
     (!!+),
     type (<!!),
  )
-import Data.Effect.OpenUnion.Internal.Strengthen (Strengthen, StrengthenUnder)
-import Data.Effect.OpenUnion.Internal.Weaken (IsSuffixOf, Weaken, WeakenUnder)
+
+-- TODO: add injN/prjN/move/swap/insert/rotate functions.

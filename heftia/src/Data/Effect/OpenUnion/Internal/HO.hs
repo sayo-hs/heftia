@@ -63,29 +63,31 @@ import Control.Effect (type (~>))
 import Data.Coerce (coerce)
 import Data.Effect.HFunctor (HFunctor, hfmap)
 import Data.Effect.OpenUnion.Internal (
+    BundleUnder,
     Drop,
-    FindElem (elemNo),
+    FindElem,
     IfNotFound,
     IsSuffixOf,
     KnownLength,
     Length,
     P (unP),
+    PrefixLength,
     Reverse,
+    Split,
+    Strengthen,
+    StrengthenN,
+    StrengthenNUnder,
+    StrengthenUnder,
     Take,
+    WeakenN,
+    WeakenNUnder,
+    elemNo,
     prefixLen,
     reifyLength,
+    strengthenMap,
+    strengthenMapUnder,
     wordVal,
     type (++),
- )
-import Data.Effect.OpenUnion.Internal.Bundle (Bundle, BundleUnder)
-import Data.Effect.OpenUnion.Internal.Strengthen (
-    Strengthen,
-    StrengthenUnder,
-    strengthenUnderMap,
- )
-import Data.Effect.OpenUnion.Internal.Weaken (
-    Weaken,
-    WeakenUnder,
  )
 import Data.Kind (Type)
 import GHC.TypeNats (KnownNat, type (-))
@@ -166,80 +168,124 @@ weakensH :: forall es es' f a. (es `IsSuffixOf` es') => UnionH es f a -> UnionH 
 weakensH (UnionH n a koi) = UnionH (n + prefixLen @es @es') a koi
 {-# INLINE weakensH #-}
 
-weakenNH :: forall len es es' f a. (Weaken len es es') => UnionH es f a -> UnionH es' f a
+weakenNH :: forall len es es' f a. (WeakenN len es es') => UnionH es f a -> UnionH es' f a
 weakenNH (UnionH n a koi) = UnionH (n + wordVal @len) a koi
 {-# INLINE weakenNH #-}
 
-weakenNUnderMH
+weakenNUnderH
     :: forall len offset es es' f a
-     . (WeakenUnder len offset es es')
+     . (WeakenNUnder len offset es es')
     => UnionH es f a
     -> UnionH es' f a
-weakenNUnderMH u@(UnionH n a koi)
+weakenNUnderH u@(UnionH n a koi)
     | n < wordVal @offset = coerce u
     | otherwise = UnionH (n + wordVal @len) a koi
-{-# INLINE weakenNUnderMH #-}
+{-# INLINE weakenNUnderH #-}
 
-strengthenNH :: forall len es es' f a. (Strengthen len es es') => UnionH es f a -> UnionH es' f a
-strengthenNH (UnionH n a koi) = UnionH (strengthenUnderMap @len @0 @es @es' n) a koi
+strengthensH :: forall es es' f a. (Strengthen es es') => UnionH es f a -> UnionH es' f a
+strengthensH = strengthenNH @(PrefixLength es' es)
+{-# INLINE strengthensH #-}
+
+strengthenNH :: forall len es es' f a. (StrengthenN len es es') => UnionH es f a -> UnionH es' f a
+strengthenNH (UnionH n a koi) = UnionH (strengthenMap @_ @_ @len @es @es' n) a koi
 {-# INLINE strengthenNH #-}
 
-strengthenNUnderMH
-    :: forall len offset es es' f a
-     . (StrengthenUnder len offset es es')
+strengthensUnderH
+    :: forall offset es es' f a
+     . (StrengthenUnder offset es es')
     => UnionH es f a
     -> UnionH es' f a
-strengthenNUnderMH u@(UnionH n a koi)
+strengthensUnderH = strengthenNUnderH @(PrefixLength es' es) @offset
+{-# INLINE strengthensUnderH #-}
+
+strengthenNUnderH
+    :: forall len offset es es' f a
+     . (StrengthenNUnder len offset es es')
+    => UnionH es f a
+    -> UnionH es' f a
+strengthenNUnderH u@(UnionH n a koi)
     | n < off = coerce u
-    | otherwise = UnionH (off + strengthenUnderMap @len @offset @es @es' (n - off)) a koi
+    | otherwise = UnionH (off + strengthenMapUnder @len @offset @es @es' (n - off)) a koi
   where
     off = wordVal @offset
-{-# INLINE strengthenNUnderMH #-}
+{-# INLINE strengthenNUnderH #-}
 
 bundleUnionH
     :: forall bundle es rest f a
-     . (Bundle es bundle rest)
+     . (Split es bundle rest)
     => UnionH es f a
     -> UnionH (UnionH bundle ': rest) f a
-bundleUnionH (UnionH n a koi)
+bundleUnionH = bundleUnionNH @(Length bundle)
+{-# INLINE bundleUnionH #-}
+
+bundleUnionNH
+    :: forall len es f a
+     . (KnownNat len)
+    => UnionH es f a
+    -> UnionH (UnionH (Take len es) ': Drop len es) f a
+bundleUnionNH (UnionH n a koi)
     | n < len = UnionH 0 (UnionH n a koi) id
     | otherwise = UnionH (n - len + 1) a koi
   where
-    len = reifyLength @bundle
-{-# INLINE bundleUnionH #-}
+    len = wordVal @len
+{-# INLINE bundleUnionNH #-}
 
 unbundleUnionH
     :: forall bundle es rest f a
-     . (Bundle es bundle rest)
+     . (Split es bundle rest)
     => UnionH (UnionH bundle ': rest) f a
     -> UnionH es f a
-unbundleUnionH (UnionH n a koi)
+unbundleUnionH = unbundleUnionNH @(Length bundle)
+{-# INLINE unbundleUnionH #-}
+
+unbundleUnionNH
+    :: forall len es f a
+     . (KnownNat len)
+    => UnionH (UnionH (Take len es) ': Drop len es) f a
+    -> UnionH es f a
+unbundleUnionNH (UnionH n a koi)
     | n == 0 = case unsafeCoerce a of
         UnionH n' a' koi' -> UnionH n' a' (koi . koi')
-    | otherwise = UnionH (n - 1 + reifyLength @bundle) a koi
-{-# INLINE unbundleUnionH #-}
+    | otherwise = UnionH (n - 1 + wordVal @len) a koi
+{-# INLINE unbundleUnionNH #-}
 
 bundleUnionUnderH
     :: forall offset bundle es es' f a
      . (BundleUnder UnionH offset es es' bundle)
     => UnionH es f a
     -> UnionH es' f a
-bundleUnionUnderH u@(UnionH n a koi)
+bundleUnionUnderH = bundleUnionNUnderH @(Length bundle) @offset
+{-# INLINE bundleUnionUnderH #-}
+
+bundleUnionNUnderH
+    :: forall len offset es f a
+     . (KnownNat len, KnownNat offset)
+    => UnionH es f a
+    -> UnionH (Take offset es ++ (UnionH (Take len (Drop offset es)) ': Drop len (Drop offset es))) f a
+bundleUnionNUnderH u@(UnionH n a koi)
     | n < off = coerce u
     | n' < len = UnionH 0 (UnionH n' a koi) id
     | otherwise = UnionH (n - len + 1) a koi
   where
     off = wordVal @offset
-    len = reifyLength @bundle
+    len = wordVal @len
     n' = n - off
-{-# INLINE bundleUnionUnderH #-}
+{-# INLINE bundleUnionNUnderH #-}
 
 unbundleUnionUnderH
     :: forall offset bundle es es' f a
      . (BundleUnder UnionH offset es es' bundle)
     => UnionH es' f a
     -> UnionH es f a
-unbundleUnionUnderH u@(UnionH n a koi)
+unbundleUnionUnderH = unbundleUnionNUnderH @(Length bundle) @offset
+{-# INLINE unbundleUnionUnderH #-}
+
+unbundleUnionNUnderH
+    :: forall len offset es f a
+     . (KnownNat len, KnownNat offset)
+    => UnionH (Take offset es ++ (UnionH (Take len (Drop offset es)) ': Drop len (Drop offset es))) f a
+    -> UnionH es f a
+unbundleUnionNUnderH u@(UnionH n a koi)
     | n < off = coerce u
     | n == off =
         case unsafeCoerce a of
@@ -247,8 +293,8 @@ unbundleUnionUnderH u@(UnionH n a koi)
     | otherwise = UnionH (n - 1 + len) a koi
   where
     off = wordVal @offset
-    len = reifyLength @bundle
-{-# INLINE unbundleUnionUnderH #-}
+    len = wordVal @len
+{-# INLINE unbundleUnionNUnderH #-}
 
 bundleAllUnionH :: UnionH es f a -> UnionH '[UnionH es] f a
 bundleAllUnionH u = UnionH 0 u id
@@ -318,4 +364,3 @@ flipUnionUnderH u@(UnionH n a koi)
 
 nilH :: UnionH '[] f a -> r
 nilH _ = error "Effect system internal error: nilH - An empty effect union, which should not be possible to create, has been created."
-{-# INLINE nilH #-}

@@ -49,7 +49,6 @@ Description :  Open unions (type-indexed co-products) for extensible effects.
 -}
 module Data.Effect.OpenUnion.Internal where
 
-import Data.Kind (Constraint)
 import Data.Proxy (Proxy (Proxy))
 import Data.Type.Equality (type (==))
 import GHC.TypeError (ErrorMessage (ShowType, Text, (:$$:), (:<>:)), TypeError)
@@ -60,31 +59,15 @@ Represents position of element @e :: k@ in a type list @es :: [k]@.
 -}
 newtype P (e :: k) (es :: [k]) = P {unP :: Word}
 
-{- |
-Find an index of an element @e :: k@ in a type list @es :: [k]@.
-The element must exist. The @es :: [k]@ type represents the entire list,
-prior to recursion, and it is used to produce better type errors.
+type FindElem e es = KnownNat (ElemIndex e es)
 
-This is essentially a compile-time computation without run-time overhead.
--}
-class FindElem (e :: k) (es :: [k]) where
-    -- | Position of the element @e :: k@ in a type list @es :: [k]@.
-    --
-    -- Position is computed during compilation, i.e. there is no run-time
-    -- overhead.
-    --
-    -- /O(1)/
-    elemNo :: P e es
+elemNo :: forall e es. (FindElem e es) => P e es
+elemNo = P $ wordVal @(ElemIndex e es)
+{-# INLINE elemNo #-}
 
--- | Base case; element is at the current position in the list.
-instance FindElem e (e ': es) where
-    elemNo = P 0
-
-{- | Recursion; element is not at the current position, but is somewhere in the
-list.
--}
-instance {-# OVERLAPPABLE #-} (FindElem e es) => FindElem e (e' ': es) where
-    elemNo = P $ 1 + unP (elemNo :: P e es)
+type family ElemIndex e es where
+    ElemIndex e (e ': es) = 0
+    ElemIndex e (_ ': es) = 1 + ElemIndex e es
 
 {- | Instance resolution for this class fails with a custom type error
 if @e :: k@ is not in the list @w :: [k]@.
@@ -139,6 +122,8 @@ type family PrefixLength es es' where
     PrefixLength es es = 0
     PrefixLength es (e ': es') = 1 + PrefixLength es es'
 
+-- fixme: Use type class with functional dependencies instaed of type family for readable compile error and compile speed.
+
 type IsSuffixOf_ es es' = KnownNat (PrefixLength es es')
 class (IsSuffixOf_ es es') => IsSuffixOf es es'
 instance (IsSuffixOf_ es es') => IsSuffixOf es es'
@@ -149,19 +134,19 @@ prefixLen = wordVal @(PrefixLength es es')
 
 type WeakenN len es es' = (es ~ Drop len es', KnownNat len)
 
-type WeakenNUnderM len offset es es' =
+type WeakenNUnder len offset es es' =
     (WeakenN len (Drop offset es) (Drop offset es'), KnownNat offset)
 
 type Strengthen es es' =
-    (StrengthenMap (PrefixLength es' es) es es', KnownNat (PrefixLength es es'))
+    (StrengthenMap (PrefixLength es' es) es es', KnownNat (PrefixLength es' es))
 
 type StrengthenN len es es' = (StrengthenMap len es es', KnownNat len)
 
-type StrengthenUnderM offset es es' =
-    (StrengthenNUnderM (PrefixLength es' es) offset es es')
+type StrengthenUnder offset es es' =
+    (StrengthenNUnder (PrefixLength es' es) offset es es')
 
-type StrengthenNUnderM len offset es es' =
-    (StrengthenMap len (Drop offset es) (Drop offset es'), KnownNat len)
+type StrengthenNUnder len offset es es' =
+    (StrengthenMap len (Drop offset es) (Drop offset es'), KnownNat len, KnownNat offset)
 
 type StrengthenMap len es es' = (StrengthenMap_ (len == 0) len es es')
 
@@ -180,29 +165,38 @@ instance
     => StrengthenMap_ 'False len (e ': es) es'
     where
     strengthenMap = \case
-        0 -> unP $ elemNo @_ @e @es
+        0 -> unP $ elemNo @e @es
         n -> strengthenMap @_ @_ @(len - 1) @es @es' $ n - 1
     {-# INLINE strengthenMap #-}
 
-type BundleUnderM u offset es es' bundle =
+strengthenMapUnder :: forall len offset es es'. (StrengthenNUnder len offset es es') => Word -> Word
+strengthenMapUnder = strengthenMap @_ @_ @len @(Drop offset es) @(Drop offset es')
+{-# INLINE strengthenMapUnder #-}
+
+type BundleUnder u offset es es' bundle =
     ( es' ~ Take offset es ++ (u bundle ': Drop (Length bundle) (Drop offset es))
     , es ~ Take offset es' ++ bundle ++ Drop 1 (Drop offset es')
-    , bundle ~ Take (PrefixLength (Drop offset es) (Drop 1 (Drop offset es'))) (Drop offset es)
+    , bundle ~ Take (PrefixLength (Drop 1 (Drop offset es')) (Drop offset es)) (Drop offset es)
+    , KnownLength bundle
+    , KnownNat offset
+    , Length bundle ~ PrefixLength (Drop 1 (Drop offset es')) (Drop offset es)
     )
 
 type Split es init tail =
     ( es ~ init ++ tail
-    , init ~ Take (PrefixLength es tail) es
-    , tail ~ Drop (Length init) tail
+    , init ~ Take (PrefixLength tail es) es
+    , tail ~ Drop (Length init) es
+    , KnownLength init
+    , Length init ~ PrefixLength tail es
     )
 
 type family Take n es where
     Take 0 es = '[]
-    Take n (e ': es) = e ': Take n es
+    Take n (e ': es) = e ': Take (n - 1) es
 
 type family Drop n es where
     Drop 0 es = es
-    Drop n (e ': es) = Drop n es
+    Drop n (e ': es) = Drop (n - 1) es
 
 type Reverse es = Reverse_ '[] es
 

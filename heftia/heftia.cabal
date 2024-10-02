@@ -68,9 +68,6 @@ library
         Data.Effect.OpenUnion.Internal
         Data.Effect.OpenUnion.Internal.FO
         Data.Effect.OpenUnion.Internal.HO
-        Data.Effect.OpenUnion.Internal.Weaken
-        Data.Effect.OpenUnion.Internal.Strengthen
-        Data.Effect.OpenUnion.Internal.Bundle
 
     reexported-modules:
         Data.Effect,
