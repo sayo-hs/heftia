@@ -3,6 +3,7 @@
 module Control.Monad.Hefty (
     module Control.Monad.Hefty.Types,
     module Control.Monad.Hefty.Interpret,
+    module Control.Monad.Hefty.Interpret.State,
     module Control.Monad.Hefty.Transform,
 ) where
 
@@ -53,6 +54,13 @@ import Control.Monad.Hefty.Interpret (
     reinterpretWith,
     runEff,
     runPure,
+ )
+import Control.Monad.Hefty.Interpret.State (
+    StateElaborator,
+    StateInterpreter,
+    interpretStateBy,
+    iterStateAllEffHFBy,
+    reinterpretStateBy,
  )
 import Control.Monad.Hefty.Transform (
     bundle,
