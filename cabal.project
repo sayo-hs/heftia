@@ -19,3 +19,4 @@ source-repository-package
 allow-newer: eff:primitive
 
 benchmarks: True
+tests: True

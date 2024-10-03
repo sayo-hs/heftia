@@ -130,6 +130,7 @@ test-suite test
 
     main-is: Driver.hs
     other-modules:
+        Test.Semantics
 
     hs-source-dirs: test
 

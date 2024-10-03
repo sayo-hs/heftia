@@ -29,7 +29,7 @@ main =
                     , bench "effectful.deep" $ nf countdownEffectfulDeep x
                     , bench "mtl.shallow" $ nf countdownMtl x
                     , bench "mtl.deep" $ nf countdownMtlDeep x
-                    ] -- TODO: add eff
+                    ] -- TODO: add eff, eveff
         , bgroup "catch" $
             [10000] <&> \x ->
                 bgroup
@@ -57,10 +57,10 @@ main =
             [32] <&> \x ->
                 bgroup
                     (show x)
-                    [ bench "freer.shallow" $ nf pythFreer x
-                    , bench "freer.deep" $ nf pythFreerDeep x
-                    , bench "heftia.shallow" $ nf pythHeftia x
+                    [ bench "heftia.shallow" $ nf pythHeftia x
                     , bench "heftia.deep" $ nf pythHeftiaDeep x
+                    , bench "freer.shallow" $ nf pythFreer x
+                    , bench "freer.deep" $ nf pythFreerDeep x
                     , bench "fused.shallow" $ nf pythFused x
                     , bench "fused.deep" $ nf pythFusedDeep x
                     , bench "eff.shallow" $ nf pythEff x
@@ -73,10 +73,10 @@ main =
             [1000] <&> \x ->
                 bgroup
                     (show x)
-                    [ bench "freer.shallow" $ nf coroutineFreer x
-                    , bench "freer.deep" $ nf coroutineFreerDeep x
-                    , bench "heftia.shallow" $ nf coroutineHeftia x
+                    [ bench "heftia.shallow" $ nf coroutineHeftia x
                     , bench "heftia.deep" $ nf coroutineHeftiaDeep x
+                    , bench "freer.shallow" $ nf coroutineFreer x
+                    , bench "freer.deep" $ nf coroutineFreerDeep x
                     , bench "eff.shallow" $ nf coroutineEff x
                     , bench "eff.deep" $ nf coroutineEffDeep x
                     , bench "mp.shallow" $ nf coroutineMp x

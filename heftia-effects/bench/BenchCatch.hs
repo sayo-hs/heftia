@@ -32,41 +32,16 @@ programHeftia = \case
 catchHeftia :: Int -> Either () ()
 catchHeftia n = H.runPure $ H.runThrow $ H.runCatch @() $ programHeftia n
 
-catchHeftiaDeep0 :: Int -> Either () ()
-catchHeftiaDeep0 n = H.runPure $ run $ run $ run $ run $ run $ H.runThrow $ run $ run $ run $ run $ run $ H.runCatch @() $ programHeftia n
-  where
-    run :: (H.HFunctors eh) => H.Eff eh (H.Ask () ': ef) a -> H.Eff eh ef a
-    run = H.runAsk ()
+catchHeftiaDeep0, catchHeftiaDeep1, catchHeftiaDeep2, catchHeftiaDeep3, catchHeftiaDeep4, catchHeftiaDeep5 :: Int -> Either () ()
+catchHeftiaDeep0 n = H.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runThrow $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runCatch @() $ programHeftia n
+catchHeftiaDeep1 n = H.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runThrow $ hrun $ hrun $ hrun $ hrun $ H.runCatch @() $ hrun $ programHeftia n
+catchHeftiaDeep2 n = H.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runThrow $ hrun $ hrun $ hrun $ H.runCatch @() $ hrun $ hrun $ programHeftia n
+catchHeftiaDeep3 n = H.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runThrow $ hrun $ hrun $ H.runCatch @() $ hrun $ hrun $ hrun $ programHeftia n
+catchHeftiaDeep4 n = H.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runThrow $ hrun $ H.runCatch @() $ hrun $ hrun $ hrun $ hrun $ programHeftia n
+catchHeftiaDeep5 n = H.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runThrow $ H.runCatch @() $ hrun $ hrun $ hrun $ hrun $ hrun $ programHeftia n
 
-catchHeftiaDeep1 :: Int -> Either () ()
-catchHeftiaDeep1 n = H.runPure $ run $ run $ run $ run $ run $ H.runThrow $ run $ run $ run $ run $ H.runCatch @() $ run $ programHeftia n
-  where
-    run :: (H.HFunctors eh) => H.Eff eh (H.Ask () ': ef) a -> H.Eff eh ef a
-    run = H.runAsk ()
-
-catchHeftiaDeep2 :: Int -> Either () ()
-catchHeftiaDeep2 n = H.runPure $ run $ run $ run $ run $ run $ H.runThrow $ run $ run $ run $ H.runCatch @() $ run $ run $ programHeftia n
-  where
-    run :: (H.HFunctors eh) => H.Eff eh (H.Ask () ': ef) a -> H.Eff eh ef a
-    run = H.runAsk ()
-
-catchHeftiaDeep3 :: Int -> Either () ()
-catchHeftiaDeep3 n = H.runPure $ run $ run $ run $ run $ run $ H.runThrow $ run $ run $ H.runCatch @() $ run $ run $ run $ programHeftia n
-  where
-    run :: (H.HFunctors eh) => H.Eff eh (H.Ask () ': ef) a -> H.Eff eh ef a
-    run = H.runAsk ()
-
-catchHeftiaDeep4 :: Int -> Either () ()
-catchHeftiaDeep4 n = H.runPure $ run $ run $ run $ run $ run $ H.runThrow $ run $ H.runCatch @() $ run $ run $ run $ run $ programHeftia n
-  where
-    run :: (H.HFunctors eh) => H.Eff eh (H.Ask () ': ef) a -> H.Eff eh ef a
-    run = H.runAsk ()
-
-catchHeftiaDeep5 :: Int -> Either () ()
-catchHeftiaDeep5 n = H.runPure $ run $ run $ run $ run $ run $ H.runThrow $ H.runCatch @() $ run $ run $ run $ run $ run $ programHeftia n
-  where
-    run :: (H.HFunctors eh) => H.Eff eh (H.Ask () ': ef) a -> H.Eff eh ef a
-    run = H.runAsk ()
+hrun :: (H.HFunctors eh) => H.Eff eh (H.Ask () ': ef) a -> H.Eff eh ef a
+hrun = H.runAsk ()
 
 programSem :: (P.Error () `P.Member` es) => Int -> P.Sem es a
 programSem = \case
