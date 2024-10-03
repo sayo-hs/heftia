@@ -29,8 +29,8 @@ import Data.Functor (($>))
 import Data.Monoid (Sum (Sum))
 import Test.Hspec (Spec, describe, it, shouldBe)
 
-spec_stateExcept :: Spec
-spec_stateExcept = describe "State & Except semantics" do
+spec_State_Except :: Spec
+spec_State_Except = describe "State & Except semantics" do
     let action :: (State Bool <| ef, Throw () <| ef, Catch () <<| eh) => (eh :!! ef) Bool
         action = do
             (put True *> throw ()) `catch` \() -> pure ()
@@ -41,8 +41,8 @@ spec_stateExcept = describe "State & Except semantics" do
     it "runThrow  . evalState $ (put True *> throw) `catch` ()  ==>  Right True" do
         runPure (runThrow @() . evalState False . runCatch @() $ action) `shouldBe` Right True
 
-spec_nonDetExcept :: Spec
-spec_nonDetExcept = describe "NonDet & Except semantics" do
+spec_NonDet_Except :: Spec
+spec_NonDet_Except = describe "NonDet & Except semantics" do
     let action1
             , action2
                 :: (Empty <| ef, ChooseH <<| eh, Throw () <| ef, Catch () <<| eh) => eh :!! ef $ Bool
@@ -58,8 +58,8 @@ spec_nonDetExcept = describe "NonDet & Except semantics" do
     it "runThrow  . runNonDet $ (throw <|> True) `catch` False  ==>  Right [False, True]" do
         runPure (runThrow @() . runNonDet @[] . runCatch @() . runChooseH $ action2) `shouldBe` Right [False, True]
 
-spec_nonDetWriter :: Spec
-spec_nonDetWriter = describe "NonDet & Writer semantics" do
+spec_NonDet_Writer :: Spec
+spec_NonDet_Writer = describe "NonDet & Writer semantics" do
     let action
             :: (Empty <| ef, ChooseH <<| eh, Tell (Sum Int) <| ef, WriterH (Sum Int) <<| eh)
             => eh :!! ef $ (Sum Int, Bool)
@@ -76,8 +76,8 @@ data SomeEff a where
     SomeAction :: SomeEff String
 makeEffectF [''SomeEff]
 
-spec_theIssue12 :: Spec
-spec_theIssue12 = describe "hasura/eff#12 semantics" do
+spec_The_issue_12 :: Spec
+spec_The_issue_12 = describe "hasura/eff#12 semantics" do
     let action :: (Catch String <<| eh, Throw String <| ef, SomeEff <| ef) => eh :!! ef $ String
         action = someAction `catch` \(_ :: String) -> pure "caught"
 

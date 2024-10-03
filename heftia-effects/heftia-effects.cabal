@@ -131,6 +131,9 @@ test-suite test
     main-is: Driver.hs
     other-modules:
         Test.Semantics
+        Test.Writer
+        Test.Pyth
+        Test.Coroutine
 
     hs-source-dirs: test
 
