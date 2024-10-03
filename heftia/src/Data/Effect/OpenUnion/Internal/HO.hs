@@ -167,7 +167,7 @@ instance (FindElem e es, IfNotFound e es es) => MemberH e es where
 infix 3 <<|
 type (<<|) = MemberH
 
-type MemberHBy key es = LookupH key es <<| es
+type MemberHBy key e es = (key ##> e <<| es, LookupH key es ~ key ##> e)
 
 type LookupH key es = LookupH_ key es es
 

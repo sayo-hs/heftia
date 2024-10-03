@@ -1,5 +1,6 @@
--- SPDX-License-Identifier: MPL-2.0
 {-# LANGUAGE UndecidableInstances #-}
+
+-- SPDX-License-Identifier: MPL-2.0
 
 module Control.Monad.Hefty.Types where
 
@@ -14,16 +15,16 @@ import Control.Monad.RWS (MonadRWS)
 import Control.Monad.Reader.Class (MonadReader, ask, local)
 import Control.Monad.State.Class (MonadState, get, put)
 import Control.Monad.Writer.Class (MonadWriter, listen, pass, tell)
-import Data.Effect.Except
+import Data.Effect.Except (Catch, Throw, catch'', throw'')
 import Data.Effect.Fail (Fail)
 import Data.Effect.Fail qualified as E
 import Data.Effect.Fix (Fix)
 import Data.Effect.Fix qualified as E
-import Data.Effect.Key (Key (Key), KeyH (KeyH), type (##>), type (#>))
+import Data.Effect.Key (Key (Key), KeyH (KeyH))
 import Data.Effect.NonDet (ChooseH, Empty, chooseH)
 import Data.Effect.NonDet qualified as E
-import Data.Effect.OpenUnion.Internal.FO (Lookup, MemberBy, Union, inj, type (<|))
-import Data.Effect.OpenUnion.Internal.HO (LookupH, MemberHBy, UnionH, injH, type (<<|))
+import Data.Effect.OpenUnion.Internal.FO (MemberBy, Union, inj, type (<|))
+import Data.Effect.OpenUnion.Internal.HO (MemberHBy, UnionH, injH, type (<<|))
 import Data.Effect.Reader (Ask, Local, ask'', local'')
 import Data.Effect.State (State, get'', put'')
 import Data.Effect.Unlift (UnliftIO)
@@ -83,11 +84,11 @@ instance (e <<| eh) => SendSig e (Eff eh ef) where
     sendSig = sendH
     {-# INLINE sendSig #-}
 
-instance (MemberBy key ef, key #> e ~ Lookup key ef) => SendInsBy key e (Eff eh ef) where
+instance (MemberBy key e ef) => SendInsBy key e (Eff eh ef) where
     sendInsBy = send . Key @key
     {-# INLINE sendInsBy #-}
 
-instance (MemberHBy key eh, key ##> e ~ LookupH key eh) => SendSigBy key e (Eff eh ef) where
+instance (MemberHBy key e eh) => SendSigBy key e (Eff eh ef) where
     sendSigBy = sendH . KeyH @key
     {-# INLINE sendSigBy #-}
 

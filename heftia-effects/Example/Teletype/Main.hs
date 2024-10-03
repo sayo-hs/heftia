@@ -12,12 +12,14 @@ The original of this example can be found at polysemy.
 module Main where
 
 import Control.Effect (type (<:), type (~>))
-import Control.Effect.ExtensibleChurch (runEff, type (:!!))
-import Control.Effect.Hefty (interposeRec, interpretRec, untagEff)
+import Control.Monad.Hefty.Interpret (interposeRec, interpretRec, runEff)
+import Control.Monad.Hefty.Transform (untag)
+import Control.Monad.Hefty.Types (type (:!!))
 import Control.Monad.IO.Class (liftIO)
+import Data.Effect.OpenUnion.Internal.FO (type (<|))
+import Data.Effect.OpenUnion.Internal.HO (HFunctors)
 import Data.Effect.TH (makeEffectF)
 import Data.Effect.Tag (Tag (unTag), type (#))
-import Data.Hefty.Extensible (ForallHFunctor, type (<|))
 
 data Teletype a where
     ReadTTY :: Teletype String
@@ -25,7 +27,7 @@ data Teletype a where
 
 makeEffectF [''Teletype]
 
-teletypeToIO :: (IO <| r, ForallHFunctor eh) => eh :!! LTeletype ': r ~> eh :!! r
+teletypeToIO :: (IO <| r, HFunctors eh) => eh :!! Teletype ': r ~> eh :!! r
 teletypeToIO = interpretRec \case
     ReadTTY -> liftIO getLine
     WriteTTY msg -> liftIO $ putStrLn msg
@@ -37,7 +39,7 @@ echo = do
         "" -> pure ()
         _ -> writeTTY' @"tty1" i >> echo
 
-strong :: (Teletype # "tty1" <| ef, ForallHFunctor eh) => eh :!! ef ~> eh :!! ef
+strong :: (Teletype # "tty1" <| ef, HFunctors eh) => eh :!! ef ~> eh :!! ef
 strong =
     interposeRec @(_ # "tty1") \e -> case unTag e of
         ReadTTY -> readTTY' @"tty1"
@@ -46,4 +48,4 @@ strong =
 main :: IO ()
 main = runEff do
     liftIO $ putStrLn "Please enter something..."
-    teletypeToIO . untagEff @"tty1" . strong . strong $ echo
+    teletypeToIO . untag @"tty1" . strong . strong $ echo

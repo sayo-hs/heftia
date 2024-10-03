@@ -8,13 +8,15 @@
 module Main where
 
 import Control.Effect (type (~>))
-import Control.Effect.ExtensibleChurch (runEff, type (:!!))
-import Control.Effect.Hefty (interposeRec, interpretRec, unkeyEff)
 import Control.Effect.Key (SendInsBy)
+import Control.Monad.Hefty.Interpret (interposeRec, interpretRec, runEff)
+import Control.Monad.Hefty.Transform (unkey)
+import Control.Monad.Hefty.Types (type (:!!))
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect.Key (unKey, type (#>))
+import Data.Effect.OpenUnion.Internal.FO (MemberBy, type (<|))
+import Data.Effect.OpenUnion.Internal.HO (HFunctors)
 import Data.Effect.TH (makeEffectF)
-import Data.Hefty.Extensible (ForallHFunctor, MemberBy, type (<|))
 
 data Teletype a where
     ReadTTY :: Teletype String
@@ -22,7 +24,7 @@ data Teletype a where
 
 makeEffectF [''Teletype]
 
-teletypeToIO :: (IO <| r, ForallHFunctor eh) => eh :!! LTeletype ': r ~> eh :!! r
+teletypeToIO :: (IO <| r, HFunctors eh) => eh :!! Teletype ': r ~> eh :!! r
 teletypeToIO = interpretRec \case
     ReadTTY -> liftIO getLine
     WriteTTY msg -> liftIO $ putStrLn msg
@@ -34,7 +36,7 @@ echo = do
         "" -> pure ()
         _ -> writeTTY'' @"tty1" i >> echo
 
-strong :: (MemberBy "tty1" Teletype ef, ForallHFunctor eh) => eh :!! ef ~> eh :!! ef
+strong :: (MemberBy "tty1" Teletype ef, HFunctors eh) => eh :!! ef ~> eh :!! ef
 strong =
     interposeRec @("tty1" #> _) \e -> case unKey e of
         ReadTTY -> readTTY'' @"tty1"
@@ -43,4 +45,4 @@ strong =
 main :: IO ()
 main = runEff do
     liftIO $ putStrLn "Please enter something..."
-    teletypeToIO . unkeyEff @"tty1" . strong . strong $ echo
+    teletypeToIO . unkey @"tty1" . strong . strong $ echo

@@ -10,29 +10,31 @@ module Main where
 
 import Control.Arrow ((>>>))
 import Control.Effect (type (<:), type (<<:), type (~>))
-import Control.Effect.ExtensibleFinal (runEff, type (!!), type (:!!))
-import Control.Effect.Hefty (
-    Elab,
+import Control.Effect.Interpreter.Heftia.Reader (runReader)
+import Control.Effect.Interpreter.Heftia.State (evalState)
+import Control.Monad (when)
+import Control.Monad.Hefty.Interpret (
     interposeRec,
     interposeRecH,
     interpretRec,
     interpretRecH,
+    reinterpretRecH,
+    runEff,
+ )
+import Control.Monad.Hefty.Transform (
     raise,
     raiseH,
     raiseUnder,
-    reinterpretRecH,
     subsume,
  )
-import Control.Effect.Interpreter.Heftia.Reader (runReader)
-import Control.Effect.Interpreter.Heftia.State (evalState)
-import Control.Monad (when)
+import Control.Monad.Hefty.Types (Eff, Elab, type (:!!))
 import Control.Monad.IO.Class (MonadIO, liftIO)
-import Data.Effect.Reader (LAsk, Local, ask, local)
+import Data.Effect.OpenUnion.Internal.FO (type (<|))
+import Data.Effect.OpenUnion.Internal.HO (HFunctors, type (<<|))
+import Data.Effect.Reader (Ask, Local, ask, local)
 import Data.Effect.State (get, modify)
 import Data.Effect.TH (makeEffectF, makeEffectH)
-import Data.Free.Sum (type (+))
 import Data.Function ((&))
-import Data.Hefty.Extensible (ForallHFunctor, type (<<|), type (<|))
 import Data.Kind (Type)
 import Data.Text (Text)
 import Data.Text qualified as T
@@ -44,17 +46,17 @@ data Log a where
     Logging :: Text -> Log ()
 makeEffectF [''Log]
 
-logToIO :: (IO <| r, ForallHFunctor eh) => eh :!! LLog ': r ~> eh :!! r
+logToIO :: (IO <| r, HFunctors eh) => eh :!! Log ': r ~> eh :!! r
 logToIO = interpretRec \(Logging msg) -> liftIO $ T.putStrLn msg
 
 data Time a where
     CurrentTime :: Time UTCTime
 makeEffectF [''Time]
 
-timeToIO :: (IO <| r, ForallHFunctor eh) => eh :!! LTime ': r ~> eh :!! r
+timeToIO :: (IO <| r, HFunctors eh) => eh :!! Time ': r ~> eh :!! r
 timeToIO = interpretRec \CurrentTime -> liftIO getCurrentTime
 
-logWithTime :: (Log <| ef, Time <| ef, ForallHFunctor eh) => eh :!! ef ~> eh :!! ef
+logWithTime :: (Log <| ef, Time <| ef, HFunctors eh) => eh :!! ef ~> eh :!! ef
 logWithTime = interposeRec \(Logging msg) -> do
     t <- currentTime
     logging $ "[" <> iso8601 t <> "] " <> msg
@@ -64,16 +66,16 @@ iso8601 t = T.take 23 (T.pack $ formatTime defaultTimeLocale "%FT%T.%q" t) <> "Z
 
 -- | An effect that introduces a scope that represents a chunk of logs.
 data LogChunk f (a :: Type) where
-    LogChunk ::
-        -- | chunk name
-        Text ->
-        f a ->
-        LogChunk f a
+    LogChunk
+        :: Text
+        -- ^ chunk name
+        -> f a
+        -> LogChunk f a
 
 makeEffectH [''LogChunk]
 
 -- | Ignore chunk names and output logs in log chunks as they are.
-runLogChunk :: ForallHFunctor eh => LogChunk ': eh :!! ef ~> eh :!! ef
+runLogChunk :: (HFunctors eh) => LogChunk ': eh :!! ef ~> eh :!! ef
 runLogChunk = interpretRecH \(LogChunk _ m) -> m
 
 data FileSystem a where
@@ -81,7 +83,7 @@ data FileSystem a where
     WriteToFile :: FilePath -> Text -> FileSystem ()
 makeEffectF [''FileSystem]
 
-runDummyFS :: (IO <| r, ForallHFunctor eh) => eh :!! LFileSystem ': r ~> eh :!! r
+runDummyFS :: (IO <| r, HFunctors eh) => eh :!! FileSystem ': r ~> eh :!! r
 runDummyFS = interpretRec \case
     Mkdir path ->
         liftIO $ putStrLn $ "<runDummyFS> mkdir " <> path
@@ -89,20 +91,21 @@ runDummyFS = interpretRec \case
         liftIO $ putStrLn $ "<runDummyFS> writeToFile " <> path <> " : " <> T.unpack content
 
 -- | Create directories according to the log-chunk structure and save one log in one file.
-saveLogChunk ::
-    forall eh ef.
-    (LogChunk <<| eh, Log <| ef, FileSystem <| ef, Time <| ef, ForallHFunctor eh) =>
-    eh :!! ef ~> eh :!! ef
+saveLogChunk
+    :: forall eh ef
+     . (LogChunk <<| eh, Log <| ef, FileSystem <| ef, Time <| ef, HFunctors eh)
+    => eh :!! ef ~> eh :!! ef
 saveLogChunk =
-    raise >>> raiseH
+    raise
+        >>> raiseH
         >>> hookCreateDirectory
         >>> hookWriteFile
         >>> runReader @FilePath "./log/"
   where
     hookCreateDirectory
-        , hookWriteFile ::
-            (Local FilePath ': eh :!! LAsk FilePath ': ef)
-                ~> (Local FilePath ': eh :!! LAsk FilePath ': ef)
+        , hookWriteFile
+            :: (Local FilePath ': eh :!! Ask FilePath ': ef)
+                ~> (Local FilePath ': eh :!! Ask FilePath ': ef)
     hookCreateDirectory =
         interposeRecH \(LogChunk chunkName a) -> logChunk chunkName do
             chunkBeginAt <- currentTime
@@ -120,15 +123,15 @@ saveLogChunk =
             logging msg
 
 -- | Limit the number of logs in a log chunk to the first @n@ logs.
-limitLogChunk :: Log <| ef => Int -> '[LogChunk] :!! LLog ': ef ~> '[LogChunk] :!! LLog ': ef
+limitLogChunk :: (Log <| ef) => Int -> '[LogChunk] :!! Log ': ef ~> '[LogChunk] :!! Log ': ef
 limitLogChunk n = reinterpretRecH $ elabLimitLogChunk n
 
-elabLimitLogChunk :: Log <| ef => Int -> Elab LogChunk ('[LogChunk] :!! LLog ': ef)
+elabLimitLogChunk :: (Log <| ef) => Int -> Elab LogChunk ('[LogChunk] :!! Log ': ef)
 elabLimitLogChunk n (LogChunk name a) =
     logChunk name do
         raise . raiseH $ limitLog $ runLogChunk $ limitLogChunk n a
   where
-    limitLog :: Log <| ef => '[] :!! LLog ': ef ~> '[] :!! ef
+    limitLog :: (Log <| ef) => '[] :!! Log ': ef ~> '[] :!! ef
     limitLog a' =
         evalState @Int 0 $
             raiseUnder a' & interpretRec \(Logging msg) -> do
@@ -173,18 +176,18 @@ saveThenLimit =
     logExample
         & saveLogChunk
         & limitLogChunk 2
-        & subsume @LLog
+        & subsume @Log
         & runApp
 
 limitThenSave :: IO ()
 limitThenSave =
     logExample
         & limitLogChunk 2
-        & subsume @LLog
+        & subsume @Log
         & saveLogChunk
         & runApp
 
-runApp :: LogChunk !! FileSystem + Time + Log + IO ~> IO
+runApp :: Eff '[LogChunk] '[FileSystem, Time, Log, IO] ~> IO
 runApp =
     runLogChunk
         >>> runDummyFS

@@ -8,12 +8,13 @@
 module Main where
 
 import Control.Effect (type (~>))
-import Control.Effect.ExtensibleChurch (runEff, type (:!!))
-import Control.Effect.Hefty (Elab, interposeK, interpretRec, interpretRecH)
+import Control.Monad.Hefty.Interpret (interposeBy, interpretRec, interpretRecH, runEff)
+import Control.Monad.Hefty.Types (Elab, type (:!!))
 import Control.Monad.IO.Class (liftIO)
+import Data.Effect.OpenUnion.Internal.FO (type (<|))
+import Data.Effect.OpenUnion.Internal.HO (HFunctors)
 import Data.Effect.TH (makeEffectF, makeEffectH)
 import Data.Function ((&))
-import Data.Hefty.Extensible (ForallHFunctor, type (<|))
 
 type ForkID = Int
 
@@ -21,16 +22,16 @@ data Fork a where
     Fork :: Fork ForkID
 makeEffectF [''Fork]
 
-runForkSingle :: ForallHFunctor eh => eh :!! LFork ': r ~> eh :!! r
+runForkSingle :: (HFunctors eh) => eh :!! Fork ': r ~> eh :!! r
 runForkSingle = interpretRec \Fork -> pure 0
 
 data ResetFork f a where
-    ResetFork :: Monoid w => f w -> ResetFork f w
+    ResetFork :: (Monoid w) => f w -> ResetFork f w
 makeEffectH [''ResetFork]
 
-applyResetFork :: Fork <| r => Int -> Elab ResetFork ('[] :!! r)
+applyResetFork :: (Fork <| r) => Int -> Elab ResetFork ('[] :!! r)
 applyResetFork numberOfFork (ResetFork m) =
-    m & interposeK pure \resume Fork -> do
+    m & interposeBy pure \Fork resume -> do
         r <- mapM resume [1 .. numberOfFork]
         pure $ mconcat r
 

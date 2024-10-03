@@ -5,9 +5,8 @@
 module Main where
 
 import Control.Effect (type (<:), type (<<:))
-import Control.Effect.ExtensibleChurch (runEff)
-import Control.Effect.Hefty (interpretRecH)
-import Control.Effect.Interpreter.Heftia.Writer (elabWriterPost, elabWriterPre, runTell)
+import Control.Effect.Interpreter.Heftia.Writer (runTell, runWriterHPost, runWriterHPre)
+import Control.Monad.Hefty.Interpret (runEff)
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect.Writer (Tell, WriterH, censor, tell)
 
@@ -33,12 +32,12 @@ main :: IO ()
 main = runEff do
     (sPre, _) <-
         runTell
-            . interpretRecH (elabWriterPre @String)
+            . runWriterHPre @String
             $ censorHello
 
     (sPost, _) <-
         runTell
-            . interpretRecH (elabWriterPost @String)
+            . runWriterHPost @String
             $ censorHello
 
     liftIO $ putStrLn $ "Pre-applying: " <> sPre
