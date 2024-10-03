@@ -1,0 +1,111 @@
+-- SPDX-License-Identifier: BSD-3-Clause
+-- (c) 2022 Xy Ren; 2024 Sayo Koyoneda
+
+-- Benchmarking yield-intensive code
+module BenchPyth where
+
+import Control.Algebra qualified as F
+import Control.Applicative (Alternative (empty, (<|>)))
+import Control.Carrier.NonDet.Church qualified as F
+import Control.Carrier.Reader qualified as F
+import Control.Effect.Interpreter.Heftia.NonDet qualified as H
+import Control.Effect.Interpreter.Heftia.Reader qualified as H
+import Control.Ev.Eff qualified as E
+import Control.Ev.Util qualified as E
+import Control.Monad.Freer qualified as FS
+import Control.Monad.Freer.NonDet qualified as FS
+import Control.Monad.Freer.Reader qualified as FS
+import Control.Monad.Hefty qualified as H
+import Data.Effect.NonDet qualified as H
+import "eff" Control.Effect qualified as EF
+
+programFreer :: (FS.Member FS.NonDet es) => Int -> FS.Eff es (Int, Int, Int)
+programFreer upbound = do
+    x <- choice upbound
+    y <- choice upbound
+    z <- choice upbound
+    if x * x + y * y == z * z then return (x, y, z) else empty
+  where
+    choice 0 = empty
+    choice n = choice (n - 1) <|> pure n
+{-# NOINLINE programFreer #-}
+
+pythFreer :: Int -> [(Int, Int, Int)]
+pythFreer n = FS.run $ FS.makeChoiceA $ programFreer n
+
+pythFreerDeep :: Int -> [(Int, Int, Int)]
+pythFreerDeep n = FS.run $ run $ run $ run $ run $ run $ FS.makeChoiceA $ run $ run $ run $ run $ run $ programFreer n
+  where
+    run = FS.runReader ()
+
+programHeftia :: (H.Member H.Choose es, H.Member H.Empty es) => Int -> H.Eff '[] es (Int, Int, Int)
+programHeftia upbound = do
+    x <- choice upbound
+    y <- choice upbound
+    z <- choice upbound
+    if x * x + y * y == z * z then return (x, y, z) else H.empty
+  where
+    choice 0 = H.empty
+    choice n = choice (n - 1) `H.branch` pure n
+{-# NOINLINE programHeftia #-}
+
+pythHeftia :: Int -> [(Int, Int, Int)]
+pythHeftia n = H.runPure $ H.runNonDet $ programHeftia n
+
+pythHeftiaDeep :: Int -> [(Int, Int, Int)]
+pythHeftiaDeep n = H.runPure $ run $ run $ run $ run $ run $ H.runNonDet $ run $ run $ run $ run $ run $ programHeftia n
+  where
+    run = H.runAsk ()
+
+programFused :: (Monad m, Alternative m) => Int -> m (Int, Int, Int)
+programFused upbound = do
+    x <- choice upbound
+    y <- choice upbound
+    z <- choice upbound
+    if x * x + y * y == z * z then return (x, y, z) else empty
+  where
+    choice x = F.oneOf [1 .. x]
+{-# NOINLINE programFused #-}
+
+pythFused :: Int -> [(Int, Int, Int)]
+pythFused n = F.run $ F.runNonDetA $ programFused n
+
+pythFusedDeep :: Int -> [(Int, Int, Int)]
+pythFusedDeep n = F.run $ run $ run $ run $ run $ run $ F.runNonDetA $ run $ run $ run $ run $ run $ programFused n
+  where
+    run = F.runReader ()
+
+programEv :: (E.Choose E.:? e) => Int -> E.Eff e (Int, Int, Int)
+programEv upbound = do
+    x <- E.perform E.choose upbound
+    y <- E.perform E.choose upbound
+    z <- E.perform E.choose upbound
+    if x * x + y * y == z * z then return (x, y, z) else E.perform (\r -> E.none r) ()
+{-# NOINLINE programEv #-}
+
+pythEv :: Int -> [(Int, Int, Int)]
+pythEv n = E.runEff $ E.chooseAll $ programEv n
+
+pythEvDeep :: Int -> [(Int, Int, Int)]
+pythEvDeep n = E.runEff $ run $ run $ run $ run $ run $ E.chooseAll $ run $ run $ run $ run $ run $ programEv n
+  where
+    run = E.reader ()
+
+programEff :: (EF.NonDet EF.:< es) => Int -> EF.Eff es (Int, Int, Int)
+programEff upbound = do
+    x <- choice upbound
+    y <- choice upbound
+    z <- choice upbound
+    if x * x + y * y == z * z then return (x, y, z) else empty
+  where
+    choice 0 = empty
+    choice n = choice (n - 1) <|> pure n
+{-# NOINLINE programEff #-}
+
+pythEff :: Int -> [(Int, Int, Int)]
+pythEff n = EF.run $ EF.runNonDetAll $ programEff n
+
+pythEffDeep :: Int -> [(Int, Int, Int)]
+pythEffDeep n = EF.run $ run $ run $ run $ run $ run $ EF.runNonDetAll $ run $ run $ run $ run $ run $ programEff n
+  where
+    run = EF.runReader ()

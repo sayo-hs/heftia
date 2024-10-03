@@ -204,3 +204,35 @@ executable SemanticsZoo
     hs-source-dirs: Example/SemanticsZoo
     build-depends:
         heftia-effects,
+
+benchmark heftia-bench
+    import: common-base
+
+    type:           exitcode-stdio-1.0
+    hs-source-dirs: bench
+    main-is:        Main.hs
+
+    ghc-options: -fconstraint-solver-iterations=16
+
+    build-depends:
+        heftia-effects,
+        data-effects,
+        freer-simple,
+        polysemy,
+        fused-effects,
+        effectful,
+        eff,
+        eveff,
+        mpeff,
+        mtl,
+        tasty-bench ^>= 0.3
+
+    default-extensions:
+        PackageImports
+
+    other-modules:
+        BenchCountdown
+        BenchCatch
+        -- BenchLocal
+        BenchCoroutine
+        BenchPyth

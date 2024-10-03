@@ -9,3 +9,13 @@ source-repository-package
     subdir: data-effects-core
     subdir: data-effects-th
     subdir: data-effects
+
+source-repository-package
+    type: git
+    location: https://github.com/lexi-lambda/eff
+    tag: a6ad3c7d7c62d21cf088af109ceb1d10a56b7125
+    subdir: eff
+
+allow-newer: eff:primitive
+
+benchmarks: True

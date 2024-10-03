@@ -20,24 +20,34 @@ import Data.Effect.NonDet (Choose (Choose), ChooseH (ChooseH), Empty (Empty), ch
 
 -- | 'NonDet' effects handler for alternative answer type.
 runNonDet
-    :: forall f r a
+    :: forall f ef a
      . (Alternative f)
-    => Eff '[] (Choose ': Empty ': r) a
-    -> Eff '[] r (f a)
+    => Eff '[] (Choose ': Empty ': ef) a
+    -> Eff '[] ef (f a)
 runNonDet =
-    runChoose
-        >>> interpretBy pure \Empty _ -> pure empty
+    bundleN @2
+        >>> interpretBy
+            (pure . pure)
+            ( (\Choose k -> liftA2 (<|>) (k False) (k True))
+                !+ (\Empty _ -> pure empty)
+                !+ nil
+            )
 
 -- | 'NonDet' effects handler for monoidal answer type.
 runNonDetMonoid
-    :: forall ans r a
+    :: forall ans ef a
      . (Monoid ans)
-    => (a -> Eff '[] (Empty ': r) ans)
-    -> Eff '[] (Choose ': Empty ': r) a
-    -> Eff '[] r ans
+    => (a -> Eff '[] ef ans)
+    -> Eff '[] (Choose ': Empty ': ef) a
+    -> Eff '[] ef ans
 runNonDetMonoid f =
-    runChooseMonoid f
-        >>> interpretBy pure \Empty _ -> pure mempty
+    bundleN @2
+        >>> interpretBy
+            f
+            ( (\Choose k -> liftA2 (<>) (k False) (k True))
+                !+ (\Empty _ -> pure mempty)
+                !+ nil
+            )
 
 -- | 'Choose' effect handler for alternative answer type.
 runChoose
@@ -51,11 +61,11 @@ runChoose =
 
 -- | 'Choose' effect handler for monoidal answer type.
 runChooseMonoid
-    :: forall ans r a
+    :: forall ans ef a
      . (Semigroup ans)
-    => (a -> Eff '[] r ans)
-    -> Eff '[] (Choose ': r) a
-    -> Eff '[] r ans
+    => (a -> Eff '[] ef ans)
+    -> Eff '[] (Choose ': ef) a
+    -> Eff '[] ef ans
 runChooseMonoid f =
     interpretBy f \Choose k ->
         liftA2 (<>) (k False) (k True)
@@ -80,7 +90,11 @@ runEmpty =
 runChooseH
     :: (Choose <| ef, HFunctors eh)
     => Eff (ChooseH ': eh) ef ~> Eff eh ef
-runChooseH =
-    interpretRecH \(ChooseH a b) -> do
-        world <- choose
-        bool a b world
+runChooseH = interpretRecH \(ChooseH a b) -> branch a b
+
+-- | Faster than `<|>`.
+branch :: (Choose <| ef) => Eff eh ef a -> Eff eh ef a -> Eff eh ef a
+branch a b = do
+    world <- choose
+    bool a b world
+{-# INLINE branch #-}
