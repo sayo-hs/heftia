@@ -4,15 +4,14 @@
 
 module Main where
 
-import Control.Arrow ((>>>))
-import Control.Effect.Interpreter.Heftia.Reader (runAsk, runLocal)
+import Control.Effect.Interpreter.Heftia.Reader (runReader)
 import Control.Effect.Interpreter.Heftia.ShiftReset (evalShift, runShift_)
 import Control.Effect.Interpreter.Heftia.State (evalState)
 import Control.Effect.Key (key)
 import Control.Monad.Extra (whenM)
 import Control.Monad.Hefty.Interpret (runEff)
-import Control.Monad.Hefty.Transform (raise, unkey)
-import Control.Monad.Hefty.Types (Eff, send, send0)
+import Control.Monad.Hefty.Transform (unkey)
+import Control.Monad.Hefty.Types (Eff, send, sendN)
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect.Key (type (#>))
 import Data.Effect.Reader (Ask, Local, ask, local)
@@ -63,32 +62,30 @@ main = do
 handleReaderThenShift :: IO ()
 handleReaderThenShift =
     prog
-        & runLocal
-        & runAsk 1
+        & runReader 1
         & runEff
         & evalShift
-        & (unkey >>> evalState 0)
+        & (evalState 0 . unkey)
         & runEff
   where
     prog :: Eff '[Local Int] '[Ask Int, Eff '[Shift ()] '["counter" #> State Int, IO]] ()
     prog = do
-        k <- raise $ send0 getCC
+        k <- sendN @1 getCC
         env <- ask @Int
-        raise $ send0 $ liftIO $ putStrLn $ "[local scope outer] env = " ++ show env
+        sendN @1 $ liftIO $ putStrLn $ "[local scope outer] env = " ++ show env
         local @Int (* 2) do
-            whenM (raise $ send0 (get'' @"counter") <&> (< 5)) do
-                raise $ send0 $ modify (+ 1) & key @"counter"
+            whenM (sendN @1 (get'' @"counter") <&> (< 5)) do
+                sendN @1 $ modify (+ 1) & key @"counter"
                 env' <- ask @Int
-                raise $ send0 $ liftIO $ putStrLn $ "[local scope inner] env = " ++ show env'
+                sendN @1 $ liftIO $ putStrLn $ "[local scope inner] env = " ++ show env'
                 send k
 
 handleShiftThenReader :: IO ()
 handleShiftThenReader = do
     prog
         & runShift_
-        & runLocal
-        & runAsk 1
-        & (unkey >>> evalState 0)
+        & runReader 1
+        & (evalState 0 . unkey)
         & runEff
   where
     prog :: Eff '[Shift_, Local Int] '[Ask Int, "counter" #> State Int, IO] ()

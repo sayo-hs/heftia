@@ -53,7 +53,7 @@ main =
                     , bench "effectful.deep" $ nf catchEffectfulDeep x
                     , -- , bench "eff.shallow" $ nf catchEff x
                       -- , bench "eff.deep" $ nf catchEffDeep x
-                      -- `eff` is considerably slow in this case, so it is excluded because it makes the graph hard to read.
+                      -- `eff` is x500 slow in this case, so it is excluded because it makes the graph hard to read.
                       bench "mtl.shallow" $ nf catchMtl x
                     , bench "mtl.deep" $ nf catchMtlDeep x
                     ]
@@ -89,7 +89,7 @@ main =
                     , bench "mp.shallow" $ nf coroutineMp x
                     , bench "mp.deep" $ nf coroutineMpDeep x
                     -- `mpeff` is O(n^2) slow because of: https://dl.acm.org/doi/10.1145/2633357.2633360
-                    -- The reason regarding `eff` is unclear.
+                    -- `eff` is probably for the same reason.
                     ]
                     -- add mtl?
         ]

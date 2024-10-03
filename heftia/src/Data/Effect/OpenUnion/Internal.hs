@@ -69,6 +69,10 @@ type family ElemIndex e es where
     ElemIndex e (e ': es) = 0
     ElemIndex e (_ ': es) = 1 + ElemIndex e es
 
+type family ElemAt i es where
+    ElemAt 0 (e ': _) = e
+    ElemAt n (_ ': es) = ElemAt (n - 1) es
+
 {- | Instance resolution for this class fails with a custom type error
 if @e :: k@ is not in the list @w :: [k]@.
 -}

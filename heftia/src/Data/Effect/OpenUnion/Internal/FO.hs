@@ -61,6 +61,7 @@ import Data.Effect.Key (type (#>))
 import Data.Effect.OpenUnion.Internal (
     BundleUnder,
     Drop,
+    ElemAt,
     ElemIndex,
     FindElem,
     IfNotFound,
@@ -237,6 +238,20 @@ absence of 'Maybe', and 'Either'.
 extract :: Union '[e] a -> e a
 extract (Union _ a) = unsafeCoerce a
 {-# INLINE extract #-}
+
+inj0 :: forall e es a. e a -> Union (e ': es) a
+inj0 = Union 0
+{-# INLINE inj0 #-}
+
+injN :: forall i es a. (KnownNat i) => ElemAt i es a -> Union es a
+injN = Union (wordVal @i)
+{-# INLINE injN #-}
+
+prjN :: forall i es a. (KnownNat i) => Union es a -> Maybe (ElemAt i es a)
+prjN (Union n a)
+    | n == wordVal @i = Just $ unsafeCoerce a
+    | otherwise = Nothing
+{-# INLINE prjN #-}
 
 {- | Inject whole @'Union' es@ into a weaker @'Union' (any ': es)@ that has one
 more summand.

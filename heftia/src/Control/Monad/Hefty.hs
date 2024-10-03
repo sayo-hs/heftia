@@ -128,6 +128,8 @@ import Control.Monad.Hefty.Types (
     send0,
     send0H,
     sendH,
+    sendN,
+    sendNH,
     sendUnion,
     sendUnionBy,
     sendUnionH,

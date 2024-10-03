@@ -1,3 +1,4 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 -- SPDX-License-Identifier: MPL-2.0
@@ -23,8 +24,9 @@ import Data.Effect.Fix qualified as E
 import Data.Effect.Key (Key (Key), KeyH (KeyH))
 import Data.Effect.NonDet (ChooseH, Empty, chooseH)
 import Data.Effect.NonDet qualified as E
-import Data.Effect.OpenUnion.Internal.FO (MemberBy, Union, inj, type (<|))
-import Data.Effect.OpenUnion.Internal.HO (MemberHBy, UnionH, injH, type (<<|))
+import Data.Effect.OpenUnion.Internal (ElemAt)
+import Data.Effect.OpenUnion.Internal.FO (MemberBy, Union, inj, inj0, injN, type (<|))
+import Data.Effect.OpenUnion.Internal.HO (MemberHBy, UnionH, inj0H, injH, injNH, type (<<|))
 import Data.Effect.Reader (Ask, Local, ask'', local'')
 import Data.Effect.State (State, get'', put'')
 import Data.Effect.Unlift (UnliftIO)
@@ -34,6 +36,7 @@ import Data.FTCQueue (FTCQueue, tsingleton, (|>))
 import Data.Function ((&))
 import Data.Kind (Type)
 import Data.Tuple (swap)
+import GHC.TypeNats (KnownNat)
 import UnliftIO (MonadUnliftIO, withRunInIO)
 
 {- | The 'Eff' monad represents computations with effects.
@@ -226,9 +229,17 @@ sendH = sendUnionH . injH
 {-# INLINE sendH #-}
 
 send0 :: e ~> Eff eh (e ': ef)
-send0 = send
+send0 = sendUnion . inj0
 {-# INLINE send0 #-}
 
 send0H :: e (Eff (e ': eh) ef) ~> Eff (e ': eh) ef
-send0H = sendH
+send0H = sendUnionH . inj0H
 {-# INLINE send0H #-}
+
+sendN :: forall i ef eh. (KnownNat i) => ElemAt i ef ~> Eff eh ef
+sendN = sendUnion . injN @i
+{-# INLINE sendN #-}
+
+sendNH :: forall i eh ef. (KnownNat i) => ElemAt i eh (Eff eh ef) ~> Eff eh ef
+sendNH = sendUnionH . injNH @i
+{-# INLINE sendNH #-}

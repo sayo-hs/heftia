@@ -67,6 +67,7 @@ import Data.Effect.Key (type (##>))
 import Data.Effect.OpenUnion.Internal (
     BundleUnder,
     Drop,
+    ElemAt,
     ElemIndex,
     FindElem,
     IfNotFound,
@@ -217,6 +218,34 @@ extractH (UnionH _ a koi) = hfmap koi $ unsafeCoerce a
 extractH_ :: (NotHFunctor e) => UnionH '[e] f a -> e f a
 extractH_ (UnionH _ a _) = unsafeCoerce a
 {-# INLINE extractH_ #-}
+
+inj0H :: forall e es f a. e f a -> UnionH (e ': es) f a
+inj0H a = UnionH 0 a id
+{-# INLINE inj0H #-}
+
+injNH :: forall i es f a. (KnownNat i) => ElemAt i es f a -> UnionH es f a
+injNH a = UnionH (wordVal @i) a id
+{-# INLINE injNH #-}
+
+prjNH
+    :: forall i es f a
+     . (KnownNat i, HFunctor (ElemAt i es))
+    => UnionH es f a
+    -> Maybe (ElemAt i es f a)
+prjNH (UnionH n a koi)
+    | n == wordVal @i = Just $ hfmap koi $ unsafeCoerce a
+    | otherwise = Nothing
+{-# INLINE prjNH #-}
+
+prjNH_
+    :: forall i es f a
+     . (KnownNat i, NotHFunctor (ElemAt i es))
+    => UnionH es f a
+    -> Maybe (ElemAt i es f a)
+prjNH_ (UnionH n a _)
+    | n == wordVal @i = Just $ unsafeCoerce a
+    | otherwise = Nothing
+{-# INLINE prjNH_ #-}
 
 weakenH :: forall any es f a. UnionH es f a -> UnionH (any ': es) f a
 weakenH (UnionH n a koi) = UnionH (n + 1) a koi
