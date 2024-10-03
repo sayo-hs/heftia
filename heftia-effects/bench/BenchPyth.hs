@@ -12,10 +12,16 @@ import Control.Effect.Interpreter.Heftia.NonDet qualified as H
 import Control.Effect.Interpreter.Heftia.Reader qualified as H
 import Control.Ev.Eff qualified as E
 import Control.Ev.Util qualified as E
+import Control.Monad (MonadPlus)
 import Control.Monad.Freer qualified as FS
 import Control.Monad.Freer.NonDet qualified as FS
 import Control.Monad.Freer.Reader qualified as FS
 import Control.Monad.Hefty qualified as H
+import Control.Monad.Identity qualified as M
+import Control.Monad.Logic qualified as M
+import Control.Monad.Reader qualified as M
+import Control.Mp.Eff qualified as Mp
+import Control.Mp.Util qualified as Mp
 import Data.Effect.NonDet qualified as H
 import "eff" Control.Effect qualified as EF
 
@@ -91,6 +97,22 @@ pythEvDeep n = E.runEff $ run $ run $ run $ run $ run $ E.chooseAll $ run $ run 
   where
     run = E.reader ()
 
+programMp :: (Mp.Choose Mp.:? e) => Int -> Mp.Eff e (Int, Int, Int)
+programMp upbound = do
+    x <- Mp.perform Mp.choose upbound
+    y <- Mp.perform Mp.choose upbound
+    z <- Mp.perform Mp.choose upbound
+    if x * x + y * y == z * z then return (x, y, z) else Mp.perform (\r -> Mp.none r) ()
+{-# NOINLINE programMp #-}
+
+pythMp :: Int -> [(Int, Int, Int)]
+pythMp n = Mp.runEff $ Mp.chooseAll $ programMp n
+
+pythMpDeep :: Int -> [(Int, Int, Int)]
+pythMpDeep n = Mp.runEff $ run $ run $ run $ run $ run $ Mp.chooseAll $ run $ run $ run $ run $ run $ programMp n
+  where
+    run = Mp.reader ()
+
 programEff :: (EF.NonDet EF.:< es) => Int -> EF.Eff es (Int, Int, Int)
 programEff upbound = do
     x <- choice upbound
@@ -109,3 +131,22 @@ pythEffDeep :: Int -> [(Int, Int, Int)]
 pythEffDeep n = EF.run $ run $ run $ run $ run $ run $ EF.runNonDetAll $ run $ run $ run $ run $ run $ programEff n
   where
     run = EF.runReader ()
+
+programMtl :: (MonadPlus m) => Int -> m (Int, Int, Int)
+programMtl upbound = do
+    x <- choice upbound
+    y <- choice upbound
+    z <- choice upbound
+    if x * x + y * y == z * z then return (x, y, z) else empty
+  where
+    choice 0 = empty
+    choice n = choice (n - 1) <|> pure n
+{-# NOINLINE programMtl #-}
+
+pythLogict :: Int -> [(Int, Int, Int)]
+pythLogict n = M.observeAll $ programMtl n
+
+pythLogictDeep :: Int -> [(Int, Int, Int)]
+pythLogictDeep n = M.runIdentity $ runR $ runR $ runR $ runR $ runR $ M.observeAllT $ runR $ runR $ runR $ runR $ runR $ programMtl n
+  where
+    runR = (`M.runReaderT` ())

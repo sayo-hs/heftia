@@ -27,9 +27,13 @@ main =
                     , bench "fused.deep" $ nf countdownFusedDeep x
                     , bench "effectful.shallow" $ nf countdownEffectful x
                     , bench "effectful.deep" $ nf countdownEffectfulDeep x
+                    , bench "eff.shallow" $ nf countdownEff x
+                    , bench "eff.deep" $ nf countdownEffDeep x
+                    , bench "ev.shallow" $ nf countdownEv x
+                    , bench "ev.deep" $ nf countdownEvDeep x
                     , bench "mtl.shallow" $ nf countdownMtl x
                     , bench "mtl.deep" $ nf countdownMtlDeep x
-                    ] -- TODO: add eff, eveff
+                    ]
         , bgroup "catch" $
             [10000] <&> \x ->
                 bgroup
@@ -63,12 +67,15 @@ main =
                     , bench "freer.deep" $ nf pythFreerDeep x
                     , bench "fused.shallow" $ nf pythFused x
                     , bench "fused.deep" $ nf pythFusedDeep x
-                    , bench "eff.shallow" $ nf pythEff x
-                    , bench "eff.deep" $ nf pythEffDeep x
                     , bench "ev.shallow" $ nf pythEv x
                     , bench "ev.deep" $ nf pythEvDeep x
+                    , bench "mp.shallow" $ nf pythMp x
+                    , bench "mp.deep" $ nf pythMpDeep x
+                    , bench "eff.shallow" $ nf pythEff x
+                    , bench "eff.deep" $ nf pythEffDeep x
+                    , bench "mtl-logict.shallow" $ nf pythLogict x
+                    , bench "mtl-logict.deep" $ nf pythLogictDeep x
                     ] -- Polysemy case is excluded because of incorrect semantics.
-                    -- TODO: add mtl,mpeff
         , bgroup "coroutine" $
             [1000] <&> \x ->
                 bgroup

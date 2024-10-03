@@ -8,6 +8,8 @@ import Control.Carrier.Reader qualified as F
 import Control.Carrier.State.Strict qualified as F
 import Control.Effect.Interpreter.Heftia.Reader qualified as H
 import Control.Effect.Interpreter.Heftia.State qualified as H
+import Control.Ev.Eff qualified as E
+import Control.Ev.Util qualified as E
 import Control.Monad.Freer qualified as FS
 import Control.Monad.Freer.Reader qualified as FS
 import Control.Monad.Freer.State qualified as FS
@@ -22,6 +24,7 @@ import Effectful.State.Dynamic qualified as EL
 import Polysemy qualified as P
 import Polysemy.Reader qualified as P
 import Polysemy.State qualified as P
+import "eff" Control.Effect qualified as EF
 
 programHeftia :: (H.Member (H.State Int) es) => H.Eff '[] es Int
 programHeftia = do
@@ -113,6 +116,48 @@ countdownEffectfulDeep n =
     EL.runPureEff $ runR $ runR $ runR $ runR $ runR $ EL.runStateLocal n $ runR $ runR $ runR $ runR $ runR $ programEffectful
   where
     runR = EL.runReader ()
+
+programEff :: (EF.State Int EF.:< es) => EF.Eff es Int
+programEff = do
+    x <- EF.get @Int
+    if x == 0
+        then pure x
+        else do
+            EF.put (x - 1)
+            programEff
+{-# NOINLINE programEff #-}
+
+countdownEff :: Int -> (Int, Int)
+countdownEff n = EF.run $ EF.runState n programEff
+
+countdownEffDeep :: Int -> (Int, Int)
+countdownEffDeep n = EF.run $ runR $ runR $ runR $ runR $ runR $ EF.runState n $ runR $ runR $ runR $ runR $ runR $ programEff
+  where
+    runR = EF.runReader ()
+
+programEv :: (E.State Int E.:? es) => E.Eff es Int
+programEv = do
+    x <- E.perform (E.get @Int) ()
+    if x == 0
+        then pure x
+        else do
+            E.perform E.put (x - 1)
+            programEv
+{-# NOINLINE programEv #-}
+
+countdownEv :: Int -> (Int, Int)
+countdownEv n = E.runEff $ runStateEv n programEv
+
+countdownEvDeep :: Int -> (Int, Int)
+countdownEvDeep n = E.runEff $ runR $ runR $ runR $ runR $ runR $ runStateEv n $ runR $ runR $ runR $ runR $ runR $ programEv
+  where
+    runR = E.reader ()
+
+runStateEv :: s -> E.Eff (E.State s E.:* es) a -> E.Eff es (s, a)
+runStateEv s0 m = E.state s0 do
+    r <- m
+    s <- E.perform E.get ()
+    pure (s, r)
 
 programMtl :: (M.MonadState Int m) => m Int
 programMtl = do

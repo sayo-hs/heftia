@@ -229,6 +229,7 @@ benchmark heftia-bench
         eveff,
         mpeff,
         mtl,
+        logict,
         tasty-bench ^>= 0.3
 
     default-extensions:
