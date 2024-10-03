@@ -5,8 +5,8 @@
 module Control.Monad.Hefty.Types where
 
 import Control.Applicative (Alternative, empty, (<|>))
-import Control.Effect (SendIns, SendSig, sendIns, sendSig, type (~>))
-import Control.Effect.Key (ByKey (ByKey), SendInsBy, SendSigBy, key, sendInsBy, sendSigBy)
+import Control.Effect (SendFOE, SendHOE, sendFOE, sendHOE, type (~>))
+import Control.Effect.Key (ByKey (ByKey), SendFOEBy, SendHOEBy, key, sendFOEBy, sendHOEBy)
 import Control.Monad (MonadPlus)
 import Control.Monad.Error.Class (MonadError, catchError, throwError)
 import Control.Monad.Fix (MonadFix, mfix)
@@ -76,25 +76,25 @@ instance Monad (Eff eh ef) where
         Op e q -> Op e (q |> k)
     {-# INLINE (>>=) #-}
 
-instance (e <| ef) => SendIns e (Eff eh ef) where
-    sendIns = send
-    {-# INLINE sendIns #-}
+instance (e <| ef) => SendFOE e (Eff eh ef) where
+    sendFOE = send
+    {-# INLINE sendFOE #-}
 
-instance (e <<| eh) => SendSig e (Eff eh ef) where
-    sendSig = sendH
-    {-# INLINE sendSig #-}
+instance (e <<| eh) => SendHOE e (Eff eh ef) where
+    sendHOE = sendH
+    {-# INLINE sendHOE #-}
 
-instance (MemberBy key e ef) => SendInsBy key e (Eff eh ef) where
-    sendInsBy = send . Key @key
-    {-# INLINE sendInsBy #-}
+instance (MemberBy key e ef) => SendFOEBy key e (Eff eh ef) where
+    sendFOEBy = send . Key @key
+    {-# INLINE sendFOEBy #-}
 
-instance (MemberHBy key e eh) => SendSigBy key e (Eff eh ef) where
-    sendSigBy = sendH . KeyH @key
-    {-# INLINE sendSigBy #-}
+instance (MemberHBy key e eh) => SendHOEBy key e (Eff eh ef) where
+    sendHOEBy = sendH . KeyH @key
+    {-# INLINE sendHOEBy #-}
 
 instance
-    ( SendInsBy ReaderKey (Ask r) (Eff eh ef)
-    , SendSigBy ReaderKey (Local r) (Eff eh ef)
+    ( SendFOEBy ReaderKey (Ask r) (Eff eh ef)
+    , SendHOEBy ReaderKey (Local r) (Eff eh ef)
     )
     => MonadReader r (Eff eh ef)
     where
@@ -106,8 +106,8 @@ instance
 data ReaderKey
 
 instance
-    ( SendInsBy WriterKey (Tell w) (Eff eh ef)
-    , SendSigBy WriterKey (WriterH w) (Eff eh ef)
+    ( SendFOEBy WriterKey (Tell w) (Eff eh ef)
+    , SendHOEBy WriterKey (WriterH w) (Eff eh ef)
     , Monoid w
     )
     => MonadWriter w (Eff eh ef)
@@ -121,7 +121,7 @@ instance
 data WriterKey
 
 instance
-    (SendInsBy StateKey (State s) (Eff eh ef))
+    (SendFOEBy StateKey (State s) (Eff eh ef))
     => MonadState s (Eff eh ef)
     where
     get = get'' @StateKey
@@ -132,8 +132,8 @@ instance
 data StateKey
 
 instance
-    ( SendInsBy ErrorKey (Throw e) (Eff eh ef)
-    , SendSigBy ErrorKey (Catch e) (Eff eh ef)
+    ( SendFOEBy ErrorKey (Throw e) (Eff eh ef)
+    , SendHOEBy ErrorKey (Catch e) (Eff eh ef)
     )
     => MonadError e (Eff eh ef)
     where
@@ -145,11 +145,11 @@ instance
 data ErrorKey
 
 instance
-    ( SendInsBy ReaderKey (Ask r) (Eff eh ef)
-    , SendSigBy ReaderKey (Local r) (Eff eh ef)
-    , SendInsBy WriterKey (Tell w) (Eff eh ef)
-    , SendSigBy WriterKey (WriterH w) (Eff eh ef)
-    , SendInsBy StateKey (State s) (Eff eh ef)
+    ( SendFOEBy ReaderKey (Ask r) (Eff eh ef)
+    , SendHOEBy ReaderKey (Local r) (Eff eh ef)
+    , SendFOEBy WriterKey (Tell w) (Eff eh ef)
+    , SendHOEBy WriterKey (WriterH w) (Eff eh ef)
+    , SendFOEBy StateKey (State s) (Eff eh ef)
     , Monoid w
     )
     => MonadRWS r w s (Eff eh ef)

@@ -3,12 +3,16 @@
 module Control.Effect.Interpreter.Heftia.Concurrent.Timer where
 
 import Control.Concurrent.Thread.Delay qualified as Thread
-import Control.Effect (sendIns, type (~>))
+import Control.Effect (type (~>))
 import Control.Effect.Interpreter.Heftia.Coroutine (runCoroutine)
 import Control.Effect.Interpreter.Heftia.State (evalState)
-import Control.Monad.Hefty (HFunctors, interposeRec, interpret, interpretRec, raiseN, raiseNUnder, (:!!), type (<|))
+import Control.Monad.Hefty.Interpret (interposeRec, interpret, interpretRec)
+import Control.Monad.Hefty.Transform (raise, raiseUnder)
+import Control.Monad.Hefty.Types (send, (:!!))
 import Data.Effect.Concurrent.Timer (CyclicTimer (Wait), Timer (..), clock, cyclicTimer)
-import Data.Effect.Coroutine (Status (Coroutine, Done))
+import Data.Effect.Coroutine (Status (Continue, Done))
+import Data.Effect.OpenUnion.Internal.FO (type (<|))
+import Data.Effect.OpenUnion.Internal.HO (HFunctors)
 import Data.Effect.State (get, put)
 import Data.Function ((&))
 import Data.Time (DiffTime)
@@ -29,16 +33,19 @@ runTimerIO =
         Sleep t ->
             Thread.delay (diffTimeToPicoseconds t `quot` 1000_000) & liftIO
 
-runCyclicTimer :: forall ef. (Timer <| ef) => '[] :!! CyclicTimer ': ef ~> '[] :!! ef
+runCyclicTimer
+    :: forall ef
+     . (Timer <| ef)
+    => '[] :!! CyclicTimer ': ef ~> '[] :!! ef
 runCyclicTimer a = do
     timer0 :: Status ('[] :!! ef) () DiffTime Void <- runCoroutine cyclicTimer
     a
-        & raiseNUnder @1 @1
+        & raiseUnder
         & interpret \case
             Wait delta ->
                 get @(Status ('[] :!! ef) () DiffTime Void) >>= \case
                     Done x -> absurd x
-                    Coroutine () k -> put =<< raiseN @1 (k delta)
+                    Continue () k -> put =<< raise (k delta)
         & evalState timer0
 
 restartClock :: (Timer <| ef, HFunctors eh) => eh :!! ef ~> eh :!! ef
@@ -48,4 +55,4 @@ restartClock a = do
         Clock -> do
             t <- clock
             pure $ t - t0
-        other -> sendIns other
+        other -> send other

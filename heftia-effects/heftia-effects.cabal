@@ -54,7 +54,7 @@ common common-base
 
     build-depends:
         base >= 4.16 && < 4.21,
-        data-effects ^>= 0.1.2,
+        data-effects ^>= 0.2,
         heftia ^>= 0.4,
         time,
         unliftio,

@@ -89,7 +89,7 @@ library
     -- other-extensions:
     build-depends:
         base                          >= 4.16 && < 4.21,
-        data-effects                  ^>= 0.1.2,
+        data-effects                  ^>= 0.2,
         freer-simple                  ^>= 1.2.1.2,
         mtl,
         unliftio

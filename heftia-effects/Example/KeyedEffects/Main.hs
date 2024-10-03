@@ -8,7 +8,7 @@
 module Main where
 
 import Control.Effect (type (~>))
-import Control.Effect.Key (SendInsBy)
+import Control.Effect.Key (SendFOEBy)
 import Control.Monad.Hefty.Interpret (interposeRec, interpretRec, runEff)
 import Control.Monad.Hefty.Transform (unkey)
 import Control.Monad.Hefty.Types (type (:!!))
@@ -29,7 +29,7 @@ teletypeToIO = interpretRec \case
     ReadTTY -> liftIO getLine
     WriteTTY msg -> liftIO $ putStrLn msg
 
-echo :: (SendInsBy "tty1" Teletype m, Monad m) => m ()
+echo :: (SendFOEBy "tty1" Teletype m, Monad m) => m ()
 echo = do
     i <- readTTY'' @"tty1"
     case i of
