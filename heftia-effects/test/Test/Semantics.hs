@@ -84,7 +84,7 @@ spec_The_issue_12 = describe "hasura/eff#12 semantics" do
         runSomeEff :: (HFunctors eh, Throw String <| ef) => eh :!! SomeEff ': ef ~> eh :!! ef
         runSomeEff = interpretRec (\SomeAction -> throw "not caught")
 
-    it "runCatch   . interpret (\\SomeAction -> throw \"not caught\") $ someAction `catch` \"caught\"  ==>  Right \"caught\"" do
+    it "runCatch . interpret (\\SomeAction -> throw \"not caught\") $ someAction `catch` \"caught\"  ==>  Right \"caught\"" do
         runPure (runThrow @String . runCatch @String . runSomeEff $ action) `shouldBe` Right "caught"
-    it "runSomeEff . interpret (\\SomeAction -> throw \"not caught\") $ someAction `catch` \"caught\"  ==>  Left \"not caught\"" do
+    it "interpret (\\SomeAction -> throw \"not caught\") . runCatch $ someAction `catch` \"caught\"  ==>  Left \"not caught\"" do
         runPure (runThrow @String . runSomeEff . runCatch @String $ action) `shouldBe` Left "not caught"
