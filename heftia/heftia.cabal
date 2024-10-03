@@ -68,6 +68,7 @@ library
         Data.Effect.OpenUnion.Internal
         Data.Effect.OpenUnion.Internal.FO
         Data.Effect.OpenUnion.Internal.HO
+        Data.Effect.OpenUnion.Sum
 
     reexported-modules:
         Data.Effect,

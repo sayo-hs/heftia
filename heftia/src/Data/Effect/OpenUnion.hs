@@ -10,6 +10,7 @@ module Data.Effect.OpenUnion (
     module Data.Effect.OpenUnion.Internal,
     module Data.Effect.OpenUnion.Internal.HO,
     module Data.Effect.OpenUnion.Internal.FO,
+    module Data.Effect.OpenUnion.Sum,
 ) where
 
 import Data.Effect.OpenUnion.Internal (
@@ -121,5 +122,12 @@ import Data.Effect.OpenUnion.Internal.HO (
     (!!+.),
     type (<<|),
  )
+import Data.Effect.OpenUnion.Sum (
+    SumToRecUnion,
+    SumToRecUnionList,
+    U,
+    UL,
+    type (+),
+ )
 
--- TODO: add injN/prjN/move/swap/insert/rotate functions.
+-- TODO: add move/swap/insert/rotate functions.

@@ -27,6 +27,7 @@ import Data.Effect.NonDet qualified as E
 import Data.Effect.OpenUnion.Internal (ElemAt)
 import Data.Effect.OpenUnion.Internal.FO (MemberBy, Union, inj, inj0, injN, type (<|))
 import Data.Effect.OpenUnion.Internal.HO (MemberHBy, UnionH, inj0H, injH, injNH, type (<<|))
+import Data.Effect.OpenUnion.Sum (SumToRecUnionList)
 import Data.Effect.Reader (Ask, Local, ask'', local'')
 import Data.Effect.State (State, get'', put'')
 import Data.Effect.Unlift (UnliftIO)
@@ -57,6 +58,9 @@ infixr 4 :!!
 Allows writing @eh :!! ef@ instead of @Eff eh ef@.
 -}
 type (:!!) = Eff
+
+infixr 5 !!
+type eh !! ef = SumToRecUnionList UnionH eh :!! SumToRecUnionList Union ef
 
 instance Functor (Eff eh ef) where
     fmap f = \case

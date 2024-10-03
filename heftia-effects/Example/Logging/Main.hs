@@ -13,6 +13,7 @@ import Control.Effect (type (<:), type (<<:), type (~>))
 import Control.Effect.Interpreter.Heftia.Reader (runReader)
 import Control.Effect.Interpreter.Heftia.State (evalState)
 import Control.Monad (when)
+import Control.Monad.Hefty (type (+))
 import Control.Monad.Hefty.Interpret (
     interposeRec,
     interposeRecH,
@@ -27,7 +28,7 @@ import Control.Monad.Hefty.Transform (
     raiseUnder,
     subsume,
  )
-import Control.Monad.Hefty.Types (Eff, Elab, type (:!!))
+import Control.Monad.Hefty.Types (Elab, type (!!), type (:!!))
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Effect.OpenUnion.Internal.FO (type (<|))
 import Data.Effect.OpenUnion.Internal.HO (HFunctors, type (<<|))
@@ -187,7 +188,7 @@ limitThenSave =
         & saveLogChunk
         & runApp
 
-runApp :: Eff '[LogChunk] '[FileSystem, Time, Log, IO] ~> IO
+runApp :: LogChunk !! FileSystem + Time + Log + IO ~> IO
 runApp =
     runLogChunk
         >>> runDummyFS

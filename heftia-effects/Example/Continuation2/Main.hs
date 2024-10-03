@@ -9,9 +9,17 @@ import Control.Effect.Interpreter.Heftia.ShiftReset (evalShift, runShift_)
 import Control.Effect.Interpreter.Heftia.State (evalState)
 import Control.Effect.Key (key)
 import Control.Monad.Extra (whenM)
-import Control.Monad.Hefty.Interpret (runEff)
-import Control.Monad.Hefty.Transform (unkey)
-import Control.Monad.Hefty.Types (Eff, send, sendN)
+import Control.Monad.Hefty (
+    Eff,
+    runEff,
+    send,
+    sendN,
+    unkey,
+    type (!!),
+    type ($),
+    type (+),
+    type (:+:),
+ )
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect.Key (type (#>))
 import Data.Effect.Reader (Ask, Local, ask, local)
@@ -88,7 +96,7 @@ handleShiftThenReader = do
         & (evalState 0 . unkey)
         & runEff
   where
-    prog :: Eff '[Shift_, Local Int] '[Ask Int, "counter" #> State Int, IO] ()
+    prog :: Shift_ :+: Local Int !! Ask Int + "counter" #> State Int + IO $ ()
     prog = do
         k <- getCC_
         env <- ask @Int

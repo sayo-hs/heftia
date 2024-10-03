@@ -6,6 +6,7 @@ module Control.Monad.Hefty (
     module Control.Monad.Hefty.Interpret.State,
     module Control.Monad.Hefty.Transform,
     module Data.Effect.OpenUnion,
+    module Data.Effect.HFunctor,
 ) where
 
 import Control.Monad.Hefty.Interpret (
@@ -134,8 +135,10 @@ import Control.Monad.Hefty.Types (
     sendUnionBy,
     sendUnionH,
     sendUnionHBy,
+    type (!!),
     type ($),
     type ($$),
     type (:!!),
  )
+import Data.Effect.HFunctor (HFunctor, type (:+:))
 import Data.Effect.OpenUnion
