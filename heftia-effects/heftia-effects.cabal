@@ -23,7 +23,7 @@ maintainer:         Sayo Koyoneda <ymdfield@outlook.jp>
 copyright: 2023-2024 Sayo Koyoneda
 category: Control, Effect, Monads
 
-extra-source-files:
+extra-doc-files:
     ChangeLog.md
     NOTICE
     README.md
@@ -56,11 +56,11 @@ common common-base
         base >= 4.16 && < 4.21,
         data-effects ^>= 0.2,
         heftia ^>= 0.4,
-        time,
-        unliftio,
-        unbounded-delays,
-        ghc-typelits-knownnat,
-        containers,
+        time >= 1.11.1 && < 1.15,
+        unliftio ^>= 0.2,
+        unbounded-delays ^>= 0.1.1,
+        ghc-typelits-knownnat ^>= 0.7,
+        containers > 0.6.5 && < 0.8,
 
     ghc-options: -Wall -fplugin GHC.TypeLits.KnownNat.Solver
 
@@ -139,10 +139,10 @@ test-suite test
 
     build-depends:
         heftia-effects,
-        tasty                         ^>= 1.4,
-        tasty-hspec,
-        hspec,
-        unliftio,
+        tasty                         >= 1.4 && < 1.6,
+        tasty-hspec                   ^>= 1.2,
+        hspec                         >= 2.5 && < 2.12,
+        unliftio                      ^>= 0.2,
 
     build-tool-depends:
         tasty-discover:tasty-discover
@@ -228,17 +228,16 @@ benchmark heftia-bench
 
     build-depends:
         heftia-effects,
-        data-effects,
-        freer-simple,
-        polysemy,
-        fused-effects,
-        effectful,
+        freer-simple ^>= 1.2,
+        polysemy ^>= 1.9,
+        fused-effects ^>= 1.1,
+        effectful ^>= 2.3,
+        eveff ^>= 1.0,
+        mtl >= 2.2 && < 2.4,
+        logict >= 0.7.0.3 && < 0.9,
+        tasty-bench >= 0.3 && < 0.5,
         eff,
-        eveff,
         mpeff,
-        mtl,
-        logict,
-        tasty-bench ^>= 0.3
 
     default-extensions:
         PackageImports

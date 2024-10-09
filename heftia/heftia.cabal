@@ -7,27 +7,28 @@ synopsis: higher-order effects done right
 
 -- A longer description of the package.
 description:
-    Heftia is an extensible effects library that generalizes "Algebraic Effects
-    and Handlers" to higher-order effects, providing users with maximum
-    flexibility and delivering standard and reasonable speed. In its
-    generalization, the focus is on ensuring predictable results based on
-    simple, consistent semantics, while preserving soundness.
+    Heftia is an extensible effects library that generalizes Algebraic Effects and Handlers to higher-order effects, providing users with maximum flexibility and delivering standard and reasonable speed.
+    In its generalization, the focus is on ensuring predictable results based on simple, consistent semantics, while preserving soundness.
     .
-    This library provides "[continuation-based semantics](https://github.com/lexi-lambda/eff/blob/master/notes/semantics-zoo.md)"
-    for higher-order effects, the same as [lexi-lambda's eff](https://github.com/lexi-lambda/eff).
-    Instead of using the @IO@ monad to implement delimited continuations for effects,
-    Heftia internally uses @Freer@ monad.
+    Please refer to the [Haddock documentation](https://hackage.haskell.org/package/heftia-0.4.0.0/docs/Control-Monad-Hefty.html) for usage and semantics.
+    For information on performance, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/v0.4.0/benchmark/performance.md).
     .
-    The paper
+    The library allows the following effects with well-defined semantics and composability:
+    .
+    * Coroutines
+    * Non-deterministic computations
+    * `MonadUnliftIO`
+    .
+    This library is inspired by the paper:
     .
     * Casper Bach Poulsen and Cas van der Rest. 2023. Hefty Algebras: Modular
-    Elaboration of Higher-Order Algebraic Effects. Proc. ACM Program. Lang. 7,
-    POPL, Article 62 (January 2023), 31 pages. <https://doi.org/10.1145/3571255>
+        Elaboration of Higher-Order Algebraic Effects. Proc. ACM Program. Lang. 7,
+        POPL, Article 62 (January 2023), 31 pages. <https://doi.org/10.1145/3571255>
     .
-    inspires this library.
-    Hefty trees, proposed by the above paper, are extensions of free monads,
-    allowing for a straightforward treatment of higher-order effects.
+    The /elaboration/ approach proposed in the above paper allows for a straightforward treatment of higher-order effects.
     .
+    Heftia's data structure is an extension of the Freer monad, designed to be theoretically straightforward by eliminating ad-hoc elements.
+
 
 -- A URL where users can report bugs.
 bug-reports: https://github.com/sayo-hs/heftia
@@ -44,7 +45,7 @@ copyright:
     2016 Allele Dev; 2017 Ixperta Solutions s.r.o.; 2017 Alexis King
 category: Control, Monads
 
-extra-source-files:
+extra-doc-files:
     ChangeLog.md
     NOTICE
     README.md
@@ -93,8 +94,8 @@ library
         base                          >= 4.16 && < 4.21,
         data-effects                  ^>= 0.2,
         freer-simple                  ^>= 1.2.1.2,
-        mtl,
-        unliftio
+        mtl                           >= 2.2.2 && < 2.4,
+        unliftio                      ^>= 0.2,
 
     hs-source-dirs:   src
     ghc-options:      -Wall

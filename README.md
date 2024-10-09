@@ -9,7 +9,7 @@ In its generalization, the focus is on ensuring predictable results based on sim
 Please refer to the [Haddock documentation](https://hackage.haskell.org/package/heftia-0.4.0.0/docs/Control-Monad-Hefty.html) for usage and semantics.
 For information on performance, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/v0.4.0/benchmark/performance.md).
 
-The library allows the following effects with well-defined semantics and composability:
+The library allows the following effects with well-defined semantics:
 
 * Coroutines
 * Non-deterministic computations
@@ -179,7 +179,7 @@ $
 ## Documentation
 A detailed explanation of usage and semantics is available in [Haddock](https://hackage.haskell.org/package/heftia-0.4.0.0/docs/Control-Monad-Hefty.html).
 The example codes are located in the [heftia-effects/Example/](https://github.com/sayo-hs/heftia/tree/v0.4.0/heftia-effects/Example) directory.
-Also, the following *HeftWorld* example: https://github.com/sayo-hs/HeftWorld
+Also, the following *HeftWorld* example (outdated): https://github.com/sayo-hs/HeftWorld
 
 About the internal /elaboration/ mechanism: https://sayo-hs.github.io/jekyll/update/2024/09/04/how-the-heftia-extensible-effects-library-works.html
 
@@ -210,10 +210,9 @@ About the internal /elaboration/ mechanism: https://sayo-hs.github.io/jekyll/upd
 | `in-other-words`    | Yes                  | Multi-shot?            | Yes           | Yes                               | No?                      | Carrier dependent                |
 | `mtl`               | Yes                  | Multi-shot (`ContT`)   | Yes           | Yes                               | No                       | Carrier dependent                |
 | `fused-effects`     | Yes                  | No?                    | Yes           | Yes                               | No                       | Carrier dependent & Weaving-based (functorial state) |
-| Koka-lang           | No [^2]              | Multi-shot             | Yes           | No (language built-in)            | Yes                      | Algebraic Effects                |
+| Koka-lang           | No                   | Multi-shot             | Yes           | No (language built-in)            | Yes                      | Algebraic Effects                |
 | OCaml-lang 5        | ?                    | One-shot               | No [^3]       | No (language built-in)            | ?                        | Algebraic Effects?               |
 
-[^2]: https://gist.github.com/ymdryo/6fb2f7f4020c6fcda98ccc67c090dc75
 [^3]: Effects do not appear in the type signature and can potentially cause unhandled errors at runtime
 [^4]: Scoped Resumption only. e.g. Coroutines are not supported.
 [^5]: https://github.com/sayo-hs/heftia/issues/12
@@ -234,7 +233,7 @@ This results in minimal surprise to the mental model of the code reader.
 
 ### Performance
 
-Overall, the performance of this library is positioned roughly in the middle between the fast and slow libraries, and can be considered average.
+Overall, the performance of this library is positioned roughly in the middle between the fast (`effectful`, `eveff`, etc.) and slow (`polysemy`, `fused-effects`, etc.) libraries, and can be considered average.
 In all benchmarks, the speed is nearly equivalent to `freer-simple`, only slightly slower.
 
 For more details, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/v0.4.0/benchmark/performance.md).

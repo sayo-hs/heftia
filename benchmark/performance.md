@@ -1,6 +1,6 @@
 # Performance
 
-Overall, the performance of this library is positioned roughly in the middle between the fast and slow libraries, and can be considered average.
+Overall, the performance of this library is positioned roughly in the middle between the fast (`effectful`, `eveff`, etc.) and slow (`polysemy`, `fused-effects`, etc.) libraries, and can be considered average.
 In all benchmarks, the speed is nearly equivalent to `freer-simple`, only slightly slower.
 
 In the State benchmark, it is about 3-6x faster than `polysemy` and about 2-7x slower than `effectful`.
