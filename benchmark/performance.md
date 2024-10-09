@@ -21,6 +21,18 @@ In comparison, these libraries are significantly slower, approximately 50x slowe
 Furthermore, since there are differences among libraries in their support for higher-order effects and continuations,
 please note that, for example, in the Throw/Catch benchmark, only libraries that support higher-order effects are included in the comparison.
 
+Below is a table showing the speedup factor of `heftia` when `mtl` is set to 1x (`mtl`'s computation time divided by `heftia`'s computation time).
+Larger values indicate that `heftia` is faster.
+
+| Benchmark             | Speedup       |
+| --------------------- | ------------- |
+| state, shallow        | 1.64x         |
+| state, deep           | 5.74x         |
+| throw/catch, shallow  | 0.32x         |
+| throw/catch, deep     | 1.14 - 6.96x  |
+| nondet, shallow       | 0.20x         |
+| nondet, deep          | 0.66x         |
+
 ## Reproduction
 The benchmark code is available at [heftia-effects/bench](https://github.com/sayo-hs/heftia/blob/v0.4.0/heftia-effects/bench).
 To run the benchmarks, move your working directory to the root directory of the `heftia` repository and execute
