@@ -114,13 +114,13 @@ theIssue12 = do
 
 main :: IO ()
 main = do
-    putStrLn "# State + Except"
+    putStrLn "# State & Except"
     statePlusExcept
 
-    putStrLn "\n# NonDet + Except"
+    putStrLn "\n# NonDet & Except"
     nonDetPlusExcept
 
-    putStrLn "\n# NonDet + Writer"
+    putStrLn "\n# NonDet & Writer"
     nonDetPlusWriter
 
     putStrLn "\n# https://github.com/hasura/eff/issues/12"
@@ -129,17 +129,17 @@ main = do
     putStrLn "\n[Note] All other permutations will cause type errors."
 
 {-
-# State + Except
+# State & Except
 ( evalState . runThrow . runCatch $ action ) = Right True
 ( runThrow . evalState . runCatch $ action ) = Right True
 
-# NonDet + Except
+# NonDet & Except
 ( runNonDet . runThrow . runCatch . runChooseH $ action1 ) = [Right True,Right False]
 ( runThrow . runNonDet . runCatch . runChooseH $ action1 ) = Right [True,False]
 ( runNonDet . runThrow . runCatch . runChooseH $ action2 ) = [Right False,Right True]
 ( runThrow . runNonDet . runCatch . runChooseH $ action2 ) = Right [False,True]
 
-# NonDet + Writer
+# NonDet & Writer
 ( runNonDet . runTell . elaborateWriter . runChooseH $ action ) = [(3,(3,True)),(4,(4,False))]
 ( runTell . runNonDet . elaborateWriter . runChooseH $ action ) = (6,[(3,True),(4,False)])
 

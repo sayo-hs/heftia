@@ -121,7 +121,7 @@ prog = 'runEff' . runLog . runSpan $ do
         => 'Eff' '[] (@t'Data.Effect.NonDet.Choose'@ ': t'Data.Effect.NonDet.Empty' ': ef) a
         -> 'Eff' '[] ef (f a)
     runNonDet =
-        'bundleN' @2
+        'bundleN' \@2
             '>>>' 'interpretBy'
                 ('pure' . 'pure')
                 ( (\\@v'Data.Effect.NonDet.Choose'@ k -> 'liftA2' ('<|>') (k 'False') (k 'True'))
@@ -140,7 +140,32 @@ prog = 'runEff' . runLog . runSpan $ do
 
 = Naming Rules for Interpretation Functions
 
-1. Functions that perform recursive continuational stateful interpretation have @Rec@ additionally added.
+* Functions with an @H@, such as 'interpretH', are for higher-order effects, while those without are for first-order effects.
+
+    @
+    'interpret' :: e t'Control.Effect.~>' 'Eff' eh ef -> 'Eff' (e ': eh) ef ~> 'Eff' eh ef
+    'interpretH' :: e ('Eff' eh ef) t'Control.Effect.~>' 'Eff' eh ef -> 'Eff' (e ': eh) ef t'Control.Effect.~>' 'Eff' eh ef
+    @
+
+    Note: t'Control.Effect.~>' binds more tightly than @->@.
+
+* Functions may additionally have @With@ or @By@ at the end of their names.
+
+    * These provide functionality equivalent to "Algebraic Effects and Handlers," meaning they offer access to delimited continuations during interpretation.
+
+    * Functions in the @By@ family take two arguments: a value handler and a continuational stateful effect interpreter. They are the most generalized form.
+
+    * Functions in the @With@ family omit the value handler and take only the effect interpreter as an argument.
+
+    * The difference between @interpretBy ret f m@ and @interpretWith f m >>= ret@ is that, during interpretation,
+        the delimited continuation passed as the second argument @k@ to @f@ in the former extends up to when @ret@ finishes,
+        whereas in the latter, it only goes until @m@ finishes (just before @ret@), so @ret@ is not included in @k@.
+
+    * Functions without @With@ or @By@ cannot manipulate continuations;
+        therefore, you cannot maintain internal state or perform behaviors like
+        global escapes or non-deterministic computations during interpretation.
+
+* Functions that perform recursive continuational stateful interpretation have @Rec@ additionally added.
 
     * Non-recursive continuational stateful interpretation functions like 'interpretWith' cannot be used unless the higher-order effects are empty:
 
@@ -157,31 +182,6 @@ prog = 'runEff' . runLog . runSpan $ do
     * When using this type of function, pay attention to their /reset semantics/. This is discussed later.
 
     * In principle, they cannot take value handlers, so there is no combination with @By@.
-
-2. Functions with an @H@, such as 'interpretH', are for higher-order effects, while those without are for first-order effects.
-
-    @
-    'interpret' :: e t'Control.Effect.~>' 'Eff' eh ef -> 'Eff' (e ': eh) ef ~> 'Eff' eh ef
-    'interpretH' :: e ('Eff' eh ef) t'Control.Effect.~>' 'Eff' eh ef -> 'Eff' (e ': eh) ef t'Control.Effect.~>' 'Eff' eh ef
-    @
-
-    Note: t'Control.Effect.~>' binds more tightly than @->@.
-
-3. Functions may additionally have @With@ or @By@ at the end of their names.
-
-    * These provide functionality equivalent to "Algebraic Effects and Handlers," meaning they offer access to delimited continuations during interpretation.
-
-    * Functions in the @By@ family take two arguments: a value handler and a continuational stateful effect interpreter. They are the most generalized form.
-
-    * Functions in the @With@ family omit the value handler and take only the effect interpreter as an argument.
-
-    * The difference between @interpretBy ret f m@ and @interpretWith f m >>= ret@ is that, during interpretation,
-        the delimited continuation passed as the second argument @k@ to @f@ in the former extends up to when @ret@ finishes,
-        whereas in the latter, it only goes until @m@ finishes (just before @ret@), so @ret@ is not included in @k@.
-
-    * Functions without @With@ or @By@ cannot manipulate continuations;
-        therefore, you cannot maintain internal state or perform behaviors like
-        global escapes or non-deterministic computations during interpretation.
 
 Function names combine the above three attributes.
 Examples of complex combinations include 'interpretHBy' and 'interpretRecHWith'.
@@ -544,7 +544,7 @@ module Control.Monad.Hefty (
 
     -- | Theses entities provides an ad-hoc specialized version to accelerate interpretations that have a
     -- single state type @s@, especially for effects like t'Data.Effect.State.State' or
-    --  "Data.Effect.Writer".
+    --  [@Writer@]("Data.Effect.Writer").
     StateElaborator,
     StateInterpreter,
 

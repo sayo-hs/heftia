@@ -73,7 +73,7 @@ infixr 5 !!
 
 Example:
 
-@LogChunk t'Control.Monad.Hefty.Types.!!' FileSystem t'Data.Effect.OpenUnion.Sum.+' Time t'Data.Effect.OpenUnion.Sum.+' Log t'Data.Effect.OpenUnion.Sum.+' t'IO' t'Control.Effect.~>' t'IO'@
+@Span t'Control.Monad.Hefty.Types.!!' FileSystem t'Data.Effect.OpenUnion.Sum.+' Time t'Data.Effect.OpenUnion.Sum.+' Log t'Data.Effect.OpenUnion.Sum.+' t'IO' t'Control.Effect.~>' t'IO'@
 -}
 type eh !! ef = SumToRecUnionList UnionH eh :!! SumToRecUnionList Union ef
 

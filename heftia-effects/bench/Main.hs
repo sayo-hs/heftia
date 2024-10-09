@@ -13,83 +13,102 @@ import Test.Tasty.Bench
 main :: IO ()
 main =
     defaultMain
-        [ bgroup "countdown" $
+        [ bgroup "countdown.shallow" $
             [10000] <&> \x ->
                 bgroup
                     (show x)
-                    [ bench "heftia.shallow" $ nf countdownHeftia x
-                    , bench "heftia.deep" $ nf countdownHeftiaDeep x
-                    , bench "freer.shallow" $ nf countdownFreer x
-                    , bench "freer.deep" $ nf countdownFreerDeep x
-                    , bench "polyemy.shallow" $ nf countdownSem x
-                    , bench "polysemy.deep" $ nf countdownSemDeep x
-                    , bench "fused.shallow" $ nf countdownFused x
-                    , bench "fused.deep" $ nf countdownFusedDeep x
-                    , bench "effectful.shallow" $ nf countdownEffectful x
-                    , bench "effectful.deep" $ nf countdownEffectfulDeep x
-                    , bench "eff.shallow" $ nf countdownEff x
-                    , bench "eff.deep" $ nf countdownEffDeep x
-                    , bench "ev.shallow" $ nf countdownEv x
-                    , bench "ev.deep" $ nf countdownEvDeep x
-                    , bench "mtl.shallow" $ nf countdownMtl x
-                    , bench "mtl.deep" $ nf countdownMtlDeep x
+                    [ bench "heftia" $ nf countdownHeftia x
+                    , bench "freer" $ nf countdownFreer x
+                    , bench "polyemy" $ nf countdownSem x
+                    , bench "fused" $ nf countdownFused x
+                    , bench "effectful" $ nf countdownEffectful x
+                    , bench "eff" $ nf countdownEff x
+                    , bench "ev" $ nf countdownEv x
+                    , bench "mtl" $ nf countdownMtl x
                     ]
-        , bgroup "catch" $
+        , bgroup "countdown.deep" $
             [10000] <&> \x ->
                 bgroup
                     (show x)
-                    [ bench "heftia.shallow" $ nf catchHeftia x
-                    , bench "heftia.deep0" $ nf catchHeftiaDeep0 x
-                    , bench "heftia.deep1" $ nf catchHeftiaDeep1 x
-                    , bench "heftia.deep2" $ nf catchHeftiaDeep2 x
-                    , bench "heftia.deep3" $ nf catchHeftiaDeep3 x
-                    , bench "heftia.deep4" $ nf catchHeftiaDeep4 x
-                    , bench "heftia.deep5" $ nf catchHeftiaDeep5 x
-                    , bench "polysemy.shallow" $ nf catchSem x
-                    , bench "polysemy.deep" $ nf catchSemDeep x
-                    , bench "fused.shallow" $ nf catchFused x
-                    , bench "fused.deep" $ nf catchFusedDeep x
-                    , bench "effectful.shallow" $ nf catchEffectful x
-                    , bench "effectful.deep" $ nf catchEffectfulDeep x
-                    , -- , bench "eff.shallow" $ nf catchEff x
-                      -- , bench "eff.deep" $ nf catchEffDeep x
+                    [ bench "heftia.5+5" $ nf countdownHeftiaDeep x
+                    , bench "freer.5+5" $ nf countdownFreerDeep x
+                    , bench "polysemy.5+5" $ nf countdownSemDeep x
+                    , bench "fused.5+5" $ nf countdownFusedDeep x
+                    , bench "effectful.5+5" $ nf countdownEffectfulDeep x
+                    , bench "eff.5+5" $ nf countdownEffDeep x
+                    , bench "ev.5+5" $ nf countdownEvDeep x
+                    , bench "mtl.5+5" $ nf countdownMtlDeep x
+                    ]
+        , bgroup "catch.shallow" $
+            [10000] <&> \x ->
+                bgroup
+                    (show x)
+                    [ bench "heftia" $ nf catchHeftia x
+                    , bench "polysemy" $ nf catchSem x
+                    , bench "fused" $ nf catchFused x
+                    , bench "effectful" $ nf catchEffectful x
+                    , -- , bench "eff" $ nf catchEff x
                       -- `eff` is x500 slow in this case, so it is excluded because it makes the graph hard to read.
-                      bench "mtl.shallow" $ nf catchMtl x
-                    , bench "mtl.deep" $ nf catchMtlDeep x
+                      bench "mtl" $ nf catchMtl x
                     ]
-        , bgroup "nondet" $
+        , bgroup "catch.deep" $
+            [10000] <&> \x ->
+                bgroup
+                    (show x)
+                    [ bench "heftia.5+5+0" $ nf catchHeftiaDeep0 x
+                    , bench "heftia.5+4+1" $ nf catchHeftiaDeep1 x
+                    , bench "heftia.5+3+2" $ nf catchHeftiaDeep2 x
+                    , bench "heftia.5+2+3" $ nf catchHeftiaDeep3 x
+                    , bench "heftia.5+1+4" $ nf catchHeftiaDeep4 x
+                    , bench "heftia.5+0+5" $ nf catchHeftiaDeep5 x
+                    , bench "polysemy.5+5" $ nf catchSemDeep x
+                    , bench "fused.5+5" $ nf catchFusedDeep x
+                    , bench "effectful.5+5" $ nf catchEffectfulDeep x
+                    , -- , bench "eff.5+5" $ nf catchEffDeep x
+                      bench "mtl.5+5" $ nf catchMtlDeep x
+                    ]
+        , bgroup "nondet.shallow" $
             [32] <&> \x ->
                 bgroup
                     (show x)
-                    [ bench "heftia.shallow" $ nf pythHeftia x
-                    , bench "heftia.deep" $ nf pythHeftiaDeep x
-                    , bench "freer.shallow" $ nf pythFreer x
-                    , bench "freer.deep" $ nf pythFreerDeep x
-                    , bench "fused.shallow" $ nf pythFused x
-                    , bench "fused.deep" $ nf pythFusedDeep x
-                    , bench "ev.shallow" $ nf pythEv x
-                    , bench "ev.deep" $ nf pythEvDeep x
-                    , bench "mp.shallow" $ nf pythMp x
-                    , bench "mp.deep" $ nf pythMpDeep x
-                    , bench "eff.shallow" $ nf pythEff x
-                    , bench "eff.deep" $ nf pythEffDeep x
-                    , bench "mtl-logict.shallow" $ nf pythLogict x
-                    , bench "mtl-logict.deep" $ nf pythLogictDeep x
+                    [ bench "heftia" $ nf pythHeftia x
+                    , bench "freer" $ nf pythFreer x
+                    , bench "fused" $ nf pythFused x
+                    , bench "ev" $ nf pythEv x
+                    , bench "mp" $ nf pythMp x
+                    , bench "eff" $ nf pythEff x
+                    , bench "mtl-logict" $ nf pythLogict x
                     ] -- Polysemy case is excluded because of incorrect semantics.
-        , bgroup "coroutine" $
+        , bgroup "nondet.deep" $
+            [32] <&> \x ->
+                bgroup
+                    (show x)
+                    [ bench "heftia.5+5" $ nf pythHeftiaDeep x
+                    , bench "freer.5+5" $ nf pythFreerDeep x
+                    , bench "fused.5+5" $ nf pythFusedDeep x
+                    , bench "ev.5+5" $ nf pythEvDeep x
+                    , bench "mp.5+5" $ nf pythMpDeep x
+                    , bench "eff.5+5" $ nf pythEffDeep x
+                    , bench "mtl-logict.5+5" $ nf pythLogictDeep x
+                    ]
+        , bgroup "coroutine.shallow" $
             [1000] <&> \x ->
                 bgroup
                     (show x)
-                    [ bench "heftia.shallow" $ nf coroutineHeftia x
-                    , bench "heftia.deep" $ nf coroutineHeftiaDeep x
-                    , bench "freer.shallow" $ nf coroutineFreer x
-                    , bench "freer.deep" $ nf coroutineFreerDeep x
-                    , bench "eff.shallow" $ nf coroutineEff x
-                    , bench "eff.deep" $ nf coroutineEffDeep x
-                    , bench "mp.shallow" $ nf coroutineMp x
-                    , bench "mp.deep" $ nf coroutineMpDeep x
+                    [ bench "heftia" $ nf coroutineHeftia x
+                    , bench "freer" $ nf coroutineFreer x
+                    , bench "eff" $ nf coroutineEff x
+                    , bench "mp" $ nf coroutineMp x
                     -- `mpeff` is O(n^2) slow because of: https://dl.acm.org/doi/10.1145/2633357.2633360
                     -- `eff` is probably for the same reason.
+                    ] -- add mtl?
+        , bgroup "coroutine.deep" $
+            [1000] <&> \x ->
+                bgroup
+                    (show x)
+                    [ bench "heftia.5+5" $ nf coroutineHeftiaDeep x
+                    , bench "freer.5+5" $ nf coroutineFreerDeep x
+                    , bench "eff.5+5" $ nf coroutineEffDeep x
+                    , bench "mp.5+5" $ nf coroutineMpDeep x
                     ]
-                    -- add mtl?
         ]
