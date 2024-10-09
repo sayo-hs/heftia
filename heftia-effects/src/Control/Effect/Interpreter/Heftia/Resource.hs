@@ -18,14 +18,14 @@ import Control.Effect (type (~>))
 import Control.Monad.Hefty.Interpret (interpretH)
 import Control.Monad.Hefty.Types (Eff, type (~~>))
 import Data.Effect.OpenUnion.Internal.FO (type (<|))
-import Data.Effect.OpenUnion.Internal.HO (HFunctors, type (<<|))
+import Data.Effect.OpenUnion.Internal.HO (type (<<|))
 import Data.Effect.Resource (Resource (Bracket, BracketOnExcept))
 import Data.Effect.Unlift (UnliftIO)
 import UnliftIO (MonadUnliftIO, bracket, bracketOnError)
 
 -- | Elaborates the `Resource` effect under the `MonadUnliftIO` context.
 runResourceIO
-    :: (UnliftIO <<| eh, IO <| ef, HFunctors eh)
+    :: (UnliftIO <<| eh, IO <| ef)
     => Eff (Resource ': eh) ef ~> Eff eh ef
 runResourceIO = interpretH elabResourceIO
 

@@ -13,7 +13,6 @@ import Control.Monad.Hefty.Interpret (interposeBy, interpret, interpretH, runEff
 import Control.Monad.Hefty.Types (type (:!!))
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect.OpenUnion.Internal.FO (type (<|))
-import Data.Effect.OpenUnion.Internal.HO (HFunctors)
 import Data.Effect.TH (makeEffectF, makeEffectH)
 import Data.Function ((&))
 
@@ -23,7 +22,7 @@ data Fork a where
     Fork :: Fork ForkID
 makeEffectF [''Fork]
 
-runForkSingle :: (HFunctors eh) => eh :!! Fork ': r ~> eh :!! r
+runForkSingle :: eh :!! Fork ': r ~> eh :!! r
 runForkSingle = interpret \Fork -> pure 0
 
 data ResetFork f a where

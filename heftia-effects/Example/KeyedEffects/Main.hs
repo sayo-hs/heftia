@@ -15,7 +15,6 @@ import Control.Monad.Hefty.Types (type (:!!))
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect.Key (unKey, type (#>))
 import Data.Effect.OpenUnion.Internal.FO (MemberBy, type (<|))
-import Data.Effect.OpenUnion.Internal.HO (HFunctors)
 import Data.Effect.TH (makeEffectF)
 
 data Teletype a where
@@ -24,7 +23,7 @@ data Teletype a where
 
 makeEffectF [''Teletype]
 
-teletypeToIO :: (IO <| r, HFunctors eh) => eh :!! Teletype ': r ~> eh :!! r
+teletypeToIO :: (IO <| r) => eh :!! Teletype ': r ~> eh :!! r
 teletypeToIO = interpret \case
     ReadTTY -> liftIO getLine
     WriteTTY msg -> liftIO $ putStrLn msg
@@ -36,7 +35,7 @@ echo = do
         "" -> pure ()
         _ -> writeTTY'' @"tty1" i >> echo
 
-strong :: (MemberBy "tty1" Teletype ef, HFunctors eh) => eh :!! ef ~> eh :!! ef
+strong :: (MemberBy "tty1" Teletype ef) => eh :!! ef ~> eh :!! ef
 strong =
     interpose @("tty1" #> _) \e -> case unKey e of
         ReadTTY -> readTTY'' @"tty1"

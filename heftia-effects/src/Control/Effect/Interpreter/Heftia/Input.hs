@@ -13,7 +13,6 @@ module Control.Effect.Interpreter.Heftia.Input where
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
 import Control.Effect.Interpreter.Heftia.State (evalState)
-import Control.Monad.Hefty (HFunctors)
 import Control.Monad.Hefty.Interpret (interpret)
 import Control.Monad.Hefty.Transform (raiseUnder)
 import Control.Monad.Hefty.Types (Eff)
@@ -23,15 +22,13 @@ import Data.List (uncons)
 
 runInputEff
     :: forall i ef eh
-     . (HFunctors eh)
-    => Eff eh ef i
+     . Eff eh ef i
     -> Eff eh (Input i ': ef) ~> Eff eh ef
 runInputEff a = interpret \Input -> a
 
 runInputConst
     :: forall i ef eh
-     . (HFunctors eh)
-    => i
+     . i
     -> Eff eh (Input i ': ef) ~> Eff eh ef
 runInputConst i = interpret \Input -> pure i
 

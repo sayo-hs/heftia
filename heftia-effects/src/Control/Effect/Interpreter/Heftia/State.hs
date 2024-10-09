@@ -25,7 +25,6 @@ import Control.Monad.Hefty.Interpret.State (
  )
 import Control.Monad.Hefty.Types (Eff)
 import Data.Effect.OpenUnion.Internal.FO (type (<|))
-import Data.Effect.OpenUnion.Internal.HO (HFunctors)
 import Data.Effect.Reader (Ask (Ask), ask)
 import Data.Effect.State (State (Get, Put), get, put)
 import Data.Function ((&))
@@ -42,7 +41,7 @@ evalState s0 = interpretStateBy s0 (const pure) handleState
 execState :: forall s ef a. s -> Eff '[] (State s ': ef) a -> Eff '[] ef s
 execState s0 = interpretStateBy s0 (\s _ -> pure s) handleState
 
-runStateRec :: forall s ef eh. (HFunctors eh) => s -> Eff eh (State s ': ef) ~> Eff eh ef
+runStateRec :: forall s ef eh. s -> Eff eh (State s ': ef) ~> Eff eh ef
 runStateRec s0 = interpretStateRecWith s0 handleState
 
 handleState :: StateInterpreter s (State s) (Eff eh r) ans
@@ -53,7 +52,7 @@ handleState = \case
 
 runStateIORef
     :: forall s ef eh a
-     . (IO <| ef, HFunctors eh)
+     . (IO <| ef)
     => s
     -> Eff eh (State s ': ef) a
     -> Eff eh ef (s, a)
@@ -82,7 +81,7 @@ runStateNaive s0 m = do
     f s0
 
 -- | A naive but somewhat slower version of 'runStateRec' that does not use ad-hoc optimizations.
-runStateNaiveRec :: forall s ef eh. (HFunctors eh) => s -> Eff eh (State s ': ef) ~> Eff eh ef
+runStateNaiveRec :: forall s ef eh. s -> Eff eh (State s ': ef) ~> Eff eh ef
 runStateNaiveRec s0 =
     raiseUnder
         >>> interpretRecWith \case

@@ -12,7 +12,6 @@ import Control.Monad.Hefty.Types (send, (:!!))
 import Data.Effect.Concurrent.Timer (CyclicTimer (Wait), Timer (..), clock, cyclicTimer)
 import Data.Effect.Coroutine (Status (Continue, Done))
 import Data.Effect.OpenUnion.Internal.FO (type (<|))
-import Data.Effect.OpenUnion.Internal.HO (HFunctors)
 import Data.Effect.State (get, put)
 import Data.Function ((&))
 import Data.Time (DiffTime)
@@ -23,7 +22,7 @@ import UnliftIO (liftIO)
 
 runTimerIO
     :: forall eh ef
-     . (IO <| ef, HFunctors eh)
+     . (IO <| ef)
     => eh :!! Timer ': ef ~> eh :!! ef
 runTimerIO =
     interpret \case
@@ -48,7 +47,7 @@ runCyclicTimer a = do
                     Continue () k -> put =<< raise (k delta)
         & evalState timer0
 
-restartClock :: (Timer <| ef, HFunctors eh) => eh :!! ef ~> eh :!! ef
+restartClock :: (Timer <| ef) => eh :!! ef ~> eh :!! ef
 restartClock a = do
     t0 <- clock
     a & interpose \case

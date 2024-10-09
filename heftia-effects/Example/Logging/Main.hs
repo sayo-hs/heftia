@@ -31,7 +31,7 @@ import Control.Monad.Hefty.Transform (
 import Control.Monad.Hefty.Types (type (!!), type (:!!), type (~~>))
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Effect.OpenUnion.Internal.FO (type (<|))
-import Data.Effect.OpenUnion.Internal.HO (HFunctors, type (<<|))
+import Data.Effect.OpenUnion.Internal.HO (type (<<|))
 import Data.Effect.Reader (Ask, Local, ask, local)
 import Data.Effect.State (get, modify)
 import Data.Effect.TH (makeEffectF, makeEffectH)
@@ -47,17 +47,17 @@ data Log a where
     Logging :: Text -> Log ()
 makeEffectF [''Log]
 
-logToIO :: (IO <| r, HFunctors eh) => eh :!! Log ': r ~> eh :!! r
+logToIO :: (IO <| r) => eh :!! Log ': r ~> eh :!! r
 logToIO = interpret \(Logging msg) -> liftIO $ T.putStrLn msg
 
 data Time a where
     CurrentTime :: Time UTCTime
 makeEffectF [''Time]
 
-timeToIO :: (IO <| r, HFunctors eh) => eh :!! Time ': r ~> eh :!! r
+timeToIO :: (IO <| r) => eh :!! Time ': r ~> eh :!! r
 timeToIO = interpret \CurrentTime -> liftIO getCurrentTime
 
-logWithTime :: (Log <| ef, Time <| ef, HFunctors eh) => eh :!! ef ~> eh :!! ef
+logWithTime :: (Log <| ef, Time <| ef) => eh :!! ef ~> eh :!! ef
 logWithTime = interpose \(Logging msg) -> do
     t <- currentTime
     logging $ "[" <> iso8601 t <> "] " <> msg
@@ -76,7 +76,7 @@ data LogChunk f (a :: Type) where
 makeEffectH [''LogChunk]
 
 -- | Ignore chunk names and output logs in log chunks as they are.
-runLogChunk :: (HFunctors eh) => LogChunk ': eh :!! ef ~> eh :!! ef
+runLogChunk :: LogChunk ': eh :!! ef ~> eh :!! ef
 runLogChunk = interpretH \(LogChunk _ m) -> m
 
 data FileSystem a where
@@ -84,7 +84,7 @@ data FileSystem a where
     WriteToFile :: FilePath -> Text -> FileSystem ()
 makeEffectF [''FileSystem]
 
-runDummyFS :: (IO <| r, HFunctors eh) => eh :!! FileSystem ': r ~> eh :!! r
+runDummyFS :: (IO <| r) => eh :!! FileSystem ': r ~> eh :!! r
 runDummyFS = interpret \case
     Mkdir path ->
         liftIO $ putStrLn $ "<runDummyFS> mkdir " <> path
@@ -94,7 +94,7 @@ runDummyFS = interpret \case
 -- | Create directories according to the log-chunk structure and save one log in one file.
 saveLogChunk
     :: forall eh ef
-     . (LogChunk <<| eh, Log <| ef, FileSystem <| ef, Time <| ef, HFunctors eh)
+     . (LogChunk <<| eh, Log <| ef, FileSystem <| ef, Time <| ef)
     => eh :!! ef ~> eh :!! ef
 saveLogChunk =
     raise

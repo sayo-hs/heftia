@@ -59,7 +59,6 @@ import Data.Effect.OpenUnion.Internal.FO (
     type (<|),
  )
 import Data.Effect.OpenUnion.Internal.HO (
-    HFunctors,
     UnionH,
     bundleAllUnionH,
     bundleUnionH,
@@ -93,8 +92,7 @@ first-order effect @e'@.
 -}
 transform
     :: forall e e' ef eh
-     . (HFunctors eh)
-    => (e ~> e')
+     . (e ~> e')
     -> Eff eh (e ': ef) ~> Eff eh (e' ': ef)
 transform f = transEff (either weaken (inj . f) . decomp)
 {-# INLINE transform #-}
@@ -104,7 +102,7 @@ higher-order effect @e'@.
 -}
 transformH
     :: forall e e' eh ef
-     . (HFunctor e, HFunctors (e ': eh))
+     . (HFunctor e)
     => (e (Eff (e' ': eh) ef) ~> e' (Eff (e' ': eh) ef))
     -> Eff (e ': eh) ef ~> Eff (e' ': eh) ef
 transformH f = transEffH (either weakenH (injH . f) . decompH)
@@ -118,7 +116,7 @@ If multiple instances of @e'@ exist in the list, the one closest to the head
 -}
 translate
     :: forall e e' ef eh
-     . (e' <| ef, HFunctors eh)
+     . (e' <| ef)
     => (e ~> e')
     -> Eff eh (e ': ef) ~> Eff eh ef
 translate f = transEff (either id (inj . f) . decomp)
@@ -132,7 +130,7 @@ If multiple instances of @e'@ exist in the list, the one closest to the head
 -}
 translateH
     :: forall e e' eh ef
-     . (e' <<| eh, HFunctor e, HFunctors (e ': eh))
+     . (e' <<| eh, HFunctor e)
     => (e (Eff eh ef) ~> e' (Eff eh ef))
     -> Eff (e ': eh) ef ~> Eff eh ef
 translateH f = transEffH (either id (injH . f) . decompH)
@@ -145,7 +143,7 @@ If multiple instances of @e@ exist in the list, the one closest to the head
 -}
 rewrite
     :: forall e ef eh
-     . (e <| ef, HFunctors eh)
+     . (e <| ef)
     => (e ~> e)
     -> Eff eh ef ~> Eff eh ef
 rewrite f = transEff \u -> maybe u (inj . f) $ prj @e u
@@ -158,7 +156,7 @@ If multiple instances of @e@ exist in the list, the one closest to the head
 -}
 rewriteH
     :: forall e eh ef
-     . (e <<| eh, HFunctor e, HFunctors eh)
+     . (e <<| eh, HFunctor e)
     => (e (Eff eh ef) ~> e (Eff eh ef))
     -> Eff eh ef ~> Eff eh ef
 rewriteH f = transEffH \u -> maybe u (injH . f) $ prjH @e u
@@ -167,8 +165,7 @@ rewriteH f = transEffH \u -> maybe u (injH . f) $ prjH @e u
 -- | Transforms all first-order effects in the open union at once.
 transEff
     :: forall ef ef' eh
-     . (HFunctors eh)
-    => (Union ef ~> Union ef')
+     . (Union ef ~> Union ef')
     -> Eff eh ef ~> Eff eh ef'
 transEff = transEffHF id
 {-# INLINE transEff #-}
@@ -176,8 +173,7 @@ transEff = transEffHF id
 -- | Transforms all higher-order effects in the open union at once.
 transEffH
     :: forall eh eh' ef
-     . (HFunctors eh)
-    => (UnionH eh (Eff eh' ef) ~> UnionH eh' (Eff eh' ef))
+     . (UnionH eh (Eff eh' ef) ~> UnionH eh' (Eff eh' ef))
     -> Eff eh ef ~> Eff eh' ef
 transEffH f = transEffHF f id
 {-# INLINE transEffH #-}
@@ -187,8 +183,7 @@ once.
 -}
 transEffHF
     :: forall eh eh' ef ef'
-     . (HFunctors eh)
-    => (UnionH eh (Eff eh' ef') ~> UnionH eh' (Eff eh' ef'))
+     . (UnionH eh (Eff eh' ef') ~> UnionH eh' (Eff eh' ef'))
     -> (Union ef ~> Union ef')
     -> Eff eh ef ~> Eff eh' ef'
 transEffHF fh ff = loop
@@ -206,12 +201,12 @@ transEffHF fh ff = loop
 -- ** Insertion functions
 
 -- | Adds an arbitrary first-order effect @e@ to the head of the list.
-raise :: forall e ef eh. (HFunctors eh) => Eff eh ef ~> Eff eh (e ': ef)
+raise :: forall e ef eh. Eff eh ef ~> Eff eh (e ': ef)
 raise = transEff weaken
 {-# INLINE raise #-}
 
 -- | Adds multiple arbitrary first-order effects to the head of the list.
-raises :: (ef `IsSuffixOf` ef', HFunctors eh) => Eff eh ef ~> Eff eh ef'
+raises :: (ef `IsSuffixOf` ef') => Eff eh ef ~> Eff eh ef'
 raises = transEff weakens
 {-# INLINE raises #-}
 
@@ -220,7 +215,7 @@ of the list.
 -}
 raiseN
     :: forall len ef ef' eh
-     . (WeakenN len ef ef', HFunctors eh)
+     . (WeakenN len ef ef')
     => Eff eh ef ~> Eff eh ef'
 raiseN = transEff (weakenN @len)
 {-# INLINE raiseN #-}
@@ -230,8 +225,7 @@ list.
 -}
 raiseUnder
     :: forall e1 e2 ef eh
-     . (HFunctors eh)
-    => Eff eh (e1 ': ef) ~> Eff eh (e1 ': e2 ': ef)
+     . Eff eh (e1 ': ef) ~> Eff eh (e1 ': e2 ': ef)
 raiseUnder = transEff weakenUnder
 {-# INLINE raiseUnder #-}
 
@@ -240,7 +234,7 @@ below the head of the list.
 -}
 raisesUnder
     :: forall offset ef ef' eh
-     . (WeakenUnder offset ef ef', HFunctors eh)
+     . (WeakenUnder offset ef ef')
     => Eff eh ef ~> Eff eh ef'
 raisesUnder = transEff (weakensUnder @offset)
 {-# INLINE raisesUnder #-}
@@ -250,7 +244,7 @@ below the head of the list.
 -}
 raiseNUnder
     :: forall len offset ef ef' eh
-     . (WeakenNUnder len offset ef ef', HFunctors eh)
+     . (WeakenNUnder len offset ef ef')
     => Eff eh ef ~> Eff eh ef'
 raiseNUnder = transEff (weakenNUnder @len @offset)
 {-# INLINE raiseNUnder #-}
@@ -258,14 +252,14 @@ raiseNUnder = transEff (weakenNUnder @len @offset)
 {- | Adds a specified number @len@ of arbitrary higher-order effects to the head
 of the list.
 -}
-raiseH :: forall e eh ef. (HFunctors eh) => Eff eh ef ~> Eff (e ': eh) ef
+raiseH :: forall e eh ef. Eff eh ef ~> Eff (e ': eh) ef
 raiseH = transEffH weakenH
 {-# INLINE raiseH #-}
 
 {- | Inserts an arbitrary higher-order effect @e2@ just below the head of the
 list.
 -}
-raisesH :: (eh `IsSuffixOf` eh', HFunctors eh) => Eff eh ef ~> Eff eh' ef
+raisesH :: (eh `IsSuffixOf` eh') => Eff eh ef ~> Eff eh' ef
 raisesH = transEffH weakensH
 {-# INLINE raisesH #-}
 
@@ -274,7 +268,7 @@ of the list.
 -}
 raiseNH
     :: forall len eh eh' ef
-     . (WeakenN len eh eh', HFunctors eh)
+     . (WeakenN len eh eh')
     => Eff eh ef ~> Eff eh' ef
 raiseNH = transEffH (weakenNH @len)
 {-# INLINE raiseNH #-}
@@ -284,8 +278,7 @@ list.
 -}
 raiseUnderH
     :: forall e1 e2 eh ef
-     . (HFunctors (e1 ': eh))
-    => Eff (e1 ': eh) ef ~> Eff (e1 ': e2 ': eh) ef
+     . Eff (e1 ': eh) ef ~> Eff (e1 ': e2 ': eh) ef
 raiseUnderH = transEffH weakenUnderH
 {-# INLINE raiseUnderH #-}
 
@@ -294,7 +287,7 @@ below the head of the list.
 -}
 raiseNUnderH
     :: forall len offset eh eh' ef
-     . (WeakenNUnder len offset eh eh', HFunctors eh)
+     . (WeakenNUnder len offset eh eh')
     => Eff eh ef ~> Eff eh' ef
 raiseNUnderH = transEffH (weakenNUnderH @len @offset)
 {-# INLINE raiseNUnderH #-}
@@ -309,7 +302,7 @@ If multiple candidates of @e@ exist in the list, the one closest to the head
 -}
 subsume
     :: forall e ef eh
-     . (e <| ef, HFunctors eh)
+     . (e <| ef)
     => Eff eh (e ': ef) ~> Eff eh ef
 subsume = transEff strengthen
 {-# INLINE subsume #-}
@@ -319,7 +312,7 @@ the same types that are below them.
 -}
 subsumes
     :: forall ef ef' eh
-     . (Strengthen ef ef', HFunctors eh)
+     . (Strengthen ef ef')
     => Eff eh ef ~> Eff eh ef'
 subsumes = transEff strengthens
 {-# INLINE subsumes #-}
@@ -329,7 +322,7 @@ list into effects of the same types that are below them.
 -}
 subsumeN
     :: forall len ef ef' eh
-     . (StrengthenN len ef ef', HFunctors eh)
+     . (StrengthenN len ef ef')
     => Eff eh ef ~> Eff eh ef'
 subsumeN = transEff (strengthenN @len)
 {-# INLINE subsumeN #-}
@@ -339,7 +332,7 @@ same type of effect @e2@ that is below it.
 -}
 subsumeUnder
     :: forall e2 e1 ef eh
-     . (e2 <| ef, HFunctors eh)
+     . (e2 <| ef)
     => Eff eh (e1 ': e2 ': ef) ~> Eff eh (e1 ': ef)
 subsumeUnder = transEff strengthenUnder
 {-# INLINE subsumeUnder #-}
@@ -349,7 +342,7 @@ effects of the same types that are below them.
 -}
 subsumesUnder
     :: forall offset ef ef' eh
-     . (StrengthenUnder offset ef ef', HFunctors eh)
+     . (StrengthenUnder offset ef ef')
     => Eff eh ef ~> Eff eh ef'
 subsumesUnder = transEff (strengthensUnder @offset)
 {-# INLINE subsumesUnder #-}
@@ -359,7 +352,7 @@ of the same types that are below them.
 -}
 subsumeNUnder
     :: forall len offset ef ef' eh
-     . (StrengthenNUnder len offset ef ef', HFunctors eh)
+     . (StrengthenNUnder len offset ef ef')
     => Eff eh ef ~> Eff eh ef'
 subsumeNUnder = transEff (strengthenNUnder @len @offset)
 {-# INLINE subsumeNUnder #-}
@@ -372,7 +365,7 @@ If multiple candidates of @e@ exist in the list, the one closest to the head
 -}
 subsumeH
     :: forall e eh ef
-     . (e <<| eh, HFunctors (e ': eh))
+     . (e <<| eh)
     => Eff (e ': eh) ef ~> Eff eh ef
 subsumeH = transEffH strengthenH
 {-# INLINE subsumeH #-}
@@ -382,7 +375,7 @@ the same types that are below them.
 -}
 subsumesH
     :: forall eh eh' ef
-     . (Strengthen eh eh', HFunctors eh)
+     . (Strengthen eh eh')
     => Eff eh ef ~> Eff eh' ef
 subsumesH = transEffH strengthensH
 {-# INLINE subsumesH #-}
@@ -392,7 +385,7 @@ list into effects of the same types that are below them.
 -}
 subsumeNH
     :: forall len eh eh' ef
-     . (StrengthenN len eh eh', HFunctors eh)
+     . (StrengthenN len eh eh')
     => Eff eh ef ~> Eff eh' ef
 subsumeNH = transEffH (strengthenNH @len)
 {-# INLINE subsumeNH #-}
@@ -402,7 +395,7 @@ same type of effect @e2@ that is below it.
 -}
 subsumeUnderH
     :: forall e2 e1 eh ef
-     . (e2 <<| eh, HFunctors (e1 ': e2 ': eh))
+     . (e2 <<| eh)
     => Eff (e1 ': e2 ': eh) ef ~> Eff (e1 ': eh) ef
 subsumeUnderH = transEffH strengthenUnderH
 {-# INLINE subsumeUnderH #-}
@@ -412,7 +405,7 @@ of the same types that are below them.
 -}
 subsumeNUnderH
     :: forall len offset eh eh' ef
-     . (StrengthenNUnder len offset eh eh', HFunctors eh)
+     . (StrengthenNUnder len offset eh eh')
     => Eff eh ef ~> Eff eh' ef
 subsumeNUnderH = transEffH (strengthenNUnderH @len @offset)
 {-# INLINE subsumeNUnderH #-}
@@ -424,7 +417,7 @@ an open union.
 -}
 bundle
     :: forall ef bundle rest eh
-     . (Split ef bundle rest, HFunctors eh)
+     . (Split ef bundle rest)
     => Eff eh ef ~> Eff eh (Union bundle ': rest)
 bundle = transEff bundleUnion
 {-# INLINE bundle #-}
@@ -434,7 +427,7 @@ element using an open union.
 -}
 bundleN
     :: forall len ef eh
-     . (KnownNat len, HFunctors eh)
+     . (KnownNat len)
     => Eff eh ef ~> Eff eh (Union (Take len ef) ': Drop len ef)
 bundleN = transEff (bundleUnionN @len)
 {-# INLINE bundleN #-}
@@ -442,7 +435,7 @@ bundleN = transEff (bundleUnionN @len)
 -- | Expands effects that have been bundled into an open union.
 unbundle
     :: forall ef bundle rest eh
-     . (Split ef bundle rest, HFunctors eh)
+     . (Split ef bundle rest)
     => Eff eh (Union bundle ': rest) ~> Eff eh ef
 unbundle = transEff unbundleUnion
 {-# INLINE unbundle #-}
@@ -450,7 +443,7 @@ unbundle = transEff unbundleUnion
 -- | Expands the first @len@ effects that have been bundled into an open union.
 unbundleN
     :: forall len ef eh
-     . (KnownNat len, HFunctors eh)
+     . (KnownNat len)
     => Eff eh (Union (Take len ef) ': Drop len ef) ~> Eff eh ef
 unbundleN = transEff (unbundleUnionN @len)
 {-# INLINE unbundleN #-}
@@ -460,7 +453,7 @@ element using an open union.
 -}
 bundleUnder
     :: forall offset bundle ef ef' eh
-     . (BundleUnder Union offset ef ef' bundle, HFunctors eh)
+     . (BundleUnder Union offset ef ef' bundle)
     => Eff eh ef ~> Eff eh ef'
 bundleUnder = transEff (bundleUnionUnder @offset)
 {-# INLINE bundleUnder #-}
@@ -472,18 +465,18 @@ below the head of the list.
 -}
 unbundleUnder
     :: forall offset bundle ef ef' eh
-     . (BundleUnder Union offset ef ef' bundle, HFunctors eh)
+     . (BundleUnder Union offset ef ef' bundle)
     => Eff eh ef' ~> Eff eh ef
 unbundleUnder = transEff (unbundleUnionUnder @offset)
 {-# INLINE unbundleUnder #-}
 
 -- | Bundles all first-order effects into a single open union.
-bundleAll :: (HFunctors eh) => Eff eh ef ~> Eff eh '[Union ef]
+bundleAll :: Eff eh ef ~> Eff eh '[Union ef]
 bundleAll = transEff bundleAllUnion
 {-# INLINE bundleAll #-}
 
 -- | Expands all first-order effects from a single open union.
-unbundleAll :: (HFunctors eh) => Eff eh '[Union ef] ~> Eff eh ef
+unbundleAll :: Eff eh '[Union ef] ~> Eff eh ef
 unbundleAll = transEff unbundleAllUnion
 {-# INLINE unbundleAll #-}
 
@@ -492,7 +485,7 @@ an open union.
 -}
 bundleH
     :: forall eh bundle rest ef
-     . (Split eh bundle rest, HFunctors eh)
+     . (Split eh bundle rest)
     => Eff eh ef ~> Eff (UnionH bundle ': rest) ef
 bundleH = transEffH bundleUnionH
 {-# INLINE bundleH #-}
@@ -500,7 +493,7 @@ bundleH = transEffH bundleUnionH
 -- | Expands effects that have been bundled into an open union.
 unbundleH
     :: forall eh bundle rest ef
-     . (Split eh bundle rest, HFunctors bundle, HFunctors rest)
+     . (Split eh bundle rest)
     => Eff (UnionH bundle ': rest) ef ~> Eff eh ef
 unbundleH = transEffH unbundleUnionH
 {-# INLINE unbundleH #-}
@@ -510,7 +503,7 @@ element using an open union.
 -}
 bundleUnderH
     :: forall offset bundle eh eh' ef
-     . (BundleUnder UnionH offset eh eh' bundle, HFunctors eh)
+     . (BundleUnder UnionH offset eh eh' bundle)
     => Eff eh ef ~> Eff eh' ef
 bundleUnderH = transEffH (bundleUnionUnderH @offset)
 {-# INLINE bundleUnderH #-}
@@ -520,18 +513,18 @@ below the head of the list.
 -}
 unbundleUnderH
     :: forall offset bundle eh eh' ef
-     . (BundleUnder UnionH offset eh eh' bundle, HFunctors eh')
+     . (BundleUnder UnionH offset eh eh' bundle)
     => Eff eh' ef ~> Eff eh ef
 unbundleUnderH = transEffH (unbundleUnionUnderH @offset)
 {-# INLINE unbundleUnderH #-}
 
 -- | Bundles all higher-order effects into a single open union.
-bundleAllH :: (HFunctors eh) => Eff eh ef ~> Eff '[UnionH eh] ef
+bundleAllH :: Eff eh ef ~> Eff '[UnionH eh] ef
 bundleAllH = transEffH bundleAllUnionH
 {-# INLINE bundleAllH #-}
 
 -- | Expands all higher-order effects from a single open union.
-unbundleAllH :: (HFunctors eh) => Eff '[UnionH eh] ef ~> Eff eh ef
+unbundleAllH :: Eff '[UnionH eh] ef ~> Eff eh ef
 unbundleAllH = transEffH unbundleAllUnionH
 {-# INLINE unbundleAllH #-}
 
@@ -540,16 +533,14 @@ unbundleAllH = transEffH unbundleAllUnionH
 -- | Attaches the @tag@ to the first-order effect at the head of the list.
 tag
     :: forall tag e ef eh
-     . (HFunctors eh)
-    => Eff eh (e ': ef) ~> Eff eh (e # tag ': ef)
+     . Eff eh (e ': ef) ~> Eff eh (e # tag ': ef)
 tag = transform Tag
 {-# INLINE tag #-}
 
 -- | Removes the @tag@ from the tagged first-order effect at the head of the list.
 untag
     :: forall tag e ef eh
-     . (HFunctors eh)
-    => Eff eh (e # tag ': ef) ~> Eff eh (e ': ef)
+     . Eff eh (e # tag ': ef) ~> Eff eh (e ': ef)
 untag = transform unTag
 {-# INLINE untag #-}
 
@@ -558,15 +549,14 @@ to another tag @tag'@.
 -}
 retag
     :: forall tag' tag e ef eh
-     . (HFunctors eh)
-    => Eff eh (e # tag ': ef) ~> Eff eh (e # tag' ': ef)
+     . Eff eh (e # tag ': ef) ~> Eff eh (e # tag' ': ef)
 retag = transform $ Tag . unTag
 {-# INLINE retag #-}
 
 -- | Attaches the @tag@ to the higher-order effect at the head of the list.
 tagH
     :: forall tag e ef eh
-     . (HFunctor e, HFunctors (e ': eh))
+     . (HFunctor e)
     => Eff (e ': eh) ef ~> Eff (e ## tag ': eh) ef
 tagH = transformH TagH
 {-# INLINE tagH #-}
@@ -576,7 +566,7 @@ tagH = transformH TagH
 -}
 untagH
     :: forall tag e eh ef
-     . (HFunctor e, HFunctors (e ## tag ': eh))
+     . (HFunctor e)
     => Eff (e ## tag ': eh) ef ~> Eff (e ': eh) ef
 untagH = transformH unTagH
 {-# INLINE untagH #-}
@@ -586,7 +576,7 @@ to another tag @tag'@.
 -}
 retagH
     :: forall tag' tag e eh ef
-     . (HFunctor e, HFunctors (e ## tag ': eh))
+     . (HFunctor e)
     => Eff (e ## tag ': eh) ef ~> Eff (e ## tag' ': eh) ef
 retagH = transformH $ TagH . unTagH
 {-# INLINE retagH #-}
@@ -594,8 +584,7 @@ retagH = transformH $ TagH . unTagH
 -- | Removes the @key@ from the keyed first-order effect at the head of the list.
 unkey
     :: forall key e ef eh
-     . (HFunctors eh)
-    => Eff eh (key #> e ': ef) ~> Eff eh (e ': ef)
+     . Eff eh (key #> e ': ef) ~> Eff eh (e ': ef)
 unkey = transform unKey
 {-# INLINE unkey #-}
 
@@ -604,15 +593,14 @@ to another key @key'@.
 -}
 rekey
     :: forall key' key e ef eh
-     . (HFunctors eh)
-    => Eff eh (key #> e ': ef) ~> Eff eh (key' #> e ': ef)
+     . Eff eh (key #> e ': ef) ~> Eff eh (key' #> e ': ef)
 rekey = transform $ Key . unKey
 {-# INLINE rekey #-}
 
 -- | Removes the @key@ from the keyed higher-order effect at the head of the list.
 unkeyH
     :: forall key e eh ef
-     . (HFunctor e, HFunctors (key ##> e ': eh))
+     . (HFunctor e)
     => Eff (key ##> e ': eh) ef ~> Eff (e ': eh) ef
 unkeyH = transformH unKeyH
 {-# INLINE unkeyH #-}
@@ -622,7 +610,7 @@ to another key @key'@.
 -}
 rekeyH
     :: forall key' key e eh ef
-     . (HFunctor e, HFunctors (key ##> e ': eh))
+     . (HFunctor e)
     => Eff (key ##> e ': eh) ef ~> Eff (key' ##> e ': eh) ef
 rekeyH = transformH $ KeyH . unKeyH
 {-# INLINE rekeyH #-}

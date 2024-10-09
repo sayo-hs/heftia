@@ -19,7 +19,6 @@ import Control.Effect.Interpreter.Heftia.NonDet (runChooseH, runNonDet)
 import Control.Effect.Interpreter.Heftia.State (evalState)
 import Control.Effect.Interpreter.Heftia.Writer (runTell, runWriterHPre)
 import Control.Monad.Hefty (
-    HFunctors,
     interpret,
     runPure,
     type ($),
@@ -104,7 +103,7 @@ theIssue12 = do
     let action :: (Catch String <<| eh, Throw String <| ef, SomeEff <| ef) => eh :!! ef $ String
         action = someAction `catch` \(_ :: String) -> pure "caught"
 
-        runSomeEff :: (HFunctors eh, Throw String <| ef) => eh :!! SomeEff ': ef ~> eh :!! ef
+        runSomeEff :: (Throw String <| ef) => eh :!! SomeEff ': ef ~> eh :!! ef
         runSomeEff = interpret \SomeAction -> throw "not caught"
 
     putStr "interpret SomeEff then runCatch : ( runThrow . runCatch . runSomeEff $ action ) = "

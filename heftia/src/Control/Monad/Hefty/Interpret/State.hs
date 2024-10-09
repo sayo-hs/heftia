@@ -17,7 +17,7 @@ import Control.Monad.Hefty.Interpret (qApp)
 import Control.Monad.Hefty.Types (Eff (Op, Val), sendUnionBy, sendUnionHBy)
 import Data.Effect.OpenUnion.Internal (IsSuffixOf)
 import Data.Effect.OpenUnion.Internal.FO (Union, prj, weakens, (!+), type (<|))
-import Data.Effect.OpenUnion.Internal.HO (HFunctors, UnionH, hfmapUnion, nilH)
+import Data.Effect.OpenUnion.Internal.HO (UnionH, hfmapUnion, nilH)
 import Data.Kind (Type)
 
 -- | An ad-hoc stateful version of t'Control.Monad.Hefty.Types.Interpreter' for performance.
@@ -52,8 +52,7 @@ reinterpretStateBy s0 ret hdl =
 
 interpretStateRecWith
     :: forall s e ef eh a
-     . (HFunctors eh)
-    => s
+     . s
     -> (forall ans. StateInterpreter s e (Eff eh ef) ans)
     -> Eff eh (e ': ef) a
     -> Eff eh ef a
@@ -62,7 +61,7 @@ interpretStateRecWith = reinterpretStateRecWith
 
 reinterpretStateRecWith
     :: forall s e ef' ef eh a
-     . (ef `IsSuffixOf` ef', HFunctors eh)
+     . (ef `IsSuffixOf` ef')
     => s
     -> (forall ans. StateInterpreter s e (Eff eh ef') ans)
     -> Eff eh (e ': ef) a

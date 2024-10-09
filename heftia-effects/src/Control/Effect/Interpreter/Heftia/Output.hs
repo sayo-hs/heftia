@@ -16,7 +16,6 @@ import Control.Effect.Interpreter.Heftia.State (runState)
 import Control.Effect.Interpreter.Heftia.Writer (handleTell)
 import Control.Monad.Hefty (
     Eff,
-    HFunctors,
     interpret,
     interpretStateBy,
     raiseUnder,
@@ -27,15 +26,13 @@ import Data.Effect.Writer (Tell (Tell))
 
 runOutputEff
     :: forall o ef eh
-     . (HFunctors eh)
-    => (o -> Eff eh ef ())
+     . (o -> Eff eh ef ())
     -> Eff eh (Output o ': ef) ~> Eff eh ef
 runOutputEff f = interpret \(Output o) -> f o
 
 ignoreOutput
     :: forall o ef eh
-     . (HFunctors eh)
-    => Eff eh (Output o ': ef) ~> Eff eh ef
+     . Eff eh (Output o ': ef) ~> Eff eh ef
 ignoreOutput = runOutputEff $ const $ pure ()
 
 runOutputList

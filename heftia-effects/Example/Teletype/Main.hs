@@ -17,7 +17,6 @@ import Control.Monad.Hefty.Transform (untag)
 import Control.Monad.Hefty.Types (type (:!!))
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect.OpenUnion.Internal.FO (type (<|))
-import Data.Effect.OpenUnion.Internal.HO (HFunctors)
 import Data.Effect.TH (makeEffectF)
 import Data.Effect.Tag (Tag (unTag), type (#))
 
@@ -27,7 +26,7 @@ data Teletype a where
 
 makeEffectF [''Teletype]
 
-teletypeToIO :: (IO <| r, HFunctors eh) => eh :!! Teletype ': r ~> eh :!! r
+teletypeToIO :: (IO <| r) => eh :!! Teletype ': r ~> eh :!! r
 teletypeToIO = interpret \case
     ReadTTY -> liftIO getLine
     WriteTTY msg -> liftIO $ putStrLn msg
@@ -39,7 +38,7 @@ echo = do
         "" -> pure ()
         _ -> writeTTY' @"tty1" i >> echo
 
-strong :: (Teletype # "tty1" <| ef, HFunctors eh) => eh :!! ef ~> eh :!! ef
+strong :: (Teletype # "tty1" <| ef) => eh :!! ef ~> eh :!! ef
 strong =
     interpose @(_ # "tty1") \e -> case unTag e of
         ReadTTY -> readTTY' @"tty1"

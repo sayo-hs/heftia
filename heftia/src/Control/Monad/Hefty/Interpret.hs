@@ -35,18 +35,14 @@ import Data.Effect.OpenUnion.Internal.FO (
     type (<|),
  )
 import Data.Effect.OpenUnion.Internal.HO (
-    HFunctors,
     MemberH (prjH),
-    NotHFunctor,
     UnionH,
     extractH,
-    extractH_,
     hfmapUnion,
     nilH,
     weakenNH,
     weakensH,
     (!!+),
-    (!!+.),
     type (<<|),
  )
 import Data.FTCQueue (FTCQueue, ViewL (TOne, (:|)), tviewl, (><))
@@ -76,8 +72,7 @@ runPure = loop
 -- | Interprets the first-order effect @e@ at the head of the list using the provided natural transformation style handler.
 interpret
     :: forall e ef eh
-     . (HFunctors eh)
-    => (e ~> Eff eh ef)
+     . (e ~> Eff eh ef)
     -- ^ Effect handler
     -> Eff eh (e ': ef) ~> Eff eh ef
 interpret = reinterpret
@@ -112,8 +107,7 @@ Note that during interpretation, the continuational state is reset (delimited) a
 -}
 interpretRecWith
     :: forall e ef eh a
-     . (HFunctors eh)
-    => (forall ans. Interpreter e (Eff eh ef) ans)
+     . (forall ans. Interpreter e (Eff eh ef) ans)
     -- ^ Effect handler
     -> Eff eh (e ': ef) a
     -> Eff eh ef a
@@ -125,33 +119,12 @@ interpretRecWith = reinterpretRecWith
 -- | Interprets the higher-order effect @e@ at the head of the list using the provided natural transformation style elaborator.
 interpretH
     :: forall e eh ef
-     . (HFunctor e, HFunctors eh)
+     . (HFunctor e)
     => e ~~> Eff eh ef
     -- ^ Effect elaborator
     -> Eff (e ': eh) ef ~> Eff eh ef
 interpretH = reinterpretH
 {-# INLINE interpretH #-}
-
-{- | Interprets the higher-order effect @e@ at the head of the list using the provided natural transformation style elaborator.
-
-For when the higher-order effect @e@ is not an 'HFunctor', e.g., the t'Data.Effect.ShiftReset.Shift' effect.
--}
-interpretH_
-    :: forall e eh ef
-     . (NotHFunctor e, HFunctors eh)
-    => e (Eff (e ': eh) ef) ~> Eff eh ef
-    -- ^ Effect elaborator
-    -> Eff (e ': eh) ef ~> Eff eh ef
-interpretH_ = reinterpretH_
-{-# INLINE interpretH_ #-}
-
-interpretFixH_
-    :: forall e eh ef
-     . (NotHFunctor e, HFunctors eh)
-    => (forall x. Eff (e ': eh) ef ~> Eff eh ef -> e (Eff (e ': eh) ef) x -> Eff eh ef x)
-    -> Eff (e ': eh) ef ~> Eff eh ef
-interpretFixH_ = reinterpretFixH_
-{-# INLINE interpretFixH_ #-}
 
 -- | Interprets the single higher-order effect @e@ using the provided continuational stateful elaborator.
 interpretHWith
@@ -177,22 +150,6 @@ interpretHBy
 interpretHBy = reinterpretHBy
 {-# INLINE interpretHBy #-}
 
-{- | Interprets the single higher-order effect @e@ using the provided value handler and continuational stateful elaborator.
-
-For when the higher-order effect @e@ is not an 'HFunctor', e.g., the t'Data.Effect.ShiftReset.Shift' effect.
--}
-interpretHBy_
-    :: forall e eh ef ans a
-     . (NotHFunctor e)
-    => (a -> Eff eh ef ans)
-    -- ^ Value handler
-    -> Interpreter (e (Eff '[e] ef)) (Eff eh ef) ans
-    -- ^ Effect elaborator
-    -> Eff '[e] ef a
-    -> Eff eh ef ans
-interpretHBy_ = reinterpretHBy_
-{-# INLINE interpretHBy_ #-}
-
 {- | Interprets the higher-order effect @e@ at the head of the list using the provided continuational stateful elaborator.
 
 Interpretation is performed recursively with respect to the scopes of unelaborated higher-order effects @eh@.
@@ -200,7 +157,7 @@ Note that during interpretation, the continuational state is reset (delimited) a
 -}
 interpretRecHWith
     :: forall e eh ef a
-     . (HFunctor e, HFunctors eh)
+     . (HFunctor e)
     => (forall ans. Elaborator e (Eff eh ef) ans)
     -- ^ Effect elaborator
     -> Eff (e ': eh) ef a
@@ -208,30 +165,13 @@ interpretRecHWith
 interpretRecHWith = reinterpretRecHWith
 {-# INLINE interpretRecHWith #-}
 
-{- | Interprets the higher-order effect @e@ at the head of the list using the provided continuational stateful elaborator.
-
-Interpretation is performed recursively with respect to the scopes of unelaborated higher-order effects @eh@.
-Note that during interpretation, the continuational state is reset (delimited) and does not persist beyond scopes.
-
-For when the higher-order effect @e@ is not an 'HFunctor', e.g., the t'Data.Effect.ShiftReset.Shift' effect.
--}
-interpretRecHWith_
-    :: forall e eh ef a
-     . (NotHFunctor e, HFunctors eh)
-    => (forall ans. Interpreter (e (Eff (e ': eh) ef)) (Eff eh ef) ans)
-    -- ^ Effect elaborator
-    -> Eff (e ': eh) ef a
-    -> Eff eh ef a
-interpretRecHWith_ = reinterpretRecHWith_
-{-# INLINE interpretRecHWith_ #-}
-
 -- * Reinterpretation functions
 
 -- ** For first-order effects
 
 reinterpret
     :: forall e ef' ef eh
-     . (ef `IsSuffixOf` ef', HFunctors eh)
+     . (ef `IsSuffixOf` ef')
     => (e ~> Eff eh ef')
     -> Eff eh (e ': ef) ~> Eff eh ef'
 reinterpret f = reinterpretRecWith (stateless f)
@@ -239,7 +179,7 @@ reinterpret f = reinterpretRecWith (stateless f)
 
 reinterpretN
     :: forall n e ef' ef eh
-     . (WeakenN n ef ef', HFunctors eh)
+     . (WeakenN n ef ef')
     => (e ~> Eff eh ef')
     -> Eff eh (e ': ef) ~> Eff eh ef'
 reinterpretN f = reinterpretRecNWith @n (stateless f)
@@ -285,7 +225,7 @@ reinterpretNBy ret hdl = iterAllEffHFBy ret nilH (hdl !+ flip sendUnionBy . weak
 
 reinterpretRecWith
     :: forall e ef' ef eh a
-     . (ef `IsSuffixOf` ef', HFunctors eh)
+     . (ef `IsSuffixOf` ef')
     => (forall ans. Interpreter e (Eff eh ef') ans)
     -> Eff eh (e ': ef) a
     -> Eff eh ef' a
@@ -297,7 +237,7 @@ reinterpretRecWith hdl = loop
 
 reinterpretRecNWith
     :: forall n e ef' ef eh a
-     . (WeakenN n ef ef', HFunctors eh)
+     . (WeakenN n ef ef')
     => (forall ans. Interpreter e (Eff eh ef') ans)
     -> Eff eh (e ': ef) a
     -> Eff eh ef' a
@@ -311,34 +251,15 @@ reinterpretRecNWith hdl = loop
 
 reinterpretH
     :: forall e eh eh' ef
-     . (HFunctor e, eh `IsSuffixOf` eh', HFunctors eh)
+     . (HFunctor e, eh `IsSuffixOf` eh')
     => e ~~> Eff eh' ef
     -> Eff (e ': eh) ef ~> Eff eh' ef
 reinterpretH elb = reinterpretRecHWith (stateless elb)
 {-# INLINE reinterpretH #-}
 
-reinterpretH_
-    :: forall e eh eh' ef
-     . (NotHFunctor e, eh `IsSuffixOf` eh', HFunctors eh)
-    => e (Eff (e ': eh) ef) ~> Eff eh' ef
-    -> Eff (e ': eh) ef ~> Eff eh' ef
-reinterpretH_ elb = reinterpretRecHWith_ (stateless elb)
-{-# INLINE reinterpretH_ #-}
-
-reinterpretFixH_
-    :: forall e eh eh' ef
-     . (NotHFunctor e, eh `IsSuffixOf` eh', HFunctors eh)
-    => (forall x. Eff (e ': eh) ef ~> Eff eh' ef -> e (Eff (e ': eh) ef) x -> Eff eh' ef x)
-    -> Eff (e ': eh) ef ~> Eff eh' ef
-reinterpretFixH_ elb = loop
-  where
-    loop :: Eff (e ': eh) ef ~> Eff eh' ef
-    loop = reinterpretRecHWith_ (stateless (elb loop))
-{-# INLINE reinterpretFixH_ #-}
-
 reinterpretNH
     :: forall n e eh eh' ef
-     . (HFunctor e, WeakenN n eh eh', HFunctors eh)
+     . (HFunctor e, WeakenN n eh eh')
     => e ~~> Eff eh' ef
     -> Eff (e ': eh) ef ~> Eff eh' ef
 reinterpretNH elb = reinterpretRecNHWith @n (stateless elb)
@@ -372,16 +293,6 @@ reinterpretHBy
 reinterpretHBy ret elb = iterAllEffHFBy ret (elb . extractH) (flip sendUnionBy)
 {-# INLINE reinterpretHBy #-}
 
-reinterpretHBy_
-    :: forall e eh ef ans a
-     . (NotHFunctor e)
-    => (a -> Eff eh ef ans)
-    -> Interpreter (e (Eff '[e] ef)) (Eff eh ef) ans
-    -> Eff '[e] ef a
-    -> Eff eh ef ans
-reinterpretHBy_ ret elb = iterAllEffHFBy ret (elb . extractH_) (flip sendUnionBy)
-{-# INLINE reinterpretHBy_ #-}
-
 reinterpretNHBy
     :: forall n e eh ef ans a
      . (HFunctor e, WeakenN n '[] eh)
@@ -394,7 +305,7 @@ reinterpretNHBy = reinterpretHBy
 
 reinterpretRecHWith
     :: forall e eh eh' ef a
-     . (HFunctor e, eh `IsSuffixOf` eh', HFunctors eh)
+     . (HFunctor e, eh `IsSuffixOf` eh')
     => (forall ans. Elaborator e (Eff eh' ef) ans)
     -> Eff (e ': eh) ef a
     -> Eff eh' ef a
@@ -408,25 +319,9 @@ reinterpretRecHWith elb = loop
             (flip sendUnionBy)
 {-# INLINE reinterpretRecHWith #-}
 
-reinterpretRecHWith_
-    :: forall e eh eh' ef a
-     . (NotHFunctor e, eh `IsSuffixOf` eh', HFunctors eh)
-    => (forall ans. Interpreter (e (Eff (e ': eh) ef)) (Eff eh' ef) ans)
-    -> Eff (e ': eh) ef a
-    -> Eff eh' ef a
-reinterpretRecHWith_ elb = loop
-  where
-    loop :: Eff (e ': eh) ef ~> Eff eh' ef
-    loop =
-        iterAllEffHFBy
-            pure
-            (elb !!+. flip sendUnionHBy . weakensH . hfmapUnion loop)
-            (flip sendUnionBy)
-{-# INLINE reinterpretRecHWith_ #-}
-
 reinterpretRecNHWith
     :: forall n e eh eh' ef a
-     . (HFunctor e, WeakenN n eh eh', HFunctors eh)
+     . (HFunctor e, WeakenN n eh eh')
     => (forall ans. Elaborator e (Eff eh' ef) ans)
     -> Eff (e ': eh) ef a
     -> Eff eh' ef a
@@ -450,7 +345,7 @@ If multiple instances of @e@ exist in the list, the one closest to the head (wit
 -}
 interpose
     :: forall e ef eh
-     . (e <| ef, HFunctors eh)
+     . (e <| ef)
     => (e ~> Eff eh ef)
     -- ^ Effect handler
     -> Eff eh ef ~> Eff eh ef
@@ -496,7 +391,7 @@ If multiple instances of @e@ exist in the list, the one closest to the head (wit
 -}
 interposeRecWith
     :: forall e ef eh a
-     . (e <| ef, HFunctors eh)
+     . (e <| ef)
     => (forall ans. Interpreter e (Eff eh ef) ans)
     -- ^ Effect handler
     -> Eff eh ef a
@@ -518,7 +413,7 @@ If multiple instances of @e@ exist in the list, the one closest to the head (wit
 -}
 interposeH
     :: forall e eh ef
-     . (e <<| eh, HFunctor e, HFunctors eh)
+     . (e <<| eh, HFunctor e)
     => e ~~> Eff eh ef
     -- ^ Effect elaborator
     -> Eff eh ef ~> Eff eh ef
@@ -534,7 +429,7 @@ If multiple instances of @e@ exist in the list, the one closest to the head (wit
 -}
 interposeRecHWith
     :: forall e eh ef a
-     . (e <<| eh, HFunctor e, HFunctors eh)
+     . (e <<| eh, HFunctor e)
     => (forall ans. Elaborator e (Eff eh ef) ans)
     -- ^ Effect elaborator
     -> Eff eh ef a

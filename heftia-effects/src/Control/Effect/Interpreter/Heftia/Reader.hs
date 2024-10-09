@@ -15,7 +15,6 @@ module Control.Effect.Interpreter.Heftia.Reader where
 import Control.Effect (type (~>))
 import Control.Monad.Hefty (
     Eff,
-    HFunctors,
     interpose,
     interpret,
     interpretH,
@@ -27,28 +26,26 @@ import Data.Function ((&))
 
 runReader
     :: forall r eh ef
-     . (HFunctors eh)
-    => r
+     . r
     -> Eff (Local r ': eh) (Ask r ': ef) ~> Eff eh ef
 runReader r = runAsk r . runLocal
 
 -- | Elaborate the t'Local' effect.
 runLocal
     :: forall r eh ef
-     . (Ask r <| ef, HFunctors eh)
+     . (Ask r <| ef)
     => Eff (Local r ': eh) ef ~> Eff eh ef
 runLocal = interpretH elabLocal
 
 elabLocal
     :: forall r eh ef
-     . (Ask r <| ef, HFunctors eh)
+     . (Ask r <| ef)
     => Local r ~~> Eff eh ef
 elabLocal (Local f a) = a & interpose @(Ask r) \Ask -> f <$> ask
 
 -- | Interpret the t'Ask' effect.
 runAsk
     :: forall r ef eh
-     . (HFunctors eh)
-    => r
+     . r
     -> Eff eh (Ask r ': ef) ~> Eff eh ef
 runAsk r = interpret \Ask -> pure r

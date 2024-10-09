@@ -18,7 +18,6 @@ module Control.Effect.Interpreter.Heftia.Writer where
 import Control.Effect (type (~>))
 import Control.Monad.Hefty (
     Eff,
-    HFunctors,
     StateInterpreter,
     interpose,
     interposeStateBy,
@@ -92,7 +91,7 @@ censorPost f m = do
 
 censorPre
     :: forall w eh ef
-     . (Tell w <| ef, Monoid w, HFunctors eh)
+     . (Tell w <| ef, Monoid w)
     => (w -> w)
     -> Eff eh ef ~> Eff eh ef
 censorPre f = interpose @(Tell w) \(Tell w) -> tell $ f w

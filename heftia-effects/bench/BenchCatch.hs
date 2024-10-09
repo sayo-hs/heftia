@@ -40,7 +40,7 @@ catchHeftiaDeep3 n = H.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runThrow $
 catchHeftiaDeep4 n = H.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runThrow $ hrun $ H.runCatch @() $ hrun $ hrun $ hrun $ hrun $ programHeftia n
 catchHeftiaDeep5 n = H.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runThrow $ H.runCatch @() $ hrun $ hrun $ hrun $ hrun $ hrun $ programHeftia n
 
-hrun :: (H.HFunctors eh) => H.Eff eh (H.Ask () ': ef) a -> H.Eff eh ef a
+hrun :: H.Eff eh (H.Ask () ': ef) a -> H.Eff eh ef a
 hrun = H.runAsk ()
 
 programSem :: (P.Error () `P.Member` es) => Int -> P.Sem es a

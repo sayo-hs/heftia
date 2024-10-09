@@ -86,7 +86,7 @@ runEmpty =
         @choose :: m Bool@
 -}
 runChooseH
-    :: (Choose <| ef, HFunctors eh)
+    :: (Choose <| ef)
     => Eff (ChooseH ': eh) ef ~> Eff eh ef
 runChooseH = interpretH \(ChooseH a b) -> branch a b
 

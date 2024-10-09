@@ -31,10 +31,10 @@ data Span m (a :: Type) where
     Span :: String -> m a -> Span m a
 'makeEffectH' [''Span]
 
-runLog :: ('IO' t'Data.Effect.OpenUnion.<|' ef, 'HFunctors' eh) => 'Eff' eh (Log ': ef) t'Control.Effect.~>' 'Eff' eh ef
+runLog :: ('IO' t'Data.Effect.OpenUnion.<|' ef) => 'Eff' eh (Log ': ef) t'Control.Effect.~>' 'Eff' eh ef
 runLog = 'interpret' \\(Log msg) -> liftIO $ putStrLn $ "[LOG] " <> msg
 
-runSpan :: ('IO' t'Data.Effect.OpenUnion.<|' ef, 'HFunctors' eh) => 'Eff' (Span ': eh) ef t'Control.Effect.~>' 'Eff' eh ef
+runSpan :: ('IO' t'Data.Effect.OpenUnion.<|' ef) => 'Eff' (Span ': eh) ef t'Control.Effect.~>' 'Eff' eh ef
 runSpan = 'interpretH' \\(Span name m) -> do
     'liftIO' $ 'putStrLn' $ "[Start span '" <> name <> "']"
     r <- m
@@ -140,16 +140,34 @@ prog = 'runEff' . runLog . runSpan $ do
 
 = Naming Rules for Interpretation Functions
 
-1. Functions with an @H@, such as 'interpretH', are for higher-order effects, while those without are for first-order effects.
+1. Functions that perform recursive continuational stateful interpretation have @Rec@ additionally added.
+
+    * Non-recursive continuational stateful interpretation functions like 'interpretWith' cannot be used unless the higher-order effects are empty:
+
+        @
+        'interpretWith' :: e ~> Eff '[] ef => 'Eff' '[] (e ': ef) ~> 'Eff' '[] ef
+        @
+
+    * The @Rec@ versions can be used even when @eh@ is not empty.
+
+        @
+        'interpretRecWith' :: e ~> 'Eff' eh (e ': ef) ~> 'Eff' eh ef
+        @
+
+    * When using this type of function, pay attention to their /reset semantics/. This is discussed later.
+
+    * In principle, they cannot take value handlers, so there is no combination with @By@.
+
+2. Functions with an @H@, such as 'interpretH', are for higher-order effects, while those without are for first-order effects.
 
     @
-    'interpret' :: 'HFunctors' eh => e t'Control.Effect.~>' 'Eff' eh ef -> 'Eff' (e ': eh) ef ~> 'Eff' eh ef
-    'interpretH' :: 'HFunctors' eh => e ('Eff' eh ef) t'Control.Effect.~>' 'Eff' eh ef -> 'Eff' (e ': eh) ef t'Control.Effect.~>' 'Eff' eh ef
+    'interpret' :: e t'Control.Effect.~>' 'Eff' eh ef -> 'Eff' (e ': eh) ef ~> 'Eff' eh ef
+    'interpretH' :: e ('Eff' eh ef) t'Control.Effect.~>' 'Eff' eh ef -> 'Eff' (e ': eh) ef t'Control.Effect.~>' 'Eff' eh ef
     @
 
     Note: t'Control.Effect.~>' binds more tightly than @->@.
 
-2. Functions may additionally have @With@ or @By@ at the end of their names.
+3. Functions may additionally have @With@ or @By@ at the end of their names.
 
     * These provide functionality equivalent to "Algebraic Effects and Handlers," meaning they offer access to delimited continuations during interpretation.
 
@@ -165,34 +183,8 @@ prog = 'runEff' . runLog . runSpan $ do
         therefore, you cannot maintain internal state or perform behaviors like
         global escapes or non-deterministic computations during interpretation.
 
-3. Functions that perform recursive continuational stateful interpretation have @Rec@ additionally added.
-
-    * Non-recursive continuational stateful interpretation functions like 'interpretWith' cannot be used unless the higher-order effects are empty:
-
-        @
-        'interpretWith' :: e ~> Eff '[] ef => 'Eff' '[] (e ': ef) ~> 'Eff' '[] ef
-        @
-
-    * The @Rec@ versions can be used even when @eh@ is not empty, as long as all effects included in @eh@ are instances of @HFunctor@:
-
-        @
-        'interpretRecWith' :: 'HFunctors' eh => e ~> 'Eff' eh (e ': ef) ~> 'Eff' eh ef
-        @
-
-    * When using this type of function, pay attention to their /reset semantics/. This is discussed later.
-
-    * In principle, they cannot take value handlers, so there is no combination with @By@.
-
-4. For interpreting higher-order effects that do not have an instance of
-    'HFunctor', interpretation functions have an
-    underscore \'@_@\' added at the end.
-
-Function names combine the above four attributes.
+Function names combine the above three attributes.
 Examples of complex combinations include 'interpretHBy' and 'interpretRecHWith'.
-
-Even if a function for a theoretically possible combination does not exist, it's
-simply due to the large number of patterns not yet implemented. If you have
-requests, please submit an issue or pull request on [GitHub](https://github.com/sayo-hs/heftia).
 
 = Semantics of effects
 
@@ -204,7 +196,7 @@ data SomeEff a where
 'makeEffectF' [''SomeEff]
 
 -- | Throws an exception when \'SomeAction\' is encountered
-runSomeEff :: (@t'Data.Effect.Except.Throw'@ String t'Data.Effect.OpenUnion.<|' ef, 'HFunctors' eh) => 'Eff' eh (SomeEff ': ef) ~> 'Eff' eh ef
+runSomeEff :: (@t'Data.Effect.Except.Throw'@ String t'Data.Effect.OpenUnion.<|' ef) => 'Eff' eh (SomeEff ': ef) ~> 'Eff' eh ef
 runSomeEff = 'interpret' \\SomeAction -> v'Data.Effect.Except.throw' "not caught"
 
 -- | Catches the exception if \'someAction\' results in one
@@ -329,7 +321,7 @@ If you are not using @Rec@ functions, you don't need to pay particular attention
 @runStateRec@ is a variant of @runState@, a handler for the @State@ effect that can be used even when higher-order effects are unelaborated:
 
 @
-runStateRec :: 'HFunctors' eh => 'Eff' eh (@t'Data.Effect.State.State'@ s ': ef) t'Control.Effect.~>' 'Eff' eh ef
+runStateRec :: 'Eff' eh (@t'Data.Effect.State.State'@ s ': ef) t'Control.Effect.~>' 'Eff' eh ef
 runState ::  'Eff' '[] (@t'Data.Effect.State.State'@ s ': ef) t'Control.Effect.~>' 'Eff' '[] ef
 @
 
@@ -499,13 +491,9 @@ module Control.Monad.Hefty (
 
     -- *** For higher-order effects
     interpretH,
-    interpretH_,
-    interpretFixH_,
     interpretHWith,
     interpretHBy,
-    interpretHBy_,
     interpretRecHWith,
-    interpretRecHWith_,
 
     -- ** Reinterpretation functions
 
@@ -520,16 +508,12 @@ module Control.Monad.Hefty (
 
     -- *** For higher-order effects
     reinterpretH,
-    reinterpretH_,
-    reinterpretFixH_,
     reinterpretNH,
     reinterpretHWith,
     reinterpretNHWith,
     reinterpretHBy,
-    reinterpretHBy_,
     reinterpretNHBy,
     reinterpretRecHWith,
-    reinterpretRecHWith_,
     reinterpretRecNHWith,
 
     -- ** Interposition functions
@@ -668,14 +652,10 @@ import Control.Monad.Hefty.Interpret (
     interposeWith,
     interpret,
     interpretBy,
-    interpretFixH_,
     interpretH,
     interpretHBy,
-    interpretHBy_,
     interpretHWith,
-    interpretH_,
     interpretRecHWith,
-    interpretRecHWith_,
     interpretRecWith,
     interpretWith,
     iterAllEffHFBy,
@@ -687,12 +667,9 @@ import Control.Monad.Hefty.Interpret (
     iterEffRecHWith,
     reinterpret,
     reinterpretBy,
-    reinterpretFixH_,
     reinterpretH,
     reinterpretHBy,
-    reinterpretHBy_,
     reinterpretHWith,
-    reinterpretH_,
     reinterpretN,
     reinterpretNBy,
     reinterpretNH,
@@ -700,7 +677,6 @@ import Control.Monad.Hefty.Interpret (
     reinterpretNHWith,
     reinterpretNWith,
     reinterpretRecHWith,
-    reinterpretRecHWith_,
     reinterpretRecNHWith,
     reinterpretRecNWith,
     reinterpretRecWith,

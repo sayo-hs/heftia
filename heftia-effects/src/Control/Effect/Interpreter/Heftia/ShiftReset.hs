@@ -6,7 +6,6 @@ module Control.Effect.Interpreter.Heftia.ShiftReset where
 
 import Control.Monad.Hefty (
     Eff,
-    HFunctors,
     interpretH,
     interpretHBy,
     interpretRecHWith,
@@ -41,8 +40,8 @@ runShift f =
 withShift :: Eff '[ShiftFix ans '[] '[Eff eh ef]] '[Eff eh ef] ans -> Eff eh ef ans
 withShift = runEff . evalShift
 
-runShift_ :: forall r ef. (HFunctors r) => Eff (Shift_ (Eff r ef) ': r) ef ~> Eff r ef
+runShift_ :: forall r ef. Eff (Shift_ (Eff r ef) ': r) ef ~> Eff r ef
 runShift_ = interpretRecHWith \(KeyH (Shift_' f)) k -> f k id
 
-runReset :: forall r ef. (HFunctors r) => Eff (Reset ': r) ef ~> Eff r ef
+runReset :: forall r ef. Eff (Reset ': r) ef ~> Eff r ef
 runReset = interpretH \(Reset a) -> a

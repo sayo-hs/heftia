@@ -18,7 +18,6 @@ import Control.Monad.Hefty.Transform (raiseUnder)
 import Control.Monad.Hefty.Types (Eff)
 import Data.Effect.Fresh (Fresh (Fresh))
 import Data.Effect.OpenUnion.Internal.FO (type (<|))
-import Data.Effect.OpenUnion.Internal.HO (HFunctors)
 import Data.Effect.State (State, get, modify)
 import Numeric.Natural (Natural)
 
@@ -27,7 +26,7 @@ runFreshNatural =
     raiseUnder >>> runFreshNaturalAsState >>> runState 0
 
 runFreshNaturalAsState
-    :: (State Natural <| r, HFunctors eh)
+    :: (State Natural <| r)
     => Eff eh (Fresh Natural ': r) ~> Eff eh r
 runFreshNaturalAsState =
     interpret \Fresh -> get @Natural <* modify @Natural (+ 1)
