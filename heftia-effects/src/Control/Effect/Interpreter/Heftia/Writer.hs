@@ -15,7 +15,6 @@ See [README.md](https://github.com/sayo-hs/heftia/blob/master/README.md).
 -}
 module Control.Effect.Interpreter.Heftia.Writer where
 
-import Control.Effect (type (~>))
 import Control.Monad.Hefty (
     Eff,
     StateInterpreter,
@@ -25,6 +24,7 @@ import Control.Monad.Hefty (
     interpretStateBy,
     send,
     type (<|),
+    type (~>),
  )
 import Data.Effect.Writer (Tell (Tell), WriterH (Censor, Listen), tell)
 

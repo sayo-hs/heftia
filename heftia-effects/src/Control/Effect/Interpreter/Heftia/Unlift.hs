@@ -10,8 +10,7 @@ Portability :  portable
 -}
 module Control.Effect.Interpreter.Heftia.Unlift where
 
-import Control.Effect (type (~>))
-import Control.Monad.Hefty (Eff, interpretH, runEff, send0)
+import Control.Monad.Hefty (Eff, interpretH, runEff, send0, type (~>))
 import Data.Effect.Unlift (UnliftBase (WithRunInBase), UnliftIO)
 
 runUnliftBase :: forall b. (Monad b) => Eff '[UnliftBase b] '[b] ~> b

@@ -11,13 +11,18 @@ The original of this example can be found at polysemy.
 -}
 module Main where
 
-import Control.Effect (type (<:), type (~>))
-import Control.Monad.Hefty.Interpret (interpose, interpret, runEff)
-import Control.Monad.Hefty.Transform (untag)
-import Control.Monad.Hefty.Types (type (:!!))
-import Control.Monad.IO.Class (liftIO)
-import Data.Effect.OpenUnion.Internal.FO (type (<|))
-import Data.Effect.TH (makeEffectF)
+import Control.Monad.Hefty (
+    interpose,
+    interpret,
+    liftIO,
+    makeEffectF,
+    runEff,
+    untag,
+    type (:!!),
+    type (<:),
+    type (<|),
+    type (~>),
+ )
 import Data.Effect.Tag (Tag (unTag), type (#))
 
 data Teletype a where

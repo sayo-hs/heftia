@@ -9,13 +9,24 @@ import Control.Effect.Interpreter.Heftia.ShiftReset (ShiftFix, evalShift, runShi
 import Control.Effect.Interpreter.Heftia.State (evalState)
 import Control.Effect.Key (key)
 import Control.Monad.Extra (whenM)
-import Control.Monad.Hefty (Eff, raiseH, runEff, send, sendN, unkey, type (!!), type ($), type (+), type (:+:))
-import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Hefty (
+    Eff,
+    liftIO,
+    raiseH,
+    runEff,
+    send,
+    sendN,
+    unkey,
+    (&),
+    type (!!),
+    type ($),
+    type (+),
+    type (:+:),
+ )
 import Data.Effect.Key (type (#>))
 import Data.Effect.Reader (Ask, Local, ask, local)
 import Data.Effect.ShiftReset (Shift_, getCC, getCC_)
 import Data.Effect.State (State, get'', modify)
-import Data.Function ((&))
 import Data.Functor ((<&>))
 
 main :: IO ()

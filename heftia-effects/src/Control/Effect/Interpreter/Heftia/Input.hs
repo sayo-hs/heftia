@@ -11,11 +11,8 @@ Portability :  portable
 module Control.Effect.Interpreter.Heftia.Input where
 
 import Control.Arrow ((>>>))
-import Control.Effect (type (~>))
 import Control.Effect.Interpreter.Heftia.State (evalState)
-import Control.Monad.Hefty.Interpret (interpret)
-import Control.Monad.Hefty.Transform (raiseUnder)
-import Control.Monad.Hefty.Types (Eff)
+import Control.Monad.Hefty (Eff, interpret, raiseUnder, type (~>))
 import Data.Effect.Input (Input (Input))
 import Data.Effect.State (gets, put)
 import Data.List (uncons)

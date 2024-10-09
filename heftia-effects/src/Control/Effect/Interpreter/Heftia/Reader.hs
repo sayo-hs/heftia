@@ -12,17 +12,17 @@ Interpreters for the t'Ask' / t'Local' effects.
 -}
 module Control.Effect.Interpreter.Heftia.Reader where
 
-import Control.Effect (type (~>))
 import Control.Monad.Hefty (
     Eff,
     interpose,
     interpret,
     interpretH,
+    (&),
     type (<|),
+    type (~>),
     type (~~>),
  )
 import Data.Effect.Reader (Ask (..), Local (..), ask)
-import Data.Function ((&))
 
 runReader
     :: forall r eh ef

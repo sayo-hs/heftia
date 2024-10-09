@@ -10,12 +10,8 @@ Portability :  portable
 -}
 module Control.Effect.Interpreter.Heftia.Fail where
 
-import Control.Effect (type (~>))
-import Control.Monad.Hefty.Interpret (interpret)
-import Control.Monad.Hefty.Types (Eff)
-import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Hefty (Eff, interpret, liftIO, type (<|), type (~>))
 import Data.Effect.Fail (Fail (Fail))
-import Data.Effect.OpenUnion.Internal.FO (type (<|))
 
 runFailIO :: (IO <| ef) => Eff eh (Fail ': ef) ~> Eff eh ef
 runFailIO = interpret \(Fail s) -> liftIO $ fail s

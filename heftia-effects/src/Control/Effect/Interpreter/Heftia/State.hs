@@ -13,21 +13,24 @@ Interpreter for the t'Data.Effect.State.State' effect.
 module Control.Effect.Interpreter.Heftia.State where
 
 import Control.Arrow ((>>>))
-import Control.Effect (type (~>))
 import Control.Effect.Interpreter.Heftia.Reader (runAsk)
-import Control.Monad.Hefty (interpose, interpretBy, interpretRecWith, raiseUnder)
-import Control.Monad.Hefty.Interpret (interpret)
-import Control.Monad.Hefty.Interpret.State (
+import Control.Monad.Hefty (
+    Eff,
     StateInterpreter,
+    interpose,
     interposeStateBy,
+    interpret,
+    interpretBy,
+    interpretRecWith,
     interpretStateBy,
     interpretStateRecWith,
+    raiseUnder,
+    (&),
+    type (<|),
+    type (~>),
  )
-import Control.Monad.Hefty.Types (Eff)
-import Data.Effect.OpenUnion.Internal.FO (type (<|))
 import Data.Effect.Reader (Ask (Ask), ask)
 import Data.Effect.State (State (Get, Put), get, put)
-import Data.Function ((&))
 import Data.Functor ((<&>))
 import UnliftIO (newIORef, readIORef, writeIORef)
 

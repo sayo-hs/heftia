@@ -23,7 +23,7 @@ import Data.Effect.Resource (Resource (Bracket, BracketOnExcept))
 import Data.Effect.Unlift (UnliftIO)
 import UnliftIO (MonadUnliftIO, bracket, bracketOnError)
 
--- | Elaborates the `Resource` effect under the `MonadUnliftIO` context.
+-- | Elaborates the `Resource` effect under the `UnliftIO` context.
 runResourceIO
     :: (UnliftIO <<| eh, IO <| ef)
     => Eff (Resource ': eh) ef ~> Eff eh ef

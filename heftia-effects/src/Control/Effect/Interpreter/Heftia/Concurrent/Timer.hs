@@ -3,22 +3,27 @@
 module Control.Effect.Interpreter.Heftia.Concurrent.Timer where
 
 import Control.Concurrent.Thread.Delay qualified as Thread
-import Control.Effect (type (~>))
 import Control.Effect.Interpreter.Heftia.Coroutine (runCoroutine)
 import Control.Effect.Interpreter.Heftia.State (evalState)
-import Control.Monad.Hefty.Interpret (interpose, interpret)
-import Control.Monad.Hefty.Transform (raise, raiseUnder)
-import Control.Monad.Hefty.Types (send, (:!!))
+import Control.Monad.Hefty (
+    interpose,
+    interpret,
+    liftIO,
+    raise,
+    raiseUnder,
+    send,
+    (&),
+    type (:!!),
+    type (<|),
+    type (~>),
+ )
 import Data.Effect.Concurrent.Timer (CyclicTimer (Wait), Timer (..), clock, cyclicTimer)
 import Data.Effect.Coroutine (Status (Continue, Done))
-import Data.Effect.OpenUnion.Internal.FO (type (<|))
 import Data.Effect.State (get, put)
-import Data.Function ((&))
 import Data.Time (DiffTime)
 import Data.Time.Clock (diffTimeToPicoseconds, picosecondsToDiffTime)
 import Data.Void (Void, absurd)
 import GHC.Clock (getMonotonicTimeNSec)
-import UnliftIO (liftIO)
 
 runTimerIO
     :: forall eh ef

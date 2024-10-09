@@ -13,23 +13,23 @@ It can be confirmed that Heftia also realizes continuation-based semantics equiv
 module Main where
 
 import Control.Applicative ((<|>))
-import Control.Effect (type (~>))
 import Control.Effect.Interpreter.Heftia.Except (runCatch, runThrow)
 import Control.Effect.Interpreter.Heftia.NonDet (runChooseH, runNonDet)
 import Control.Effect.Interpreter.Heftia.State (evalState)
 import Control.Effect.Interpreter.Heftia.Writer (runTell, runWriterHPre)
 import Control.Monad.Hefty (
     interpret,
+    makeEffectF,
     runPure,
     type ($),
     type (:!!),
     type (<<|),
     type (<|),
+    type (~>),
  )
 import Data.Effect.Except (Catch, Throw, catch, throw)
 import Data.Effect.NonDet (ChooseH, Empty)
 import Data.Effect.State (State, get, put)
-import Data.Effect.TH (makeEffectF)
 import Data.Effect.Writer (Tell, WriterH, listen, tell)
 import Data.Functor (($>))
 import Data.Monoid (Sum (Sum))
@@ -84,12 +84,12 @@ nonDetPlusWriter = do
           where
             add = tell . Sum @Int
 
-    putStr "( runNonDet . runTell . elaborateWriter . runChooseH $ action ) = "
+    putStr "( runNonDet . runTell . runWriterH . runChooseH $ action ) = "
     print . map (\(Sum m, (Sum n, b)) -> (m, (n, b))) . runPure $
         runNonDet @[] . runTell @(Sum Int) . runWriterHPre @(Sum Int) . runChooseH $
             action
 
-    putStr "( runTell . runNonDet . elaborateWriter . runChooseH $ action ) = "
+    putStr "( runTell . runNonDet . runWriterH . runChooseH $ action ) = "
     print . (\(Sum m, xs) -> (m, map (\(Sum n, b) -> (n, b)) xs)) . runPure $
         runTell @(Sum Int) . runNonDet @[] . runWriterHPre @(Sum Int) . runChooseH $
             action
@@ -140,8 +140,8 @@ main = do
 ( runThrow . runNonDet . runCatch . runChooseH $ action2 ) = Right [False,True]
 
 # NonDet & Writer
-( runNonDet . runTell . elaborateWriter . runChooseH $ action ) = [(3,(3,True)),(4,(4,False))]
-( runTell . runNonDet . elaborateWriter . runChooseH $ action ) = (6,[(3,True),(4,False)])
+( runNonDet . runTell . runWriterH . runChooseH $ action ) = [(3,(3,True)),(4,(4,False))]
+( runTell . runNonDet . runWriterH . runChooseH $ action ) = (6,[(3,True),(4,False)])
 
 # https://github.com/hasura/eff/issues/12
 interpret SomeEff then runCatch : ( runThrow . runCatch . runSomeEff $ action ) = Right "caught"

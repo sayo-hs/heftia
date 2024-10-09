@@ -12,16 +12,25 @@ Interpreters for the t'Data.Effect.Except.Throw' / t'Data.Effect.Except.Catch' e
 -}
 module Control.Effect.Interpreter.Heftia.Except where
 
-import Control.Effect (type (~>))
 import Control.Exception (Exception)
-import Control.Monad.Hefty (bundleAllH, nilH, (!!+))
-import Control.Monad.Hefty.Interpret (interposeWith, interpret, interpretBy, interpretH)
-import Control.Monad.Hefty.Types (Eff, Interpreter, type (~~>))
+import Control.Monad.Hefty (
+    Eff,
+    Interpreter,
+    bundleAllH,
+    interposeWith,
+    interpret,
+    interpretBy,
+    interpretH,
+    nilH,
+    (!!+),
+    (&),
+    type (<<|),
+    type (<|),
+    type (~>),
+    type (~~>),
+ )
 import Data.Effect.Except (Catch (Catch), Throw (Throw))
-import Data.Effect.OpenUnion.Internal.FO (type (<|))
-import Data.Effect.OpenUnion.Internal.HO (type (<<|))
 import Data.Effect.Unlift (UnliftIO)
-import Data.Function ((&))
 import UnliftIO (throwIO)
 import UnliftIO qualified as IO
 

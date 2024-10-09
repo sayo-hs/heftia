@@ -29,7 +29,8 @@ extra-doc-files:
     README.md
 
 tested-with:
-    GHC == 9.2.8
+    GHC == 9.8.2
+    GHC == 9.4.1
 
 source-repository head
     type: git
@@ -53,7 +54,7 @@ common common-base
         PatternSynonyms
 
     build-depends:
-        base >= 4.16 && < 4.21,
+        base >= 4.17 && < 4.21,
         data-effects ^>= 0.2,
         heftia ^>= 0.4,
         time >= 1.11.1 && < 1.15,

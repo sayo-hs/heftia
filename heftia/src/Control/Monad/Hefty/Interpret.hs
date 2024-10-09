@@ -56,13 +56,11 @@ runEff = iterEffBy pure $ stateless id
 
 -- | Extracts the value from a computation that contains only pure values without any effect.
 runPure :: Eff '[] '[] a -> a
-runPure = loop
-  where
-    loop = \case
-        Val x -> x
-        Op u _ -> case u of
-            Left u' -> nilH u'
-            Right u' -> nil u'
+runPure = \case
+    Val x -> x
+    Op u _ -> case u of
+        Left u' -> nilH u'
+        Right u' -> nil u'
 {-# INLINE runPure #-}
 
 -- * Standard interpretation functions

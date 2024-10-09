@@ -7,15 +7,20 @@
 
 module Main where
 
-import Control.Effect (type (~>))
 import Control.Effect.Key (SendFOEBy)
-import Control.Monad.Hefty.Interpret (interpose, interpret, runEff)
-import Control.Monad.Hefty.Transform (unkey)
-import Control.Monad.Hefty.Types (type (:!!))
-import Control.Monad.IO.Class (liftIO)
+import Control.Monad.Hefty (
+    MemberBy,
+    interpose,
+    interpret,
+    liftIO,
+    makeEffectF,
+    runEff,
+    unkey,
+    type (:!!),
+    type (<|),
+    type (~>),
+ )
 import Data.Effect.Key (unKey, type (#>))
-import Data.Effect.OpenUnion.Internal.FO (MemberBy, type (<|))
-import Data.Effect.TH (makeEffectF)
 
 data Teletype a where
     ReadTTY :: Teletype String

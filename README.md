@@ -3,7 +3,7 @@
 [![Hackage](https://img.shields.io/hackage/v/heftia.svg?logo=haskell&label=heftia)](https://hackage.haskell.org/package/heftia)
 [![Hackage](https://img.shields.io/hackage/v/heftia-effects.svg?logo=haskell&label=heftia-effects)](https://hackage.haskell.org/package/heftia-effects)
 
-Heftia is an extensible effects library that generalizes Algebraic Effects and Handlers to higher-order effects, providing users with maximum flexibility and delivering standard and reasonable speed.
+Heftia is an extensible effects library that generalizes "Algebraic Effects and Handlers" to higher-order effects, providing users with maximum flexibility and delivering standard and reasonable speed.
 In its generalization, the focus is on ensuring predictable results based on simple, consistent semantics, while preserving soundness.
 
 Please refer to the [Haddock documentation](https://hackage.haskell.org/package/heftia-0.4.0.0/docs/Control-Monad-Hefty.html) for usage and semantics.
@@ -78,7 +78,8 @@ Example .cabal:
 ...
 ```
 
-This library has been tested to work with GHC 9.8.2.
+The supported versions are GHC 9.4.1 and later.
+This library has been tested with GHC 9.8.2 and 9.4.1.
 
 ## Getting Started
 
@@ -148,7 +149,7 @@ Post-applying: Hello world!!
 For more details, please refer to the [complete code](https://github.com/sayo-hs/heftia/blob/v0.4.0/heftia-effects/Example/Writer/Main.hs) and the [implementation of the elaborator](https://github.com/sayo-hs/heftia/blob/v0.4.0/heftia-effects/src/Control/Effect/Interpreter/Heftia/Writer.hs).
 
 ### Semantics Zoo
-To run the [SemanticsZoo example](https://github.com/sayo-hs/heftia/blob/08f5cfe6a8f5c0383ea2b02e93326552400f7fd3/heftia-effects/Example/SemanticsZoo/Main.hs):
+To run the [SemanticsZoo example](https://github.com/sayo-hs/heftia/blob/v0.4.0/heftia-effects/Example/SemanticsZoo/Main.hs):
 ```console
 $ git clone https://github.com/sayo-hs/heftia
 $ cd heftia/heftia-effects
@@ -165,8 +166,8 @@ $ cabal run exe:SemanticsZoo
 ( runThrow . runNonDet . runCatch . runChooseH $ action2 ) = Right [False,True]
 
 # NonDet & Writer
-( runNonDet . runTell . elaborateWriter . runChooseH $ action ) = [(3,(3,True)),(4,(4,False))]
-( runTell . runNonDet . elaborateWriter . runChooseH $ action ) = (6,[(3,True),(4,False)])
+( runNonDet . runTell . runWriterH . runChooseH $ action ) = [(3,(3,True)),(4,(4,False))]
+( runTell . runNonDet . runWriterH . runChooseH $ action ) = (6,[(3,True),(4,False)])
 
 # https://github.com/hasura/eff/issues/12
 interpret SomeEff then runCatch : ( runThrow . runCatch . runSomeEff $ action ) = Right "caught"
@@ -263,11 +264,9 @@ For more details, please refer to [performance.md](https://github.com/sayo-hs/he
     Also, it is not compatible with Effectful and eff.
 
 ## Future Plans
-* Support for Applicative effects.
+* Support for Applicative effects
 * Completing lacking definitions such as
     * interpreters for the `Accum` and others effects
-
-    and others.
 
 ## License
 The license is MPL 2.0. Please refer to the [NOTICE](https://github.com/sayo-hs/heftia/blob/v0.4.0/NOTICE).

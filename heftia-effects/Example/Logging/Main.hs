@@ -9,34 +9,38 @@
 module Main where
 
 import Control.Arrow ((>>>))
-import Control.Effect (type (<:), type (<<:), type (~>))
 import Control.Effect.Interpreter.Heftia.Reader (runReader)
 import Control.Effect.Interpreter.Heftia.State (evalState)
 import Control.Monad (when)
-import Control.Monad.Hefty (type (+))
-import Control.Monad.Hefty.Interpret (
+import Control.Monad.Hefty (
+    Type,
     interpose,
     interposeH,
     interpret,
     interpretH,
-    reinterpretH,
-    runEff,
- )
-import Control.Monad.Hefty.Transform (
+    liftIO,
+    makeEffectF,
+    makeEffectH,
     raise,
     raiseH,
     raiseUnder,
+    reinterpretH,
+    runEff,
     subsume,
+    (&),
+    type (!!),
+    type (+),
+    type (:!!),
+    type (<:),
+    type (<<:),
+    type (<<|),
+    type (<|),
+    type (~>),
+    type (~~>),
  )
-import Control.Monad.Hefty.Types (type (!!), type (:!!), type (~~>))
-import Control.Monad.IO.Class (MonadIO, liftIO)
-import Data.Effect.OpenUnion.Internal.FO (type (<|))
-import Data.Effect.OpenUnion.Internal.HO (type (<<|))
+import Control.Monad.IO.Class (MonadIO)
 import Data.Effect.Reader (Ask, Local, ask, local)
 import Data.Effect.State (get, modify)
-import Data.Effect.TH (makeEffectF, makeEffectH)
-import Data.Function ((&))
-import Data.Kind (Type)
 import Data.Text (Text)
 import Data.Text qualified as T
 import Data.Text.IO qualified as T

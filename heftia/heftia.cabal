@@ -7,13 +7,13 @@ synopsis: higher-order effects done right
 
 -- A longer description of the package.
 description:
-    Heftia is an extensible effects library that generalizes Algebraic Effects and Handlers to higher-order effects, providing users with maximum flexibility and delivering standard and reasonable speed.
+    Heftia is an extensible effects library that generalizes "Algebraic Effects and Handlers" to higher-order effects, providing users with maximum flexibility and delivering standard and reasonable speed.
     In its generalization, the focus is on ensuring predictable results based on simple, consistent semantics, while preserving soundness.
     .
     Please refer to the [Haddock documentation](https://hackage.haskell.org/package/heftia-0.4.0.0/docs/Control-Monad-Hefty.html) for usage and semantics.
     For information on performance, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/v0.4.0/benchmark/performance.md).
     .
-    The library allows the following effects with well-defined semantics and composability:
+    The library allows the following effects with well-defined semantics:
     .
     * Coroutines
     * Non-deterministic computations
@@ -51,7 +51,8 @@ extra-doc-files:
     README.md
 
 tested-with:
-    GHC == 9.2.8
+    GHC == 9.8.2
+    GHC == 9.4.1
 
 source-repository head
     type: git
@@ -91,7 +92,7 @@ library
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:
-        base                          >= 4.16 && < 4.21,
+        base                          >= 4.17 && < 4.21,
         data-effects                  ^>= 0.2,
         freer-simple                  ^>= 1.2.1.2,
         mtl                           >= 2.2.2 && < 2.4,

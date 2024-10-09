@@ -7,14 +7,20 @@
 
 module Main where
 
-import Control.Effect (type (~>))
-import Control.Monad.Hefty (type (~~>))
-import Control.Monad.Hefty.Interpret (interposeBy, interpret, interpretH, runEff)
-import Control.Monad.Hefty.Types (type (:!!))
-import Control.Monad.IO.Class (liftIO)
-import Data.Effect.OpenUnion.Internal.FO (type (<|))
-import Data.Effect.TH (makeEffectF, makeEffectH)
-import Data.Function ((&))
+import Control.Monad.Hefty (
+    interposeBy,
+    interpret,
+    interpretH,
+    liftIO,
+    makeEffectF,
+    makeEffectH,
+    runEff,
+    (&),
+    type (:!!),
+    type (<|),
+    type (~>),
+    type (~~>),
+ )
 
 type ForkID = Int
 

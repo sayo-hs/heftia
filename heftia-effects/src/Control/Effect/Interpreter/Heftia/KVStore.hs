@@ -15,13 +15,9 @@ in the @polysemy-kvstore@ package.
 module Control.Effect.Interpreter.Heftia.KVStore where
 
 import Control.Arrow ((>>>))
-import Control.Effect (type (~>))
 import Control.Effect.Interpreter.Heftia.State (runState)
-import Control.Monad.Hefty.Interpret (interpret)
-import Control.Monad.Hefty.Transform (raiseUnder)
-import Control.Monad.Hefty.Types (Eff)
+import Control.Monad.Hefty (Eff, interpret, raiseUnder, type (<|), type (~>))
 import Data.Effect.KVStore (KVStore (LookupKV, UpdateKV))
-import Data.Effect.OpenUnion.Internal.FO (type (<|))
 import Data.Effect.State (State, get, modify)
 import Data.Functor ((<&>))
 import Data.Map (Map)

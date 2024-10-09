@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
@@ -11,8 +13,20 @@ Portability :  portable
 module Control.Effect.Interpreter.Heftia.NonDet where
 
 import Control.Applicative (Alternative ((<|>)), empty, (<|>))
+#if ( __GLASGOW_HASKELL__ < 906 )
+import Control.Applicative (liftA2)
+#endif
 import Control.Arrow ((>>>))
-import Control.Monad.Hefty
+import Control.Monad.Hefty (
+    Eff,
+    bundleN,
+    interpretBy,
+    interpretH,
+    nil,
+    (!+),
+    type (<|),
+    type (~>),
+ )
 import Data.Bool (bool)
 import Data.Effect.NonDet (Choose (Choose), ChooseH (ChooseH), Empty (Empty), choose)
 
