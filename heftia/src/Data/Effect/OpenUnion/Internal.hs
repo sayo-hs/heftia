@@ -44,7 +44,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Copyright   :  (c) 2016 Allele Dev; 2017 Ixperta Solutions s.r.o.; 2017 Alexis King; 2024 Sayo Koyoneda
 License     :  MPL-2.0 (see the LICENSE file) AND BSD-3-Clause
 Maintainer  :  ymdfield@outlook.jp
-Stability   :  experimental
 Description :  Open unions (type-indexed co-products) for extensible effects.
 -}
 module Data.Effect.OpenUnion.Internal where

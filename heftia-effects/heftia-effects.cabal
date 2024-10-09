@@ -79,6 +79,7 @@ library
         Control.Effect.Interpreter.Heftia.Output
         Control.Effect.Interpreter.Heftia.Resource
         Control.Effect.Interpreter.Heftia.Unlift
+        Control.Effect.Interpreter.Heftia.Provider
         Control.Effect.Interpreter.Heftia.KVStore
         Control.Effect.Interpreter.Heftia.Fresh
         Control.Effect.Interpreter.Heftia.Fail
@@ -107,10 +108,9 @@ library
         Data.Effect.Coroutine,
         Data.Effect.Input,
         Data.Effect.Output,
-        Data.Effect.Provider,
-        Data.Effect.Provider.Implicit,
         Data.Effect.Resource,
         Data.Effect.Unlift,
+        Data.Effect.Provider,
         Data.Effect.KVStore,
         Data.Effect.Fresh,
         Data.Effect.Fail,
@@ -206,6 +206,14 @@ executable SemanticsZoo
 
     main-is: Main.hs
     hs-source-dirs: Example/SemanticsZoo
+    build-depends:
+        heftia-effects,
+
+executable FileSystemProvider
+    import: common-base
+
+    main-is: Main.hs
+    hs-source-dirs: Example/FileSystemProvider
     build-depends:
         heftia-effects,
 

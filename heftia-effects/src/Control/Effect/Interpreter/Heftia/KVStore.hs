@@ -6,7 +6,6 @@
 Copyright   :  (c) 2024 Sayo Koyoneda
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
-Stability   :  experimental
 Portability :  portable
 
 This module provides handlers for the t`KVStore` effect, comes

@@ -5,25 +5,15 @@
 module Main where
 
 import Control.Effect.Interpreter.Heftia.Reader (runReader)
-import Control.Effect.Interpreter.Heftia.ShiftReset (evalShift, runShift_)
+import Control.Effect.Interpreter.Heftia.ShiftReset (ShiftFix, evalShift, runShift_, unShiftBase)
 import Control.Effect.Interpreter.Heftia.State (evalState)
 import Control.Effect.Key (key)
 import Control.Monad.Extra (whenM)
-import Control.Monad.Hefty (
-    Eff,
-    runEff,
-    send,
-    sendN,
-    unkey,
-    type (!!),
-    type ($),
-    type (+),
-    type (:+:),
- )
+import Control.Monad.Hefty (Eff, raiseH, runEff, send, sendN, unkey, type (!!), type ($), type (+), type (:+:))
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect.Key (type (#>))
 import Data.Effect.Reader (Ask, Local, ask, local)
-import Data.Effect.ShiftReset (Shift, Shift_, getCC, getCC_)
+import Data.Effect.ShiftReset (Shift_, getCC, getCC_)
 import Data.Effect.State (State, get'', modify)
 import Data.Function ((&))
 import Data.Functor ((<&>))
@@ -76,9 +66,11 @@ handleReaderThenShift =
         & (evalState 0 . unkey)
         & runEff
   where
-    prog :: Eff '[Local Int] '[Ask Int, Eff '[Shift ()] '["counter" #> State Int, IO]] ()
+    prog
+        :: (r ~ '["counter" #> State Int, IO])
+        => Eff '[Local Int] '[Ask Int, Eff '[ShiftFix () '[] r] r] ()
     prog = do
-        k <- sendN @1 getCC
+        k <- sendN @1 $ getCC
         env <- ask @Int
         sendN @1 $ liftIO $ putStrLn $ "[local scope outer] env = " ++ show env
         local @Int (* 2) do
@@ -86,7 +78,7 @@ handleReaderThenShift =
                 sendN @1 $ modify (+ 1) & key @"counter"
                 env' <- ask @Int
                 sendN @1 $ liftIO $ putStrLn $ "[local scope inner] env = " ++ show env'
-                send k
+                send $ unShiftBase k
 
 handleShiftThenReader :: IO ()
 handleShiftThenReader = do
@@ -96,7 +88,9 @@ handleShiftThenReader = do
         & (evalState 0 . unkey)
         & runEff
   where
-    prog :: Shift_ :+: Local Int !! Ask Int + "counter" #> State Int + IO $ ()
+    prog
+        :: (r ~ (Ask Int + "counter" #> State Int + IO))
+        => Shift_ (Local Int !! r) :+: Local Int !! r $ ()
     prog = do
         k <- getCC_
         env <- ask @Int
@@ -106,4 +100,4 @@ handleShiftThenReader = do
                 modify (+ 1) & key @"counter"
                 env' <- ask @Int
                 liftIO $ putStrLn $ "[local scope inner] env = " ++ show env'
-                k
+                raiseH k

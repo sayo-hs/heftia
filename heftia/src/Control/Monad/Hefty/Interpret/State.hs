@@ -1,5 +1,15 @@
 -- SPDX-License-Identifier: MPL-2.0
 
+{- |
+Copyright   :  (c) 2024 Sayo Koyoneda
+License     :  MPL-2.0 (see the LICENSE file)
+Maintainer  :  ymdfield@outlook.jp
+
+This module provides an ad-hoc specialized version of
+ "Control.Monad.Hefty.Interpret" to accelerate interpretations that have a
+single state type @s@, especially for effects like t'Data.Effect.State.State' or
+ "Data.Effect.Writer".
+-}
 module Control.Monad.Hefty.Interpret.State where
 
 import Control.Effect (type (~>))
@@ -10,27 +20,13 @@ import Data.Effect.OpenUnion.Internal.FO (Union, prj, weakens, (!+), type (<|))
 import Data.Effect.OpenUnion.Internal.HO (HFunctors, UnionH, hfmapUnion, nilH)
 import Data.Kind (Type)
 
+-- | An ad-hoc stateful version of t'Control.Monad.Hefty.Types.Interpreter' for performance.
 type StateInterpreter s e m (ans :: Type) = forall x. e x -> s -> (s -> x -> m ans) -> m ans
 
+-- | An ad-hoc stateful version of t'Control.Monad.Hefty.Types.Elaborator' for performance.
 type StateElaborator s e m ans = StateInterpreter s (e m) m ans
 
-iterStateAllEffHFBy
-    :: forall s eh ef m ans a
-     . (Monad m)
-    => s
-    -> (s -> a -> m ans)
-    -> StateInterpreter s (UnionH eh (Eff eh ef)) m ans
-    -> StateInterpreter s (Union ef) m ans
-    -> Eff eh ef a
-    -> m ans
-iterStateAllEffHFBy s0 ret fh ff = loop s0
-  where
-    loop s = \case
-        Val x -> ret s x
-        Op u q -> either (`fh` s) (`ff` s) u k
-          where
-            k s' = loop s' . qApp q
-{-# INLINE iterStateAllEffHFBy #-}
+-- * Interpretation functions
 
 interpretStateBy
     :: forall s e ef ans a
@@ -82,6 +78,8 @@ reinterpretStateRecWith s0 hdl = loop s0
             (hdl !+ \u s' k -> sendUnionBy (k s') (weakens u))
 {-# INLINE reinterpretStateRecWith #-}
 
+-- * Interposition functions
+
 interposeStateBy
     :: forall s e ef ans a
      . (e <| ef)
@@ -94,5 +92,25 @@ interposeStateBy s0 ret f =
     iterStateAllEffHFBy s0 ret nilH \u s k ->
         maybe (sendUnionBy (k s) u) (\e -> f e s k) (prj @e u)
 {-# INLINE interposeStateBy #-}
+
+-- * Transformation to monads
+
+iterStateAllEffHFBy
+    :: forall s eh ef m ans a
+     . (Monad m)
+    => s
+    -> (s -> a -> m ans)
+    -> StateInterpreter s (UnionH eh (Eff eh ef)) m ans
+    -> StateInterpreter s (Union ef) m ans
+    -> Eff eh ef a
+    -> m ans
+iterStateAllEffHFBy s0 ret fh ff = loop s0
+  where
+    loop s = \case
+        Val x -> ret s x
+        Op u q -> either (`fh` s) (`ff` s) u k
+          where
+            k s' = loop s' . qApp q
+{-# INLINE iterStateAllEffHFBy #-}
 
 -- TODO: add other pattern functions.

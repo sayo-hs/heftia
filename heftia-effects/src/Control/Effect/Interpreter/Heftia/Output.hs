@@ -6,7 +6,6 @@
 Copyright   :  (c) 2024 Sayo Koyoneda
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
-Stability   :  experimental
 Portability :  portable
 -}
 module Control.Effect.Interpreter.Heftia.Output where
@@ -19,7 +18,6 @@ import Control.Monad.Hefty (
     Eff,
     HFunctors,
     interpret,
-    interpretRec,
     interpretStateBy,
     raiseUnder,
  )
@@ -32,7 +30,7 @@ runOutputEff
      . (HFunctors eh)
     => (o -> Eff eh ef ())
     -> Eff eh (Output o ': ef) ~> Eff eh ef
-runOutputEff f = interpretRec \(Output o) -> f o
+runOutputEff f = interpret \(Output o) -> f o
 
 ignoreOutput
     :: forall o ef eh

@@ -44,6 +44,14 @@ countdownHeftiaDeep n = H.runPure $ runR $ runR $ runR $ runR $ runR $ H.runStat
   where
     runR = H.runAsk ()
 
+countdownHeftiaNaive :: Int -> (Int, Int)
+countdownHeftiaNaive n = H.runPure $ H.runStateNaive n programHeftia
+
+countdownHeftiaNaiveDeep :: Int -> (Int, Int)
+countdownHeftiaNaiveDeep n = H.runPure $ runR $ runR $ runR $ runR $ runR $ H.runStateNaive n $ runR $ runR $ runR $ runR $ runR $ programHeftia
+  where
+    runR = H.runAsk ()
+
 programFreer :: (FS.Member (FS.State Int) es) => FS.Eff es Int
 programFreer = do
     x <- FS.get @Int

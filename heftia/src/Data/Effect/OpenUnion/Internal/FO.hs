@@ -44,7 +44,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Copyright   :  (c) 2016 Allele Dev; 2017 Ixperta Solutions s.r.o.; 2017 Alexis King; 2024 Sayo Koyoneda
 License     :  MPL-2.0 (see the LICENSE file) AND BSD-3-Clause
 Maintainer  :  ymdfield@outlook.jp
-Stability   :  experimental
 Description :  Open unions (type-indexed co-products) for extensible first-order effects.
 
 Implementation of an open union for first-order effects.
@@ -57,6 +56,7 @@ Based on [the open union in freer-simple](https://hackage.haskell.org/package/fr
 module Data.Effect.OpenUnion.Internal.FO where
 
 import Data.Coerce (coerce)
+import Data.Effect (EffectF)
 import Data.Effect.Key (type (#>))
 import Data.Effect.OpenUnion.Internal (
     BundleUnder,
@@ -92,9 +92,6 @@ import Data.Effect.OpenUnion.Internal (
 import Data.Kind (Type)
 import GHC.TypeNats (KnownNat, type (-))
 import Unsafe.Coerce (unsafeCoerce)
-
--- | Kind of first-order effects.
-type EffectF = Type -> Type
 
 -- | Open union for first-order effects.
 data Union (es :: [EffectF]) (a :: Type) where
@@ -144,7 +141,7 @@ For example, a computation that only needs access to a cell of mutable state
 containing an 'Integer' would likely use the following type:
 
 @
-'Member' ('Data.Effect.State.State' 'Integer') ef => 'Control.Monad.Hefty.Eff' eh ef ()
+'Data.Effect.State.State' 'Integer' t'Data.Effect.OpenUnion.<|' ef => 'Control.Monad.Hefty.Eff' eh ef ()
 @
 -}
 class (FindElem e es) => Member (e :: EffectF) es where

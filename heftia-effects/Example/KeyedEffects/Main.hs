@@ -9,7 +9,7 @@ module Main where
 
 import Control.Effect (type (~>))
 import Control.Effect.Key (SendFOEBy)
-import Control.Monad.Hefty.Interpret (interposeRec, interpretRec, runEff)
+import Control.Monad.Hefty.Interpret (interpose, interpret, runEff)
 import Control.Monad.Hefty.Transform (unkey)
 import Control.Monad.Hefty.Types (type (:!!))
 import Control.Monad.IO.Class (liftIO)
@@ -25,7 +25,7 @@ data Teletype a where
 makeEffectF [''Teletype]
 
 teletypeToIO :: (IO <| r, HFunctors eh) => eh :!! Teletype ': r ~> eh :!! r
-teletypeToIO = interpretRec \case
+teletypeToIO = interpret \case
     ReadTTY -> liftIO getLine
     WriteTTY msg -> liftIO $ putStrLn msg
 
@@ -38,7 +38,7 @@ echo = do
 
 strong :: (MemberBy "tty1" Teletype ef, HFunctors eh) => eh :!! ef ~> eh :!! ef
 strong =
-    interposeRec @("tty1" #> _) \e -> case unKey e of
+    interpose @("tty1" #> _) \e -> case unKey e of
         ReadTTY -> readTTY'' @"tty1"
         WriteTTY msg -> writeTTY'' @"tty1" $ msg <> "!"
 

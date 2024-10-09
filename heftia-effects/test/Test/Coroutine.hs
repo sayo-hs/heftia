@@ -3,10 +3,12 @@
 module Test.Coroutine where
 
 import Control.Effect.Interpreter.Heftia.Coroutine (runCoroutine)
-import Control.Monad
-import Control.Monad.Hefty
-import Data.Effect.Coroutine
-import Test.Hspec
+import Control.Monad (forM)
+import Control.Monad.Hefty.Interpret (runPure)
+import Control.Monad.Hefty.Types (Eff)
+import Data.Effect.Coroutine (Status (..), Yield, yield)
+import Data.Effect.OpenUnion.Internal.FO (type (<|))
+import Test.Hspec (Spec, it, shouldBe)
 
 generateSeq :: (Yield Int Int <| ef) => Int -> Eff '[] ef [Int]
 generateSeq n =
@@ -18,5 +20,5 @@ replyDouble = \case
     Continue i f -> replyDouble =<< f (i * 2)
 
 spec_Coroutine :: Spec
-spec_Coroutine = it "n = 5" do
+spec_Coroutine = it "Generator & Reply" do
     runPure (replyDouble =<< runCoroutine (generateSeq 5)) `shouldBe` [2, 4, 6, 8, 10]

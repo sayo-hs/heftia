@@ -20,7 +20,7 @@ import Control.Effect.Interpreter.Heftia.State (evalState)
 import Control.Effect.Interpreter.Heftia.Writer (runTell, runWriterHPre)
 import Control.Monad.Hefty (
     HFunctors,
-    interpretRec,
+    interpret,
     runPure,
     type ($),
     type (:!!),
@@ -105,7 +105,7 @@ theIssue12 = do
         action = someAction `catch` \(_ :: String) -> pure "caught"
 
         runSomeEff :: (HFunctors eh, Throw String <| ef) => eh :!! SomeEff ': ef ~> eh :!! ef
-        runSomeEff = interpretRec (\SomeAction -> throw "not caught")
+        runSomeEff = interpret \SomeAction -> throw "not caught"
 
     putStr "interpret SomeEff then runCatch : ( runThrow . runCatch . runSomeEff $ action ) = "
     print $ runPure $ runThrow @String . runCatch @String . runSomeEff $ action

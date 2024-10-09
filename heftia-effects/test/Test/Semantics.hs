@@ -13,7 +13,7 @@ import Control.Effect.Interpreter.Heftia.State (evalState)
 import Control.Effect.Interpreter.Heftia.Writer (runTell, runWriterHPre)
 import Control.Monad.Hefty (
     HFunctors,
-    interpretRec,
+    interpret,
     runPure,
     type ($),
     type (:!!),
@@ -82,7 +82,7 @@ spec_The_issue_12 = describe "hasura/eff#12 semantics" do
         action = someAction `catch` \(_ :: String) -> pure "caught"
 
         runSomeEff :: (HFunctors eh, Throw String <| ef) => eh :!! SomeEff ': ef ~> eh :!! ef
-        runSomeEff = interpretRec (\SomeAction -> throw "not caught")
+        runSomeEff = interpret (\SomeAction -> throw "not caught")
 
     it "runCatch . interpret (\\SomeAction -> throw \"not caught\") $ someAction `catch` \"caught\"  ==>  Right \"caught\"" do
         runPure (runThrow @String . runCatch @String . runSomeEff $ action) `shouldBe` Right "caught"

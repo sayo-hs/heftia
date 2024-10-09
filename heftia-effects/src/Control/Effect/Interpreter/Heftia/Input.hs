@@ -6,7 +6,6 @@
 Copyright   :  (c) 2024 Sayo Koyoneda
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
-Stability   :  experimental
 Portability :  portable
 -}
 module Control.Effect.Interpreter.Heftia.Input where
@@ -15,7 +14,7 @@ import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
 import Control.Effect.Interpreter.Heftia.State (evalState)
 import Control.Monad.Hefty (HFunctors)
-import Control.Monad.Hefty.Interpret (interpret, interpretRec)
+import Control.Monad.Hefty.Interpret (interpret)
 import Control.Monad.Hefty.Transform (raiseUnder)
 import Control.Monad.Hefty.Types (Eff)
 import Data.Effect.Input (Input (Input))
@@ -27,14 +26,14 @@ runInputEff
      . (HFunctors eh)
     => Eff eh ef i
     -> Eff eh (Input i ': ef) ~> Eff eh ef
-runInputEff a = interpretRec \Input -> a
+runInputEff a = interpret \Input -> a
 
 runInputConst
     :: forall i ef eh
      . (HFunctors eh)
     => i
     -> Eff eh (Input i ': ef) ~> Eff eh ef
-runInputConst i = interpretRec \Input -> pure i
+runInputConst i = interpret \Input -> pure i
 
 runInputList :: forall i r. [i] -> Eff '[] (Input (Maybe i) ': r) ~> Eff '[] r
 runInputList is =

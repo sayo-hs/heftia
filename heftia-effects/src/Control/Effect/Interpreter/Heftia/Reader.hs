@@ -6,23 +6,21 @@
 Copyright   :  (c) 2023 Sayo Koyoneda
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
-Stability   :  experimental
 Portability :  portable
 
-Interpreter and elaborator for the t'Data.Effect.Reader.Local' / t'Data.Effect.Reader.Catch' effect
-classes.
+Interpreters for the t'Ask' / t'Local' effects.
 -}
 module Control.Effect.Interpreter.Heftia.Reader where
 
 import Control.Effect (type (~>))
 import Control.Monad.Hefty (
     Eff,
-    Elab,
     HFunctors,
-    interposeRec,
-    interpretRec,
-    interpretRecH,
+    interpose,
+    interpret,
+    interpretH,
     type (<|),
+    type (~~>),
  )
 import Data.Effect.Reader (Ask (..), Local (..), ask)
 import Data.Function ((&))
@@ -39,13 +37,13 @@ runLocal
     :: forall r eh ef
      . (Ask r <| ef, HFunctors eh)
     => Eff (Local r ': eh) ef ~> Eff eh ef
-runLocal = interpretRecH elabLocal
+runLocal = interpretH elabLocal
 
 elabLocal
     :: forall r eh ef
      . (Ask r <| ef, HFunctors eh)
-    => Elab (Local r) (Eff eh ef)
-elabLocal (Local f a) = a & interposeRec @(Ask r) \Ask -> f <$> ask
+    => Local r ~~> Eff eh ef
+elabLocal (Local f a) = a & interpose @(Ask r) \Ask -> f <$> ask
 
 -- | Interpret the t'Ask' effect.
 runAsk
@@ -53,4 +51,4 @@ runAsk
      . (HFunctors eh)
     => r
     -> Eff eh (Ask r ': ef) ~> Eff eh ef
-runAsk r = interpretRec \Ask -> pure r
+runAsk r = interpret \Ask -> pure r

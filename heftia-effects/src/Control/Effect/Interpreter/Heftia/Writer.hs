@@ -8,7 +8,6 @@
 Copyright   :  (c) 2023 Sayo Koyoneda
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
-Stability   :  experimental
 Portability :  portable
 
 Interpreter and elaborator for the t'Data.Effect.Writer.Writer' effect class.
@@ -21,9 +20,9 @@ import Control.Monad.Hefty (
     Eff,
     HFunctors,
     StateInterpreter,
-    interposeRec,
+    interpose,
     interposeStateBy,
-    interpretRecH,
+    interpretH,
     interpretStateBy,
     send,
     type (<|),
@@ -46,12 +45,12 @@ handleTell (Tell w') w k = k (w <> w') ()
 {-# INLINE handleTell #-}
 
 runWriterHPost :: (Monoid w, Tell w <| ef) => Eff '[WriterH w] ef ~> Eff '[] ef
-runWriterHPost = interpretRecH \case
+runWriterHPost = interpretH \case
     Listen m -> listen m
     Censor f m -> censorPost f m
 
 runWriterHPre :: (Monoid w, Tell w <| ef) => Eff '[WriterH w] ef ~> Eff '[] ef
-runWriterHPre = interpretRecH \case
+runWriterHPre = interpretH \case
     Listen m -> listen m
     Censor f m -> censorPre f m
 
@@ -96,4 +95,4 @@ censorPre
      . (Tell w <| ef, Monoid w, HFunctors eh)
     => (w -> w)
     -> Eff eh ef ~> Eff eh ef
-censorPre f = interposeRec @(Tell w) \(Tell w) -> tell $ f w
+censorPre f = interpose @(Tell w) \(Tell w) -> tell $ f w

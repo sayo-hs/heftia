@@ -4,35 +4,45 @@
 
 module Control.Effect.Interpreter.Heftia.ShiftReset where
 
-import Control.Effect (type (~>))
-import Control.Monad.Hefty.Interpret (interpretHBy_, interpretRecH, iterAllEffHFBy, runEff)
-import Control.Monad.Hefty.Transform (raiseH)
-import Control.Monad.Hefty.Types (Eff, sendUnionBy, sendUnionHBy)
+import Control.Monad.Hefty (
+    Eff,
+    HFunctors,
+    interpretH,
+    interpretHBy,
+    interpretRecHWith,
+    raiseH,
+    runEff,
+    type (~>),
+ )
 import Data.Effect.Key (KeyH (KeyH))
-import Data.Effect.OpenUnion.Internal.HO (HFunctors, hfmapUnion, (!!+.))
-import Data.Effect.ShiftReset (Reset (Reset), Shift, Shift' (Shift), Shift_ (Shift_))
+import Data.Effect.ShiftReset (
+    Reset (Reset),
+    Shift,
+    Shift' (Shift),
+    Shift_,
+    Shift_' (Shift_'),
+ )
 
-evalShift :: Eff '[Shift ans] ef ans -> Eff '[] ef ans
+type ShiftFix ans eh ef = Shift ans (ShiftBase ans eh ef)
+
+newtype ShiftBase ans eh ef a
+    = ShiftBase {unShiftBase :: Eff (Shift ans (ShiftBase ans eh ef) ': eh) ef a}
+    deriving newtype (Functor, Applicative, Monad)
+
+evalShift :: Eff '[ShiftFix ans '[] ef] ef ans -> Eff '[] ef ans
 evalShift = runShift pure
 
-runShift :: (a -> Eff '[] ef ans) -> Eff '[Shift ans] ef a -> Eff '[] ef ans
+runShift :: (a -> Eff '[] ef ans) -> Eff '[ShiftFix ans '[] ef] ef a -> Eff '[] ef ans
 runShift f =
-    interpretHBy_ f \e k ->
-        let k' = raiseH . k
-         in evalShift $ case e of
-                KeyH (Shift g) -> g k'
+    interpretHBy f \e k ->
+        evalShift $ case e of
+            KeyH (Shift g) -> unShiftBase $ g (ShiftBase . raiseH . k) ShiftBase
 
-withShift :: Eff '[Shift ans] '[Eff eh ef] ans -> Eff eh ef ans
+withShift :: Eff '[ShiftFix ans '[] '[Eff eh ef]] '[Eff eh ef] ans -> Eff eh ef ans
 withShift = runEff . evalShift
 
-runShift_ :: forall r ef. (HFunctors r) => Eff (Shift_ ': r) ef ~> Eff r ef
-runShift_ =
-    iterAllEffHFBy
-        pure
-        ( (\(Shift_ f) k -> runShift_ $ f $ raiseH . k)
-            !!+. (flip sendUnionHBy . hfmapUnion runShift_)
-        )
-        (flip sendUnionBy)
+runShift_ :: forall r ef. (HFunctors r) => Eff (Shift_ (Eff r ef) ': r) ef ~> Eff r ef
+runShift_ = interpretRecHWith \(KeyH (Shift_' f)) k -> f k id
 
 runReset :: forall r ef. (HFunctors r) => Eff (Reset ': r) ef ~> Eff r ef
-runReset = interpretRecH \(Reset a) -> a
+runReset = interpretH \(Reset a) -> a

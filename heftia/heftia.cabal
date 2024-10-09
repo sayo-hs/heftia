@@ -7,7 +7,11 @@ synopsis: higher-order effects done right
 
 -- A longer description of the package.
 description:
-    Heftia is a higher-order effects version of Freer.
+    Heftia is an extensible effects library that generalizes "Algebraic Effects
+    and Handlers" to higher-order effects, providing users with maximum
+    flexibility and delivering standard and reasonable speed. In its
+    generalization, the focus is on ensuring predictable results based on
+    simple, consistent semantics, while preserving soundness.
     .
     This library provides "[continuation-based semantics](https://github.com/lexi-lambda/eff/blob/master/notes/semantics-zoo.md)"
     for higher-order effects, the same as [lexi-lambda's eff](https://github.com/lexi-lambda/eff).
@@ -23,9 +27,6 @@ description:
     inspires this library.
     Hefty trees, proposed by the above paper, are extensions of free monads,
     allowing for a straightforward treatment of higher-order effects.
-    .
-    This library provides Hefty monads and Freer monads, encoded into data
-    types in several ways to enable tuning in pursuit of high performance.
     .
 
 -- A URL where users can report bugs.

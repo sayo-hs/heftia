@@ -15,11 +15,11 @@ import Control.Effect.Interpreter.Heftia.State (evalState)
 import Control.Monad (when)
 import Control.Monad.Hefty (type (+))
 import Control.Monad.Hefty.Interpret (
-    interposeRec,
-    interposeRecH,
-    interpretRec,
-    interpretRecH,
-    reinterpretRecH,
+    interpose,
+    interposeH,
+    interpret,
+    interpretH,
+    reinterpretH,
     runEff,
  )
 import Control.Monad.Hefty.Transform (
@@ -28,7 +28,7 @@ import Control.Monad.Hefty.Transform (
     raiseUnder,
     subsume,
  )
-import Control.Monad.Hefty.Types (Elab, type (!!), type (:!!))
+import Control.Monad.Hefty.Types (type (!!), type (:!!), type (~~>))
 import Control.Monad.IO.Class (MonadIO, liftIO)
 import Data.Effect.OpenUnion.Internal.FO (type (<|))
 import Data.Effect.OpenUnion.Internal.HO (HFunctors, type (<<|))
@@ -48,17 +48,17 @@ data Log a where
 makeEffectF [''Log]
 
 logToIO :: (IO <| r, HFunctors eh) => eh :!! Log ': r ~> eh :!! r
-logToIO = interpretRec \(Logging msg) -> liftIO $ T.putStrLn msg
+logToIO = interpret \(Logging msg) -> liftIO $ T.putStrLn msg
 
 data Time a where
     CurrentTime :: Time UTCTime
 makeEffectF [''Time]
 
 timeToIO :: (IO <| r, HFunctors eh) => eh :!! Time ': r ~> eh :!! r
-timeToIO = interpretRec \CurrentTime -> liftIO getCurrentTime
+timeToIO = interpret \CurrentTime -> liftIO getCurrentTime
 
 logWithTime :: (Log <| ef, Time <| ef, HFunctors eh) => eh :!! ef ~> eh :!! ef
-logWithTime = interposeRec \(Logging msg) -> do
+logWithTime = interpose \(Logging msg) -> do
     t <- currentTime
     logging $ "[" <> iso8601 t <> "] " <> msg
 
@@ -77,7 +77,7 @@ makeEffectH [''LogChunk]
 
 -- | Ignore chunk names and output logs in log chunks as they are.
 runLogChunk :: (HFunctors eh) => LogChunk ': eh :!! ef ~> eh :!! ef
-runLogChunk = interpretRecH \(LogChunk _ m) -> m
+runLogChunk = interpretH \(LogChunk _ m) -> m
 
 data FileSystem a where
     Mkdir :: FilePath -> FileSystem ()
@@ -85,7 +85,7 @@ data FileSystem a where
 makeEffectF [''FileSystem]
 
 runDummyFS :: (IO <| r, HFunctors eh) => eh :!! FileSystem ': r ~> eh :!! r
-runDummyFS = interpretRec \case
+runDummyFS = interpret \case
     Mkdir path ->
         liftIO $ putStrLn $ "<runDummyFS> mkdir " <> path
     WriteToFile path content ->
@@ -108,7 +108,7 @@ saveLogChunk =
             :: (Local FilePath ': eh :!! Ask FilePath ': ef)
                 ~> (Local FilePath ': eh :!! Ask FilePath ': ef)
     hookCreateDirectory =
-        interposeRecH \(LogChunk chunkName a) -> logChunk chunkName do
+        interposeH \(LogChunk chunkName a) -> logChunk chunkName do
             chunkBeginAt <- currentTime
             let dirName = T.unpack $ iso8601 chunkBeginAt <> "-" <> chunkName
             local @FilePath (++ dirName ++ "/") do
@@ -117,7 +117,7 @@ saveLogChunk =
                 a
 
     hookWriteFile =
-        interposeRec \(Logging msg) -> do
+        interpose \(Logging msg) -> do
             logChunkPath <- ask
             logAt <- currentTime
             writeToFile (T.unpack $ T.pack logChunkPath <> iso8601 logAt <> ".log") msg
@@ -125,9 +125,9 @@ saveLogChunk =
 
 -- | Limit the number of logs in a log chunk to the first @n@ logs.
 limitLogChunk :: (Log <| ef) => Int -> '[LogChunk] :!! Log ': ef ~> '[LogChunk] :!! Log ': ef
-limitLogChunk n = reinterpretRecH $ elabLimitLogChunk n
+limitLogChunk n = reinterpretH $ elabLimitLogChunk n
 
-elabLimitLogChunk :: (Log <| ef) => Int -> Elab LogChunk ('[LogChunk] :!! Log ': ef)
+elabLimitLogChunk :: (Log <| ef) => Int -> LogChunk ~~> '[LogChunk] :!! Log ': ef
 elabLimitLogChunk n (LogChunk name a) =
     logChunk name do
         raise . raiseH $ limitLog $ runLogChunk $ limitLogChunk n a
@@ -135,7 +135,7 @@ elabLimitLogChunk n (LogChunk name a) =
     limitLog :: (Log <| ef) => '[] :!! Log ': ef ~> '[] :!! ef
     limitLog a' =
         evalState @Int 0 $
-            raiseUnder a' & interpretRec \(Logging msg) -> do
+            raiseUnder a' & interpret \(Logging msg) -> do
                 count <- get
                 when (count < n) do
                     logging msg

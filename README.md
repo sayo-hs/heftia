@@ -156,12 +156,12 @@ main :: IO ()
 main = runEff do
     (sPre, _) <-
         runTell
-            . interpretRecH (elabWriterPre @String)
+            . interpretH (elabWriterPre @String)
             $ censorHello
 
     (sPost, _) <-
         runTell
-            . interpretRecH (elabWriterPost @String)
+            . interpretH (elabWriterPost @String)
             $ censorHello
 
     liftIO $ putStrLn $ "Pre-applying: " <> sPre

@@ -4,7 +4,6 @@
 Copyright   :  (c) 2024 Sayo Koyoneda
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
-Stability   :  experimental
 -}
 module Data.Effect.OpenUnion (
     module Data.Effect.OpenUnion.Internal,
@@ -33,7 +32,6 @@ import Data.Effect.OpenUnion.Internal (
     type (++),
  )
 import Data.Effect.OpenUnion.Internal.FO (
-    EffectF,
     Lookup,
     Member,
     MemberBy,
@@ -74,7 +72,6 @@ import Data.Effect.OpenUnion.Internal.FO (
     type (<|),
  )
 import Data.Effect.OpenUnion.Internal.HO (
-    EffectH,
     HFunctors,
     IsHFunctors,
     LookupH,
@@ -120,6 +117,7 @@ import Data.Effect.OpenUnion.Internal.HO (
     weakensUnderH,
     (!!+),
     (!!+.),
+    ($+),
     type (<<|),
  )
 import Data.Effect.OpenUnion.Sum (

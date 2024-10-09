@@ -8,8 +8,9 @@
 module Main where
 
 import Control.Effect (type (~>))
-import Control.Monad.Hefty.Interpret (interposeBy, interpretRec, interpretRecH, runEff)
-import Control.Monad.Hefty.Types (Elab, type (:!!))
+import Control.Monad.Hefty (type (~~>))
+import Control.Monad.Hefty.Interpret (interposeBy, interpret, interpretH, runEff)
+import Control.Monad.Hefty.Types (type (:!!))
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect.OpenUnion.Internal.FO (type (<|))
 import Data.Effect.OpenUnion.Internal.HO (HFunctors)
@@ -23,13 +24,13 @@ data Fork a where
 makeEffectF [''Fork]
 
 runForkSingle :: (HFunctors eh) => eh :!! Fork ': r ~> eh :!! r
-runForkSingle = interpretRec \Fork -> pure 0
+runForkSingle = interpret \Fork -> pure 0
 
 data ResetFork f a where
     ResetFork :: (Monoid w) => f w -> ResetFork f w
 makeEffectH [''ResetFork]
 
-applyResetFork :: (Fork <| r) => Int -> Elab ResetFork ('[] :!! r)
+applyResetFork :: (Fork <| r) => Int -> ResetFork ~~> '[] :!! r
 applyResetFork numberOfFork (ResetFork m) =
     m & interposeBy pure \Fork resume -> do
         r <- mapM resume [1 .. numberOfFork]
@@ -39,7 +40,7 @@ main :: IO ()
 main =
     runEff
         . runForkSingle
-        . interpretRecH (applyResetFork 4)
+        . interpretH (applyResetFork 4)
         $ do
             liftIO . putStrLn . (("[out of scope] " ++) . show) =<< fork
             s <- resetFork do

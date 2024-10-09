@@ -6,7 +6,6 @@
 Copyright   :  (c) 2024 Sayo Koyoneda
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
-Stability   :  experimental
 Portability :  portable
 -}
 module Control.Effect.Interpreter.Heftia.Unlift where
@@ -18,7 +17,7 @@ import Data.Effect.Unlift (UnliftBase (WithRunInBase), UnliftIO)
 runUnliftBase :: forall b. (Monad b) => Eff '[UnliftBase b] '[b] ~> b
 runUnliftBase =
     runEff . interpretH \(WithRunInBase f) ->
-        send0 $ f runUnliftBase
+        send0 $ f runEff
 
 runUnliftIO :: Eff '[UnliftIO] '[IO] ~> IO
 runUnliftIO = runUnliftBase

@@ -8,7 +8,6 @@ Copyright   :  (c) 2023 Sayo Koyoneda
                (c) 2022 Fumiaki Kinoshita
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
-Stability   :  experimental
 Portability :  portable
 
 An elaborator for the t'Control.Effect.Class.Resource.Resource' effect class.
@@ -16,8 +15,8 @@ An elaborator for the t'Control.Effect.Class.Resource.Resource' effect class.
 module Control.Effect.Interpreter.Heftia.Resource where
 
 import Control.Effect (type (~>))
-import Control.Monad.Hefty.Interpret (interpretRecH)
-import Control.Monad.Hefty.Types (Eff, Elab)
+import Control.Monad.Hefty.Interpret (interpretH)
+import Control.Monad.Hefty.Types (Eff, type (~~>))
 import Data.Effect.OpenUnion.Internal.FO (type (<|))
 import Data.Effect.OpenUnion.Internal.HO (HFunctors, type (<<|))
 import Data.Effect.Resource (Resource (Bracket, BracketOnExcept))
@@ -28,9 +27,9 @@ import UnliftIO (MonadUnliftIO, bracket, bracketOnError)
 runResourceIO
     :: (UnliftIO <<| eh, IO <| ef, HFunctors eh)
     => Eff (Resource ': eh) ef ~> Eff eh ef
-runResourceIO = interpretRecH elabResourceIO
+runResourceIO = interpretH elabResourceIO
 
-elabResourceIO :: (MonadUnliftIO m) => Elab Resource m
+elabResourceIO :: (MonadUnliftIO m) => Resource ~~> m
 elabResourceIO = \case
     Bracket acquire release thing -> bracket acquire release thing
     BracketOnExcept acquire onError thing -> bracketOnError acquire onError thing

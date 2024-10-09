@@ -6,7 +6,6 @@
 Copyright   :  (c) 2024 Sayo Koyoneda
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
-Stability   :  experimental
 Portability :  portable
 -}
 module Control.Effect.Interpreter.Heftia.Fresh where
@@ -14,7 +13,7 @@ module Control.Effect.Interpreter.Heftia.Fresh where
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
 import Control.Effect.Interpreter.Heftia.State (runState)
-import Control.Monad.Hefty.Interpret (interpretRec)
+import Control.Monad.Hefty.Interpret (interpret)
 import Control.Monad.Hefty.Transform (raiseUnder)
 import Control.Monad.Hefty.Types (Eff)
 import Data.Effect.Fresh (Fresh (Fresh))
@@ -31,4 +30,4 @@ runFreshNaturalAsState
     :: (State Natural <| r, HFunctors eh)
     => Eff eh (Fresh Natural ': r) ~> Eff eh r
 runFreshNaturalAsState =
-    interpretRec \Fresh -> get @Natural <* modify @Natural (+ 1)
+    interpret \Fresh -> get @Natural <* modify @Natural (+ 1)

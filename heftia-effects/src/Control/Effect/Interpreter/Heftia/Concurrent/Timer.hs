@@ -6,7 +6,7 @@ import Control.Concurrent.Thread.Delay qualified as Thread
 import Control.Effect (type (~>))
 import Control.Effect.Interpreter.Heftia.Coroutine (runCoroutine)
 import Control.Effect.Interpreter.Heftia.State (evalState)
-import Control.Monad.Hefty.Interpret (interposeRec, interpret, interpretRec)
+import Control.Monad.Hefty.Interpret (interpose, interpret)
 import Control.Monad.Hefty.Transform (raise, raiseUnder)
 import Control.Monad.Hefty.Types (send, (:!!))
 import Data.Effect.Concurrent.Timer (CyclicTimer (Wait), Timer (..), clock, cyclicTimer)
@@ -26,7 +26,7 @@ runTimerIO
      . (IO <| ef, HFunctors eh)
     => eh :!! Timer ': ef ~> eh :!! ef
 runTimerIO =
-    interpretRec \case
+    interpret \case
         Clock -> do
             t <- getMonotonicTimeNSec & liftIO
             pure $ picosecondsToDiffTime $ fromIntegral t * 1000
@@ -51,7 +51,7 @@ runCyclicTimer a = do
 restartClock :: (Timer <| ef, HFunctors eh) => eh :!! ef ~> eh :!! ef
 restartClock a = do
     t0 <- clock
-    a & interposeRec \case
+    a & interpose \case
         Clock -> do
             t <- clock
             pure $ t - t0

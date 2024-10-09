@@ -12,7 +12,7 @@ The original of this example can be found at polysemy.
 module Main where
 
 import Control.Effect (type (<:), type (~>))
-import Control.Monad.Hefty.Interpret (interposeRec, interpretRec, runEff)
+import Control.Monad.Hefty.Interpret (interpose, interpret, runEff)
 import Control.Monad.Hefty.Transform (untag)
 import Control.Monad.Hefty.Types (type (:!!))
 import Control.Monad.IO.Class (liftIO)
@@ -28,7 +28,7 @@ data Teletype a where
 makeEffectF [''Teletype]
 
 teletypeToIO :: (IO <| r, HFunctors eh) => eh :!! Teletype ': r ~> eh :!! r
-teletypeToIO = interpretRec \case
+teletypeToIO = interpret \case
     ReadTTY -> liftIO getLine
     WriteTTY msg -> liftIO $ putStrLn msg
 
@@ -41,7 +41,7 @@ echo = do
 
 strong :: (Teletype # "tty1" <| ef, HFunctors eh) => eh :!! ef ~> eh :!! ef
 strong =
-    interposeRec @(_ # "tty1") \e -> case unTag e of
+    interpose @(_ # "tty1") \e -> case unTag e of
         ReadTTY -> readTTY' @"tty1"
         WriteTTY msg -> writeTTY' @"tty1" $ msg <> "!"
 

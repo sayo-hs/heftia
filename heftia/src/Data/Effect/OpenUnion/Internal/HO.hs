@@ -47,7 +47,6 @@ OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 Copyright   :  (c) 2016 Allele Dev; 2017 Ixperta Solutions s.r.o.; 2017 Alexis King; 2024 Sayo Koyoneda
 License     :  MPL-2.0 (see the LICENSE file) AND BSD-3-Clause
 Maintainer  :  ymdfield@outlook.jp
-Stability   :  experimental
 Description :  Open unions (type-indexed co-products) for extensible higher-order effects.
 
 Implementation of an open union for higher-order effects.
@@ -61,7 +60,7 @@ module Data.Effect.OpenUnion.Internal.HO where
 
 import Control.Effect (type (~>))
 import Data.Coerce (coerce)
-import Data.Effect (IsHFunctor)
+import Data.Effect (EffectH, IsHFunctor)
 import Data.Effect.HFunctor (HFunctor, hfmap)
 import Data.Effect.Key (type (##>))
 import Data.Effect.OpenUnion.Internal (
@@ -100,10 +99,7 @@ import Data.Type.Bool (type (&&))
 import GHC.TypeNats (KnownNat, type (-))
 import Unsafe.Coerce (unsafeCoerce)
 
--- | Kind of higher-order effects.
-type EffectH = (Type -> Type) -> Type -> Type
-
--- | Open union for higher-order effects. Becomes an instance of 'HFunctor' for free.
+-- | Open union for higher-order effects.
 data UnionH (es :: [EffectH]) (f :: Type -> Type) (a :: Type) where
     UnionH
         :: {-# UNPACK #-} !Word
@@ -111,7 +107,9 @@ data UnionH (es :: [EffectH]) (f :: Type -> Type) (a :: Type) where
         -> e g a
         -- ^ The data of the higher-order effect that is an element of the union.
         -> (g ~> f)
-        -- ^ Continuation of interpretation. Due to this component, this open union becomes a free 'HFunctor', which contributes to performance improvement.
+        -- ^ Continuation of interpretation.
+        -- Due to this component, v'hfmap' for t'UnionH' becomes faster (because
+        -- it no longer requires the t'HFunctor' dictionary), thus improving overall performance.
         -> UnionH es f a
 
 class (IsHFunctors es ~ 'True) => HFunctors es
@@ -210,6 +208,13 @@ infixr 5 !!+.
     Left x -> g x
     Right x -> f x
 {-# INLINE (!!+.) #-}
+
+infixr 5 $+
+($+) :: (NotHFunctor e) => (p -> e f a -> r) -> (p -> UnionH es f a -> r) -> p -> UnionH (e : es) f a -> r
+(f $+ g) b u = case decompH_ u of
+    Left x -> g b x
+    Right x -> f b x
+{-# INLINE ($+) #-}
 
 extractH :: (HFunctor e) => UnionH '[e] f a -> e f a
 extractH (UnionH _ a koi) = hfmap koi $ unsafeCoerce a

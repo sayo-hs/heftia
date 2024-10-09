@@ -6,14 +6,12 @@
 Copyright   :  (c) 2024 Sayo Koyoneda
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
-Stability   :  experimental
 Portability :  portable
 -}
 module Control.Effect.Interpreter.Heftia.NonDet where
 
 import Control.Applicative (Alternative ((<|>)), empty, (<|>))
 import Control.Arrow ((>>>))
-import Control.Effect (type (~>))
 import Control.Monad.Hefty
 import Data.Bool (bool)
 import Data.Effect.NonDet (Choose (Choose), ChooseH (ChooseH), Empty (Empty), choose)
@@ -90,7 +88,7 @@ runEmpty =
 runChooseH
     :: (Choose <| ef, HFunctors eh)
     => Eff (ChooseH ': eh) ef ~> Eff eh ef
-runChooseH = interpretRecH \(ChooseH a b) -> branch a b
+runChooseH = interpretH \(ChooseH a b) -> branch a b
 
 -- | Faster than `<|>`.
 branch :: (Choose <| ef) => Eff eh ef a -> Eff eh ef a -> Eff eh ef a
