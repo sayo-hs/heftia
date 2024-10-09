@@ -1,6 +1,6 @@
 -- SPDX-License-Identifier: MPL-2.0
 
-module Control.Effect.Interpreter.Heftia.Coroutine where
+module Control.Monad.Hefty.Coroutine where
 
 import Control.Monad.Hefty.Interpret (interpretBy)
 import Control.Monad.Hefty.Types (Eff)

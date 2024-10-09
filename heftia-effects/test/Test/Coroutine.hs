@@ -2,8 +2,8 @@
 
 module Test.Coroutine where
 
-import Control.Effect.Interpreter.Heftia.Coroutine (runCoroutine)
 import Control.Monad (forM)
+import Control.Monad.Hefty.Coroutine (runCoroutine)
 import Control.Monad.Hefty.Interpret (runPure)
 import Control.Monad.Hefty.Types (Eff)
 import Data.Effect.Coroutine (Status (..), Yield, yield)

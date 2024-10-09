@@ -4,8 +4,8 @@
 
 module Main where
 
-import Control.Effect.Interpreter.Heftia.Writer (runTell, runWriterHPost, runWriterHPre)
 import Control.Monad.Hefty (liftIO, runEff, type (<:), type (<<:))
+import Control.Monad.Hefty.Writer (runTell, runWriterHPost, runWriterHPre)
 import Data.Effect.Writer (Tell, WriterH, censor, tell)
 
 hello :: (Tell String <: m, Monad m) => m ()

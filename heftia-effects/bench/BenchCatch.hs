@@ -7,10 +7,10 @@ module BenchCatch where
 
 import Control.Carrier.Error.Either qualified as F
 import Control.Carrier.Reader qualified as F
-import Control.Effect.Interpreter.Heftia.Except qualified as H
-import Control.Effect.Interpreter.Heftia.Reader qualified as H
 import Control.Monad.Except qualified as M
 import Control.Monad.Hefty qualified as H
+import Control.Monad.Hefty.Except qualified as H
+import Control.Monad.Hefty.Reader qualified as H
 import Control.Monad.Identity qualified as M
 import Control.Monad.Reader qualified as M
 import Data.Effect.Except qualified as H

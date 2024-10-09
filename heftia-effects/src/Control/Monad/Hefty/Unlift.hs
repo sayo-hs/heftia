@@ -8,7 +8,7 @@ License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 Portability :  portable
 -}
-module Control.Effect.Interpreter.Heftia.Unlift where
+module Control.Monad.Hefty.Unlift where
 
 import Control.Monad.Hefty (Eff, interpretH, runEff, send0, type (~>))
 import Data.Effect.Unlift (UnliftBase (WithRunInBase), UnliftIO)

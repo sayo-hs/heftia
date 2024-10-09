@@ -6,7 +6,6 @@
 module Main where
 
 import Control.Arrow ((>>>))
-import Control.Effect.Interpreter.Heftia.Provider (ProviderFix_, provide_, runProvider_)
 import Control.Monad.Hefty (
     Eff,
     Type,
@@ -18,6 +17,7 @@ import Control.Monad.Hefty (
     type (<|),
     type (~>),
  )
+import Control.Monad.Hefty.Provider (ProviderFix_, provide_, runProvider_)
 
 data FileSystemF a where
     ReadFS :: FilePath -> FileSystemF String

@@ -8,11 +8,11 @@ License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 Portability :  portable
 -}
-module Control.Effect.Interpreter.Heftia.Fresh where
+module Control.Monad.Hefty.Fresh where
 
 import Control.Arrow ((>>>))
-import Control.Effect.Interpreter.Heftia.State (runState)
 import Control.Monad.Hefty (Eff, interpret, raiseUnder, type (<|), type (~>))
+import Control.Monad.Hefty.State (runState)
 import Data.Effect.Fresh (Fresh (Fresh))
 import Data.Effect.State (State, get, modify)
 import Numeric.Natural (Natural)

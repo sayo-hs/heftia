@@ -3,13 +3,13 @@
 
 module BenchCoroutine where
 
-import Control.Effect.Interpreter.Heftia.Coroutine qualified as H
-import Control.Effect.Interpreter.Heftia.Reader qualified as H
 import Control.Monad (forM)
 import Control.Monad.Freer qualified as FS
 import Control.Monad.Freer.Coroutine qualified as FS
 import Control.Monad.Freer.Reader qualified as FS
 import Control.Monad.Hefty qualified as H
+import Control.Monad.Hefty.Coroutine qualified as H
+import Control.Monad.Hefty.Reader qualified as H
 import Control.Mp.Eff qualified as Mp
 import Control.Mp.Util qualified as Mp
 import Data.Effect.Coroutine qualified as H

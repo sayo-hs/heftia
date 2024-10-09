@@ -10,10 +10,9 @@ Portability :  portable
 
 Interpreter for the t'Data.Effect.State.State' effect.
 -}
-module Control.Effect.Interpreter.Heftia.State where
+module Control.Monad.Hefty.State where
 
 import Control.Arrow ((>>>))
-import Control.Effect.Interpreter.Heftia.Reader (runAsk)
 import Control.Monad.Hefty (
     Eff,
     StateInterpreter,
@@ -29,6 +28,7 @@ import Control.Monad.Hefty (
     type (<|),
     type (~>),
  )
+import Control.Monad.Hefty.Reader (runAsk)
 import Data.Effect.Reader (Ask (Ask), ask)
 import Data.Effect.State (State (Get, Put), get, put)
 import Data.Functor ((<&>))

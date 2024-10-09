@@ -8,11 +8,11 @@ License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 Portability :  portable
 -}
-module Control.Effect.Interpreter.Heftia.Input where
+module Control.Monad.Hefty.Input where
 
 import Control.Arrow ((>>>))
-import Control.Effect.Interpreter.Heftia.State (evalState)
 import Control.Monad.Hefty (Eff, interpret, raiseUnder, type (~>))
+import Control.Monad.Hefty.State (evalState)
 import Data.Effect.Input (Input (Input))
 import Data.Effect.State (gets, put)
 import Data.List (uncons)

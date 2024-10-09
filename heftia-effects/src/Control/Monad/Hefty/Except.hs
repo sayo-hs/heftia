@@ -10,7 +10,7 @@ Portability :  portable
 
 Interpreters for the t'Data.Effect.Except.Throw' / t'Data.Effect.Except.Catch' effects.
 -}
-module Control.Effect.Interpreter.Heftia.Except where
+module Control.Monad.Hefty.Except where
 
 import Control.Exception (Exception)
 import Control.Monad.Hefty (

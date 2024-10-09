@@ -13,7 +13,7 @@ Portability :  portable
 Interpreter and elaborator for the t'Data.Effect.Writer.Writer' effect class.
 See [README.md](https://github.com/sayo-hs/heftia/blob/master/README.md).
 -}
-module Control.Effect.Interpreter.Heftia.Writer where
+module Control.Monad.Hefty.Writer where
 
 import Control.Monad.Hefty (
     Eff,

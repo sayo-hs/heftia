@@ -1,10 +1,10 @@
 -- SPDX-License-Identifier: MPL-2.0
 
-module Control.Effect.Interpreter.Heftia.Concurrent.Timer where
+module Control.Monad.Hefty.Concurrent.Timer where
 
 import Control.Concurrent.Thread.Delay qualified as Thread
-import Control.Effect.Interpreter.Heftia.Coroutine (runCoroutine)
-import Control.Effect.Interpreter.Heftia.State (evalState)
+import Control.Monad.Hefty.Coroutine (runCoroutine)
+import Control.Monad.Hefty.State (evalState)
 import Control.Monad.Hefty (
     interpose,
     interpret,

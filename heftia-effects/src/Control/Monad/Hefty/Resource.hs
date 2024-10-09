@@ -12,7 +12,7 @@ Portability :  portable
 
 An elaborator for the t'Control.Effect.Class.Resource.Resource' effect class.
 -}
-module Control.Effect.Interpreter.Heftia.Resource where
+module Control.Monad.Hefty.Resource where
 
 import Control.Effect (type (~>))
 import Control.Monad.Hefty.Interpret (interpretH)

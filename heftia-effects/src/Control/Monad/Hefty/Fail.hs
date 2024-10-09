@@ -8,7 +8,7 @@ License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 Portability :  portable
 -}
-module Control.Effect.Interpreter.Heftia.Fail where
+module Control.Monad.Hefty.Fail where
 
 import Control.Monad.Hefty (Eff, interpret, liftIO, type (<|), type (~>))
 import Data.Effect.Fail (Fail (Fail))

@@ -6,14 +6,14 @@ module BenchCountdown where
 
 import Control.Carrier.Reader qualified as F
 import Control.Carrier.State.Strict qualified as F
-import Control.Effect.Interpreter.Heftia.Reader qualified as H
-import Control.Effect.Interpreter.Heftia.State qualified as H
 import Control.Ev.Eff qualified as E
 import Control.Ev.Util qualified as E
 import Control.Monad.Freer qualified as FS
 import Control.Monad.Freer.Reader qualified as FS
 import Control.Monad.Freer.State qualified as FS
 import Control.Monad.Hefty qualified as H
+import Control.Monad.Hefty.Reader qualified as H
+import Control.Monad.Hefty.State qualified as H
 import Control.Monad.Identity qualified as M
 import Control.Monad.Reader qualified as M
 import Control.Monad.State.Strict qualified as M

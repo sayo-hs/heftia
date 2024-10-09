@@ -7,7 +7,7 @@ Copyright   :  (c) 2024 Sayo Koyoneda
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 -}
-module Control.Effect.Interpreter.Heftia.Provider where
+module Control.Monad.Hefty.Provider where
 
 import Control.Monad.Hefty (
     Eff,

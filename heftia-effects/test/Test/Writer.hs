@@ -3,8 +3,8 @@
 module Test.Writer where
 
 import Control.Effect (type (<:), type (<<:))
-import Control.Effect.Interpreter.Heftia.Writer (runTell, runWriterHPost, runWriterHPre)
 import Control.Monad.Hefty.Interpret (runEff)
+import Control.Monad.Hefty.Writer (runTell, runWriterHPost, runWriterHPre)
 import Data.Effect.Writer (Tell, WriterH, censor, tell)
 import Test.Hspec (Spec, describe, it, shouldBe)
 

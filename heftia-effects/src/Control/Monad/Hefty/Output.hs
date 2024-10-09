@@ -8,12 +8,12 @@ License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 Portability :  portable
 -}
-module Control.Effect.Interpreter.Heftia.Output where
+module Control.Monad.Hefty.Output where
 
 import Control.Arrow ((>>>))
-import Control.Effect.Interpreter.Heftia.State (runState)
-import Control.Effect.Interpreter.Heftia.Writer (handleTell)
 import Control.Monad.Hefty (Eff, interpret, interpretStateBy, raiseUnder, type (~>))
+import Control.Monad.Hefty.State (runState)
+import Control.Monad.Hefty.Writer (handleTell)
 import Data.Effect.Output (Output (Output))
 import Data.Effect.State (modify)
 import Data.Effect.Writer (Tell (Tell))

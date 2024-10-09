@@ -10,7 +10,7 @@ License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 Portability :  portable
 -}
-module Control.Effect.Interpreter.Heftia.NonDet where
+module Control.Monad.Hefty.NonDet where
 
 import Control.Applicative (Alternative ((<|>)), empty, (<|>))
 #if ( __GLASGOW_HASKELL__ < 906 )

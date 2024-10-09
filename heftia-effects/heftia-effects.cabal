@@ -69,22 +69,22 @@ library
     import: common-base
 
     exposed-modules:
-        Control.Effect.Interpreter.Heftia.Reader
-        Control.Effect.Interpreter.Heftia.Writer
-        Control.Effect.Interpreter.Heftia.State
-        Control.Effect.Interpreter.Heftia.Except
-        Control.Effect.Interpreter.Heftia.ShiftReset
-        Control.Effect.Interpreter.Heftia.NonDet
-        Control.Effect.Interpreter.Heftia.Coroutine
-        Control.Effect.Interpreter.Heftia.Input
-        Control.Effect.Interpreter.Heftia.Output
-        Control.Effect.Interpreter.Heftia.Resource
-        Control.Effect.Interpreter.Heftia.Unlift
-        Control.Effect.Interpreter.Heftia.Provider
-        Control.Effect.Interpreter.Heftia.KVStore
-        Control.Effect.Interpreter.Heftia.Fresh
-        Control.Effect.Interpreter.Heftia.Fail
-        Control.Effect.Interpreter.Heftia.Concurrent.Timer
+        Control.Monad.Hefty.Reader
+        Control.Monad.Hefty.Writer
+        Control.Monad.Hefty.State
+        Control.Monad.Hefty.Except
+        Control.Monad.Hefty.ShiftReset
+        Control.Monad.Hefty.NonDet
+        Control.Monad.Hefty.Coroutine
+        Control.Monad.Hefty.Input
+        Control.Monad.Hefty.Output
+        Control.Monad.Hefty.Resource
+        Control.Monad.Hefty.Unlift
+        Control.Monad.Hefty.Provider
+        Control.Monad.Hefty.KVStore
+        Control.Monad.Hefty.Fresh
+        Control.Monad.Hefty.Fail
+        Control.Monad.Hefty.Concurrent.Timer
 
     reexported-modules:
         Control.Monad.Hefty,

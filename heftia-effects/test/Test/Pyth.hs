@@ -3,9 +3,9 @@
 module Test.Pyth where
 
 import Control.Applicative (empty, (<|>))
-import Control.Effect.Interpreter.Heftia.NonDet (runChooseH, runNonDet)
 import Control.Monad (MonadPlus)
 import Control.Monad.Hefty.Interpret (runPure)
+import Control.Monad.Hefty.NonDet (runChooseH, runNonDet)
 import Test.Hspec (Spec, describe, it, shouldBe)
 
 search :: (MonadPlus m) => Int -> m (Int, Int, Int)

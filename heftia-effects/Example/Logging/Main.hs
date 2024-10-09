@@ -9,8 +9,6 @@
 module Main where
 
 import Control.Arrow ((>>>))
-import Control.Effect.Interpreter.Heftia.Reader (runReader)
-import Control.Effect.Interpreter.Heftia.State (evalState)
 import Control.Monad (when)
 import Control.Monad.Hefty (
     Type,
@@ -38,6 +36,8 @@ import Control.Monad.Hefty (
     type (~>),
     type (~~>),
  )
+import Control.Monad.Hefty.Reader (runReader)
+import Control.Monad.Hefty.State (evalState)
 import Control.Monad.IO.Class (MonadIO)
 import Data.Effect.Reader (Ask, Local, ask, local)
 import Data.Effect.State (get, modify)

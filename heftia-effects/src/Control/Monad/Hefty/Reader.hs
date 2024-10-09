@@ -10,7 +10,7 @@ Portability :  portable
 
 Interpreters for the t'Ask' / t'Local' effects.
 -}
-module Control.Effect.Interpreter.Heftia.Reader where
+module Control.Monad.Hefty.Reader where
 
 import Control.Monad.Hefty (
     Eff,

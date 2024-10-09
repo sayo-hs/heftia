@@ -4,9 +4,6 @@
 
 module Main where
 
-import Control.Effect.Interpreter.Heftia.Reader (runReader)
-import Control.Effect.Interpreter.Heftia.ShiftReset (ShiftFix, evalShift, runShift_, unShiftBase)
-import Control.Effect.Interpreter.Heftia.State (evalState)
 import Control.Effect.Key (key)
 import Control.Monad.Extra (whenM)
 import Control.Monad.Hefty (
@@ -23,6 +20,9 @@ import Control.Monad.Hefty (
     type (+),
     type (:+:),
  )
+import Control.Monad.Hefty.Reader (runReader)
+import Control.Monad.Hefty.ShiftReset (ShiftFix, evalShift, runShift_, unShiftBase)
+import Control.Monad.Hefty.State (evalState)
 import Data.Effect.Key (type (#>))
 import Data.Effect.Reader (Ask, Local, ask, local)
 import Data.Effect.ShiftReset (Shift_, getCC, getCC_)

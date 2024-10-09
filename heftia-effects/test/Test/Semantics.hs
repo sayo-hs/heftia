@@ -7,10 +7,6 @@ module Test.Semantics where
 
 import Control.Applicative ((<|>))
 import Control.Effect (type (~>))
-import Control.Effect.Interpreter.Heftia.Except (runCatch, runThrow)
-import Control.Effect.Interpreter.Heftia.NonDet (runChooseH, runNonDet)
-import Control.Effect.Interpreter.Heftia.State (evalState)
-import Control.Effect.Interpreter.Heftia.Writer (runTell, runWriterHPre)
 import Control.Monad.Hefty (
     interpret,
     runPure,
@@ -19,6 +15,10 @@ import Control.Monad.Hefty (
     type (<<|),
     type (<|),
  )
+import Control.Monad.Hefty.Except (runCatch, runThrow)
+import Control.Monad.Hefty.NonDet (runChooseH, runNonDet)
+import Control.Monad.Hefty.State (evalState)
+import Control.Monad.Hefty.Writer (runTell, runWriterHPre)
 import Data.Effect.Except (Catch, Throw, catch, throw)
 import Data.Effect.NonDet (ChooseH, Empty)
 import Data.Effect.State (State, get, put)
