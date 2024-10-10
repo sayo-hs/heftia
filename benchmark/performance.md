@@ -40,6 +40,8 @@ To run the benchmarks, move your working directory to the root directory of the 
 
 ## Benchmark Results
 
+The code was compiled with GHC 9.8.2 and run on a Ryzen 9 3900XT.
+
 * State Effect Benchmark (Shallow Effect Stack):
 ![countdown.shallow](https://github.com/sayo-hs/heftia/blob/v0.4.0/benchmark/bench-result/countdown-shallow.svg)
 
