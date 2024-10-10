@@ -218,6 +218,14 @@ executable FileSystemProvider
     build-depends:
         heftia-effects,
 
+executable UnliftIO
+    import: common-base
+
+    main-is: Main.hs
+    hs-source-dirs: Example/UnliftIO
+    build-depends:
+        heftia-effects,
+
 benchmark heftia-bench
     import: common-base
 
