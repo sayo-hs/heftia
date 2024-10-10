@@ -270,8 +270,9 @@ For more details, please refer to [performance.md](https://github.com/sayo-hs/he
 
 ## License
 The license is MPL 2.0. Please refer to the [NOTICE](https://github.com/sayo-hs/heftia/blob/v0.4.0/NOTICE).
-Additionally, this README.md and the documents under the `docs-ja` directory are licensed
-under CC BY-SA 4.0.
+Additionally, the code from `freer-simple` has been modified and used internally within this library.
+Therefore, some modules are licensed under both `MPL-2.0 AND BSD-3-Clause`.
+For details on licenses and copyrights, please refer to the module's Haddock documentation.
 
 ## Your contributions are welcome!
 Please see [CONTRIBUTING.md](https://github.com/sayo-hs/heftia/blob/v0.4.0/CONTRIBUTING.md).
