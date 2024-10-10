@@ -20,7 +20,7 @@ This library is inspired by the paper:
     Elaboration of Higher-Order Algebraic Effects. Proc. ACM Program. Lang. 7,
     POPL, Article 62 (January 2023), 31 pages. <https://doi.org/10.1145/3571255>
 
-The /elaboration/ approach proposed in the above paper allows for a straightforward treatment of higher-order effects.
+The *elaboration* approach proposed in the above paper allows for a straightforward treatment of higher-order effects.
 
 Heftia's data structure is an extension of the Freer monad, designed to be theoretically straightforward by eliminating ad-hoc elements.
 
