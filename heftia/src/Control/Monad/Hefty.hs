@@ -20,6 +20,9 @@ effect @Log@ for logging and the higher-order effect @Span@ for representing
 named spans in a program.
 
 @
+{\-# LANGUAGE AllowAmbiguousTypes #-\}
+{\-# LANGUAGE TemplateHaskell #-\}
+
 import "Control.Monad.Hefty"
 import Prelude hiding (log, span)
 
@@ -170,13 +173,13 @@ prog = 'runEff' . runLog . runSpan $ do
     * Non-recursive continuational stateful interpretation functions like 'interpretWith' cannot be used unless the higher-order effects are empty:
 
         @
-        'interpretWith' :: e ~> Eff '[] ef => 'Eff' '[] (e ': ef) ~> 'Eff' '[] ef
+        'interpretWith' :: e t'Control.Effect.~>' 'Eff' '[] ef -> 'Eff' '[] (e ': ef) t'Control.Effect.~>' 'Eff' '[] ef
         @
 
     * The @Rec@ versions can be used even when @eh@ is not empty.
 
         @
-        'interpretRecWith' :: e ~> 'Eff' eh (e ': ef) ~> 'Eff' eh ef
+        'interpretRecWith' :: e t'Control.Effect.~>' 'Eff' eh ef -> 'Eff' eh (e ': ef) t'Control.Effect.~>' 'Eff' eh ef
         @
 
     * When using this type of function, pay attention to their /reset semantics/. This is discussed later.
