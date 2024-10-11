@@ -140,7 +140,7 @@ main = runEff do
     liftIO $ putStrLn $ "Post-applying: " <> sPost
 ```
 
-Using the `elabWriterPre` elaborator, you'll get "Goodbye world!", whereas with the `elabWriterPost` elaborator, you'll get "Hello world!!".
+Using the `runWriterHPre` elaborator, you'll get "Goodbye world!", whereas with the `runWriterHPost` elaborator, you'll get "Hello world!!".
 ```
 Pre-applying: Goodbye world!
 Post-applying: Hello world!!
