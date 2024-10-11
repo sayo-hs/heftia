@@ -1,4 +1,4 @@
-# Heftia: higher-order effects done right for Haskell
+# Heftia: higher-order algebraic effects done right for Haskell
 
 [![Hackage](https://img.shields.io/hackage/v/heftia.svg?logo=haskell&label=heftia)](https://hackage.haskell.org/package/heftia)
 [![Hackage](https://img.shields.io/hackage/v/heftia-effects.svg?logo=haskell&label=heftia-effects)](https://hackage.haskell.org/package/heftia-effects)
@@ -9,11 +9,32 @@ In its generalization, the focus is on ensuring predictable results based on sim
 Please refer to the [Haddock documentation](https://hackage.haskell.org/package/heftia-0.4.0.0/docs/Control-Monad-Hefty.html) for usage and semantics.
 For information on performance, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/3ebe317452694a53278f753cf1caaf2a3ddd2b6a/benchmark/performance.md).
 
-The library allows the following effects with well-defined semantics:
+**Key Features:**
 
-* Coroutines
-* Non-deterministic computations
-* `MonadUnliftIO`
+* **Correct Semantics for Higher-Order Effects & Continuations**
+
+    This library provides the following features simultaneously, which existing libraries could not support together:
+
+    * Higher-order effects
+    * Delimited continuations (algebraic effects)
+    * Coroutines (non-scoped resumptions)
+    * Non-deterministic computations
+    * [`MonadUnliftIO`](https://hackage.haskell.org/package/unliftio)
+
+    All of these interact through a simple, consistent, and predictable semantics based on algebraic effects.
+
+* **Easy and Concise Implementation for Custom Effect Interpreters**
+
+    As you can see from the implementations of basic effect interpreters such as [State](https://hackage.haskell.org/package/heftia-effects-0.4.0.0/docs/src/Control.Monad.Hefty.State.html#runState), [Throw/Catch](https://hackage.haskell.org/package/heftia-effects-0.4.0.0/docs/src/Control.Monad.Hefty.Except.html#runThrow), [Writer](https://hackage.haskell.org/package/heftia-effects-0.4.0.0/docs/src/Control.Monad.Hefty.Writer.html#runTell), [NonDet](https://hackage.haskell.org/package/heftia-effects-0.4.0.0/docs/src/Control.Monad.Hefty.NonDet.html#runNonDet), and [Coroutine](https://hackage.haskell.org/package/heftia-effects-0.4.0.0/docs/src/Control.Monad.Hefty.Coroutine.html#runCoroutine), they can be implemented in just a few lines, or even a single line. Even for effects like NonDet and Coroutine, which involve continuations and might seem difficult to implement at first glance, this is exactly how simple it can be. This is the power of algebraic effects. Users can quickly define experimental and innovative custom effects using continuations.
+
+* **Standard and Reasonable Performance**
+
+    It operates at a speed positioned roughly in the middle between faster libraries (like `effectful` or `eveff`) and relatively slower ones (like `polysemy` or `fused-effects`): [performance.md](https://github.com/sayo-hs/heftia/blob/develop/benchmark/performance.md).
+
+* **Purity**
+
+    * Does not depend on the IO monad and can use any monad as the base monad.
+    * Semantics are isolated from the IO monad, meaning that aspects like asynchronous exceptions and threads do not affect the behavior of effects.
 
 This library is inspired by the paper:
 * Casper Bach Poulsen and Cas van der Rest. 2023. Hefty Algebras: Modular
