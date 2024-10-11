@@ -17,8 +17,8 @@ For information on performance, please refer to [performance.md](https://github.
 
     * Higher-order effects
     * Delimited continuations (algebraic effects)
-    * Coroutines (non-scoped resumptions)
-    * Non-deterministic computations
+        * Coroutines (non-scoped resumptions)
+        * Non-deterministic computations
     * [`MonadUnliftIO`](https://hackage.haskell.org/package/unliftio)
         * Code example: [heftia-effects/Example/UnliftIO/Main.hs](https://github.com/sayo-hs/heftia/blob/e1c1ab72bacc8cab1ca8728c1c44363ea34639d7/heftia-effects/Example/UnliftIO/Main.hs)
 
