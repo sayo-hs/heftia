@@ -219,7 +219,7 @@ About the internal *elaboration* mechanism: https://sayo-hs.github.io/jekyll/upd
 [^5]: https://github.com/sayo-hs/heftia/issues/12
 [^6]: https://github.com/hasura/eff/issues/12
 
-Heftia can simply be described as a higher-order version of freer-simple.
+Heftia can simply be described as a higher-order version of `freer-simple`.
 This is indeed true in terms of its internal mechanisms as well.
 
 Additionally, this library provides a consistent algebraic effects semantics that is independent of carriers and effects.
@@ -252,8 +252,8 @@ For more details, please refer to [performance.md](https://github.com/sayo-hs/he
 
 * It is generally recommended to use effects defined with automatic derivation provided by [data-effects-th](https://hackage.haskell.org/package/data-effects-th).
 
-* The representation of first-order effects is compatible with freer-simple.
-    Therefore, effects defined for freer-simple can be used as is in this library.
+* The representation of first-order effects is compatible with `freer-simple`.
+    Therefore, effects defined for `freer-simple` can be used as is in this library.
     However, to avoid confusion between redundantly defined effects,
     it is recommended to use the effects defined in `data-effects`.
 
