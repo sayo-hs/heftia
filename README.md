@@ -288,9 +288,11 @@ For more details, please refer to [performance.md](https://github.com/sayo-hs/he
     Also, it is not compatible with Effectful and eff.
 
 ## Future Plans
+* Increase effects and nurture the ecosystem
+    * async/await, concurrent/parallel programming, streaming, `co-log`, file system, Subprocesses, POSIX, and so on...
+* Write practical software using Heftia
 * Support for Applicative effects
-* Completing lacking definitions such as
-    * interpreters for the `Accum` and others effects
+* (Support for [Linear](https://hackage.haskell.org/package/linear-base) effects?)
 
 ## License
 The license is MPL 2.0. Please refer to the [NOTICE](https://github.com/sayo-hs/heftia/blob/v0.5.0/NOTICE).
