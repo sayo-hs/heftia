@@ -9,7 +9,16 @@ In its generalization, the focus is on ensuring predictable results based on sim
 Please refer to the [Haddock documentation](https://hackage.haskell.org/package/heftia-0.4.0.0/docs/Control-Monad-Hefty.html) for usage and semantics.
 For information on performance, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/v0.5.0/benchmark/performance.md).
 
-**Key Features:**
+This library is inspired by the paper:
+* Casper Bach Poulsen and Cas van der Rest. 2023. Hefty Algebras: Modular
+    Elaboration of Higher-Order Algebraic Effects. Proc. ACM Program. Lang. 7,
+    POPL, Article 62 (January 2023), 31 pages. <https://doi.org/10.1145/3571255>
+
+The *elaboration* approach proposed in the above paper allows for a straightforward treatment of higher-order effects.
+
+Heftia's data structure is an extension of the Freer monad, designed to be theoretically straightforward by eliminating ad-hoc elements.
+
+## Key Features
 
 * **Correct Semantics for Higher-Order Effects & Continuations**
 
@@ -41,14 +50,17 @@ For information on performance, please refer to [performance.md](https://github.
 Additionally, if performance is not a top priority, it should also be a good alternative for `effectful`.
 If performance is particularly important, [`effectful`](https://github.com/haskell-effectful/effectful) would be the best alternative to this library.
 
-This library is inspired by the paper:
-* Casper Bach Poulsen and Cas van der Rest. 2023. Hefty Algebras: Modular
-    Elaboration of Higher-Order Algebraic Effects. Proc. ACM Program. Lang. 7,
-    POPL, Article 62 (January 2023), 31 pages. <https://doi.org/10.1145/3571255>
+## Downsides
 
-The *elaboration* approach proposed in the above paper allows for a straightforward treatment of higher-order effects.
+This library has notable semantic differences, particularly compared to libraries like `effectful`, `polysemy`, and `fused-effects`.
+The semantics of this library are almost equivalent to those of `freer-simple` and are also similar to Alexis King's `eff` library.
+This type of semantics is often referred to as *continuation-based semantics*.
+Additionally, unlike recent libraries such as `effectful`, which have an IO-fused effect system, the semantics of this library are separated from IO.
+Due to these differences, people who are already familiar with the semantics of other major libraries may find it challenging to transition to this library due to the mental model differences.
 
-Heftia's data structure is an extension of the Freer monad, designed to be theoretically straightforward by eliminating ad-hoc elements.
+For those who have not used an extensible effects library in Haskell before, this should not be a problem.
+Particularly, if you are already somewhat familiar with the semantics of algebraic effects through languages like `koka` or `eff-lang`,
+you likely already have the mental model needed for this library, and everything should go smoothly.
 
 ## Status
 
