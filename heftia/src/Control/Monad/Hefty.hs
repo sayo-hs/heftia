@@ -269,7 +269,7 @@ On the other hand, in @prog2@, when @runCatch@ is applied to @action@:
 @
     runCatch \@String action
  =  runCatch \@String $ someAction \`@v'Data.Effect.Except.catch'@\` \\(_ :: String) -> 'pure' "caught"
-==> 'interposeWith' (\\(@v'Data.Effect.Except.Throw' e) _ -> 'pure' "caught") $ someAction
+==> 'interposeWith' (\\(@v'Data.Effect.Except.Throw'@ e) _ -> 'pure' "caught") $ someAction
 @
 
 At this point, since there is no v'Data.Effect.Except.throw' in the computation
