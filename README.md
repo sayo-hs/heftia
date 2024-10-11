@@ -7,7 +7,7 @@ Heftia is an extensible effects library that generalizes "Algebraic Effects and 
 In its generalization, the focus is on ensuring predictable results based on simple, consistent semantics, while preserving soundness.
 
 Please refer to the [Haddock documentation](https://hackage.haskell.org/package/heftia-0.4.0.0/docs/Control-Monad-Hefty.html) for usage and semantics.
-For information on performance, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/v0.4.0/benchmark/performance.md).
+For information on performance, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/3ebe317452694a53278f753cf1caaf2a3ddd2b6a/benchmark/performance.md).
 
 The library allows the following effects with well-defined semantics:
 
@@ -179,7 +179,7 @@ $
 
 ## Documentation
 A detailed explanation of usage and semantics is available in [Haddock](https://hackage.haskell.org/package/heftia-0.4.0.0/docs/Control-Monad-Hefty.html).
-The example codes are located in the [heftia-effects/Example/](https://github.com/sayo-hs/heftia/tree/v0.4.0/heftia-effects/Example) directory.
+The example codes are located in the [heftia-effects/Example/](https://github.com/sayo-hs/heftia/tree/0cff92ee913177ad149fd4747508a074ebb915f8/heftia-effects/Example) directory.
 Also, the following *HeftWorld* example (outdated): https://github.com/sayo-hs/HeftWorld
 
 About the internal *elaboration* mechanism: https://sayo-hs.github.io/jekyll/update/2024/09/04/how-the-heftia-extensible-effects-library-works.html
@@ -237,7 +237,7 @@ This results in minimal surprise to the mental model of the code reader.
 Overall, the performance of this library is positioned roughly in the middle between the fast (`effectful`, `eveff`, etc.) and slow (`polysemy`, `fused-effects`, etc.) libraries, and can be considered average.
 In all benchmarks, the speed is nearly equivalent to `freer-simple`, only slightly slower.
 
-For more details, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/v0.4.0/benchmark/performance.md).
+For more details, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/3ebe317452694a53278f753cf1caaf2a3ddd2b6a/benchmark/performance.md).
 
 ### Compatibility with other libraries
 
