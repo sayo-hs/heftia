@@ -146,7 +146,7 @@ Pre-applying: Goodbye world!
 Post-applying: Hello world!!
 ```
 
-For more details, please refer to the [complete code](https://github.com/sayo-hs/heftia/blob/v0.4.0/heftia-effects/Example/Writer/Main.hs) and the [implementation of the elaborator](https://github.com/sayo-hs/heftia/blob/v0.4.0/heftia-effects/src/Control/Effect/Interpreter/Heftia/Writer.hs).
+For more details, please refer to the [complete code](https://github.com/sayo-hs/heftia/blob/v0.4.0/heftia-effects/Example/Writer/Main.hs) and the [implementation of the elaborator](https://github.com/sayo-hs/heftia/blob/v0.4.0/heftia-effects/src/Control/Monad/Hefty/Writer.hs).
 
 ### Semantics Zoo
 To run the [SemanticsZoo example](https://github.com/sayo-hs/heftia/blob/v0.4.0/heftia-effects/Example/SemanticsZoo/Main.hs):
