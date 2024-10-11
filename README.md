@@ -37,6 +37,10 @@ For information on performance, please refer to [performance.md](https://github.
     * Does not depend on the IO monad and can use any monad as the base monad.
     * Semantics are isolated from the IO monad, meaning that aspects like asynchronous exceptions and threads do not affect the behavior of effects.
 
+**Heftia should be a good substitute for `mtl`, `polysemy`, `fused-effects`, and `freer-simple`.**
+Additionally, if performance is not a top priority, it should also be a good alternative for `effectful`.
+If performance is particularly important, [`effectful`](https://github.com/haskell-effectful/effectful) would be the best alternative to this library.
+
 This library is inspired by the paper:
 * Casper Bach Poulsen and Cas van der Rest. 2023. Hefty Algebras: Modular
     Elaboration of Higher-Order Algebraic Effects. Proc. ACM Program. Lang. 7,
