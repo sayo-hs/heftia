@@ -8,12 +8,15 @@ License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 Portability :  portable
 -}
-module Control.Monad.Hefty.Fresh where
+module Control.Monad.Hefty.Fresh (
+    module Control.Monad.Hefty.Fresh,
+    module Data.Effect.Fresh,
+) where
 
 import Control.Arrow ((>>>))
 import Control.Monad.Hefty (Eff, interpret, raiseUnder, type (<|), type (~>))
 import Control.Monad.Hefty.State (runState)
-import Data.Effect.Fresh (Fresh (Fresh))
+import Data.Effect.Fresh
 import Data.Effect.State (State, get, modify)
 import Numeric.Natural (Natural)
 

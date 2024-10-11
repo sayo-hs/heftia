@@ -2,7 +2,11 @@
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
-module Control.Monad.Hefty.ShiftReset where
+module Control.Monad.Hefty.ShiftReset (
+    module Control.Monad.Hefty.ShiftReset,
+    module Data.Effect.ShiftReset,
+)
+where
 
 import Control.Monad.Hefty (
     Eff,
@@ -14,13 +18,7 @@ import Control.Monad.Hefty (
     type (~>),
  )
 import Data.Effect.Key (KeyH (KeyH))
-import Data.Effect.ShiftReset (
-    Reset (Reset),
-    Shift,
-    Shift' (Shift),
-    Shift_,
-    Shift_' (Shift_'),
- )
+import Data.Effect.ShiftReset
 
 type ShiftFix ans eh ef = Shift ans (ShiftBase ans eh ef)
 

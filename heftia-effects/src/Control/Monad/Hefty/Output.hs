@@ -8,13 +8,17 @@ License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 Portability :  portable
 -}
-module Control.Monad.Hefty.Output where
+module Control.Monad.Hefty.Output (
+    module Control.Monad.Hefty.Output,
+    module Data.Effect.Output,
+)
+where
 
 import Control.Arrow ((>>>))
 import Control.Monad.Hefty (Eff, interpret, interpretStateBy, raiseUnder, type (~>))
 import Control.Monad.Hefty.State (runState)
 import Control.Monad.Hefty.Writer (handleTell)
-import Data.Effect.Output (Output (Output))
+import Data.Effect.Output
 import Data.Effect.State (modify)
 import Data.Effect.Writer (Tell (Tell))
 

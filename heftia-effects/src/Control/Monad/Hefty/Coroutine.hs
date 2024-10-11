@@ -1,10 +1,14 @@
 -- SPDX-License-Identifier: MPL-2.0
 
-module Control.Monad.Hefty.Coroutine where
+module Control.Monad.Hefty.Coroutine (
+    module Control.Monad.Hefty.Coroutine,
+    module Data.Effect.Coroutine,
+)
+where
 
 import Control.Monad.Hefty.Interpret (interpretBy)
 import Control.Monad.Hefty.Types (Eff)
-import Data.Effect.Coroutine (Status (Continue, Done), Yield (Yield))
+import Data.Effect.Coroutine
 
 runCoroutine
     :: forall a b ans r

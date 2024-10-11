@@ -8,12 +8,16 @@ License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 Portability :  portable
 -}
-module Control.Monad.Hefty.Input where
+module Control.Monad.Hefty.Input (
+    module Control.Monad.Hefty.Input,
+    module Data.Effect.Input,
+)
+where
 
 import Control.Arrow ((>>>))
 import Control.Monad.Hefty (Eff, interpret, raiseUnder, type (~>))
 import Control.Monad.Hefty.State (evalState)
-import Data.Effect.Input (Input (Input))
+import Data.Effect.Input
 import Data.Effect.State (gets, put)
 import Data.List (uncons)
 

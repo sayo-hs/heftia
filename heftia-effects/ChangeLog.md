@@ -21,3 +21,11 @@
 * Support for the core package update to version 0.4.
 * Dropped support for GHC 9.2.8, now supporting GHC 9.4.1 and later.
 * Added benchmarks and tests.
+
+## 0.5.0.0 -- 2024-10-12
+
+* **Breaking changes**
+    * Renamed `Control.Monad.Hefty.Provider.provide`/`provide_` -> `scope`/`scoped_`
+    * Renamed `Control.Monad.Hefty.Writer.listen` -> `intercept`
+
+* Reexported `Data.Effect.*` from the interpreters module `Control.Monad.Hefty.*`.

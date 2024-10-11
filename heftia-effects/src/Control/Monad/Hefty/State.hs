@@ -10,7 +10,11 @@ Portability :  portable
 
 Interpreter for the t'Data.Effect.State.State' effect.
 -}
-module Control.Monad.Hefty.State where
+module Control.Monad.Hefty.State (
+    module Control.Monad.Hefty.State,
+    module Data.Effect.State,
+)
+where
 
 import Control.Arrow ((>>>))
 import Control.Monad.Hefty (
@@ -30,7 +34,7 @@ import Control.Monad.Hefty (
  )
 import Control.Monad.Hefty.Reader (runAsk)
 import Data.Effect.Reader (Ask (Ask), ask)
-import Data.Effect.State (State (Get, Put), get, put)
+import Data.Effect.State
 import Data.Functor ((<&>))
 import UnliftIO (newIORef, readIORef, writeIORef)
 

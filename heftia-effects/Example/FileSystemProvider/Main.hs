@@ -17,7 +17,7 @@ import Control.Monad.Hefty (
     type (<|),
     type (~>),
  )
-import Control.Monad.Hefty.Provider (ProviderFix_, provide_, runProvider_)
+import Control.Monad.Hefty.Provider (ProviderFix_, runProvider_, scope_)
 
 data FileSystemF a where
     ReadFS :: FilePath -> FileSystemF String
@@ -48,8 +48,8 @@ runDummyFSProvider =
 main :: IO ()
 main =
     runEff . runDummyFSProvider $
-        provide_ @"fs1" "/fs1" \_ -> do
-            provide_ @"fs2" "/fs2" \inBase -> do
+        scope_ @"fs1" "/fs1" \_ -> do
+            scope_ @"fs2" "/fs2" \inBase -> do
                 inBase do
                     s1 <- readFS' @"fs1" "/a/b/c"
                     liftIO $ putStrLn $ "content: " <> show s1

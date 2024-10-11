@@ -10,7 +10,11 @@ Portability :  portable
 
 Interpreters for the t'Ask' / t'Local' effects.
 -}
-module Control.Monad.Hefty.Reader where
+module Control.Monad.Hefty.Reader (
+    module Control.Monad.Hefty.Reader,
+    module Data.Effect.Reader,
+)
+where
 
 import Control.Monad.Hefty (
     Eff,
@@ -22,7 +26,7 @@ import Control.Monad.Hefty (
     type (~>),
     type (~~>),
  )
-import Data.Effect.Reader (Ask (..), Local (..), ask)
+import Data.Effect.Reader
 
 runReader
     :: forall r eh ef

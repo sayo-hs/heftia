@@ -12,7 +12,6 @@ import Control.Monad.Hefty.Coroutine qualified as H
 import Control.Monad.Hefty.Reader qualified as H
 import Control.Mp.Eff qualified as Mp
 import Control.Mp.Util qualified as Mp
-import Data.Effect.Coroutine qualified as H
 import "eff" Control.Effect qualified as E
 
 programFreer :: (FS.Member (FS.Yield Int Int) es) => Int -> FS.Eff es [Int]

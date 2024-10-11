@@ -10,12 +10,17 @@ License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 Portability :  portable
 -}
-module Control.Monad.Hefty.NonDet where
+module Control.Monad.Hefty.NonDet (
+    module Control.Monad.Hefty.NonDet,
+    module Data.Effect.NonDet,
+)
+where
 
-import Control.Applicative (Alternative ((<|>)), empty, (<|>))
+import Control.Applicative (Alternative ((<|>)), (<|>))
 #if ( __GLASGOW_HASKELL__ < 906 )
 import Control.Applicative (liftA2)
 #endif
+import Control.Applicative qualified as A
 import Control.Arrow ((>>>))
 import Control.Monad.Hefty (
     Eff,
@@ -28,7 +33,7 @@ import Control.Monad.Hefty (
     type (~>),
  )
 import Data.Bool (bool)
-import Data.Effect.NonDet (Choose (Choose), ChooseH (ChooseH), Empty (Empty), choose)
+import Data.Effect.NonDet
 
 -- | 'NonDet' effects handler for alternative answer type.
 runNonDet
@@ -41,7 +46,7 @@ runNonDet =
         >>> interpretBy
             (pure . pure)
             ( (\Choose k -> liftA2 (<|>) (k False) (k True))
-                !+ (\Empty _ -> pure empty)
+                !+ (\Empty _ -> pure A.empty)
                 !+ nil
             )
 

@@ -10,26 +10,27 @@ Portability :  portable
 
 Interpreters for the t'Data.Effect.Except.Throw' / t'Data.Effect.Except.Catch' effects.
 -}
-module Control.Monad.Hefty.Except where
+module Control.Monad.Hefty.Except (
+    module Control.Monad.Hefty.Except,
+    module Data.Effect.Except,
+)
+where
 
 import Control.Exception (Exception)
 import Control.Monad.Hefty (
     Eff,
     Interpreter,
-    bundleAllH,
     interposeWith,
     interpret,
     interpretBy,
     interpretH,
-    nilH,
-    (!!+),
     (&),
     type (<<|),
     type (<|),
     type (~>),
     type (~~>),
  )
-import Data.Effect.Except (Catch (Catch), Throw (Throw))
+import Data.Effect.Except
 import Data.Effect.Unlift (UnliftIO)
 import UnliftIO (throwIO)
 import UnliftIO qualified as IO
@@ -62,9 +63,3 @@ runCatchIO
      . (UnliftIO <<| eh, IO <| ef, Exception e)
     => Eff (Catch e ': eh) ef ~> Eff eh ef
 runCatchIO = interpretH \(Catch action hdl) -> IO.catch action hdl
-
-prog :: Eff '[Catch String, Catch Int] '[Throw String, Throw Int] ()
-prog = undefined
-
-prog' :: Eff '[] [Throw String, Throw Int] ()
-prog' = interpretH (elabCatch @String !!+ elabCatch @Int !!+ nilH) . bundleAllH $ prog

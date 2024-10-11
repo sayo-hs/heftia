@@ -13,7 +13,11 @@ Portability :  portable
 Interpreter and elaborator for the t'Data.Effect.Writer.Writer' effect class.
 See [README.md](https://github.com/sayo-hs/heftia/blob/master/README.md).
 -}
-module Control.Monad.Hefty.Writer where
+module Control.Monad.Hefty.Writer (
+    module Control.Monad.Hefty.Writer,
+    module Data.Effect.Writer,
+)
+where
 
 import Control.Monad.Hefty (
     Eff,
@@ -26,7 +30,7 @@ import Control.Monad.Hefty (
     type (<|),
     type (~>),
  )
-import Data.Effect.Writer (Tell (Tell), WriterH (Censor, Listen), tell)
+import Data.Effect.Writer
 
 -- | 'Writer' effect handler with post-applying censor semantics.
 runWriterPost :: (Monoid w) => Eff '[WriterH w] (Tell w ': ef) a -> Eff '[] ef (w, a)
@@ -45,23 +49,23 @@ handleTell (Tell w') w k = k (w <> w') ()
 
 runWriterHPost :: (Monoid w, Tell w <| ef) => Eff '[WriterH w] ef ~> Eff '[] ef
 runWriterHPost = interpretH \case
-    Listen m -> listen m
+    Listen m -> intercept m
     Censor f m -> censorPost f m
 
 runWriterHPre :: (Monoid w, Tell w <| ef) => Eff '[WriterH w] ef ~> Eff '[] ef
 runWriterHPre = interpretH \case
-    Listen m -> listen m
+    Listen m -> intercept m
     Censor f m -> censorPre f m
 
 {- | Retrieves the monoidal value accumulated by v'tell' within the given action.
 The v'tell' effect is not consumed and remains intact.
 -}
-listen
+intercept
     :: forall w ef a
      . (Tell w <| ef, Monoid w)
     => Eff '[] ef a
     -> Eff '[] ef (w, a)
-listen =
+intercept =
     interposeStateBy @_ @(Tell w)
         mempty
         (curry pure)

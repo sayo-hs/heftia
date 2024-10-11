@@ -12,16 +12,21 @@ Portability :  portable
 
 An elaborator for the t'Control.Effect.Class.Resource.Resource' effect class.
 -}
-module Control.Monad.Hefty.Resource where
+module Control.Monad.Hefty.Resource (
+    module Control.Monad.Hefty.Resource,
+    module Data.Effect.Resource,
+)
+where
 
 import Control.Effect (type (~>))
 import Control.Monad.Hefty.Interpret (interpretH)
 import Control.Monad.Hefty.Types (Eff, type (~~>))
 import Data.Effect.OpenUnion.Internal.FO (type (<|))
 import Data.Effect.OpenUnion.Internal.HO (type (<<|))
-import Data.Effect.Resource (Resource (Bracket, BracketOnExcept))
+import Data.Effect.Resource
 import Data.Effect.Unlift (UnliftIO)
-import UnliftIO (MonadUnliftIO, bracket, bracketOnError)
+import UnliftIO (MonadUnliftIO)
+import UnliftIO qualified as IO
 
 -- | Elaborates the `Resource` effect under the `UnliftIO` context.
 runResourceIO
@@ -31,6 +36,6 @@ runResourceIO = interpretH elabResourceIO
 
 elabResourceIO :: (MonadUnliftIO m) => Resource ~~> m
 elabResourceIO = \case
-    Bracket acquire release thing -> bracket acquire release thing
-    BracketOnExcept acquire onError thing -> bracketOnError acquire onError thing
+    Bracket acquire release thing -> IO.bracket acquire release thing
+    BracketOnExcept acquire onError thing -> IO.bracketOnError acquire onError thing
 {-# INLINE elabResourceIO #-}

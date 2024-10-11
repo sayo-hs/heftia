@@ -13,8 +13,6 @@ import Control.Monad.Hefty.Except qualified as H
 import Control.Monad.Hefty.Reader qualified as H
 import Control.Monad.Identity qualified as M
 import Control.Monad.Reader qualified as M
-import Data.Effect.Except qualified as H
-import Data.Effect.Reader qualified as H
 import Effectful qualified as EL
 import Effectful.Error.Dynamic qualified as EL
 import Effectful.Reader.Dynamic qualified as EL

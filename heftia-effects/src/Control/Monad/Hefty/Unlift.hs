@@ -8,10 +8,14 @@ License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 Portability :  portable
 -}
-module Control.Monad.Hefty.Unlift where
+module Control.Monad.Hefty.Unlift (
+    module Control.Monad.Hefty.Unlift,
+    module Data.Effect.Unlift,
+)
+where
 
 import Control.Monad.Hefty (Eff, interpretH, runEff, send0, type (~>))
-import Data.Effect.Unlift (UnliftBase (WithRunInBase), UnliftIO)
+import Data.Effect.Unlift
 
 runUnliftBase :: forall b. (Monad b) => Eff '[UnliftBase b] '[b] ~> b
 runUnliftBase =

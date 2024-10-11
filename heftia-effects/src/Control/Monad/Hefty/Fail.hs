@@ -8,10 +8,15 @@ License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 Portability :  portable
 -}
-module Control.Monad.Hefty.Fail where
+module Control.Monad.Hefty.Fail (
+    module Control.Monad.Hefty.Fail,
+    module Data.Effect.Fail,
+)
+where
 
+import Control.Monad.Fail qualified as IO
 import Control.Monad.Hefty (Eff, interpret, liftIO, type (<|), type (~>))
-import Data.Effect.Fail (Fail (Fail))
+import Data.Effect.Fail
 
 runFailIO :: (IO <| ef) => Eff eh (Fail ': ef) ~> Eff eh ef
-runFailIO = interpret \(Fail s) -> liftIO $ fail s
+runFailIO = interpret \(Fail s) -> liftIO $ IO.fail s

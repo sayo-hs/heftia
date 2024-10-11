@@ -12,12 +12,16 @@ This module provides handlers for the t`KVStore` effect, comes
 from [@Polysemy.KVStore@](https://hackage.haskell.org/package/polysemy-kvstore-0.1.3.0/docs/Polysemy-KVStore.html)
 in the @polysemy-kvstore@ package.
 -}
-module Control.Monad.Hefty.KVStore where
+module Control.Monad.Hefty.KVStore (
+    module Control.Monad.Hefty.KVStore,
+    module Data.Effect.KVStore,
+)
+where
 
 import Control.Arrow ((>>>))
 import Control.Monad.Hefty (Eff, interpret, raiseUnder, type (<|), type (~>))
 import Control.Monad.Hefty.State (runState)
-import Data.Effect.KVStore (KVStore (LookupKV, UpdateKV))
+import Data.Effect.KVStore
 import Data.Effect.State (State, get, modify)
 import Data.Functor ((<&>))
 import Data.Map (Map)

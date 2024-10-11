@@ -7,7 +7,11 @@ Copyright   :  (c) 2024 Sayo Koyoneda
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 -}
-module Control.Monad.Hefty.Provider where
+module Control.Monad.Hefty.Provider (
+    module Control.Monad.Hefty.Provider,
+    module Data.Effect.Provider,
+)
+where
 
 import Control.Monad.Hefty (
     Eff,
@@ -23,8 +27,7 @@ import Control.Monad.Hefty (
     type (~>),
  )
 import Data.Effect.Key (KeyH (KeyH))
-import Data.Effect.Provider (Provider, Provider' (Provide), ProviderKey)
-import Data.Effect.Provider qualified as P
+import Data.Effect.Provider
 import Data.Effect.Tag (type (#), type (##))
 import Data.Functor.Identity (Identity (Identity))
 
@@ -62,7 +65,7 @@ runProvider_
     -> Eff (ProviderFix_ i eh rh ef rf ': rh) rf ~> Eff rh rf
 runProvider_ run = runProvider \i m -> run i $ Identity <$> m
 
-provide
+scope
     :: forall tag ctx i eh ef a sh bh sf bf
      . ( MemberHBy
             (ProviderKey ctx i)
@@ -75,11 +78,11 @@ provide
          -> Eff (sh ## tag ': ProviderFix ctx i sh bh sf bf ': bh) (sf # tag ': bf) a
        )
     -> Eff eh ef (ctx a)
-provide i f =
-    i P...! \runInBase ->
+scope i f =
+    i ..! \runInBase ->
         ProviderBase . untag . untagH $ f $ tagH . tag . unProviderBase . runInBase
 
-provide_
+scope_
     :: forall tag i eh ef a sh bh sf bf
      . ( MemberHBy
             (ProviderKey Identity i)
@@ -92,6 +95,6 @@ provide_
          -> Eff (sh ## tag ': ProviderFix_ i sh bh sf bf ': bh) (sf # tag ': bf) a
        )
     -> Eff eh ef a
-provide_ i f =
-    i P..! \runInBase ->
+scope_ i f =
+    i .! \runInBase ->
         ProviderBase . untag . untagH $ f $ tagH . tag . unProviderBase . runInBase

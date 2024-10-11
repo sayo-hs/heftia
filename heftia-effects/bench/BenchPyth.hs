@@ -22,7 +22,6 @@ import Control.Monad.Logic qualified as M
 import Control.Monad.Reader qualified as M
 import Control.Mp.Eff qualified as Mp
 import Control.Mp.Util qualified as Mp
-import Data.Effect.NonDet qualified as H
 import "eff" Control.Effect qualified as EF
 
 programFreer :: (FS.Member FS.NonDet es) => Int -> FS.Eff es (Int, Int, Int)

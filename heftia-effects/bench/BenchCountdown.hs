@@ -17,7 +17,6 @@ import Control.Monad.Hefty.State qualified as H
 import Control.Monad.Identity qualified as M
 import Control.Monad.Reader qualified as M
 import Control.Monad.State.Strict qualified as M
-import Data.Effect.State qualified as H
 import Effectful qualified as EL
 import Effectful.Reader.Dynamic qualified as EL
 import Effectful.State.Dynamic qualified as EL
