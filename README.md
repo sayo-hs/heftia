@@ -20,6 +20,7 @@ For information on performance, please refer to [performance.md](https://github.
     * Coroutines (non-scoped resumptions)
     * Non-deterministic computations
     * [`MonadUnliftIO`](https://hackage.haskell.org/package/unliftio)
+        * Code example: [heftia-effects/Example/UnliftIO/Main.hs](https://github.com/sayo-hs/heftia/blob/e1c1ab72bacc8cab1ca8728c1c44363ea34639d7/heftia-effects/Example/UnliftIO/Main.hs)
 
     All of these interact through a simple, consistent, and predictable semantics based on algebraic effects.
 
