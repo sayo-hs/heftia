@@ -103,8 +103,6 @@ Example .cabal:
 The supported versions are GHC 9.4.1 and later.
 This library has been tested with GHC 9.8.2 and 9.4.1.
 
-## Getting Started
-
 ## Example
 
 Compared to existing Effect System libraries in Haskell that handle higher-order effects, this
