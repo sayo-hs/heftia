@@ -7,7 +7,7 @@ Heftia is an extensible effects library for Haskell that generalizes "Algebraic 
 In its generalization, the focus is on ensuring predictable results based on simple, consistent semantics, while preserving soundness.
 
 Please refer to the [Haddock documentation](https://hackage.haskell.org/package/heftia-0.4.0.0/docs/Control-Monad-Hefty.html) for usage and semantics.
-For information on performance, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/3ebe317452694a53278f753cf1caaf2a3ddd2b6a/benchmark/performance.md).
+For information on performance, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/v0.5.0/benchmark/performance.md).
 
 **Key Features:**
 
@@ -20,7 +20,7 @@ For information on performance, please refer to [performance.md](https://github.
         * Coroutines (non-scoped resumptions)
         * Non-deterministic computations
     * [`MonadUnliftIO`](https://hackage.haskell.org/package/unliftio)
-        * Code example: [heftia-effects/Example/UnliftIO/Main.hs](https://github.com/sayo-hs/heftia/blob/e1c1ab72bacc8cab1ca8728c1c44363ea34639d7/heftia-effects/Example/UnliftIO/Main.hs)
+        * Code example: [heftia-effects/Example/UnliftIO/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/UnliftIO/Main.hs)
 
     All of these interact through a simple, consistent, and predictable semantics based on algebraic effects.
 
@@ -30,7 +30,7 @@ For information on performance, please refer to [performance.md](https://github.
 
 * **Standard and Reasonable Performance**
 
-    It operates at a speed positioned roughly in the middle between faster libraries (like `effectful` or `eveff`) and relatively slower ones (like `polysemy` or `fused-effects`): [performance.md](https://github.com/sayo-hs/heftia/blob/develop/benchmark/performance.md).
+    It operates at a speed positioned roughly in the middle between faster libraries (like `effectful` or `eveff`) and relatively slower ones (like `polysemy` or `fused-effects`): [performance.md](https://github.com/sayo-hs/heftia/blob/v0.5.0/benchmark/performance.md).
 
 * **Purity**
 
@@ -115,7 +115,7 @@ are some examples:
 
 In handling higher-order effects, it's easy to work with **multi-shot delimited continuations**.
 For more details, please refer to
-the [example code](https://github.com/sayo-hs/heftia/blob/v0.4.0/heftia-effects/Example/Continuation/Main.hs).
+the [example code](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/Continuation/Main.hs).
 
 ### Two interpretations of the `censor` effect for Writer
 
@@ -168,10 +168,10 @@ Pre-applying: Goodbye world!
 Post-applying: Hello world!!
 ```
 
-For more details, please refer to the [complete code](https://github.com/sayo-hs/heftia/blob/v0.4.0/heftia-effects/Example/Writer/Main.hs) and the [implementation of the elaborator](https://github.com/sayo-hs/heftia/blob/v0.4.0/heftia-effects/src/Control/Monad/Hefty/Writer.hs).
+For more details, please refer to the [complete code](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/Writer/Main.hs) and the [implementation of the elaborator](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/src/Control/Monad/Hefty/Writer.hs).
 
 ### Semantics Zoo
-To run the [SemanticsZoo example](https://github.com/sayo-hs/heftia/blob/v0.4.0/heftia-effects/Example/SemanticsZoo/Main.hs):
+To run the [SemanticsZoo example](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/SemanticsZoo/Main.hs):
 ```console
 $ git clone https://github.com/sayo-hs/heftia
 $ cd heftia/heftia-effects
@@ -259,7 +259,7 @@ This results in minimal surprise to the mental model of the code reader.
 Overall, the performance of this library is positioned roughly in the middle between the fast (`effectful`, `eveff`, etc.) and slow (`polysemy`, `fused-effects`, etc.) libraries, and can be considered average.
 In all benchmarks, the speed is nearly equivalent to `freer-simple`, only slightly slower.
 
-For more details, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/3ebe317452694a53278f753cf1caaf2a3ddd2b6a/benchmark/performance.md).
+For more details, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/v0.5.0/benchmark/performance.md).
 
 ### Compatibility with other libraries
 
@@ -291,13 +291,13 @@ For more details, please refer to [performance.md](https://github.com/sayo-hs/he
     * interpreters for the `Accum` and others effects
 
 ## License
-The license is MPL 2.0. Please refer to the [NOTICE](https://github.com/sayo-hs/heftia/blob/v0.4.0/NOTICE).
+The license is MPL 2.0. Please refer to the [NOTICE](https://github.com/sayo-hs/heftia/blob/v0.5.0/NOTICE).
 Additionally, the code from `freer-simple` has been modified and used internally within this library.
 Therefore, some modules are licensed under both `MPL-2.0 AND BSD-3-Clause`.
 For details on licenses and copyrights, please refer to the module's Haddock documentation.
 
 ## Your contributions are welcome!
-Please see [CONTRIBUTING.md](https://github.com/sayo-hs/heftia/blob/v0.4.0/CONTRIBUTING.md).
+Please see [CONTRIBUTING.md](https://github.com/sayo-hs/heftia/blob/v0.5.0/CONTRIBUTING.md).
 
 ## Acknowledgements, citations, and related work
 The following is a non-exhaustive list of people and works that have had a significant impact, directly or indirectly, on Heftia’s design and implementation:
