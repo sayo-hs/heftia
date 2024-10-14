@@ -111,10 +111,18 @@ Example .cabal:
         TemplateHaskell,
         PartialTypeSignatures,
         AllowAmbiguousTypes
-
-    ghc-options: ... -fplugin GHC.TypeLits.KnownNat.Solver
 ...
 ```
+
+If you encounter an error like the following, add the pragma:
+
+```haskell
+{-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
+```
+
+to the header of your source file.
+
+    Could not deduce ‘GHC.TypeNats.KnownNat (1 GHC.TypeNats.+ ...)’
 
 The supported versions are GHC 9.4.1 and later.
 This library has been tested with GHC 9.8.2 and 9.4.1.
