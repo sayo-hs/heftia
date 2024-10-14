@@ -1,10 +1,10 @@
+{-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
+
 -- SPDX-License-Identifier: MPL-2.0
 
 module Control.Monad.Hefty.Concurrent.Timer where
 
 import Control.Concurrent.Thread.Delay qualified as Thread
-import Control.Monad.Hefty.Coroutine (runCoroutine)
-import Control.Monad.Hefty.State (evalState)
 import Control.Monad.Hefty (
     interpose,
     interpret,
@@ -17,6 +17,8 @@ import Control.Monad.Hefty (
     type (<|),
     type (~>),
  )
+import Control.Monad.Hefty.Coroutine (runCoroutine)
+import Control.Monad.Hefty.State (evalState)
 import Data.Effect.Concurrent.Timer (CyclicTimer (Wait), Timer (..), clock, cyclicTimer)
 import Data.Effect.Coroutine (Status (Continue, Done))
 import Data.Effect.State (get, put)
