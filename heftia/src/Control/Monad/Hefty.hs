@@ -199,7 +199,7 @@ data SomeEff a where
 'makeEffectF' [''SomeEff]
 
 -- | Throws an exception when \'SomeAction\' is encountered
-runSomeEff :: (@t'Data.Effect.Except.Throw'@ String t'Data.Effect.OpenUnion.<|' ef) => 'Eff' eh (SomeEff ': ef) ~> 'Eff' eh ef
+runSomeEff :: (@t'Data.Effect.Except.Throw'@ String t'Data.Effect.OpenUnion.<|' ef) => 'Eff' eh (SomeEff ': ef) t'Control.Effect.~>' 'Eff' eh ef
 runSomeEff = 'interpret' \\SomeAction -> v'Data.Effect.Except.throw' "not caught"
 
 -- | Catches the exception if \'someAction\' results in one
@@ -207,13 +207,13 @@ action :: (SomeEff t'Data.Effect.OpenUnion.<|' ef, t'Data.Effect.Except.Catch' S
 action = someAction \`@v'Data.Effect.Except.catch'@\` \\(_ :: String) -> 'pure' "caught"
 
 prog1 :: IO ()
-prog1 = 'runPure' . runThrow @String . runCatch @String . runSomeEff $ action
+prog1 = 'runPure' . runThrow \@String . runCatch \@String . runSomeEff $ action
 
 >>> prog1
 Right "caught"
 
 prog2 :: IO ()
-prog2 = 'runPure' . runThrow @String . runSomeEff . runCatch @String $ action
+prog2 = 'runPure' . runThrow \@String . runSomeEff . runCatch \@String $ action
 
 >>> prog2
 Left "not caught"
