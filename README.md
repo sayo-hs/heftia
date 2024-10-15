@@ -223,7 +223,7 @@ $
 
 ## Documentation
 A detailed explanation of usage and semantics is available in [Haddock](https://hackage.haskell.org/package/heftia-0.4.0.0/docs/Control-Monad-Hefty.html).
-The example codes are located in the [heftia-effects/Example/](https://github.com/sayo-hs/heftia/tree/0cff92ee913177ad149fd4747508a074ebb915f8/heftia-effects/Example) directory.
+The example codes are located in the [heftia-effects/Example/](https://github.com/sayo-hs/heftia/tree/v0.5.0/heftia-effects/Example) directory.
 Also, the following *HeftWorld* example (outdated): https://github.com/sayo-hs/HeftWorld
 
 About the internal *elaboration* mechanism: https://sayo-hs.github.io/jekyll/update/2024/09/04/how-the-heftia-extensible-effects-library-works.html
