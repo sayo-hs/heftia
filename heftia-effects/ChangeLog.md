@@ -29,7 +29,7 @@
 ## 0.5.0.0 -- 2024-10-12
 
 * **New features**
-    * Added Concurrent/Parallel and Streaming effects.
+    * Added Concurrent/Parallel effects and Streaming functionality.
 
 * **Breaking changes**
     * Renamed `Control.Monad.Hefty.Provider.provide`/`provide_` -> `scope`/`scoped_`
