@@ -6,12 +6,11 @@ module Control.Monad.Hefty.Coroutine (
 )
 where
 
-import Control.Monad.Hefty.Interpret (interpretBy)
-import Control.Monad.Hefty.Types (Eff)
+import Control.Monad.Hefty (Eff, interpretBy)
 import Data.Effect.Coroutine
 
 runCoroutine
-    :: forall a b ans r
-     . Eff '[] (Yield a b ': r) ans
-    -> Eff '[] r (Status (Eff '[] r) a b ans)
+    :: forall a b ans ef
+     . Eff '[] (Yield a b ': ef) ans
+    -> Eff '[] ef (Status (Eff '[] ef) a b ans)
 runCoroutine = interpretBy (pure . Done) (\(Yield a) k -> pure $ Continue a k)

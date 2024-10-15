@@ -62,6 +62,9 @@ common common-base
         unbounded-delays ^>= 0.1.1,
         ghc-typelits-knownnat ^>= 0.7,
         containers > 0.6.5 && < 0.8,
+        infinite-list,
+        kan-extensions,
+        these,
 
     ghc-options: -Wall
 
@@ -84,6 +87,8 @@ library
         Control.Monad.Hefty.KVStore
         Control.Monad.Hefty.Fresh
         Control.Monad.Hefty.Fail
+        Control.Monad.Hefty.Concurrent.Parallel
+        Control.Monad.Hefty.Concurrent.Stream
         Control.Monad.Hefty.Concurrent.Timer
 
     reexported-modules:
@@ -223,6 +228,14 @@ executable UnliftIO
 
     main-is: Main.hs
     hs-source-dirs: Example/UnliftIO
+    build-depends:
+        heftia-effects,
+
+executable Stream
+    import: common-base
+
+    main-is: Main.hs
+    hs-source-dirs: Example/Stream
     build-depends:
         heftia-effects,
 

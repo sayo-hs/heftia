@@ -22,7 +22,14 @@
 * Dropped support for GHC 9.2.8, now supporting GHC 9.4.1 and later.
 * Added benchmarks and tests.
 
+## 0.4.0.1 -- 2024-10-14
+
+* Fixed an issue where builds would fail with Stack: https://github.com/sayo-hs/heftia/issues/15
+
 ## 0.5.0.0 -- 2024-10-12
+
+* **New features**
+    * Added Concurrent/Parallel and Streaming effects.
 
 * **Breaking changes**
     * Renamed `Control.Monad.Hefty.Provider.provide`/`provide_` -> `scope`/`scoped_`

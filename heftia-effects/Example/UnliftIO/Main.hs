@@ -16,7 +16,7 @@ import Control.Monad.Hefty (
     liftIO,
     makeEffectF,
     makeEffectH,
-    raisesH,
+    raiseAllH,
     type (<<|),
     type (<|),
     type (~>),
@@ -55,7 +55,7 @@ main =
             insertDB 123
             insertDB 456
 
-            raisesH do
+            raiseAllH do
                 -- Even within the scope of UnliftIO, you can combine
                 -- non-deterministic computations...
                 runNonDetMonoid (const $ pure ()) . runChooseH $ do
@@ -74,7 +74,7 @@ main =
                             insertDB x
                             pure ()
 
-                -- Note that UnliftIO is disabled within the scope of 'raisesH'.
+                -- Note that UnliftIO is disabled within the scope of 'raiseAllH'.
                 -- Fitst-order 'IO' operations are still possible.
                 liftIO $ putStrLn "The transaction is being finalized..."
 

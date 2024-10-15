@@ -39,6 +39,7 @@ import Data.Effect.OpenUnion.Internal.FO (
     bundleUnionUnder,
     decomp,
     inj,
+    nil,
     prj,
     strengthen,
     strengthenN,
@@ -66,6 +67,7 @@ import Data.Effect.OpenUnion.Internal.HO (
     decompH,
     hfmapUnion,
     injH,
+    nilH,
     prjH,
     strengthenH,
     strengthenNH,
@@ -220,6 +222,11 @@ raiseN
 raiseN = transEff (weakenN @len)
 {-# INLINE raiseN #-}
 
+-- | Raises an empty first-order effect list to an arbitrary effect list.
+raiseAll :: Eff eh '[] ~> Eff eh ef
+raiseAll = transEff nil
+{-# INLINE raiseAll #-}
+
 {- | Inserts an arbitrary first-order effect @e2@ just below the head of the
 list.
 -}
@@ -272,6 +279,11 @@ raiseNH
     => Eff eh ef ~> Eff eh' ef
 raiseNH = transEffH (weakenNH @len)
 {-# INLINE raiseNH #-}
+
+-- | Raises an empty first-order effect list to an arbitrary effect list.
+raiseAllH :: Eff '[] ef ~> Eff eh ef
+raiseAllH = transEffH nilH
+{-# INLINE raiseAllH #-}
 
 {- | Inserts an arbitrary higher-order effect @e2@ just below the head of the
 list.
