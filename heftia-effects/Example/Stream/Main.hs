@@ -68,3 +68,14 @@ main = runUnliftIO . runResourceIO . runParallelIO $ do
     _ <- runSomeResource $ connect @Int produce consume
     _ <- runSomeResource $ connect @Int produce consume
     pure ()
+
+{-
+Acquiring resource
+1
+2
+Releasing resource
+Acquiring resource
+1
+2
+Releasing resource
+-}
