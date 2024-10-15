@@ -309,7 +309,8 @@ For more details, please refer to [performance.md](https://github.com/sayo-hs/he
 
 ## Future Plans
 * Increase effects and nurture the ecosystem
-    * async/await, concurrent/parallel programming, streaming, `co-log`, file system, Subprocesses, POSIX, and so on...
+    * ✅ concurrent/parallel programming, streaming: to be released in v0.5
+    * `co-log`, file system, Subprocesses, POSIX, and so on...
 * Write practical software using Heftia
 * Support for Applicative effects
 * (Support for [Linear](https://hackage.haskell.org/package/linear-base) effects?)
