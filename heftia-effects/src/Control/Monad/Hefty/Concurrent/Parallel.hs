@@ -31,9 +31,7 @@ import UnliftIO qualified as IO
 import UnliftIO.Concurrent (threadDelay)
 
 data Parallel f a where
-    Parallel :: f (a -> b) -> f a -> Parallel f b
-
--- LiftP2 :: (a -> b -> c) -> f a -> f b -> Parallel f c
+    LiftP2 :: (a -> b -> c) -> f a -> f b -> Parallel f c
 
 data Halt (a :: Type) where
     Halt :: Halt a
@@ -50,11 +48,8 @@ instance (Parallel <<: f, Applicative f) => Applicative (Concurrently f) where
     pure = Concurrently . pure
     {-# INLINE pure #-}
 
-    Concurrently f <*> Concurrently m = Concurrently $ parallel f m
-    {-# INLINE (<*>) #-}
-
--- liftA2 f (Concurrently a) (Concurrently b) = Concurrently $ liftP2 f a b
--- {-# INLINE liftA2 #-}
+    liftA2 f (Concurrently a) (Concurrently b) = Concurrently $ liftP2 f a b
+    {-# INLINE liftA2 #-}
 
 instance (Race <<: f, Halt <: f, Parallel <<: f, Applicative f) => Alternative (Concurrently f) where
     empty = Concurrently halt
@@ -62,10 +57,6 @@ instance (Race <<: f, Halt <: f, Parallel <<: f, Applicative f) => Alternative (
 
     (Concurrently a) <|> (Concurrently b) = Concurrently $ race a b
     {-# INLINE (<|>) #-}
-
-liftP2 :: (Parallel <<: f, Applicative f) => (a -> b -> c) -> f a -> f b -> f c
-liftP2 f a b = runConcurrently $ liftA2 f (Concurrently a) (Concurrently b)
-{-# INLINE liftP2 #-}
 
 liftP3 :: (Parallel <<: f, Applicative f) => (a -> b -> c -> d) -> f a -> f b -> f c -> f d
 liftP3 f a b c = runConcurrently $ liftA3 f (Concurrently a) (Concurrently b) (Concurrently c)
@@ -84,7 +75,7 @@ runHaltIO :: (IO <| ef) => Eff eh (Halt ': ef) ~> Eff eh ef
 runHaltIO = interpret haltToIO
 
 parallelToIO :: (MonadUnliftIO m) => Parallel ~~> m
-parallelToIO (Parallel f m) = IO.runConcurrently $ IO.Concurrently f <*> IO.Concurrently m
+parallelToIO (LiftP2 f a b) = IO.runConcurrently $ liftA2 f (IO.Concurrently a) (IO.Concurrently b)
 {-# INLINE parallelToIO #-}
 
 raceToIO :: (MonadUnliftIO m) => Race ~~> m

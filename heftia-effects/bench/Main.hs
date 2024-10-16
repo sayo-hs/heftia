@@ -6,6 +6,7 @@ module Main where
 import BenchCatch
 import BenchCoroutine
 import BenchCountdown
+import BenchParallel
 import BenchPyth
 import Data.Functor ((<&>))
 import Test.Tasty.Bench
@@ -111,4 +112,9 @@ main =
                     , bench "eff.5+5" $ nf coroutineEffDeep x
                     , bench "mp.5+5" $ nf coroutineMpDeep x
                     ]
+        , bgroup "parallel" $
+            [10000] <&> \x ->
+                bgroup
+                    (show x)
+                    [bench "parallel" $ nf parallel x]
         ]
