@@ -648,6 +648,8 @@ module Control.Monad.Hefty (
     module Data.Effect.OpenUnion,
     module Data.Effect,
     module Data.Effect.TH,
+    module Data.Effect.HFunctor.TH,
+    module Data.Effect.Key.TH,
     module Control.Effect,
 ) where
 
@@ -791,6 +793,8 @@ import Control.Monad.Hefty.Types (
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect
 import Data.Effect.HFunctor (HFunctor)
+import Data.Effect.HFunctor.TH
+import Data.Effect.Key.TH
 import Data.Effect.OpenUnion
 import Data.Effect.OpenUnion.Sum (type (:+:))
 import Data.Effect.TH
