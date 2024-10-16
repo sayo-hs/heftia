@@ -62,9 +62,8 @@ common common-base
         unbounded-delays ^>= 0.1.1,
         ghc-typelits-knownnat ^>= 0.7,
         containers > 0.6.5 && < 0.8,
-        infinite-list,
-        kan-extensions,
         these,
+        co-log-core,
 
     ghc-options: -Wall
 
@@ -90,6 +89,7 @@ library
         Control.Monad.Hefty.Concurrent.Parallel
         Control.Monad.Hefty.Concurrent.Stream
         Control.Monad.Hefty.Concurrent.Timer
+        Control.Monad.Hefty.Log
 
     reexported-modules:
         Control.Monad.Hefty,

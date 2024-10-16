@@ -30,6 +30,7 @@
 
 * **New features**
     * Added Concurrent/Parallel effects and Streaming functionality.
+    * Added interpreters for the `co-log` ecosystem.
 
 * **Breaking changes**
     * Renamed `Control.Monad.Hefty.Provider.provide`/`provide_` -> `scope`/`scoped_`
