@@ -21,7 +21,7 @@ Heftia's data structure is an extension of the Freer monad, designed to be theor
 ## Why choose this library over others?
 This library is based on algebraic effects. Currently, **none of the practical effect libraries other than this one are "algebraic."** So, why is being *algebraic* important?
 
-For example, algebraic effects are essential for managing coroutines, generators, streaming, non-deterministic computations, and more in a highly elegant and concise manner.
+For example, algebraic effects are essential for managing coroutines, generators, streaming, concurrency, non-deterministic computations, and more in a highly elegant and concise manner.
 
 Algebraic effects provide a consistent and predictable framework for handling side effects, enhancing modularity and flexibility in your code.
 Research in cutting-edge languages like [Koka](https://koka-lang.github.io/koka/doc/index.html), [Eff lang](https://www.eff-lang.org/), and [OCaml 5](https://ocaml.org/manual/effects.html) is advancing the understanding and implementation of algebraic effects, establishing them as **the programming paradigm of the future**.
