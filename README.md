@@ -318,11 +318,11 @@ For more details, please refer to [performance.md](https://github.com/sayo-hs/he
     However, to avoid confusion between redundantly defined effects,
     it is recommended to use the effects defined in `data-effects`.
 
-* GADTs for higher-order effects are formally similar to Polysemy and fused-effects,
+* GADTs for higher-order effects are formally similar to `polysemy` and `fused-effects`,
     but they need to be instances of the [`HFunctor`](https://hackage.haskell.org/package/compdata-0.13.1/docs/Data-Comp-Multi-HFunctor.html#t:HFunctor) type class.
     While it's not impossible to manually derive `HFunctor` for effect types based on these libraries and use them,
     it's inconvenient, so it's better to use `data-effects`.
-    Also, it is not compatible with Effectful and eff.
+    Also, it is not compatible with `effectful` and `eff`.
 
 ## Future Plans
 * Increase effects and nurture the ecosystem
