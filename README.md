@@ -267,11 +267,11 @@ About the internal *elaboration* mechanism: https://sayo-hs.github.io/jekyll/upd
 | `mtl`               | Yes                  | Multi-shot (`ContT`)   | Yes           | Yes                               | No                       | Carrier dependent                |
 | `fused-effects`     | Yes                  | No?                    | Yes           | Yes                               | No                       | Carrier dependent & Weaving-based (functorial state) |
 | Koka-lang           | No                   | Multi-shot             | Yes           | No (language built-in)            | Yes                      | Algebraic Effects                |
-| OCaml-lang 5        | ?                    | One-shot               | No [^3]       | No (language built-in)            | ?                        | Algebraic Effects?               |
+| Eff-lang            | No                   | Multi-shot             | Yes           | No (language built-in)            | Yes                      | Algebraic Effects                |
+| OCaml-lang 5        | ?                    | One-shot               | No [^3]       | No (language built-in)            | ?                        | Algebraic Effects                |
 
 [^3]: Effects do not appear in the type signature and can potentially cause unhandled errors at runtime
 [^4]: Scoped Resumption only. e.g. Coroutines are not supported.
-[^5]: https://github.com/sayo-hs/heftia/issues/12
 [^6]: https://github.com/hasura/eff/issues/12
 
 Heftia can simply be described as a higher-order version of `freer-simple`.
