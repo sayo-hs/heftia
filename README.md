@@ -26,7 +26,7 @@ For example, algebraic effects are essential for managing coroutines, generators
 Algebraic effects provide a consistent and predictable framework for handling side effects, enhancing modularity and flexibility in your code.
 Research in cutting-edge languages like [Koka](https://koka-lang.github.io/koka/doc/index.html), [Eff lang](https://www.eff-lang.org/), and [OCaml 5](https://ocaml.org/manual/effects.html) is advancing the understanding and implementation of algebraic effects, establishing them as **the programming paradigm of the future**.
 
-Heftia extends this by supporting higher-order algebraic effects, allowing for more expressive and customizable effect management.
+Heftia extends this by supporting higher-order algebraic effects, allowing for more expressive and modular effect management.
 This leads to more maintainable and extensible applications compared to non-algebraic effect libraries, positioning Heftia at **the forefront of modern effect handling techniques**.
 
 ## Key Features
