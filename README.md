@@ -56,6 +56,8 @@ This leads to more maintainable and extensible applications compared to non-alge
 
     * Does not depend on the IO monad and can use any monad as the base monad.
     * Semantics are isolated from the IO monad, meaning that aspects like asynchronous exceptions and threads do not affect the behavior of effects.
+    * The constructors of the `Eff` monad are [exposed](https://hackage.haskell.org/package/heftia-0.4.0.0/docs/Control-Monad-Hefty.html#t:Eff), and users can manipulate them directly without any safety concerns. Still, the semantics remain intact.
+    * These are in contrast to libraries like `effectful` and `eff`, making this library more **Haskell-ish and purely functional**.
 
 **Heftia should be a good substitute for `mtl`, `polysemy`, `fused-effects`, and `freer-simple`.**
 Additionally, if performance is not a top priority, it should also be a good alternative for `effectful`.
