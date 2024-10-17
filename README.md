@@ -294,13 +294,19 @@ In all benchmarks, the speed is nearly equivalent to `freer-simple`, only slight
 
 For more details, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/v0.5.0/benchmark/performance.md).
 
-### Compatibility with other libraries
+### Interoperability with other libraries
 
-#### About mtl
+#### About `mtl`
 * Since the representation of effectful programs in Heftia is simply a monad (`Eff`), it can be used as the base monad for transformers.
     This means you can stack any transformer on top of it.
 
 * The `Eff` monad is an instance of `MonadIO`, `MonadError`, `MonadRWS`, `MonadUnliftIO`, `Alternative`, etc., and these behave as the senders for the embedded `IO` or the effect GADTs defined in [data-effects](https://github.com/sayo-hs/data-effects).
+
+#### About `effectful`
+
+* In Heftia, since any monad can be used as the base monad of `Eff`, by setting the `Eff` monad from `effectful` as the base monad of Heftia, you can stack any effect in Heftia on top of `effectful`. In other words, the `Eff` of `Heftia` itself can be used like a monad transformer. This is not limited to `effectful`.
+
+* By using `Control.Monad.Hefty.Unlift.runUnliftIO` instead of `Control.Monad.Hefty.runEff`, you can inherit and use the `MonadUnliftIO` functionality of `effectful`'s `Eff` as a higher-order `UnliftIO` effect within Heftia.
 
 #### Representation of effects
 * Heftia relies on [data-effects](https://hackage.haskell.org/package/data-effects) for the definitions of standard effects such as `Reader`, `Writer`, and `State`.
