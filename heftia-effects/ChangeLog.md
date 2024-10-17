@@ -37,3 +37,4 @@
     * Renamed `Control.Monad.Hefty.Writer.listen` -> `intercept`
 
 * Reexported `Data.Effect.*` from the interpreters module `Control.Monad.Hefty.*`.
+* Generalized `runUnliftIO` to use any monad that is an instance of `MonadUnliftIO`.
