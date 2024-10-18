@@ -269,7 +269,7 @@ benchmark heftia-bench
     other-modules:
         BenchCountdown
         BenchCatch
-        -- BenchLocal
+        BenchLocal
         BenchCoroutine
         BenchPyth
         BenchParallel

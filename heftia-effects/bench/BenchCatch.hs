@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: BSD-3-Clause
 -- (c) 2022 Xy Ren; 2024 Sayo Koyoneda
 
--- Benchmarking scoped effects #1: Catching errors
+-- Benchmarking higher-order effects #1: Catching errors
 
 module BenchCatch where
 

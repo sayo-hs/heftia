@@ -6,6 +6,7 @@ module Main where
 import BenchCatch
 import BenchCoroutine
 import BenchCountdown
+import BenchLocal
 import BenchParallel
 import BenchPyth
 import Data.Functor ((<&>))
@@ -67,6 +68,34 @@ main =
                     , bench "effectful.5+5" $ nf catchEffectfulDeep x
                     , -- , bench "eff.5+5" $ nf catchEffDeep x
                       bench "mtl.5+5" $ nf catchMtlDeep x
+                    ]
+        , bgroup "local.shallow" $
+            [10000] <&> \x ->
+                bgroup
+                    (show x)
+                    [ bench "heftia" $ nf localHeftia x
+                    , bench "polysemy" $ nf localSem x
+                    , bench "fused" $ nf localFused x
+                    , bench "effectful" $ nf localEffectful x
+                    -- , bench "eff" $ nf localEff x
+                    -- `eff` is x500 slow in this case, so it is excluded because it makes the graph hard to read.
+                    --  bench "mtl" $ nf localMtl x
+                    ]
+        , bgroup "local.deep" $
+            [10000] <&> \x ->
+                bgroup
+                    (show x)
+                    [ bench "heftia.5+5+0" $ nf localHeftiaDeep0 x
+                    , bench "heftia.5+4+1" $ nf localHeftiaDeep1 x
+                    , bench "heftia.5+3+2" $ nf localHeftiaDeep2 x
+                    , bench "heftia.5+2+3" $ nf localHeftiaDeep3 x
+                    , bench "heftia.5+1+4" $ nf localHeftiaDeep4 x
+                    , bench "heftia.5+0+5" $ nf localHeftiaDeep5 x
+                    , bench "polysemy.5+5" $ nf localSemDeep x
+                    , bench "fused.5+5" $ nf localFusedDeep x
+                    , bench "effectful.5+5" $ nf localEffectfulDeep x
+                    --  bench "eff.5+5" $ nf localEffDeep x
+                    --  bench "mtl.5+5" $ nf localMtlDeep x
                     ]
         , bgroup "nondet.shallow" $
             [32] <&> \x ->
