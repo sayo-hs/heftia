@@ -15,6 +15,7 @@ Description :  Open unions (type-indexed co-products) for extensible effects.
 -}
 module Data.Effect.OpenUnion.Internal where
 
+import Data.Effect.Key (type (##>), type (#>))
 import Data.Proxy (Proxy (Proxy))
 import Data.Type.Equality (type (==))
 import GHC.TypeError (ErrorMessage (ShowType, Text, (:$$:), (:<>:)), TypeError)
@@ -68,13 +69,23 @@ lexi-lambda/freer-simple#3, which describes the motivation in more detail.
 -}
 instance {-# INCOHERENT #-} IfNotFound e r w
 
-type LookupError (key :: kk) (w :: [ke]) =
-    TypeError
+class IfKeyNotFound (key :: k) (r :: [e]) (w :: [e])
+
+instance
+    ( TypeError
         ( 'Text "The key ‘"
             ':<>: 'ShowType key
             ':<>: 'Text "’ does not exist in the type-level list"
             ':$$: 'Text "  ‘" ':<>: 'ShowType w ':<>: 'Text "’"
         )
+    )
+    => IfKeyNotFound key '[] w
+
+instance IfKeyNotFound key (key #> e ': r) w
+instance IfKeyNotFound key (key ##> e ': r) w
+instance {-# OVERLAPPABLE #-} (IfKeyNotFound key r w) => IfKeyNotFound key (e ': r) w
+
+instance {-# INCOHERENT #-} IfKeyNotFound e r w
 
 infixr 5 ++
 type family xs ++ ys where

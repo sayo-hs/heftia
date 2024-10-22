@@ -23,7 +23,7 @@ import Control.Monad.Hefty (
  )
 import Control.Monad.Hefty.Coroutine (runCoroutine)
 import Control.Monad.Hefty.State (evalState)
-import Data.Effect.Concurrent.Timer (CyclicTimer (Wait), Timer (Clock, Sleep), clock, cyclicTimer)
+import Data.Effect.Concurrent.Timer
 import Data.Effect.Coroutine (Status (Continue, Done))
 import Data.Effect.State (get, put)
 import Data.Time (DiffTime)

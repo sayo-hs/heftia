@@ -2,8 +2,17 @@
 
 module Control.Monad.Hefty.Concurrent.Stream where
 
-import Control.Monad.Hefty (Eff, interpretBy, raiseAllH, (&), type (<<|))
-import Control.Monad.Hefty.Concurrent.Parallel (Parallel, liftP2)
+import Control.Monad.Hefty (
+    Eff,
+    interpretBy,
+    raiseAllH,
+    unkey,
+    untag,
+    (&),
+    type (#),
+    type (#>),
+ )
+import Control.Monad.Hefty.Concurrent.Async (HasAsync, liftAsync2)
 import Control.Monad.Hefty.Coroutine (Status (Continue, Done))
 import Control.Monad.Hefty.Input (Input (Input))
 import Control.Monad.Hefty.Output (Output (Output))
@@ -11,8 +20,8 @@ import Data.Bifunctor (Bifunctor, bimap)
 import Data.These (These (That, These, This))
 
 connect
-    :: forall v a b eh ef
-     . (Parallel <<| eh)
+    :: forall v a b eh ef f
+     . (HasAsync ef f)
     => Eff '[] (Output v ': ef) a
     -> Eff '[] (Input v ': ef) b
     -> Eff eh ef (StreamStatus (Eff '[] ef) v a b)
@@ -21,14 +30,32 @@ connect a b =
         (a & interpretBy (pure . Done) \(Output v) k -> pure $ Continue v k)
         (b & interpretBy (pure . Done) \Input k -> pure $ Continue () k)
 
+connect'
+    :: forall o i v a b eh ef f
+     . (HasAsync ef f)
+    => Eff '[] (Output v # o ': ef) a
+    -> Eff '[] (Input v # i ': ef) b
+    -> Eff eh ef (StreamStatus (Eff '[] ef) v a b)
+connect' a b = connect (untag a) (untag b)
+{-# INLINE connect' #-}
+
+connect''
+    :: forall o i v a b eh ef f
+     . (HasAsync ef f)
+    => Eff '[] (o #> Output v ': ef) a
+    -> Eff '[] (i #> Input v ': ef) b
+    -> Eff eh ef (StreamStatus (Eff '[] ef) v a b)
+connect'' a b = connect (unkey a) (unkey b)
+{-# INLINE connect'' #-}
+
 runStream
-    :: forall v a b eh ef
-     . (Parallel <<| eh)
+    :: forall v a b eh ef f
+     . (HasAsync ef f)
     => Eff '[] ef (Status (Eff '[] ef) v () a)
     -> Eff '[] ef (Status (Eff '[] ef) () v b)
     -> Eff eh ef (StreamStatus (Eff '[] ef) v a b)
 runStream a b = do
-    (a', b') <- liftP2 (,) (raiseAllH a) (raiseAllH b)
+    (a', b') <- liftAsync2 (,) (raiseAllH a) (raiseAllH b)
 
     case (a', b') of
         (Done x, Done y) -> pure $ Equilibrium x y

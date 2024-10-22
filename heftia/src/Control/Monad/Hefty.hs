@@ -506,9 +506,10 @@ module Control.Monad.Hefty (
     -- *** For first-order effects
     reinterpret,
     reinterpretN,
-    reinterpretNWith,
     reinterpretBy,
     reinterpretNBy,
+    reinterpretWith,
+    reinterpretNWith,
     reinterpretRecWith,
     reinterpretRecNWith,
 
@@ -647,6 +648,8 @@ module Control.Monad.Hefty (
     liftIO,
     module Data.Effect.OpenUnion,
     module Data.Effect,
+    module Data.Effect.Tag,
+    module Data.Effect.Key,
     module Data.Effect.TH,
     module Data.Effect.HFunctor.TH,
     module Data.Effect.Key.TH,
@@ -690,6 +693,7 @@ import Control.Monad.Hefty.Interpret (
     reinterpretRecNHWith,
     reinterpretRecNWith,
     reinterpretRecWith,
+    reinterpretWith,
     runEff,
     runPure,
     stateless,
@@ -794,8 +798,10 @@ import Control.Monad.IO.Class (liftIO)
 import Data.Effect
 import Data.Effect.HFunctor (HFunctor)
 import Data.Effect.HFunctor.TH
+import Data.Effect.Key
 import Data.Effect.Key.TH
 import Data.Effect.OpenUnion
 import Data.Effect.OpenUnion.Sum (type (:+:))
 import Data.Effect.TH
+import Data.Effect.Tag
 import Data.Kind (Type)

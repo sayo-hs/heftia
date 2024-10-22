@@ -115,3 +115,5 @@ branch a b = do
     world <- choose
     bool a b world
 {-# INLINE branch #-}
+
+infixl 3 `branch`

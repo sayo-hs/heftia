@@ -10,14 +10,16 @@ import Control.Monad.Hefty (
     Eff,
     interpret,
     liftIO,
+    raise,
     (&),
     type (<:),
     type (<<|),
     type (<|),
     type (~>),
  )
-import Control.Monad.Hefty.Concurrent.Parallel (runParallelIO)
+import Control.Monad.Hefty.Concurrent.Async (runAsyncIO, runAsyncSeq)
 import Control.Monad.Hefty.Concurrent.Stream (connect)
+import Control.Monad.Hefty.Concurrent.Timer (Timer, runTimerIO, sleep)
 import Control.Monad.Hefty.Except (runThrow, throw)
 import Control.Monad.Hefty.Input (Input, input)
 import Control.Monad.Hefty.Output (Output, output)
@@ -49,24 +51,37 @@ This function is equivalent to the following (as a result of reducing 'runThrow'
 
 @
 produce = void do
-    for_ [1 .. 2] \(i :: Int) -> do
+    for_ [1 .. 4] \(i :: Int) -> do
         output i
+        sleep 0.5
 @
 -}
-produce :: (Output Int <| ef) => Eff '[] ef ()
-produce = void . runThrow @() $ do
-    for_ [1 .. 3] \(i :: Int) -> do
-        when (i >= 3) $ throw ()
-        output i
+produce :: (Output Int <| ef, Timer <| ef) => Int -> Eff '[] ef ()
+produce n = void . runThrow @() $ do
+    for_ [1 ..] \(i :: Int) -> do
+        when (i == 5) $ throw ()
+        output $ n + i
+
+-- sleep 0.5
 
 consume :: (Input Int <: m, MonadIO m) => m ()
 consume = forever do
     liftIO . print =<< input @Int
 
+plus100 :: (Input Int <: m, Output Int <: m, MonadIO m) => m ()
+plus100 = forever do
+    i <- input @Int
+    liftIO $ print i
+    output $ i + 100
+
 main :: IO ()
-main = runUnliftIO . runResourceIO . runParallelIO $ do
-    _ <- runSomeResource $ connect @Int produce consume
-    _ <- runSomeResource $ connect @Int produce consume
+main = runUnliftIO . runTimerIO . runResourceIO $ do
+    -- _ <- runSomeResource $ runAsyncIO $ connect @Int (produce 0) consume
+    -- _ <- runSomeResource $ runAsyncIO $ connect @Int (connect @Int (produce 0) plus100) consume
+    _ <-
+        runAsyncIO do
+            let m = connect @Int (raise (produce 1000)) consume
+            connect @Int m consume
     pure ()
 
 {-

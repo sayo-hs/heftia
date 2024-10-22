@@ -36,11 +36,11 @@ import Data.Effect.OpenUnion.Internal (
     ElemAt,
     ElemIndex,
     FindElem,
+    IfKeyNotFound,
     IfNotFound,
     IsSuffixOf,
     KnownLength,
     Length,
-    LookupError,
     P (unP),
     PrefixLength,
     Reverse,
@@ -110,14 +110,11 @@ instance (FindElem e es, IfNotFound e es es) => MemberH e es where
 infix 3 <<|
 type (<<|) = MemberH
 
-type MemberHBy key e es = (key ##> e <<| es, LookupH key es ~ key ##> e)
+type MemberHBy key e es = (key ##> e <<| es, LookupH key es ~ key ##> e, IfKeyNotFound key es es)
 
-type LookupH key es = LookupH_ key es es
-
-type family LookupH_ (key :: k) r w :: EffectH where
-    LookupH_ key (key ##> e ': _) w = key ##> e
-    LookupH_ key (_ ': r) w = LookupH_ key r w
-    LookupH_ key '[] w = LookupError key w
+type family LookupH (key :: k) r :: EffectH where
+    LookupH key (key ##> e ': _) = key ##> e
+    LookupH key (_ ': r) = LookupH key r
 
 decompH :: (HFunctor e) => UnionH (e ': es) f a -> Either (UnionH es f a) (e f a)
 decompH (UnionH 0 a koi) = Right $ hfmap koi $ unsafeCoerce a

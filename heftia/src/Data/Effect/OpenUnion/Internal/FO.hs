@@ -31,11 +31,11 @@ import Data.Effect.OpenUnion.Internal (
     ElemAt,
     ElemIndex,
     FindElem,
+    IfKeyNotFound,
     IfNotFound,
     IsSuffixOf,
     KnownLength,
     Length,
-    LookupError,
     P (unP),
     PrefixLength,
     Reverse,
@@ -153,14 +153,11 @@ instance (FindElem e es, IfNotFound e es es) => Member e es where
 infix 3 <|
 type (<|) = Member
 
-type MemberBy key e es = (key #> e <| es, Lookup key es ~ key #> e)
+type MemberBy key e es = (key #> e <| es, Lookup key es ~ key #> e, IfKeyNotFound key es es)
 
-type Lookup key es = Lookup_ key es es
-
-type family Lookup_ (key :: k) r w :: EffectF where
-    Lookup_ key (key #> e ': _) w = key #> e
-    Lookup_ key (_ ': r) w = Lookup_ key r w
-    Lookup_ key '[] w = LookupError key w
+type family Lookup (key :: k) r :: EffectF where
+    Lookup key (key #> e ': _) = key #> e
+    Lookup key (_ ': r) = Lookup key r
 
 {- | Orthogonal decomposition of a @'Union' (e ': es) :: 'EffectF'@. 'Right' value
 is returned if the @'Union' (e ': es) :: 'EffectF'@ contains @e :: 'EffectF'@, and

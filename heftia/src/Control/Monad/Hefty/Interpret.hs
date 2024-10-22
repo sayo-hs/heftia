@@ -188,40 +188,40 @@ reinterpretN f = reinterpretRecNWith @n (stateless f)
 {-# INLINE reinterpretN #-}
 
 reinterpretWith
-    :: forall e ef' ef a
+    :: forall e ef' ef eh a
      . (ef `IsSuffixOf` ef')
-    => Interpreter e (Eff '[] ef') a
+    => Interpreter e (Eff eh ef') a
     -> Eff '[] (e ': ef) a
-    -> Eff '[] ef' a
+    -> Eff eh ef' a
 reinterpretWith = reinterpretBy pure
 {-# INLINE reinterpretWith #-}
 
 reinterpretNWith
-    :: forall n e ef' ef a
+    :: forall n e ef' ef eh a
      . (WeakenN n ef ef')
-    => Interpreter e (Eff '[] ef') a
+    => Interpreter e (Eff eh ef') a
     -> Eff '[] (e ': ef) a
-    -> Eff '[] ef' a
+    -> Eff eh ef' a
 reinterpretNWith = reinterpretNBy @n pure
 {-# INLINE reinterpretNWith #-}
 
 reinterpretBy
-    :: forall e ef' ef ans a
+    :: forall e ef' ef eh ans a
      . (ef `IsSuffixOf` ef')
-    => (a -> Eff '[] ef' ans)
-    -> Interpreter e (Eff '[] ef') ans
+    => (a -> Eff eh ef' ans)
+    -> Interpreter e (Eff eh ef') ans
     -> Eff '[] (e ': ef) a
-    -> Eff '[] ef' ans
+    -> Eff eh ef' ans
 reinterpretBy ret hdl = iterAllEffHFBy ret nilH (hdl !+ flip sendUnionBy . weakens)
 {-# INLINE reinterpretBy #-}
 
 reinterpretNBy
-    :: forall n e ef' ef ans a
+    :: forall n e ef' ef eh ans a
      . (WeakenN n ef ef')
-    => (a -> Eff '[] ef' ans)
-    -> Interpreter e (Eff '[] ef') ans
+    => (a -> Eff eh ef' ans)
+    -> Interpreter e (Eff eh ef') ans
     -> Eff '[] (e ': ef) a
-    -> Eff '[] ef' ans
+    -> Eff eh ef' ans
 reinterpretNBy ret hdl = iterAllEffHFBy ret nilH (hdl !+ flip sendUnionBy . weakenN @n)
 {-# INLINE reinterpretNBy #-}
 
@@ -373,14 +373,14 @@ interposeWith = interposeBy pure
 If multiple instances of @e@ exist in the list, the one closest to the head (with the smallest index) will be targeted.
 -}
 interposeBy
-    :: forall e ef ans a
+    :: forall e ef eh ans a
      . (e <| ef)
-    => (a -> Eff '[] ef ans)
+    => (a -> Eff eh ef ans)
     -- ^ Value handler
-    -> Interpreter e (Eff '[] ef) ans
+    -> Interpreter e (Eff eh ef) ans
     -- ^ Effect handler
     -> Eff '[] ef a
-    -> Eff '[] ef ans
+    -> Eff eh ef ans
 interposeBy ret f = iterAllEffHFBy ret nilH \u -> maybe (`sendUnionBy` u) f (prj @e u)
 {-# INLINE interposeBy #-}
 
