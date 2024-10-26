@@ -17,7 +17,6 @@ import Control.Monad.Hefty (
     type (<|),
     type (~>),
  )
-import Control.Monad.Hefty.Concurrent.Async (runAsyncIO, runAsyncSeq)
 import Control.Monad.Hefty.Concurrent.Stream (connect)
 import Control.Monad.Hefty.Concurrent.Timer (Timer, runTimerIO, sleep)
 import Control.Monad.Hefty.Except (runThrow, throw)
@@ -78,10 +77,6 @@ main :: IO ()
 main = runUnliftIO . runTimerIO . runResourceIO $ do
     -- _ <- runSomeResource $ runAsyncIO $ connect @Int (produce 0) consume
     -- _ <- runSomeResource $ runAsyncIO $ connect @Int (connect @Int (produce 0) plus100) consume
-    _ <-
-        runAsyncIO do
-            let m = connect @Int (raise (produce 1000)) consume
-            connect @Int m consume
     pure ()
 
 {-

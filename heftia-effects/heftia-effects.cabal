@@ -88,7 +88,6 @@ library
         Control.Monad.Hefty.Fresh
         Control.Monad.Hefty.Fail
         Control.Monad.Hefty.Concurrent.Parallel
-        Control.Monad.Hefty.Concurrent.Async
         Control.Monad.Hefty.Concurrent.Stream
         Control.Monad.Hefty.Concurrent.Timer
         Control.Monad.Hefty.Log
@@ -123,7 +122,6 @@ library
         Data.Effect.Fresh,
         Data.Effect.Fail,
         Data.Effect.Concurrent.Parallel,
-        Data.Effect.Concurrent.Async,
         Data.Effect.Concurrent.Timer,
         Data.Effect.Log,
 
@@ -145,7 +143,7 @@ test-suite test
         Test.Writer
         Test.Pyth
         Test.Coroutine
-        Test.Async
+        Test.Concurrent
 
     hs-source-dirs: test
 
