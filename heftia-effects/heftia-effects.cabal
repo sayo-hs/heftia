@@ -201,7 +201,7 @@ executable Continuation2
     hs-source-dirs: Example/Continuation2
     build-depends:
         heftia-effects,
-        extra ^>= 1.7.14,
+        extra >= 1.7.14 && < 1.9,
 
 executable Writer
     import: common-base
@@ -257,7 +257,7 @@ benchmark heftia-bench
         freer-simple ^>= 1.2,
         polysemy ^>= 1.9,
         fused-effects ^>= 1.1,
-        effectful >= 2.3 && < 2.5,
+        effectful >= 2.3 && < 2.6,
         eveff ^>= 1.0,
         mtl >= 2.2 && < 2.4,
         logict >= 0.7.0.3 && < 0.9,
