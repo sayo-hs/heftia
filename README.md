@@ -362,6 +362,7 @@ The following is a non-exhaustive list of people and works that have had a signi
 - Sandy Maguire and other contributors — [`polysemy`][gh:polysemy]
 - Alexis King and other contributors — [`freer-simple`][gh:freer-simple], [`eff`][gh:eff]
 - Casper Bach Poulsen and Cas van der Rest — [Hefty Algebras: Modular Elaboration of Higher-Order Algebraic Effects][casper:hefty]
+- Tom Ellis — [Bluefin streams finalize promptly][gh:bluefin-streams]
 
 [gh:fused-effects]: https://github.com/fused-effects/fused-effects
 [gh:polysemy]: https://github.com/polysemy-research/polysemy
@@ -370,3 +371,4 @@ The following is a non-exhaustive list of people and works that have had a signi
 [casper:hefty]: https://dl.acm.org/doi/10.1145/3571255
 [gh:freer-simple]: https://github.com/lexi-lambda/freer-simple
 [gh:eff]: https://github.com/lexi-lambda/eff
+[gh:bluefin-streams]: https://h2.jaguarpaw.co.uk/posts/bluefin-streams-finalize-promptly/

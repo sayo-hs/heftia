@@ -74,7 +74,7 @@ main = runUnliftIO . runTimerIO . runResourceIO $ do
 
     liftIO $ putStrLn "\n[IO-fused machinery interpretation example]"
 
-    let produceWithBracket = do
+    let produceWithBracket =
             bracket_
                 (liftIO $ putStrLn "Acquiring resource")
                 (liftIO $ putStrLn "Releasing resource")
