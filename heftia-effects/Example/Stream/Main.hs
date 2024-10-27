@@ -54,7 +54,7 @@ plus100 = forever do
 
 {- |
 The difference between `runMachinery` and `runMachineryIO` is that the former
-returns a continuation at the point when the stream has completed, allowing the
+returns a continuation at the point when the stream has paused, allowing the
 stream to be resumed later by providing new inputs and handlers. In terms of
 algebraic effects, this means that /non-scoped resumption/ is possible.
 
