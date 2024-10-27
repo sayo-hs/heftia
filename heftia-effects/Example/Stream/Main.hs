@@ -97,7 +97,7 @@ main = runUnliftIO . runTimerIO . runResourceIO $ do
                 >>> Unit @Int @Int plus100
                 >>> Unit @Int @() consume
 
-    liftIO $ putStrLn "\n[IO-based (TMVar-based) machinery interpretation example]"
+    liftIO $ putStrLn "\n[IO-fused machinery interpretation example]"
 
     let produceWithBracket = do
             bracket_
@@ -124,7 +124,7 @@ Transform 3 to 103
 Transform 4 to 104
 104
 
-[IO-based (TMVar-based) machinery interpretation example]
+[IO-fused machinery interpretation example]
 Acquiring resource
 Transform 1 to 101
 101
