@@ -31,6 +31,10 @@ Research in cutting-edge languages like [Koka](https://koka-lang.github.io/koka/
 Heftia extends this by supporting higher-order algebraic effects, allowing for more expressive and modular effect management.
 This leads to more maintainable and extensible applications compared to non-algebraic effect libraries, positioning Heftia at **the forefront of modern effect handling techniques**.
 
+Furthermore, **Heftia is functionally a superset of other effect libraries**, especially those based on IO.
+In other words, anything that is possible with other libraries is also possible with this library.
+This is because Heftia supports `MonadUnliftIO` in the form of higher-order effects.
+
 ## Key Features
 
 * **Correct Semantics for Higher-Order Effects & Continuations**
