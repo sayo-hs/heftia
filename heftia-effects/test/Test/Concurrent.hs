@@ -14,7 +14,7 @@ import Control.Monad.Hefty.Concurrent.Parallel (
     input,
     polling,
     runConcurrentIO,
-    runSequential,
+    runParallelAsSequential,
  )
 import Control.Monad.Hefty.Concurrent.Timer (runTimerIO, sleep)
 import Control.Monad.Hefty.State (get, modify, runStateIORef)
@@ -41,7 +41,7 @@ spec_Concurrent = do
         a `shouldBe` "ABC"
 
     it "Sequential" do
-        (s, a) <- runEff . runSequential $ prog
+        (s, a) <- runEff . runParallelAsSequential $ prog
         s `shouldBe` "BA"
         a `shouldBe` "BC"
 
