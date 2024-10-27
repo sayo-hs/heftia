@@ -5,7 +5,6 @@
 module Control.Monad.Hefty.Concurrent.Parallel (
     module Control.Monad.Hefty.Concurrent.Parallel,
     module Data.Effect.Concurrent.Parallel,
-    module Data.Effect.NonDet,
     module Data.Effect.Input,
 )
 where
@@ -13,7 +12,6 @@ where
 import Control.Monad (forever)
 import Control.Monad.Hefty (
     Eff,
-    Interpreter,
     interpret,
     interpretH,
     raiseAllH,
@@ -28,7 +26,6 @@ import Control.Monad.Hefty.Unlift (UnliftIO)
 import Data.Effect.Concurrent.Parallel
 import Data.Effect.Coroutine (Status (Continue, Done))
 import Data.Effect.Input
-import Data.Effect.NonDet
 import Data.Function (fix)
 import UnliftIO (
     MonadIO,
@@ -113,9 +110,6 @@ pollToIO (Poldl f a b) =
 
 haltToIO :: (MonadIO m) => Halt ~> m
 haltToIO Halt = liftIO $ forever $ threadDelay maxBound
-
-emptyToHaltIO :: (MonadIO m) => Interpreter Empty m ans
-emptyToHaltIO Empty _ = haltToIO Halt
 
 runParallelAsSequential :: Eff (Parallel ': eh) ef ~> Eff eh ef
 runParallelAsSequential = interpretH parallelToSequential
