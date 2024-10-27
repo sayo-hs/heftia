@@ -2,7 +2,12 @@
 
 -- SPDX-License-Identifier: MPL-2.0
 
-module Control.Monad.Hefty.Concurrent.Stream where
+module Control.Monad.Hefty.Concurrent.Stream (
+    module Control.Monad.Hefty.Concurrent.Stream,
+    module Control.Monad.Hefty.Input,
+    module Control.Monad.Hefty.Output,
+)
+where
 
 import Control.Arrow (Arrow, ArrowChoice, arr, first, left, (>>>))
 import Control.Category (Category)
@@ -24,11 +29,9 @@ import Control.Monad.Hefty (
     type (<|),
  )
 import Control.Monad.Hefty.Concurrent.Parallel (Parallel, liftP2)
-import Control.Monad.Hefty.Input (Input (Input))
-import Control.Monad.Hefty.Output (Output (Output))
+import Control.Monad.Hefty.Input
+import Control.Monad.Hefty.Output
 import Control.Monad.Hefty.State (State, evalState, evalStateIORef, get'', put'')
-import Data.Effect.Input (input)
-import Data.Effect.Output (output)
 import Data.Effect.Unlift (UnliftIO, withRunInIO)
 import Data.Function (fix)
 import Data.Sequence (Seq ((:|>)))

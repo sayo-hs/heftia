@@ -9,15 +9,21 @@ import Control.Arrow ((>>>))
 import Control.Monad (forever, void, when)
 import Control.Monad.Hefty (Eff, liftIO, raiseAllH, type (<:), type (<|))
 import Control.Monad.Hefty.Concurrent.Parallel (runParallelIO)
-import Control.Monad.Hefty.Concurrent.Stream (Machinery (Unit), runMachinery, runMachineryIO_)
+import Control.Monad.Hefty.Concurrent.Stream (
+    Input,
+    Machinery (Unit),
+    Output,
+    input,
+    output,
+    runMachinery,
+    runMachineryIO_,
+ )
 import Control.Monad.Hefty.Concurrent.Timer (Timer, runTimerIO, sleep)
 import Control.Monad.Hefty.Except (runThrow, throw)
-import Control.Monad.Hefty.Input (Input, input)
-import Control.Monad.Hefty.Output (Output, output)
-import Control.Monad.Hefty.Resource (bracket_, runResourceIO)
 import Control.Monad.Hefty.Unlift (runUnliftIO)
 import Control.Monad.IO.Class (MonadIO)
 import Data.Foldable (for_)
+import UnliftIO (bracket_)
 
 {- | In reality, this 'throw' operates independently of @bracket@...
 because 'runThrow' functions under the semantics of pure algebraic effects,
@@ -33,7 +39,7 @@ produce = void do
 @
 -}
 produce :: (Output Int <| ef, Timer <| ef) => Eff '[] ef ()
-produce = void . runThrow @() $ do
+produce = void . runThrow @() $
     for_ [1 ..] \(i :: Int) -> do
         when (i == 5) $ throw ()
         output i
@@ -64,7 +70,7 @@ Conversely, the latter allows the unrestricted use of `bracket`
 and offers the same functionality.
 -}
 main :: IO ()
-main = runUnliftIO . runTimerIO . runResourceIO $ do
+main = runUnliftIO . runTimerIO $ do
     liftIO $ putStrLn "[Parallel effect-based (purer & non-IO-fused) machinery interpretation example]"
     _ <-
         runParallelIO . runMachinery $
@@ -86,8 +92,6 @@ main = runUnliftIO . runTimerIO . runResourceIO $ do
             produceWithBracket
             >>> Unit @Int @Int plus100
             >>> Unit @Int @() consume
-
-    pure ()
 
 {-
 Transform 1 to 101

@@ -151,97 +151,91 @@ This library has been tested with GHC 9.8.2 and 9.4.1.
 
 ## Example
 
-Compared to existing Effect System libraries in Haskell that handle higher-order effects, this
-library's approach allows for a more effortless and flexible handling of higher-order effects. Here
-are some examples:
+### Coroutine-based Composable Concurrent Stream (since v0.5)
 
-### Extracting Multi-shot Delimited Continuations
+Below is an example of using concurrent streams (pipes).
 
-In handling higher-order effects, it's easy to work with **multi-shot delimited continuations**.
-For more details, please refer to
-the [example code](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/Continuation/Main.hs).
+```haskell
+{-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
 
-### Two interpretations of the `censor` effect for Writer
+import Control.Monad.Hefty
+import Control.Monad.Hefty.Concurrent.Stream
+import Control.Monad.Hefty.Concurrent.Timer
+import Control.Monad.Hefty.Except
+import Control.Monad.Hefty.Unlift
+import Control.Arrow ((>>>))
+import Control.Monad (forever, void, when)
+import Data.Foldable (for_)
+import UnliftIO (bracket_)
 
-Let's consider the following Writer effectful program:
+-- | Generates a sequence of 1, 2, 3, 4 at 0.5-second intervals.
+produce :: (Output Int <| ef, Timer <| ef) => Eff '[] ef ()
+produce = void . runThrow @() $
+    for_ [1 ..] \(i :: Int) -> do
+        when (i == 5) $ throw ()
+        output i
+        sleep 0.5
 
-```hs
-hello :: (Tell String <: m, Monad m) => m ()
-hello = do
-    tell "Hello"
-    tell " world!"
+-- | Receives the sequence at 0.5-second intervals and prints it.
+consume :: (Input Int <| ef, Timer <| ef, IO <| ef) => Eff eh ef ()
+consume = forever do
+    liftIO . print =<< input @Int
+    sleep 0.5
 
-censorHello :: (Tell String <: m, WriterH String <<: m, Monad m) => m ()
-censorHello =
-    censor
-        ( \s ->
-            if s == "Hello" then
-                "Goodbye"
-            else if s == "Hello world!" then
-                "Hello world!!"
-            else
-                s
-        )
-        hello
-```
+-- | Transforms by receiving the sequence as input at 0.5-second intervals, adds 100, and outputs it.
+plus100 :: (Input Int <| ef, Output Int <| ef, Timer <| ef, IO <| ef) => Eff eh ef ()
+plus100 = forever do
+    i <- input @Int
+    let o = i + 100
+    liftIO $ putStrLn $ "Transform " <> show i <> " to " <> show o
+    output o
+    sleep 0.5
 
-For `censorHello`, should the final written string be `"Goodbye world!"` (Pre-applying behavior) ?
-Or should it be `"Hello world!!"` (Post-applying behavior) ?
-With Heftia, **you can freely choose either behavior depending on which higher-order effect interpreter (which we call an elaborator) you use**.
-
-```hs
 main :: IO ()
-main = runEff do
-    (sPre, _) <-
-        runTell
-            . runWriterHPre @String
-            $ censorHello
+main = runUnliftIO . runTimerIO $ do
+    let produceWithBracket =
+            bracket_
+                (liftIO $ putStrLn "Start")
+                (liftIO $ putStrLn "End")
+                (raiseAllH produce)
 
-    (sPost, _) <-
-        runTell
-            . runWriterHPost @String
-            $ censorHello
-
-    liftIO $ putStrLn $ "Pre-applying: " <> sPre
-    liftIO $ putStrLn $ "Post-applying: " <> sPost
+    runMachineryIO_ $
+        Unit @() @Int do
+            produceWithBracket
+            produceWithBracket
+            >>> Unit @Int @Int plus100
+            >>> Unit @Int @() consume
 ```
 
-Using the `runWriterHPre` elaborator, you'll get "Goodbye world!", whereas with the `runWriterHPost` elaborator, you'll get "Hello world!!".
 ```
-Pre-applying: Goodbye world!
-Post-applying: Hello world!!
+>>> main
+Start
+Transform 1 to 101
+101
+Transform 2 to 102
+102
+Transform 3 to 103
+103
+Transform 4 to 104
+104
+End
+Start
+Transform 1 to 101
+101
+Transform 2 to 102
+102
+Transform 3 to 103
+103
+Transform 4 to 104
+104
+End
 ```
 
-For more details, please refer to the [complete code](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/Writer/Main.hs) and the [implementation of the elaborator](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/src/Control/Monad/Hefty/Writer.hs).
+* Each function (machine unit) `produce`, `consume`, and `plus100` operates with input/output at 0.5-second intervals, but note that the composed stream also maintains operation intervals at 0.5 seconds (not 1.5 seconds!). This means that each unit operates concurrently based on threads.
 
-### Semantics Zoo
-To run the [SemanticsZoo example](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/SemanticsZoo/Main.hs):
-```console
-$ git clone https://github.com/sayo-hs/heftia
-$ cd heftia/heftia-effects
-$ cabal run exe:SemanticsZoo
-...
-# State & Except
-( evalState . runThrow . runCatch $ action ) = Right True
-( runThrow . evalState . runCatch $ action ) = Right True
+* `End` is displayed just after the first sequence ends and before the second sequence starts, even though `produceWithBracket` is executed twice in succession. This demonstrates that the `bracket_` function based on `MonadUnliftIO` for safe resource release works in such a way that resources are released immediately at the correct timing—even if the stream is still in progress—rather than waiting until the entire stream (including the second sequence) has completed. Existing stream libraries like [`pipes`](https://hackage.haskell.org/package/pipes) and [`conduit`](https://hackage.haskell.org/package/conduit) have the issue that immediate resource release like this is not possible. This problem was first addressed by the effect system library [`bluefin`](https://github.com/tomjaguarpaw/bluefin). For more details, please refer to [Bluefin streams finalize promptly](https://github.com/tomjaguarpaw/bluefin#bluefin-streams-finalize-promptly).
 
-# NonDet & Except
-( runNonDet . runThrow . runCatch . runChooseH $ action1 ) = [Right True,Right False]
-( runThrow . runNonDet . runCatch . runChooseH $ action1 ) = Right [True,False]
-( runNonDet . runThrow . runCatch . runChooseH $ action2 ) = [Right False,Right True]
-( runThrow . runNonDet . runCatch . runChooseH $ action2 ) = Right [False,True]
-
-# NonDet & Writer
-( runNonDet . runTell . runWriterH . runChooseH $ action ) = [(3,(3,True)),(4,(4,False))]
-( runTell . runNonDet . runWriterH . runChooseH $ action ) = (6,[(3,True),(4,False)])
-
-# https://github.com/hasura/eff/issues/12
-interpret SomeEff then runCatch : ( runThrow . runCatch . runSomeEff $ action ) = Right "caught"
-runCatch then interpret SomeEff : ( runThrow . runSomeEff . runCatch $ action ) = Left "not caught"
-
-[Note] All other permutations will cause type errors.
-$
-```
+The complete code example can be found at [heftia-effects/Example/Stream/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/Stream/Main.hs).
 
 ## Documentation
 A detailed explanation of usage and semantics is available in [Haddock](https://hackage.haskell.org/package/heftia-0.4.0.0/docs/Control-Monad-Hefty.html).
@@ -362,7 +356,7 @@ The following is a non-exhaustive list of people and works that have had a signi
 - Sandy Maguire and other contributors — [`polysemy`][gh:polysemy]
 - Alexis King and other contributors — [`freer-simple`][gh:freer-simple], [`eff`][gh:eff]
 - Casper Bach Poulsen and Cas van der Rest — [Hefty Algebras: Modular Elaboration of Higher-Order Algebraic Effects][casper:hefty]
-- Tom Ellis — [Bluefin streams finalize promptly][gh:bluefin-streams]
+- Tom Ellis — [Bluefin streams finalize promptly][tom:bluefin-streams]
 
 [gh:fused-effects]: https://github.com/fused-effects/fused-effects
 [gh:polysemy]: https://github.com/polysemy-research/polysemy
@@ -371,4 +365,4 @@ The following is a non-exhaustive list of people and works that have had a signi
 [casper:hefty]: https://dl.acm.org/doi/10.1145/3571255
 [gh:freer-simple]: https://github.com/lexi-lambda/freer-simple
 [gh:eff]: https://github.com/lexi-lambda/eff
-[gh:bluefin-streams]: https://h2.jaguarpaw.co.uk/posts/bluefin-streams-finalize-promptly/
+[tom:bluefin-streams]: https://h2.jaguarpaw.co.uk/posts/bluefin-streams-finalize-promptly/
