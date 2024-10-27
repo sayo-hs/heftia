@@ -1,4 +1,4 @@
-{-# LANGUAGE ApplicativeDo #-}
+{-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
 
 -- SPDX-License-Identifier: MPL-2.0
 
@@ -26,7 +26,7 @@ import Control.Monad.Hefty (
 import Control.Monad.Hefty.Concurrent.Parallel (Parallel, liftP2)
 import Control.Monad.Hefty.Input (Input (Input))
 import Control.Monad.Hefty.Output (Output (Output))
-import Control.Monad.Hefty.State (evalState, get'', put'')
+import Control.Monad.Hefty.State (State, evalState, evalStateIORef, get'', put'')
 import Data.Effect.Input (input)
 import Data.Effect.Output (output)
 import Data.Effect.Unlift (UnliftIO, withRunInIO)
@@ -67,63 +67,73 @@ instance Arrow (Machinery '[] ef ans) where
 
     first :: forall b c d. Machinery '[] ef ans b c -> Machinery '[] ef ans (b, d) (c, d)
     first = \case
-        Unit m ->
-            Unit $
-                evalState (Left @(Seq c) @d Seq.Empty) . unkey @"buffer" $
-                    bundleN @2 m
-                        & reinterpret
-                            ( ( \Input -> do
-                                    (b, d) <- input
-
-                                    get'' @"buffer" >>= \case
-                                        Right _ -> pure ()
-                                        Left outputQueue -> forM_ outputQueue \c -> output (c, d)
-
-                                    put'' @"buffer" $ Right d
-
-                                    pure b
-                              )
-                                !+ ( \(Output c) ->
-                                        get'' @"buffer" >>= \case
-                                            Right d -> output (c, d)
-                                            Left outputQueue -> put'' @"buffer" $ Left $ outputQueue :|> c
-                                   )
-                                !+ nil
-                            )
+        Unit m -> Unit $ evalState (Left Seq.Empty) $ buffering m
         Connect a b -> Connect (first a) (first b)
 
     {-# INLINE arr #-}
     {-# INLINE first #-}
 
+buffering
+    :: forall b c d ans eh ef
+     . Eff eh (Input b ': Output c ': ef) ans
+    -> Eff eh (State (Either (Seq c) d) ': Input (b, d) ': Output (c, d) ': ef) ans
+buffering =
+    bundleN @2
+        >>> reinterpret
+            ( ( \Input -> do
+                    (b, d) <- input
+
+                    get'' @"buffer" >>= \case
+                        Right _ -> pure ()
+                        Left outputQueue -> forM_ outputQueue \c -> output (c, d)
+
+                    put'' @"buffer" $ Right d
+
+                    pure b
+              )
+                !+ ( \(Output c) ->
+                        get'' @"buffer" >>= \case
+                            Right d -> output (c, d)
+                            Left outputQueue -> put'' @"buffer" $ Left $ outputQueue :|> c
+                   )
+                !+ nil
+            )
+        >>> unkey @"buffer"
+
 instance ArrowChoice (Machinery '[] ef ans) where
-    left :: forall b c d. Machinery '[] ef ans b c -> Machinery '[] ef ans (Either b d) (Either c d)
-    left = \case
-        Unit m ->
-            bundleN @2 m
-                & reinterpret
-                    ( ( \Input -> fix \next ->
-                            input @(Either b d) >>= \case
-                                Left x -> pure x
-                                Right o -> do
-                                    output @(Either c d) $ Right o
-                                    next
-                      )
-                        !+ (\(Output o) -> output @(Either c d) $ Left o)
-                        !+ nil
-                    )
-                & Unit
-        Connect a b -> Connect (left a) (left b)
+    left = leftMachinery
     {-# INLINE left #-}
 
-newtype Machine eh ef ans i o = Machine
-    {runMachine :: Eff eh ef (MachineStatus eh ef ans i o)}
+leftMachinery
+    :: forall b c d ans eh ef
+     . Machinery eh ef ans b c
+    -> Machinery eh ef ans (Either b d) (Either c d)
+leftMachinery = \case
+    Unit m ->
+        bundleN @2 m
+            & reinterpret
+                ( ( \Input -> fix \next ->
+                        input @(Either b d) >>= \case
+                            Left x -> pure x
+                            Right o -> do
+                                output @(Either c d) $ Right o
+                                next
+                  )
+                    !+ (\(Output o) -> output @(Either c d) $ Left o)
+                    !+ nil
+                )
+            & Unit
+    Connect a b -> Connect (leftMachinery a) (leftMachinery b)
 
-data MachineStatus eh ef ans i o
+newtype Machine f ans i o = Machine
+    {runMachine :: f (MachineStatus f ans i o)}
+
+data MachineStatus f ans i o
     = Terminated ans
-    | Waiting (i -> Machine eh ef ans i o)
-    | Produced o (Machine eh ef ans i o)
+    | Waiting (i -> Machine f ans i o)
+    | Produced o (Machine f ans i o)
 
-machine :: Eff '[] (Input i ': Output o ': ef) ans -> Machine eh ef ans i o
+machine :: Eff '[] (Input i ': Output o ': ef) ans -> Machine (Eff eh ef) ans i o
 machine =
     bundleN @2
         >>> interpretBy
@@ -139,15 +149,12 @@ runMachinery
     :: forall i o ans eh ef
      . (Parallel <<| eh, Semigroup ans)
     => Machinery '[] ef ans i o
-    -> Eff eh ef (MachineStatus eh ef ans i o)
+    -> Eff eh ef (MachineStatus (Eff eh ef) ans i o)
 runMachinery = \case
     Unit m -> runMachine $ machine m
     Connect a b -> do
         liftP2 (,) (runMachinery a) (runMachinery b) >>= loop
       where
-        loop
-            :: (MachineStatus eh ef ans a b, MachineStatus eh ef ans b c)
-            -> Eff eh ef (MachineStatus eh ef ans a c)
         loop = \case
             (Terminated ans, Terminated ans') -> pure $ Terminated $ ans <> ans'
             (Produced o k1, Waiting k2) ->
@@ -162,6 +169,32 @@ runMachinery = \case
                     loop (s, s')
             (Terminated ans, Waiting _) -> pure $ Terminated ans
             (Produced _ _, Terminated ans) -> pure $ Terminated ans
+
+newtype MachineryIO eh ef ans i o = MachineryIO {unMachineryIO :: Machinery eh ef ans i o}
+    deriving newtype (Category)
+
+instance (IO <| ef) => Arrow (MachineryIO eh ef ans) where
+    arr (f :: b -> c) =
+        MachineryIO . Unit . forever $
+            input @b >>= output . f
+
+    first :: forall b c d. MachineryIO eh ef ans b c -> MachineryIO eh ef ans (b, d) (c, d)
+    first =
+        unMachineryIO
+            >>> MachineryIO . \case
+                Unit m ->
+                    Unit $ evalStateIORef (Left Seq.Empty) $ buffering m
+                Connect a b ->
+                    Connect
+                        (unMachineryIO $ first $ MachineryIO a)
+                        (unMachineryIO $ first $ MachineryIO b)
+
+    {-# INLINE arr #-}
+    {-# INLINE first #-}
+
+instance (IO <| ef) => ArrowChoice (MachineryIO eh ef ans) where
+    left = MachineryIO . leftMachinery . unMachineryIO
+    {-# INLINE left #-}
 
 runMachineryIO
     :: forall i o ans eh ef
@@ -189,3 +222,11 @@ runMachineryIO i o = \case
 
                 atomically (readTMVar ans)
                     <* uninterruptibleMask_ (killThread t1 *> killThread t2)
+
+runMachineryIO_
+    :: forall ans eh ef
+     . (UnliftIO <<| eh, IO <| ef)
+    => Machinery eh ef ans () ()
+    -> Eff eh ef ans
+runMachineryIO_ = runMachineryIO (pure ()) (const $ pure ())
+{-# INLINE runMachineryIO_ #-}

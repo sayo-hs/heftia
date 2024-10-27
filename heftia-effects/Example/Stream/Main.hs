@@ -9,7 +9,7 @@ import Control.Arrow ((>>>))
 import Control.Monad (forever, void, when)
 import Control.Monad.Hefty (Eff, liftIO, raiseAllH, type (<:), type (<|))
 import Control.Monad.Hefty.Concurrent.Parallel (runParallelIO)
-import Control.Monad.Hefty.Concurrent.Stream (Machinery (Unit), runMachinery, runMachineryIO)
+import Control.Monad.Hefty.Concurrent.Stream (Machinery (Unit), runMachinery, runMachineryIO_)
 import Control.Monad.Hefty.Concurrent.Timer (Timer, runTimerIO, sleep)
 import Control.Monad.Hefty.Except (runThrow, throw)
 import Control.Monad.Hefty.Input (Input, input)
@@ -80,7 +80,7 @@ main = runUnliftIO . runTimerIO . runResourceIO $ do
                 (liftIO $ putStrLn "Releasing resource")
                 (raiseAllH produce)
 
-    runMachineryIO (pure ()) (const $ pure ()) $
+    runMachineryIO_ $
         Unit @() @Int do
             produceWithBracket
             produceWithBracket

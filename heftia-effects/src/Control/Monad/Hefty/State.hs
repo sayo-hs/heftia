@@ -48,8 +48,8 @@ evalState s0 = interpretStateBy s0 (const pure) handleState
 execState :: forall s ef a. s -> Eff '[] (State s ': ef) a -> Eff '[] ef s
 execState s0 = interpretStateBy s0 (\s _ -> pure s) handleState
 
-runStateRec :: forall s ef eh. s -> Eff eh (State s ': ef) ~> Eff eh ef
-runStateRec s0 = interpretStateRecWith s0 handleState
+evalStateRec :: forall s ef eh. s -> Eff eh (State s ': ef) ~> Eff eh ef
+evalStateRec s0 = interpretStateRecWith s0 handleState
 
 handleState :: StateInterpreter s (State s) (Eff eh r) ans
 handleState = \case
@@ -70,6 +70,18 @@ runStateIORef s0 m = do
             Get -> readIORef ref
             Put s -> writeIORef ref s
     readIORef ref <&> (,a)
+
+evalStateIORef
+    :: forall s ef eh a
+     . (IO <| ef)
+    => s
+    -> Eff eh (State s ': ef) a
+    -> Eff eh ef a
+evalStateIORef s0 m = do
+    ref <- newIORef s0
+    m & interpret \case
+        Get -> readIORef ref
+        Put s -> writeIORef ref s
 
 transactState :: forall s ef. (State s <| ef) => Eff '[] ef ~> Eff '[] ef
 transactState m = do
