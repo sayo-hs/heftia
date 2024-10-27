@@ -1,4 +1,6 @@
 {-# LANGUAGE CPP #-}
+{-# LANGUAGE DeriveAnyClass #-}
+{-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
 
 -- This Source Code Form is subject to the terms of the Mozilla Public
 -- License, v. 2.0. If a copy of the MPL was not distributed with this
@@ -25,15 +27,20 @@ import Control.Arrow ((>>>))
 import Control.Monad.Hefty (
     Eff,
     bundleN,
+    interpret,
     interpretBy,
     interpretH,
     nil,
     (!+),
+    (&),
+    type (<<|),
     type (<|),
     type (~>),
  )
 import Data.Bool (bool)
 import Data.Effect.NonDet
+import Data.Effect.Unlift (UnliftIO)
+import UnliftIO (Exception, SomeException, throwIO, try)
 
 -- | 'NonDet' effects handler for alternative answer type.
 runNonDet
@@ -88,7 +95,7 @@ runChooseMonoid f =
         liftA2 (<>) (k False) (k True)
 
 -- | 'Empty' effect handler.
-runEmpty :: forall a r. Eff '[] (Empty ': r) a -> Eff '[] r (Maybe a)
+runEmpty :: forall a ef. Eff '[] (Empty ': ef) a -> Eff '[] ef (Maybe a)
 runEmpty =
     interpretBy
         (pure . Just)
@@ -117,3 +124,21 @@ branch a b = do
 {-# INLINE branch #-}
 
 infixl 3 `branch`
+
+runNonDetIO
+    :: (UnliftIO <<| eh, IO <| ef)
+    => Eff (ChooseH ': eh) (Empty ': ef) a
+    -> Eff eh ef (Either SomeException a)
+runNonDetIO m = try do
+    m
+        & interpretH
+            ( \(ChooseH a b) ->
+                try a >>= \case
+                    Right x -> pure x
+                    Left (_ :: SomeException) -> b
+            )
+        & interpret (\Empty -> throwIO EmptyException)
+
+data EmptyException = EmptyException
+    deriving stock (Show)
+    deriving anyclass (Exception)
