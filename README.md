@@ -31,7 +31,7 @@ Research in cutting-edge languages like [Koka](https://koka-lang.github.io/koka/
 Heftia extends this by supporting higher-order algebraic effects, allowing for more expressive and modular effect management.
 This leads to more maintainable and extensible applications compared to non-algebraic effect libraries, positioning Heftia at **the forefront of modern effect handling techniques**.
 
-Furthermore, **Heftia is functionally a superset of other effect libraries**, especially those based on IO.
+Furthermore, **Heftia is functionally a superset of other effect libraries**, especially those based on `ReaderT` over `IO`.
 In other words, anything that is possible with other libraries is also possible with this library.
 This is because Heftia supports `MonadUnliftIO` in the form of higher-order effects.
 
@@ -44,9 +44,12 @@ This is because Heftia supports `MonadUnliftIO` in the form of higher-order effe
     * Higher-order effects
     * Delimited continuations (algebraic effects)
         * Coroutines (non-scoped resumptions)
+        * Coroutine-based, composable, and resumable concurrent streams
         * Non-deterministic computations
     * [`MonadUnliftIO`](https://hackage.haskell.org/package/unliftio)
-        * Code example: [heftia-effects/Example/UnliftIO/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/UnliftIO/Main.hs)
+        * Examples
+            * [heftia-effects/Example/UnliftIO/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/UnliftIO/Main.hs)
+            * [heftia-effects/Example/Stream/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/Stream/Main.hs)
 
     All of these interact through a simple, consistent, and predictable semantics based on algebraic effects.
 
