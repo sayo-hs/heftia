@@ -35,6 +35,10 @@ Furthermore, **Heftia is functionally a superset of other effect libraries**, es
 In other words, anything that is possible with other libraries is also possible with this library.
 This is because Heftia supports `MonadUnliftIO` in the form of higher-order effects.
 
+**Heftia should be a good substitute for `mtl`, `polysemy`, `fused-effects`, and `freer-simple`.**
+Additionally, if performance is not a top priority, it should also be a good alternative for `effectful`.
+If performance is particularly important, [`effectful`](https://github.com/haskell-effectful/effectful) would be the best alternative to this library.
+
 ## Key Features
 
 * **Correct Semantics for Higher-Order Effects & Continuations**
@@ -67,10 +71,6 @@ This is because Heftia supports `MonadUnliftIO` in the form of higher-order effe
     * Semantics are isolated from the IO monad, meaning that aspects like asynchronous exceptions and threads do not affect the behavior of effects.
     * The constructors of the `Eff` monad are [exposed](https://hackage.haskell.org/package/heftia-0.4.0.0/docs/Control-Monad-Hefty.html#t:Eff), and users can manipulate them directly without any safety concerns. Still, the semantics remain intact.
     * These are in contrast to libraries like `effectful` and `eff`, making this library more **Haskell-ish and purely functional**.
-
-**Heftia should be a good substitute for `mtl`, `polysemy`, `fused-effects`, and `freer-simple`.**
-Additionally, if performance is not a top priority, it should also be a good alternative for `effectful`.
-If performance is particularly important, [`effectful`](https://github.com/haskell-effectful/effectful) would be the best alternative to this library.
 
 ## Downsides
 
