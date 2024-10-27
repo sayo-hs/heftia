@@ -182,7 +182,8 @@ consume = forever do
     liftIO . print =<< input @Int
     sleep 0.5
 
--- | Transforms by receiving the sequence as input at 0.5-second intervals, adds 100, and outputs it.
+-- | Transforms by receiving the sequence as input at 0.5-second intervals,
+--   adds 100, and outputs it.
 plus100 :: (Input Int <| ef, Output Int <| ef, Timer <| ef, IO <| ef) => Eff eh ef ()
 plus100 = forever do
     i <- input @Int
