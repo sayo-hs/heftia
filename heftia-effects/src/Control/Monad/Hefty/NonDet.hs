@@ -125,6 +125,16 @@ branch a b = do
 
 infixl 3 `branch`
 
+choice :: (Choose <| ef, Empty <| ef) => [a] -> Eff eh ef a
+choice = \case
+    [] -> empty
+    x : xs -> pure x `branch` choice xs
+
+choiceH :: (ChooseH <<| eh, Empty <| ef) => [a] -> Eff eh ef a
+choiceH = \case
+    [] -> empty
+    x : xs -> pure x <|> choiceH xs
+
 runNonDetIO
     :: (UnliftIO <<| eh, IO <| ef)
     => Eff (ChooseH ': eh) (Empty ': ef) a

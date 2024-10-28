@@ -243,6 +243,16 @@ executable Stream
     build-depends:
         heftia-effects,
 
+executable NonDet
+    import: common-base
+
+    main-is: Main.hs
+    hs-source-dirs: Example/NonDet
+    build-depends:
+        heftia-effects,
+        text,
+        filepath,
+
 benchmark heftia-bench
     import: common-base
 

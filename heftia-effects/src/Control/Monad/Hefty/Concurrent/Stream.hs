@@ -27,6 +27,7 @@ import Control.Monad.Hefty (
     (&),
     type (<<|),
     type (<|),
+    type (~>),
  )
 import Control.Monad.Hefty.Concurrent.Parallel (Parallel, liftP2)
 import Control.Monad.Hefty.Input
@@ -49,8 +50,15 @@ import UnliftIO (
 import UnliftIO.Concurrent (forkIO, killThread)
 
 data Machinery eh ef ans i o where
-    Unit :: forall i o ans eh ef. Eff eh (Input i ': Output o ': ef) ans -> Machinery eh ef ans i o
-    Connect :: forall a b c ans eh ef. Machinery eh ef ans a b -> Machinery eh ef ans b c -> Machinery eh ef ans a c
+    Unit
+        :: forall i o ans eh ef
+         . Eff eh (Input i ': Output o ': ef) ans
+        -> Machinery eh ef ans i o
+    Connect
+        :: forall a b c ans eh ef
+         . Machinery eh ef ans a b
+        -> Machinery eh ef ans b c
+        -> Machinery eh ef ans a c
 
 instance Category (Machinery eh ef ans) where
     id :: forall a. Machinery eh ef ans a a
@@ -68,7 +76,10 @@ instance Arrow (Machinery '[] ef ans) where
         Unit . forever $
             input @b >>= output . f
 
-    first :: forall b c d. Machinery '[] ef ans b c -> Machinery '[] ef ans (b, d) (c, d)
+    first
+        :: forall b c d
+         . Machinery '[] ef ans b c
+        -> Machinery '[] ef ans (b, d) (c, d)
     first = \case
         Unit m -> Unit $ evalState (Left Seq.Empty) $ buffering m
         Connect a b -> Connect (first a) (first b)
@@ -153,10 +164,17 @@ runMachinery
      . (Parallel <<| eh, Semigroup ans)
     => Machinery '[] ef ans i o
     -> Eff eh ef (MachineStatus (Eff eh ef) ans i o)
-runMachinery = \case
-    Unit m -> runMachine $ machine m
-    Connect a b -> do
-        liftP2 (,) (runMachinery a) (runMachinery b) >>= loop
+runMachinery = runMachineryL . mviewl
+
+runMachineryL
+    :: forall i o ans eh ef
+     . (Parallel <<| eh, Semigroup ans)
+    => MachineryViewL '[] ef ans i o
+    -> Eff eh ef (MachineStatus (Eff eh ef) ans i o)
+runMachineryL = \case
+    MOne m -> runMachine $ machine m
+    MCons m ms -> do
+        liftP2 (,) (runMachine $ machine m) (runMachinery ms) >>= loop
       where
         loop = \case
             (Terminated ans, Terminated ans') -> pure $ Terminated $ ans <> ans'
@@ -206,12 +224,18 @@ runMachineryIO
     -> (o -> Eff eh ef ())
     -> Machinery eh ef ans i o
     -> Eff eh ef ans
-runMachineryIO i o = \case
-    Unit m ->
-        m
-            & interpret (\Input -> raise i)
-            & interpret (\(Output x) -> o x)
-    Connect a b ->
+runMachineryIO i o = runMachineryIOL i o . mviewl
+
+runMachineryIOL
+    :: forall i o ans eh ef
+     . (UnliftIO <<| eh, IO <| ef)
+    => Eff eh ef i
+    -> (o -> Eff eh ef ())
+    -> MachineryViewL eh ef ans i o
+    -> Eff eh ef ans
+runMachineryIOL i o = \case
+    MOne m -> runUnit o m
+    MCons a b ->
         withRunInIO \run -> do
             chan <- newEmptyTMVarIO
             ans <- newEmptyTMVarIO
@@ -220,11 +244,17 @@ runMachineryIO i o = \case
                         x <- restore $ run m
                         atomically $ putTMVar ans x
 
-                t1 <- runThread $ runMachineryIO i (liftIO . atomically . putTMVar chan) a
+                t1 <- runThread $ runUnit (liftIO . atomically . putTMVar chan) a
                 t2 <- runThread $ runMachineryIO (liftIO . atomically $ takeTMVar chan) o b
 
                 atomically (readTMVar ans)
                     <* uninterruptibleMask_ (killThread t1 *> killThread t2)
+  where
+    runUnit :: (o' -> Eff eh ef ()) -> Eff eh (Input i ': Output o' ': ef) ~> Eff eh ef
+    runUnit o' m =
+        m
+            & interpret (\Input -> raise i)
+            & interpret (\(Output x) -> o' x)
 
 runMachineryIO_
     :: forall ans eh ef
@@ -233,3 +263,34 @@ runMachineryIO_
     -> Eff eh ef ans
 runMachineryIO_ = runMachineryIO (pure ()) (const $ pure ())
 {-# INLINE runMachineryIO_ #-}
+
+-- Inspired by https://hackage.haskell.org/package/freer-simple-1.2.1.2/docs/Data-FTCQueue.html
+
+{- |
+Left view deconstruction data structure for Machinery Pipeline.
+
+This allows the number of generated threads to be reduced to the number of machine units.
+-}
+data MachineryViewL eh ef ans i o where
+    MOne
+        :: forall i o ans eh ef
+         . Eff eh (Input i ': Output o ': ef) ans
+        -> MachineryViewL eh ef ans i o
+    MCons
+        :: forall a b c ans eh ef
+         . Eff eh (Input a ': Output b ': ef) ans
+        -> Machinery eh ef ans b c
+        -> MachineryViewL eh ef ans a c
+
+-- | Left view deconstruction for Machinery Pipeline. [average O(1)]
+mviewl :: Machinery eh ef ans i o -> MachineryViewL eh ef ans i o
+mviewl = \case
+    Unit m -> MOne m
+    Connect a b -> connect a b
+  where
+    connect
+        :: Machinery eh ef ans a b
+        -> Machinery eh ef ans b c
+        -> MachineryViewL eh ef ans a c
+    connect (Unit m) r = m `MCons` r
+    connect (Connect a b) r = connect a (Connect b r)

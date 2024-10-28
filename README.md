@@ -238,6 +238,72 @@ End
 
 The complete code example can be found at [heftia-effects/Example/Stream/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/Stream/Main.hs).
 
+### Aggregating File Sizes Using Non-Deterministic Computation
+
+The following is an extract of the main parts from an example of non-deterministic computation. For the full code, please refer to [heftia-effects/Example/NonDet/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/NonDet/Main.hs).
+
+```haskell
+-- | Aggregate the sizes of all files under the given path
+totalFileSize
+    :: (Choose <| ef, Empty <| ef, FileSystem <| ef, Throw NotADir <| ef, IO <| ef)
+    => FilePath
+    -> Eff '[] ef (Sum Integer)
+totalFileSize path = do
+    entities :: [FilePath] <- listDirectory path & joinEither
+    entity :: FilePath <- choice entities -- Non-deterministically "pick" one item from the list
+    let path' = path </> entity
+
+    liftIO $ putStrLn $ "Found " <> path'
+
+    getFileSize path' >>= \case
+        Right size -> pure $ Sum size
+        Left NotAFile -> do
+            totalFileSize path'
+
+main :: IO ()
+main = runEff
+    . runThrowIO @EntryNotFound
+    . runThrowIO @NotADir
+    . runDummyFS exampleRoot
+    $ do
+        total <- runNonDetMonoid pure (totalFileSize ".")
+        liftIO $ print total
+
+-- | Effect for file system operations
+data FileSystem a where
+    ListDirectory :: FilePath -> FileSystem (Either NotADir [FilePath])
+    GetFileSize :: FilePath -> FileSystem (Either NotAFile Integer)
+
+{- |
+Interpreter for the FileSystem effect that virtualizes the file system in memory
+based on a given FSTree, instead of performing actual IO.
+-}
+runDummyFS
+    :: (Throw EntryNotFound <| ef, Throw NotADir <| ef)
+    => FSTree
+    -> Eff eh (FileSystem ': ef) ~> Eff eh ef
+runDummyFS root = interpret \case
+    ListDirectory path ->
+        lookupFS path root <&> \case
+            Dir entries -> Right $ Map.keys entries
+            File _ -> Left NotADir
+    GetFileSize path ->
+        lookupFS path root <&> \case
+            File size -> Right size
+            Dir _ -> Left NotAFile
+```
+
+```
+>>> main
+Found ./README.md
+Found ./src
+Found ./src/Bar.hs
+Found ./src/Foo.hs
+Found ./test
+Found ./test/Baz.hs
+Sum {getSum = 10000}
+```
+
 ## Documentation
 A detailed explanation of usage and semantics is available in [Haddock](https://hackage.haskell.org/package/heftia-0.4.0.0/docs/Control-Monad-Hefty.html).
 The example codes are located in the [heftia-effects/Example/](https://github.com/sayo-hs/heftia/tree/v0.5.0/heftia-effects/Example) directory.
