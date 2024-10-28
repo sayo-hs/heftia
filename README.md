@@ -250,7 +250,10 @@ totalFileSize
     -> Eff '[] ef (Sum Integer)
 totalFileSize path = do
     entities :: [FilePath] <- listDirectory path & joinEither
-    entity :: FilePath <- choice entities -- Non-deterministically "pick" one item from the list
+
+    -- Non-deterministically *pick* one item from the list
+    entity :: FilePath <- choice entities
+
     let path' = path </> entity
 
     liftIO $ putStrLn $ "Found " <> path'
