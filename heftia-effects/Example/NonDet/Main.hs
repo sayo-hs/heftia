@@ -61,7 +61,9 @@ totalFileSize path = do
     liftIO $ putStrLn $ "Found " <> path'
 
     getFileSize path' >>= \case
-        Right size -> pure $ Sum size
+        Right size -> do
+            liftIO $ putStrLn $ " ... " <> show size <> " bytes"
+            pure $ Sum size
         Left NotAFile -> do
             totalFileSize path'
 
@@ -77,11 +79,15 @@ main = runEff
 {-
 >>> main
 Found ./README.md
+ ... 4000 bytes
 Found ./src
 Found ./src/Bar.hs
+ ... 1000 bytes
 Found ./src/Foo.hs
+ ... 2000 bytes
 Found ./test
 Found ./test/Baz.hs
+ ... 3000 bytes
 Sum {getSum = 10000}
 -}
 
