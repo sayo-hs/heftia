@@ -67,3 +67,19 @@ main =
                 transactFS' @"fs2" do
                     inBase $ transactFS' @"fs1" do
                         liftIO $ print "hello"
+
+{-
+[DUMMY FS /fs1] readFS "/a/b/c"
+content: "DUMMY CONTENT on /fs1/a/b/c"
+[DUMMY FS /fs1] writeFS "/d/e/f" "foobar"
+-----
+[DUMMY FS /fs2] readFS "/a/b/c"
+content: "DUMMY CONTENT on /fs2/a/b/c"
+[DUMMY FS /fs2] writeFS "/d/e/f" "foobar"
+-----
+[DUMMY FS /fs2] START TRANSACTION
+[DUMMY FS /fs1] START TRANSACTION
+"hello"
+[DUMMY FS /fs1] END TRANSACTION
+[DUMMY FS /fs2] END TRANSACTION
+-}
