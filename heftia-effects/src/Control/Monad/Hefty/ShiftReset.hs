@@ -23,24 +23,26 @@ import Control.Monad.Hefty (
     type (~>),
  )
 import Data.Effect.Key (KeyH (KeyH))
-import Data.Effect.ShiftReset
+import Data.Effect.ShiftReset (Shift' (Shift))
+import Data.Effect.ShiftReset hiding (Shift)
+import Data.Effect.ShiftReset qualified as D
 
-type ShiftFix ans eh ef = Shift ans (ShiftBase ans eh ef)
+type Shift ans eh ef = D.Shift ans (ShiftEff ans eh ef)
 
-newtype ShiftBase ans eh ef a
-    = ShiftBase {unShiftBase :: Eff (Shift ans (ShiftBase ans eh ef) ': eh) ef a}
+newtype ShiftEff ans eh ef a
+    = ShiftEff {unShiftEff :: Eff (D.Shift ans (ShiftEff ans eh ef) ': eh) ef a}
     deriving newtype (Functor, Applicative, Monad)
 
-evalShift :: Eff '[ShiftFix ans '[] ef] ef ans -> Eff '[] ef ans
+evalShift :: Eff '[Shift ans '[] ef] ef ans -> Eff '[] ef ans
 evalShift = runShift pure
 
-runShift :: (a -> Eff '[] ef ans) -> Eff '[ShiftFix ans '[] ef] ef a -> Eff '[] ef ans
+runShift :: (a -> Eff '[] ef ans) -> Eff '[Shift ans '[] ef] ef a -> Eff '[] ef ans
 runShift f =
     interpretHBy f \e k ->
         evalShift $ case e of
-            KeyH (Shift initiate) -> unShiftBase $ initiate (ShiftBase . raiseH . k) ShiftBase
+            KeyH (Shift initiate) -> unShiftEff $ initiate (ShiftEff . raiseH . k) ShiftEff
 
-withShift :: Eff '[ShiftFix ans '[] '[Eff eh ef]] '[Eff eh ef] ans -> Eff eh ef ans
+withShift :: Eff '[Shift ans '[] '[Eff eh ef]] '[Eff eh ef] ans -> Eff eh ef ans
 withShift = runEff . evalShift
 
 runShift_ :: forall eh ef. Eff (Shift_ (Eff eh ef) ': eh) ef ~> Eff eh ef

@@ -30,23 +30,24 @@ import Control.Monad.Hefty (
     type (##),
     type (~>),
  )
-import Data.Effect.Provider
+import Data.Effect.Provider hiding (Provider, Provider_)
+import Data.Effect.Provider qualified as D
 import Data.Functor.Identity (Identity (Identity))
 
-type Provide ctx i sh sf eh ef = Provider ctx i (ProviderEff ctx i sh sf eh ef)
-type Provide_ i sh sf eh ef = Provide Identity i sh sf eh ef
+type Provider ctx i sh sf eh ef = D.Provider ctx i (ProviderEff ctx i sh sf eh ef)
+type Provider_ i sh sf eh ef = Provider Identity i sh sf eh ef
 
 newtype ProviderEff ctx i sh sf eh ef a
-    = ProviderEff {unProviderEff :: Eff (sh ': Provide ctx i sh sf eh ef ': eh) (sf ': ef) a}
+    = ProviderEff {unProviderEff :: Eff (sh ': Provider ctx i sh sf eh ef ': eh) (sf ': ef) a}
 
 runProvider
     :: forall ctx i sh sf eh ef
      . ( forall x
           . i
-         -> Eff (sh ': Provide ctx i sh sf eh ef ': eh) (sf ': ef) x
-         -> Eff (Provide ctx i sh sf eh ef ': eh) ef (ctx x)
+         -> Eff (sh ': Provider ctx i sh sf eh ef ': eh) (sf ': ef) x
+         -> Eff (Provider ctx i sh sf eh ef ': eh) ef (ctx x)
        )
-    -> Eff (Provide ctx i sh sf eh ef ': eh) ef ~> Eff eh ef
+    -> Eff (Provider ctx i sh sf eh ef ': eh) ef ~> Eff eh ef
 runProvider run =
     interpretH \(KeyH (Provide i f)) ->
         runProvider run $
@@ -56,10 +57,10 @@ runProvider_
     :: forall i sh sf eh ef
      . ( forall x
           . i
-         -> Eff (sh ': Provide_ i sh sf eh ef ': eh) (sf ': ef) x
-         -> Eff (Provide_ i sh sf eh ef ': eh) ef x
+         -> Eff (sh ': Provider_ i sh sf eh ef ': eh) (sf ': ef) x
+         -> Eff (Provider_ i sh sf eh ef ': eh) ef x
        )
-    -> Eff (Provide_ i sh sf eh ef ': eh) ef ~> Eff eh ef
+    -> Eff (Provider_ i sh sf eh ef ': eh) ef ~> Eff eh ef
 runProvider_ run = runProvider \i a -> run i (Identity <$> a)
 
 scope
@@ -71,8 +72,8 @@ scope
        , HFunctor sh
        )
     => i
-    -> ( Eff eh ef ~> Eff (sh ## tag ': Provide ctx i sh sf bh bf ': bh) (sf # tag ': bf)
-         -> Eff (sh ## tag ': Provide ctx i sh sf bh bf ': bh) (sf # tag ': bf) a
+    -> ( Eff eh ef ~> Eff (sh ## tag ': Provider ctx i sh sf bh bf ': bh) (sf # tag ': bf)
+         -> Eff (sh ## tag ': Provider ctx i sh sf bh bf ': bh) (sf # tag ': bf) a
        )
     -> Eff eh ef (ctx a)
 scope i f =
@@ -88,8 +89,8 @@ scope_
        , HFunctor sh
        )
     => i
-    -> ( Eff eh ef ~> Eff (sh ## tag ': Provide_ i sh sf bh bf ': bh) (sf # tag ': bf)
-         -> Eff (sh ## tag ': Provide_ i sh sf bh bf ': bh) (sf # tag ': bf) a
+    -> ( Eff eh ef ~> Eff (sh ## tag ': Provider_ i sh sf bh bf ': bh) (sf # tag ': bf)
+         -> Eff (sh ## tag ': Provider_ i sh sf bh bf ': bh) (sf # tag ': bf) a
        )
     -> Eff eh ef a
 scope_ i f =

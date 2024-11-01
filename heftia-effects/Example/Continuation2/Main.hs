@@ -21,7 +21,7 @@ import Control.Monad.Hefty (
     type (:+:),
  )
 import Control.Monad.Hefty.Reader (runReader)
-import Control.Monad.Hefty.ShiftReset (ShiftFix, evalShift, runShift_, unShiftBase)
+import Control.Monad.Hefty.ShiftReset (Shift, ShiftEff (ShiftEff), evalShift, runShift_)
 import Control.Monad.Hefty.State (evalState)
 import Data.Effect.Key (type (#>))
 import Data.Effect.Reader (Ask, Local, ask, local)
@@ -79,9 +79,9 @@ handleReaderThenShift =
   where
     prog
         :: (r ~ '["counter" #> State Int, IO])
-        => Eff '[Local Int] '[Ask Int, Eff '[ShiftFix () '[] r] r] ()
+        => Eff '[Local Int] '[Ask Int, Eff '[Shift () '[] r] r] ()
     prog = do
-        k <- sendN @1 $ getCC
+        ShiftEff k <- sendN @1 $ getCC
         env <- ask @Int
         sendN @1 $ liftIO $ putStrLn $ "[local scope outer] env = " ++ show env
         local @Int (* 2) do
@@ -89,7 +89,7 @@ handleReaderThenShift =
                 sendN @1 $ modify (+ 1) & key @"counter"
                 env' <- ask @Int
                 sendN @1 $ liftIO $ putStrLn $ "[local scope inner] env = " ++ show env'
-                send $ unShiftBase k
+                send k
 
 handleShiftThenReader :: IO ()
 handleShiftThenReader = do
