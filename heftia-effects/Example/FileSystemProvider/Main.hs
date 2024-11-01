@@ -18,8 +18,7 @@ import Control.Monad.Hefty (
     type (<|),
     type (~>),
  )
-import Control.Monad.Hefty.Provider (Provide, runProvider_, scope_)
-import Data.Functor.Identity (Identity)
+import Control.Monad.Hefty.Provider (Provide_, runProvider_, scope_)
 
 data FileSystemF a where
     ReadFS :: FilePath -> FileSystemF String
@@ -29,7 +28,7 @@ data FileSystemH m (a :: Type) where
     TransactFS :: m a -> FileSystemH m a
 makeEffect [''FileSystemF] [''FileSystemH]
 
-type FSProvider eh ef = Provide Identity FilePath FileSystemH FileSystemF eh ef
+type FSProvider eh ef = Provide_ FilePath FileSystemH FileSystemF eh ef
 
 runDummyFSProvider :: (IO <| ef) => Eff (FSProvider eh ef ': eh) ef ~> Eff eh ef
 runDummyFSProvider =

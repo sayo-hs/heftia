@@ -99,9 +99,9 @@ runStateNaive s0 m = do
             Put s -> \k -> pure \_ -> k () >>= ($ s)
     f s0
 
--- | A naive but somewhat slower version of 'runStateRec' that does not use ad-hoc optimizations.
-runStateNaiveRec :: forall s ef eh. s -> Eff eh (State s ': ef) ~> Eff eh ef
-runStateNaiveRec s0 =
+-- | A naive but somewhat slower version of 'evalStateRec' that does not use ad-hoc optimizations.
+evalStateNaiveRec :: forall s ef eh. s -> Eff eh (State s ': ef) ~> Eff eh ef
+evalStateNaiveRec s0 =
     raiseUnder
         >>> interpretRecWith \case
             Get -> (ask @s >>=)
