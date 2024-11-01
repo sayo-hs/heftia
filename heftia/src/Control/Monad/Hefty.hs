@@ -542,7 +542,12 @@ module Control.Monad.Hefty (
     iterEffRecHWith,
     iterEffRecHFWith,
     iterEffHFBy,
+    iterAllEffHF,
     iterAllEffHFBy,
+
+    -- ** Layer manipulation
+    splitLayer,
+    mergeLayer,
 
     -- ** Utilities
     stateless,
@@ -671,6 +676,7 @@ import Control.Monad.Hefty.Interpret (
     interpretRecHWith,
     interpretRecWith,
     interpretWith,
+    iterAllEffHF,
     iterAllEffHFBy,
     iterEffBy,
     iterEffHBy,
@@ -678,6 +684,7 @@ import Control.Monad.Hefty.Interpret (
     iterEffRecH,
     iterEffRecHFWith,
     iterEffRecHWith,
+    mergeLayer,
     reinterpret,
     reinterpretBy,
     reinterpretH,
@@ -696,6 +703,7 @@ import Control.Monad.Hefty.Interpret (
     reinterpretWith,
     runEff,
     runPure,
+    splitLayer,
     stateless,
  )
 

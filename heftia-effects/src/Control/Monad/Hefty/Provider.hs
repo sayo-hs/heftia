@@ -16,85 +16,82 @@ where
 import Control.Monad.Hefty (
     Eff,
     HFunctor,
+    KeyH (KeyH),
     MemberHBy,
     interpretH,
-    raise,
-    raiseNH,
     tag,
     tagH,
+    transEffHF,
     untag,
     untagH,
+    weaken,
+    weakenNH,
+    type (#),
+    type (##),
     type (~>),
  )
-import Data.Effect.Key (KeyH (KeyH))
 import Data.Effect.Provider
-import Data.Effect.Tag (type (#), type (##))
 import Data.Functor.Identity (Identity (Identity))
 
-type ProviderFix ctx i eh rh ef rf = Provider ctx i (ProviderBase ctx i eh rh ef rf)
-type ProviderFix_ i eh rh ef rf = Provider Identity i (ProviderBase Identity i eh rh ef rf)
+type Provide ctx i sh sf eh ef = Provider ctx i (ProviderEff ctx i sh sf eh ef)
+type Provide_ i sh sf eh ef = Provide Identity i sh sf eh ef
 
-newtype ProviderBase ctx i eh rh ef rf a
-    = ProviderBase
-    { unProviderBase
-        :: Eff (eh ': ProviderFix ctx i eh rh ef rf ': rh) (ef ': rf) a
-    }
-    deriving newtype (Functor, Applicative, Monad)
+newtype ProviderEff ctx i sh sf eh ef a
+    = ProviderEff {unProviderEff :: Eff (sh ': Provide ctx i sh sf eh ef ': eh) (sf ': ef) a}
 
 runProvider
-    :: forall ctx i eh rh ef rf
+    :: forall ctx i sh sf eh ef
      . ( forall x
           . i
-         -> Eff (eh ': ProviderFix ctx i eh rh ef rf ': rh) (ef ': rf) x
-         -> Eff (ProviderFix ctx i eh rh ef rf ': rh) rf (ctx x)
+         -> Eff (sh ': Provide ctx i sh sf eh ef ': eh) (sf ': ef) x
+         -> Eff (Provide ctx i sh sf eh ef ': eh) ef (ctx x)
        )
-    -> Eff (ProviderFix ctx i eh rh ef rf ': rh) rf ~> Eff rh rf
-runProvider run = loop
-  where
-    loop :: Eff (ProviderFix ctx i eh rh ef rf ': rh) rf ~> Eff rh rf
-    loop = interpretH \(KeyH (Provide i f)) ->
-        loop . run i . unProviderBase $
-            f (ProviderBase . raiseNH @2 . raise)
+    -> Eff (Provide ctx i sh sf eh ef ': eh) ef ~> Eff eh ef
+runProvider run =
+    interpretH \(KeyH (Provide i f)) ->
+        runProvider run $
+            run i (unProviderEff $ f $ ProviderEff . transEffHF (weakenNH @2) weaken)
 
 runProvider_
-    :: forall i eh rh ef rf
-     . ( i
-         -> Eff (eh ': ProviderFix_ i eh rh ef rf ': rh) (ef ': rf)
-            ~> Eff (ProviderFix_ i eh rh ef rf ': rh) rf
+    :: forall i sh sf eh ef
+     . ( forall x
+          . i
+         -> Eff (sh ': Provide_ i sh sf eh ef ': eh) (sf ': ef) x
+         -> Eff (Provide_ i sh sf eh ef ': eh) ef x
        )
-    -> Eff (ProviderFix_ i eh rh ef rf ': rh) rf ~> Eff rh rf
-runProvider_ run = runProvider \i m -> run i $ Identity <$> m
+    -> Eff (Provide_ i sh sf eh ef ': eh) ef ~> Eff eh ef
+runProvider_ run = runProvider \i a -> run i (Identity <$> a)
 
 scope
-    :: forall tag ctx i eh ef a sh bh sf bf
+    :: forall tag ctx i eh ef a sh sf bh bf
      . ( MemberHBy
             (ProviderKey ctx i)
-            (Provider' ctx i (ProviderBase ctx i sh bh sf bf))
+            (Provider' ctx i (ProviderEff ctx i sh sf bh bf))
             eh
        , HFunctor sh
        )
     => i
-    -> ( (Eff eh ef ~> Eff (sh ## tag ': ProviderFix ctx i sh bh sf bf ': bh) (sf # tag ': bf))
-         -> Eff (sh ## tag ': ProviderFix ctx i sh bh sf bf ': bh) (sf # tag ': bf) a
+    -> ( Eff eh ef ~> Eff (sh ## tag ': Provide ctx i sh sf bh bf ': bh) (sf # tag ': bf)
+         -> Eff (sh ## tag ': Provide ctx i sh sf bh bf ': bh) (sf # tag ': bf) a
        )
     -> Eff eh ef (ctx a)
 scope i f =
-    i ..! \runInBase ->
-        ProviderBase . untag . untagH $ f $ tagH . tag . unProviderBase . runInBase
+    i ..! \runInScope ->
+        ProviderEff $ untagH . untag $ f (tagH . tag . unProviderEff . runInScope)
 
 scope_
-    :: forall tag i eh ef a sh bh sf bf
+    :: forall tag i eh ef a sh sf bh bf
      . ( MemberHBy
             (ProviderKey Identity i)
-            (Provider' Identity i (ProviderBase Identity i sh bh sf bf))
+            (Provider' Identity i (ProviderEff Identity i sh sf bh bf))
             eh
        , HFunctor sh
        )
     => i
-    -> ( (Eff eh ef ~> Eff (sh ## tag ': ProviderFix_ i sh bh sf bf ': bh) (sf # tag ': bf))
-         -> Eff (sh ## tag ': ProviderFix_ i sh bh sf bf ': bh) (sf # tag ': bf) a
+    -> ( Eff eh ef ~> Eff (sh ## tag ': Provide_ i sh sf bh bf ': bh) (sf # tag ': bf)
+         -> Eff (sh ## tag ': Provide_ i sh sf bh bf ': bh) (sf # tag ': bf) a
        )
     -> Eff eh ef a
 scope_ i f =
-    i .! \runInBase ->
-        ProviderBase . untag . untagH $ f $ tagH . tag . unProviderBase . runInBase
+    i .! \runInScope ->
+        ProviderEff $ untagH . untag $ f (tagH . tag . unProviderEff . runInScope)

@@ -18,7 +18,8 @@ import Control.Monad.Hefty (
     type (<|),
     type (~>),
  )
-import Control.Monad.Hefty.Provider (ProviderFix_, runProvider_, scope_)
+import Control.Monad.Hefty.Provider (Provide, runProvider_, scope_)
+import Data.Functor.Identity (Identity)
 
 data FileSystemF a where
     ReadFS :: FilePath -> FileSystemF String
@@ -28,7 +29,7 @@ data FileSystemH m (a :: Type) where
     TransactFS :: m a -> FileSystemH m a
 makeEffect [''FileSystemF] [''FileSystemH]
 
-type FSProvider eh ef = ProviderFix_ FilePath FileSystemH eh FileSystemF ef
+type FSProvider eh ef = Provide Identity FilePath FileSystemH FileSystemF eh ef
 
 runDummyFSProvider :: (IO <| ef) => Eff (FSProvider eh ef ': eh) ef ~> Eff eh ef
 runDummyFSProvider =
@@ -50,8 +51,8 @@ main :: IO ()
 main =
     runEff . runDummyFSProvider $
         scope_ @"fs1" "/fs1" \_ -> do
-            scope_ @"fs2" "/fs2" \inBase -> do
-                inBase do
+            scope_ @"fs2" "/fs2" \outer -> do
+                outer do
                     s1 <- readFS' @"fs1" "/a/b/c"
                     liftIO $ putStrLn $ "content: " <> show s1
                     writeFS' @"fs1" "/d/e/f" "foobar"
@@ -65,7 +66,7 @@ main =
                 liftIO $ putStrLn "-----"
 
                 transactFS' @"fs2" do
-                    inBase $ transactFS' @"fs1" do
+                    outer $ transactFS' @"fs1" do
                         liftIO $ print "hello"
 
 {-

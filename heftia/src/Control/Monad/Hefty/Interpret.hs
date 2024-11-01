@@ -18,11 +18,15 @@ module Control.Monad.Hefty.Interpret where
 
 import Control.Arrow ((>>>))
 import Control.Effect (type (~>))
+import Control.Monad ((>=>))
 import Control.Monad.Hefty.Types (
     Eff (Op, Val),
     Elaborator,
     Interpreter,
+    send0,
+    sendUnion,
     sendUnionBy,
+    sendUnionH,
     sendUnionHBy,
     type (~~>),
  )
@@ -561,6 +565,38 @@ iterAllEffHFBy ret fh ff = loop
           where
             k = loop . qApp q
 {-# INLINE iterAllEffHFBy #-}
+
+-- | Traverses all effects using the provided natural-transformation style elaborator and handler, transforming them into a monad @m@.
+iterAllEffHF
+    :: forall eh ef m
+     . (Monad m)
+    => UnionH eh ~~> m
+    -- ^ Effect elaborator
+    -> Union ef ~> m
+    -- ^ Effect handler
+    -> Eff eh ef ~> m
+iterAllEffHF fh ff = loop
+  where
+    loop :: Eff eh ef ~> m
+    loop = \case
+        Val x -> pure x
+        Op u q -> either (fh . hfmapUnion loop >=> k) (ff >=> k) u
+          where
+            k = loop . qApp q
+{-# INLINE iterAllEffHF #-}
+
+-- * Layer manipulation
+
+splitLayer :: Eff '[] ef ~> Eff eh '[Eff '[] ef]
+splitLayer =
+    iterAllEffHFBy pure nilH (\u k -> send0 (sendUnion u) >>= k)
+
+mergeLayer :: Eff eh '[Eff eh ef] ~> Eff eh ef
+mergeLayer =
+    iterAllEffHFBy
+        pure
+        (\u k -> sendUnionH (hfmapUnion mergeLayer u) >>= k)
+        (\u k -> extract u >>= k)
 
 -- * Utilities
 
