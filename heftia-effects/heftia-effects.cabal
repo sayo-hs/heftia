@@ -194,11 +194,11 @@ executable Continuation
     build-depends:
         heftia-effects,
 
-executable Continuation2
+executable ShiftReset
     import: common-base
 
     main-is: Main.hs
-    hs-source-dirs: Example/Continuation2
+    hs-source-dirs: Example/ShiftReset
     build-depends:
         heftia-effects,
         extra >= 1.7.14 && < 1.9,
