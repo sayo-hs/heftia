@@ -96,7 +96,7 @@ you likely already have the mental model needed for this library, and everything
 This library is currently in the beta stage.
 There may be significant changes and potential bugs.
 
-**We are looking forward to your feedback!**
+**I am looking forward to your feedback!**
 
 ## Getting Started
 1.
