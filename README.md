@@ -56,7 +56,7 @@ If performance is particularly important, [`effectful`](https://github.com/haske
             * [heftia-effects/Example/UnliftIO/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/UnliftIO/Main.hs)
             * [heftia-effects/Example/Stream/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/Stream/Main.hs)
         * [`Provider`](https://hackage.haskell.org/package/effectful-core-2.5.0.0/docs/Effectful-Provider.html) a.k.a. [`Scoped`](https://hackage.haskell.org/package/polysemy-1.9.2.0/docs/Polysemy-Scoped.html)
-            * to prevent [resource leaks caused by resource handles escaping from their scopes](https://h2.jaguarpaw.co.uk/posts/bluefin-prevents-handles-leaking/)
+            * to prevent [resource handles from leaking out of scopes](https://h2.jaguarpaw.co.uk/posts/bluefin-prevents-handles-leaking/)
             * [heftia-effects/Example/FileSystemProvider/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/FileSystemProvider/Main.hs)
         * [Applicative-style Parallelism](https://medium.com/@PerrottaFrancisco/learning-cats-effects-parallel-execution-f617f883e390)
             * like `cats-effect` in Scala
