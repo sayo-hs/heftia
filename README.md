@@ -51,12 +51,15 @@ If performance is particularly important, [`effectful`](https://github.com/haske
         * Non-deterministic computations
 
     * Higher-order effects
-        * [`MonadUnliftIO`](https://hackage.haskell.org/package/unliftio) to prevent resource leaks due to runtime exceptions
+        * [`MonadUnliftIO`](https://hackage.haskell.org/package/unliftio)
+            * to prevent resource leaks due to runtime exceptions
             * [heftia-effects/Example/UnliftIO/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/UnliftIO/Main.hs)
             * [heftia-effects/Example/Stream/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/Stream/Main.hs)
-        * [`Provider`](https://hackage.haskell.org/package/effectful-core-2.5.0.0/docs/Effectful-Provider.html) a.k.a. [`Scoped`](https://hackage.haskell.org/package/polysemy-1.9.2.0/docs/Polysemy-Scoped.html) to prevent [resource leaks caused by resource handles escaping from their scopes](https://h2.jaguarpaw.co.uk/posts/bluefin-prevents-handles-leaking/)
+        * [`Provider`](https://hackage.haskell.org/package/effectful-core-2.5.0.0/docs/Effectful-Provider.html) a.k.a. [`Scoped`](https://hackage.haskell.org/package/polysemy-1.9.2.0/docs/Polysemy-Scoped.html)
+            * to prevent [resource leaks caused by resource handles escaping from their scopes](https://h2.jaguarpaw.co.uk/posts/bluefin-prevents-handles-leaking/)
             * [heftia-effects/Example/FileSystemProvider/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/FileSystemProvider/Main.hs)
-        * [Applicative-style Parallelism](https://medium.com/@PerrottaFrancisco/learning-cats-effects-parallel-execution-f617f883e390) like `cats-effect` in Scala
+        * [Applicative-style Parallelism](https://medium.com/@PerrottaFrancisco/learning-cats-effects-parallel-execution-f617f883e390)
+            * like `cats-effect` in Scala
             * [heftia-effects/test/Test/Concurrent.hs](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/test/Test/Concurrent.hs)
 
     All of these interact through a simple, consistent, and predictable semantics based on algebraic effects.
