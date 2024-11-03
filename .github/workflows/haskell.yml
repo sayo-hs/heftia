@@ -40,8 +40,8 @@ jobs:
       - name: Install dependencies
         run: |
           cabal update
-          cabal build --only-dependencies --enable-tests all
+          cabal build --only-dependencies --enable-tests --disable-benchmarks all
       - name: Build
-        run: cabal build --enable-tests all
+        run: cabal build --enable-tests --disable-benchmarks all
       - name: Run tests
         run: cabal test --test-show-details=direct all

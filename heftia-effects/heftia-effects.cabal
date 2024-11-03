@@ -285,7 +285,7 @@ benchmark heftia-bench
         tasty-bench >= 0.3 && < 0.5,
         mpeff,
 
-    if impl(ghc >= 9.6) && impl(ghc < 9.10.1)
+    if impl(ghc >= 9.6) && impl(ghc < 9.10)
        build-depends: eff
 
     default-extensions:
