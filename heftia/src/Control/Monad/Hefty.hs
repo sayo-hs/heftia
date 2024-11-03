@@ -322,18 +322,18 @@ This is a significant difference from 'IO'-fused effect system libraries like [e
 When performing recursive continuational stateful interpretation, that is, when using functions with @Rec@, it's necessary to understand their semantics.
 If you are not using @Rec@ functions, you don't need to pay particular attention to this section.
 
-[@runStateRec@](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-State.html#v:runStateRec) is a variant of
- [@runState@](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-State.html#v:runState),
+[@evalStateRec@](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-State.html#v:evalStateRec) is a variant of
+ [@evalState@](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-State.html#v:evalState),
 a handler for the @State@ effect that can be used even when higher-order effects are unelaborated:
 
 @
-[@runStateRec@](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-State.html#v:runStateRec) :: 'Eff' eh (@t'Data.Effect.State.State'@ s ': ef) t'Control.Effect.~>' 'Eff' eh ef
-[@runState@](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-State.html#v:runState) :: 'Eff' '[] (@t'Data.Effect.State.State'@ s ': ef) t'Control.Effect.~>' 'Eff' '[] ef
+[@evalStateRec@](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-State.html#v:evalStateRec) :: s -> 'Eff' eh (@t'Data.Effect.State.State'@ s ': ef) t'Control.Effect.~>' 'Eff' eh ef
+[@evalState@](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-State.html#v:evalState) :: s -> 'Eff' '[] (@t'Data.Effect.State.State'@ s ': ef) t'Control.Effect.~>' 'Eff' '[] ef
 @
 
-@runStateRec@ uses @Rec@ functions internally. When a function uses @Rec@ functions internally, it's best to reflect that in its naming.
+@evalStateRec@ uses @Rec@ functions internally. When a function uses @Rec@ functions internally, it's best to reflect that in its naming.
 
-Now, if you perform @runStateRec@ before elaborating higher-order effects, the following occurs.
+Now, if you perform @evalStateRec@ before elaborating higher-order effects, the following occurs.
 Note that we are using the @Log@ and @Span@ effects introduced in the first example.
 
 @
@@ -341,7 +341,7 @@ import Prelude hiding (log, span)
 
 prog :: IO ()
 prog = 'runEff' do
-    runLog . runSpan . runStateRec \@[Int] [] $ do
+    runLog . runSpan . evalStateRec \@[Int] [] $ do
 
         v'Data.Effect.State.modify' \@[Int] (++ [1])
         log . show =<< v'Data.Effect.State.get' \@[Int]
@@ -370,7 +370,7 @@ When attempting to perform continuational stateful interpretation of an effect,
 if there are unelaborated higher-order effects remaining, resets of this continuational state occur for each scope of those higher-order effects.
 For higher-order effects that have already been elaborated and removed from the list at that point, there is naturally no impact.
 
-This is simply because @runStateRec@ (generally all @Rec@ functions) recursively applies @runState@ to the scopes of unelaborated higher-order effects.
+This is simply because @evalStateRec@ (generally all @Rec@ functions) recursively applies @evalState@ to the scopes of unelaborated higher-order effects.
 Interpretation occurs independently for each scope, and the state is not carried over.
 
 From the perspective of @shift/reset@ delimited continuations, this phenomenon can be seen as @reset@s being inserted at the scopes of unelaborated higher-order effects.
@@ -390,7 +390,7 @@ import Prelude hiding (log, span)
 
 prog :: IO ()
 prog = 'runEff' do
-    runLog . runState \@[Int] [] . runSpan $ do
+    runLog . evalState \@[Int] [] . runSpan $ do
 
         v'Data.Effect.State.modify' \@[Int] (++ [1])
         log . show =<< v'Data.Effect.State.get' \@[Int]
