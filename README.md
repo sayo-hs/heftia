@@ -58,6 +58,7 @@ If performance is particularly important, [`effectful`](https://github.com/haske
         * [`Provider`](https://hackage.haskell.org/package/effectful-core-2.5.0.0/docs/Effectful-Provider.html) a.k.a. [`Scoped`](https://hackage.haskell.org/package/polysemy-1.9.2.0/docs/Polysemy-Scoped.html)
             * to prevent [resource handles from leaking out of scopes](https://h2.jaguarpaw.co.uk/posts/bluefin-prevents-handles-leaking/)
             * [heftia-effects/Example/FileSystemProvider/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/FileSystemProvider/Main.hs)
+            * [heftia-effects/Example/Subprocess/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/Subprocess/Main.hs)
         * [Applicative-style Parallelism](https://medium.com/@PerrottaFrancisco/learning-cats-effects-parallel-execution-f617f883e390)
             * like `cats-effect` in Scala
             * [heftia-effects/test/Test/Concurrent.hs](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/test/Test/Concurrent.hs)
@@ -415,8 +416,8 @@ For more details, please refer to [performance.md](https://github.com/sayo-hs/he
 
 ## Future Plans
 * Increase effects and nurture the ecosystem
-    * ✅ concurrent/parallel programming, streaming, `co-log`: to be released in v0.5
-    * file system, Subprocesses, POSIX, and so on...
+    * ✅ concurrent/parallel programming, streaming, subprocess, `co-log`: to be released in v0.5
+    * file system, POSIX, and so on...
 * Write practical software using Heftia
 * Support for Applicative effects
 * (Support for [Linear](https://hackage.haskell.org/package/linear-base) effects?)

@@ -21,3 +21,7 @@ main = runUnliftIO . runSubprocIO $ do
         scope @"echo" (shell "echo a b c") {stdout = CreatePipe} \_ -> do
             readStdout'' @"echo"
     print r & liftIO
+
+{-
+SubprocScopeResult ExitSuccess "a b c\n"
+-}

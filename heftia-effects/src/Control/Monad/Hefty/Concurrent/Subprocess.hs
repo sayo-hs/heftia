@@ -75,59 +75,60 @@ deriving stock instance (Eq a) => Eq (SubprocResult p a)
 
 runSubprocIO :: (UnliftIO <<| eh, IO <| ef) => Eff (SubprocProvider eh ef ': eh) ef ~> Eff eh ef
 runSubprocIO =
-    runProvider \cp@CreateProcess {subprocLifecycle, scopeLifecycle} m -> withRunInIO \run -> do
-        (hi, ho, he, ph) <- Raw.createProcess (toRawCreateProcess cp) & liftIO
-        procStatus <- newEmptyTMVarIO
-        scopeStatus <- newEmptyTMVarIO
-        mask \restore -> do
-            let
-                runThread :: TMVar a -> IO a -> IO ThreadId
-                runThread var a = forkIO $ atomically . putTMVar var =<< a
+    runProvider \cp@CreateProcess {subprocLifecycle, scopeLifecycle} m ->
+        withRunInIO \run -> do
+            (hi, ho, he, ph) <- Raw.createProcess (toRawCreateProcess cp) & liftIO
+            procStatus <- newEmptyTMVarIO
+            scopeStatus <- newEmptyTMVarIO
+            mask \restore -> do
+                let
+                    runThread :: TMVar a -> IO a -> IO ThreadId
+                    runThread var a = forkIO $ atomically . putTMVar var =<< a
 
-            tScope <- runThread scopeStatus $ restore . run $ do
-                m
-                    & interpretH \case {}
-                    & interpret \case
-                        WriteStdin s -> hPut (fromJust hi) s & liftIO
-                        TryWriteStdin s -> do
-                            stat <- atomically $ tryReadTMVar procStatus
-                            if isNothing stat
-                                then do
-                                    hPut (fromJust hi) s & liftIO
-                                    pure True
-                                else pure False
-                        ReadStdout -> hRead (fromJust ho) & liftIO
-                        ReadStderr -> hRead (fromJust he) & liftIO
-                        PollSubproc -> atomically $ tryReadTMVar procStatus
+                tScope <- runThread scopeStatus $ restore . run $ do
+                    m
+                        & interpretH \case {}
+                        & interpret \case
+                            WriteStdin s -> hPut (fromJust hi) s & liftIO
+                            TryWriteStdin s -> do
+                                stat <- atomically $ tryReadTMVar procStatus
+                                if isNothing stat
+                                    then do
+                                        hPut (fromJust hi) s & liftIO
+                                        pure True
+                                    else pure False
+                            ReadStdout -> hRead (fromJust ho) & liftIO
+                            ReadStderr -> hRead (fromJust he) & liftIO
+                            PollSubproc -> atomically $ tryReadTMVar procStatus
 
-            _ <- runThread procStatus $ waitForProcess ph
+                _ <- runThread procStatus $ waitForProcess ph
 
-            finally
-                case (subprocLifecycle, scopeLifecycle) of
-                    (WaitMode, WaitMode) ->
-                        liftM2
-                            SubprocScopeResult
-                            (atomically $ readTMVar procStatus)
-                            (atomically $ readTMVar scopeStatus)
-                    (WaitMode, KillMode) -> do
-                        exitCode <- atomically $ readTMVar procStatus
-                        scopeResult <- atomically $ tryReadTMVar scopeStatus
-                        pure $ SubprocResult exitCode scopeResult
-                    (KillMode, WaitMode) -> do
-                        scopeResult <- atomically $ readTMVar scopeStatus
-                        exitCode <- atomically $ tryReadTMVar procStatus
-                        pure $ ScopeResult exitCode scopeResult
-                    (KillMode, KillMode) ->
-                        RaceResult
-                            <$> atomically
-                                ( (Left <$> readTMVar procStatus)
-                                    <|> (Right <$> readTMVar scopeStatus)
-                                )
-                do
-                    uninterruptibleMask_ do
-                        terminateProcess ph
-                        killThread tScope
-                    atomically $ readTMVar procStatus
+                finally
+                    case (subprocLifecycle, scopeLifecycle) of
+                        (WaitMode, WaitMode) ->
+                            liftM2
+                                SubprocScopeResult
+                                (atomically $ readTMVar procStatus)
+                                (atomically $ readTMVar scopeStatus)
+                        (WaitMode, KillMode) -> do
+                            exitCode <- atomically $ readTMVar procStatus
+                            scopeResult <- atomically $ tryReadTMVar scopeStatus
+                            pure $ SubprocResult exitCode scopeResult
+                        (KillMode, WaitMode) -> do
+                            scopeResult <- atomically $ readTMVar scopeStatus
+                            exitCode <- atomically $ tryReadTMVar procStatus
+                            pure $ ScopeResult exitCode scopeResult
+                        (KillMode, KillMode) ->
+                            RaceResult
+                                <$> atomically
+                                    ( (Left <$> readTMVar procStatus)
+                                        <|> (Right <$> readTMVar scopeStatus)
+                                    )
+                    do
+                        uninterruptibleMask_ do
+                            terminateProcess ph
+                            killThread tScope
+                        atomically $ readTMVar procStatus
 
 hRead :: Handle -> IO ByteString
 hRead h = flip fix BS.empty \next acc -> do
