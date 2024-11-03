@@ -162,7 +162,7 @@ This library has been tested with GHC 9.4.1, 9.6.6 and 9.8.2.
 
 ## Example
 
-### Coroutine-based Composable Concurrent Stream (since v0.5)
+### Coroutine-based Composable Concurrent Stream
 
 Below is an example of using concurrent streams (pipes).
 
