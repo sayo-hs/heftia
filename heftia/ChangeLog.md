@@ -27,3 +27,8 @@
         * The interface is largely the same as before, but names have been changed throughout.
 * Dropped support for GHC 9.2.8, now supporting GHC 9.4.1 and later.
 * Added detailed explanations on how to use Heftia and its semantics to the Haddock documentation of the `Control.Monad.Hefty` module.
+
+## 0.5.0.0 -- 2024-11-03
+
+* Fixed a bug in the lookup of keyed effects.
+* Added missing functions such as `key`, `keyH`, `raiseAll`, and `raiseAllH`.

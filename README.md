@@ -8,7 +8,7 @@
 Heftia is an extensible effects library for Haskell that generalizes "Algebraic Effects and Handlers" to higher-order effects, providing users with maximum flexibility and delivering standard and reasonable speed.
 In its generalization, the focus is on ensuring predictable results based on simple, consistent semantics, while preserving soundness.
 
-Please refer to the [Haddock documentation](https://hackage.haskell.org/package/heftia-0.4.0.0/docs/Control-Monad-Hefty.html) for usage and semantics.
+Please refer to the [Haddock documentation](https://hackage.haskell.org/package/heftia-0.5.0.0/docs/Control-Monad-Hefty.html) for usage and semantics.
 For information on performance, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/v0.5.0/benchmark/performance.md).
 
 This library is inspired by the paper:
@@ -67,7 +67,7 @@ If performance is particularly important, [`effectful`](https://github.com/haske
 
 * **Easy and Concise Implementation for Custom Effect Interpreters**
 
-    As you can see from the implementations of basic effect interpreters such as [State](https://hackage.haskell.org/package/heftia-effects-0.4.0.0/docs/src/Control.Monad.Hefty.State.html#runState), [Throw/Catch](https://hackage.haskell.org/package/heftia-effects-0.4.0.0/docs/src/Control.Monad.Hefty.Except.html#runThrow), [Writer](https://hackage.haskell.org/package/heftia-effects-0.4.0.0/docs/src/Control.Monad.Hefty.Writer.html#runTell), [NonDet](https://hackage.haskell.org/package/heftia-effects-0.4.0.0/docs/src/Control.Monad.Hefty.NonDet.html#runNonDet), and [Coroutine](https://hackage.haskell.org/package/heftia-effects-0.4.0.0/docs/src/Control.Monad.Hefty.Coroutine.html#runCoroutine), they can be implemented in just a few lines, or even a single line. Even for effects like NonDet and Coroutine, which involve continuations and might seem difficult to implement at first glance, this is exactly how simple it can be. This is the power of algebraic effects. Users can quickly define experimental and innovative custom effects using continuations.
+    As you can see from the implementations of basic effect interpreters such as [State](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/src/Control.Monad.Hefty.State.html#runState), [Throw/Catch](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/src/Control.Monad.Hefty.Except.html#runThrow), [Writer](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/src/Control.Monad.Hefty.Writer.html#runTell), [NonDet](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/src/Control.Monad.Hefty.NonDet.html#runNonDet), and [Coroutine](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/src/Control.Monad.Hefty.Coroutine.html#runCoroutine), they can be implemented in just a few lines, or even a single line. Even for effects like NonDet and Coroutine, which involve continuations and might seem difficult to implement at first glance, this is exactly how simple it can be. This is the power of algebraic effects. Users can quickly define experimental and innovative custom effects using continuations.
 
 * **Standard and Reasonable Performance**
 
@@ -77,7 +77,7 @@ If performance is particularly important, [`effectful`](https://github.com/haske
 
     * Does not depend on the IO monad and can use any monad as the base monad.
     * Semantics are isolated from the IO monad, meaning that aspects like asynchronous exceptions and threads do not affect the behavior of effects.
-    * The constructors of the `Eff` monad are [exposed](https://hackage.haskell.org/package/heftia-0.4.0.0/docs/Control-Monad-Hefty.html#t:Eff), and users can manipulate them directly without any safety concerns. Still, the semantics remain intact.
+    * The constructors of the `Eff` monad are [exposed](https://hackage.haskell.org/package/heftia-0.5.0.0/docs/Control-Monad-Hefty.html#t:Eff), and users can manipulate them directly without any safety concerns. Still, the semantics remain intact.
     * These are in contrast to libraries like `effectful` and `eff`, making this library more **Haskell-ish and purely functional**.
 
 ## Downsides
@@ -322,7 +322,7 @@ Sum {getSum = 10000}
 ```
 
 ## Documentation
-A detailed explanation of usage and semantics is available in [Haddock](https://hackage.haskell.org/package/heftia-0.4.0.0/docs/Control-Monad-Hefty.html).
+A detailed explanation of usage and semantics is available in [Haddock](https://hackage.haskell.org/package/heftia-0.5.0.0/docs/Control-Monad-Hefty.html).
 The example codes are located in the [heftia-effects/Example/](https://github.com/sayo-hs/heftia/tree/v0.5.0/heftia-effects/Example) directory.
 Also, the following *HeftWorld* example (outdated): https://github.com/sayo-hs/HeftWorld
 

@@ -35,7 +35,7 @@ tested-with:
 source-repository head
     type: git
     location: https://github.com/sayo-hs/heftia
-    tag: v0.4.0.1
+    tag: v0.5.0
     subdir: heftia-effects
 
 common common-base
@@ -62,9 +62,7 @@ common common-base
         unbounded-delays ^>= 0.1.1,
         ghc-typelits-knownnat ^>= 0.7,
         containers > 0.6.5 && < 0.8,
-        these,
         co-log-core,
-        random,
         process,
         bytestring,
         text,

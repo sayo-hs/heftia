@@ -80,10 +80,10 @@ prog = 'runEff' . runLog . runSpan $ do
     Elaboration is generally performed by editing first-order (or higher-order) effectful operations within the computation held by the higher-order effect being elaborated.
 
     @
-    [runCatch](https://hackage.haskell.org/package/heftia-effects-0.4.0.0/docs/Control-Monad-Hefty-Except.html#v:runCatch) :: (@t'Data.Effect.Except.Throw'@ e t'Data.Effect.OpenUnion.<|' ef) => 'Eff' '[@t'Data.Effect.Except.Catch'@ e] ef t'Control.Effect.~>' 'Eff' '[] ef
+    [runCatch](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-Except.html#v:runCatch) :: (@t'Data.Effect.Except.Throw'@ e t'Data.Effect.OpenUnion.<|' ef) => 'Eff' '[@t'Data.Effect.Except.Catch'@ e] ef t'Control.Effect.~>' 'Eff' '[] ef
     runCatch = 'interpretH' elabCatch
 
-    [elabCatch](https://hackage.haskell.org/package/heftia-effects-0.4.0.0/docs/Control-Monad-Hefty-Except.html#v:elabCatch) :: (@t'Data.Effect.Except.Throw'@ e t'Data.Effect.OpenUnion.<|' ef) => t'Data.Effect.Except.Catch' e t'Control.Monad.Hefty.~~>' 'Eff' '[] ef
+    [elabCatch](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-Except.html#v:elabCatch) :: (@t'Data.Effect.Except.Throw'@ e t'Data.Effect.OpenUnion.<|' ef) => t'Data.Effect.Except.Catch' e t'Control.Monad.Hefty.~~>' 'Eff' '[] ef
     elabCatch (@v'Data.Effect.Except.Catch'@ action hdl) = action & 'interposeWith' \\(@v'Data.Effect.Except.Throw'@ e) _ -> hdl e
     @
 
@@ -106,10 +106,10 @@ prog = 'runEff' . runLog . runSpan $ do
     By ignoring the continuation argument, it allows for global escapes like the 'Data.Effect.Except.Throw' effect.
 
     @
-    [runThrow](https://hackage.haskell.org/package/heftia-effects-0.4.0.0/docs/Control-Monad-Hefty-Except.html#v:runThrow) :: 'Eff' '[] (@t'Data.Effect.Except.Throw'@ e ': r) a -> 'Eff' '[] r ('Either' e a)
+    [runThrow](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-Except.html#v:runThrow) :: 'Eff' '[] (@t'Data.Effect.Except.Throw'@ e ': r) a -> 'Eff' '[] r ('Either' e a)
     runThrow = 'interpretBy' ('pure' '.' 'Right') handleThrow
 
-    [handleThrow](https://hackage.haskell.org/package/heftia-effects-0.4.0.0/docs/Control-Monad-Hefty-Except.html#v:handleThrow) :: 'Interpreter' (@t'Data.Effect.Except.Throw'@ e) ('Eff' '[] r) ('Either' e a)
+    [handleThrow](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-Except.html#v:handleThrow) :: 'Interpreter' (@t'Data.Effect.Except.Throw'@ e) ('Eff' '[] r) ('Either' e a)
     handleThrow (@v'Data.Effect.Except.Throw'@ e) _ = 'pure' $ 'Left' e
     @
 
@@ -118,7 +118,7 @@ prog = 'runEff' . runLog . runSpan $ do
     By calling the continuation argument multiple times, it allows for non-deterministic computations like the "Data.Effect.NonDet" effect.
 
     @
-    [runNonDet](https://hackage.haskell.org/package/heftia-effects-0.4.0.0/docs/Control-Monad-Hefty-NonDet.html#v:runNonDet)
+    [runNonDet](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-NonDet.html#v:runNonDet)
         :: forall f ef a
         . ('Alternative' f)
         => 'Eff' '[] (@t'Data.Effect.NonDet.Choose'@ ': t'Data.Effect.NonDet.Empty' ': ef) a
@@ -228,10 +228,10 @@ By properly understanding and becoming familiar with this semantics, users can q
 Let's revisit the definition of @runCatch@:
 
 @
-[runCatch](https://hackage.haskell.org/package/heftia-effects-0.4.0.0/docs/Control-Monad-Hefty-Except.html#v:runCatch) :: (@t'Data.Effect.Except.Throw'@ e t'Data.Effect.OpenUnion.<|' ef) => 'Eff' '[@t'Data.Effect.Except.Catch'@ e] ef t'Control.Effect.~>' 'Eff' '[] ef
+[runCatch](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-Except.html#v:runCatch) :: (@t'Data.Effect.Except.Throw'@ e t'Data.Effect.OpenUnion.<|' ef) => 'Eff' '[@t'Data.Effect.Except.Catch'@ e] ef t'Control.Effect.~>' 'Eff' '[] ef
 runCatch = 'interpretH' elabCatch
 
-[elabCatch](https://hackage.haskell.org/package/heftia-effects-0.4.0.0/docs/Control-Monad-Hefty-Except.html#v:elabCatch) :: (@t'Data.Effect.Except.Throw'@ e t'Data.Effect.OpenUnion.<|' ef) => t'Data.Effect.Except.Catch' e t'Control.Monad.Hefty.~~>' 'Eff' '[] ef
+[elabCatch](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-Except.html#v:elabCatch) :: (@t'Data.Effect.Except.Throw'@ e t'Data.Effect.OpenUnion.<|' ef) => t'Data.Effect.Except.Catch' e t'Control.Monad.Hefty.~~>' 'Eff' '[] ef
 elabCatch (@v'Data.Effect.Except.Catch'@ action hdl) = action & 'interposeWith' \\(@v'Data.Effect.Except.Throw'@ e) _ -> hdl e
 @
 
@@ -322,13 +322,13 @@ This is a significant difference from 'IO'-fused effect system libraries like [e
 When performing recursive continuational stateful interpretation, that is, when using functions with @Rec@, it's necessary to understand their semantics.
 If you are not using @Rec@ functions, you don't need to pay particular attention to this section.
 
-[@runStateRec@](https://hackage.haskell.org/package/heftia-effects-0.4.0.0/docs/Control-Monad-Hefty-State.html#v:runStateRec) is a variant of
- [@runState@](https://hackage.haskell.org/package/heftia-effects-0.4.0.0/docs/Control-Monad-Hefty-State.html#v:runState),
+[@runStateRec@](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-State.html#v:runStateRec) is a variant of
+ [@runState@](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-State.html#v:runState),
 a handler for the @State@ effect that can be used even when higher-order effects are unelaborated:
 
 @
-[@runStateRec@](https://hackage.haskell.org/package/heftia-effects-0.4.0.0/docs/Control-Monad-Hefty-State.html#v:runStateRec) :: 'Eff' eh (@t'Data.Effect.State.State'@ s ': ef) t'Control.Effect.~>' 'Eff' eh ef
-[@runState@](https://hackage.haskell.org/package/heftia-effects-0.4.0.0/docs/Control-Monad-Hefty-State.html#v:runState) :: 'Eff' '[] (@t'Data.Effect.State.State'@ s ': ef) t'Control.Effect.~>' 'Eff' '[] ef
+[@runStateRec@](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-State.html#v:runStateRec) :: 'Eff' eh (@t'Data.Effect.State.State'@ s ': ef) t'Control.Effect.~>' 'Eff' eh ef
+[@runState@](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-State.html#v:runState) :: 'Eff' '[] (@t'Data.Effect.State.State'@ s ': ef) t'Control.Effect.~>' 'Eff' '[] ef
 @
 
 @runStateRec@ uses @Rec@ functions internally. When a function uses @Rec@ functions internally, it's best to reflect that in its naming.

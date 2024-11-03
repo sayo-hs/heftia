@@ -26,15 +26,12 @@
 
 * Fixed an issue where builds would fail with Stack: https://github.com/sayo-hs/heftia/issues/15
 
-## 0.5.0.0 -- 2024-10-12
+## 0.5.0.0 -- 2024-11-03
 
 * **New features**
-    * Added Concurrent/Parallel effects and Streaming functionality.
+    * Added Concurrent/Parallel effects, Streaming, and Subprocess functionality.
     * Added interpreters for the `co-log` ecosystem.
 
-* **Breaking changes**
-    * Renamed `Control.Monad.Hefty.Provider.provide`/`provide_` -> `scope`/`scoped_`
-    * Renamed `Control.Monad.Hefty.Writer.listen` -> `intercept`
-
+* Renamed `Control.Monad.Hefty.Writer.listen` -> `intercept`
 * Reexported `Data.Effect.*` from the interpreters module `Control.Monad.Hefty.*`.
 * Generalized `runUnliftIO` to use any monad that is an instance of `MonadUnliftIO`.
