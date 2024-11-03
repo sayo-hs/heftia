@@ -283,8 +283,10 @@ benchmark heftia-bench
         mtl >= 2.2 && < 2.4,
         logict >= 0.7.0.3 && < 0.9,
         tasty-bench >= 0.3 && < 0.5,
-        eff,
         mpeff,
+
+    if impl(ghc >= 9.6 && < 9.10)
+        build-depends: eff
 
     default-extensions:
         PackageImports
