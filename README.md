@@ -155,7 +155,7 @@ to the header of your source file.
     Could not deduce ‘GHC.TypeNats.KnownNat (1 GHC.TypeNats.+ ...)’
 
 The supported versions are GHC 9.4.1 and later.
-This library has been tested with GHC 9.8.2 and 9.4.1.
+This library has been tested with GHC 9.4.1, 9.6.6, and 9.8.3.
 
 ## Example
 
