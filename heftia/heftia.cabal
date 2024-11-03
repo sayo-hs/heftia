@@ -1,12 +1,14 @@
 cabal-version:      2.4
 name:               heftia
-version:            0.4.0.0
+version:            0.5.0.0
 
 -- A short (one-line) description of the package.
 synopsis: higher-order algebraic effects done right
 
 -- A longer description of the package.
 description:
+    This is the core package for [heftia-effects](https://hackage.haskell.org/package/heftia-effects).
+    .
     Heftia is an extensible effects library that generalizes "Algebraic Effects and Handlers" to higher-order effects, providing users with maximum flexibility and delivering standard and reasonable speed.
     In its generalization, the focus is on ensuring predictable results based on simple, consistent semantics, while preserving soundness.
     .
@@ -51,7 +53,7 @@ tested-with:
 source-repository head
     type: git
     location: https://github.com/sayo-hs/heftia
-    tag: v0.4.0
+    tag: v0.5.0
     subdir: heftia
 
 library
