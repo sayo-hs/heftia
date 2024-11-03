@@ -38,7 +38,7 @@ runWriterPre = runTell . runWriterHPre
 runTell :: (Monoid w) => Eff '[] (Tell w ': ef) a -> Eff '[] ef (w, a)
 runTell = interpretStateBy mempty (curry pure) handleTell
 
--- | A handler function for the 'Tell' effect.
+-- | A handler function for the t'Tell' effect.
 handleTell :: (Monoid w) => StateInterpreter w (Tell w) (Eff '[] ef) (w, a)
 handleTell (Tell w') w k = k (w <> w') ()
 {-# INLINE handleTell #-}
