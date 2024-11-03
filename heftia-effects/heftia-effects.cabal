@@ -262,7 +262,7 @@ executable NonDet
     build-depends:
         heftia-effects,
         text,
-        filepath >= 1.4.101 && < 1.6,
+        filepath >= 1.4.2.2 && < 1.6,
 
 benchmark heftia-bench
     import: common-base
