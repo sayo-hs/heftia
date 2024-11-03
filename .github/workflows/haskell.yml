@@ -12,7 +12,7 @@ jobs:
   build:
     strategy:
       matrix:
-        ghc: ["9.4.1", "9.6.6", "9.8.2"]
+        ghc: ["9.4.1", "9.6.6", "9.8.2", "9.10.1"]
 
     runs-on: ubuntu-latest
 
