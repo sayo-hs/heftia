@@ -107,7 +107,7 @@ There may be significant changes and potential bugs.
     ```console
     $ cabal update
     ```
-2. Add `heftia-effects ^>= 0.4` and `ghc-typelits-knownnat ^>= 0.7` to the build dependencies. Enable the [ghc-typelits-knownnat](https://hackage.haskell.org/package/ghc-typelits-knownnat) plugin, `GHC2021`, and the following language extensions as needed:
+2. Add `heftia-effects ^>= 0.5` and `ghc-typelits-knownnat ^>= 0.7` to the build dependencies. Enable the [ghc-typelits-knownnat](https://hackage.haskell.org/package/ghc-typelits-knownnat) plugin, `GHC2021`, and the following language extensions as needed:
 
     * `LambdaCase`
     * `DerivingStrategies`
@@ -125,7 +125,7 @@ Example .cabal:
 ...
     build-depends:
         ...
-        heftia-effects ^>= 0.4,
+        heftia-effects ^>= 0.5,
         ghc-typelits-knownnat ^>= 0.7,
 
     default-language: GHC2021
@@ -162,7 +162,7 @@ This library has been tested with GHC 9.4.1, 9.6.6 and 9.8.2.
 
 ## Example
 
-### Coroutine-based Composable Concurrent Stream (since v0.5)
+### Coroutine-based Composable Concurrent Stream
 
 Below is an example of using concurrent streams (pipes).
 
