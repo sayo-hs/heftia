@@ -41,7 +41,14 @@ jobs:
         run: |
           cabal update
           cabal build --only-dependencies --enable-tests --disable-benchmarks all
+
       - name: Build
+        if: ${{ matrix.ghc != '9.4.1' }}
         run: cabal build --enable-tests --disable-benchmarks all
+
+      - name: Build
+        if: ${{ matrix.ghc == '9.4.1' }}
+        run: cabal build --enable-tests --disable-benchmarks heftia heftia-effects:heftia-effects heftia-effects:test
+
       - name: Run tests
         run: cabal test --test-show-details=direct all
