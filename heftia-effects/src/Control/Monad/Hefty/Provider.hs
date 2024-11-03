@@ -31,7 +31,6 @@ import Control.Monad.Hefty (
     type (#>),
     type (~>),
  )
-import Data.Effect.HFunctor (hfmap)
 import Data.Effect.Provider
 import Data.Functor.Const (Const (Const))
 import Data.Functor.Identity (Identity (Identity))
@@ -46,10 +45,6 @@ type Provide_ i sh sf eh ef =
 
 newtype ProviderEff_ i sh sf eh ef a
     = ProviderEff_ {unProviderEff_ :: Eff (sh ': Provide_ i sh sf eh ef ': eh) (sf ': ef) a}
-
-newtype Const2 ff x f a = Const2 {getConst2 :: ff f a}
-instance (HFunctor ff) => HFunctor (Const2 ff x) where
-    hfmap phi (Const2 ff) = Const2 $ hfmap phi ff
 
 -- | Interpret the t'Provider' effect using the given effect interpreter.
 runProvider

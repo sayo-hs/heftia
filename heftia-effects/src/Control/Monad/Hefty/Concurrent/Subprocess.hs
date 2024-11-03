@@ -10,7 +10,7 @@ Copyright   :  (c) 2024 Sayo Koyoneda
 License     :  MPL-2.0 (see the LICENSE file) AND BSD-3-Clause
 Maintainer  :  ymdfield@outlook.jp
 
-Effects for subprocess.
+Effects for well-typed subprocess.
 -}
 module Control.Monad.Hefty.Concurrent.Subprocess (
     module Control.Monad.Hefty.Concurrent.Subprocess,
