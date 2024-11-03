@@ -91,7 +91,7 @@ library
     -- other-extensions:
     build-depends:
         base                          >= 4.17 && < 4.21,
-        data-effects                  ^>= 0.3,
+        data-effects                  ^>= 0.3.0.1,
         mtl                           >= 2.2.2 && < 2.4,
         unliftio                      ^>= 0.2,
 

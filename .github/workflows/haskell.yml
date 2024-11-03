@@ -44,4 +44,4 @@ jobs:
       - name: Build
         run: cabal build --enable-tests all
       - name: Run tests
-        run: cabal test all
+        run: cabal test --test-show-details=direct all
