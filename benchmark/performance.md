@@ -28,12 +28,12 @@ Larger values indicate that `heftia` is faster.
 
 | Benchmark             | Speedup       |
 | --------------------- | ------------- |
-| state, shallow        | 1.64x         |
-| state, deep           | 5.74x         |
-| throw/catch, shallow  | 0.32x         |
-| throw/catch, deep     | 1.14 - 6.96x  |
-| nondet, shallow       | 0.20x         |
-| nondet, deep          | 0.66x         |
+| state, shallow        | 2.0x         |
+| state, deep           | 6.6x         |
+| throw/catch, shallow  | 0.3x         |
+| throw/catch, deep     | 1.2 - 6.5x  |
+| nondet, shallow       | 0.2x         |
+| nondet, deep          | 0.7x         |
 
 ## Reproduction
 The benchmark code is available at [heftia-effects/bench](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/bench).
