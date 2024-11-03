@@ -57,10 +57,13 @@ If performance is particularly important, [`effectful`](https://github.com/haske
             * [heftia-effects/Example/Stream/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/Stream/Main.hs)
         * [`Provider`](https://hackage.haskell.org/package/effectful-core-2.5.0.0/docs/Effectful-Provider.html) a.k.a. [`Scoped`](https://hackage.haskell.org/package/polysemy-1.9.2.0/docs/Polysemy-Scoped.html)
             * to prevent [resource handles from leaking out of scopes](https://h2.jaguarpaw.co.uk/posts/bluefin-prevents-handles-leaking/)
-            * [heftia-effects/Example/FileSystemProvider/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/FileSystemProvider/Main.hs)
+            * [Control.Monad.Hefty.Concurrent.Subprocess](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-Concurrent-Subprocess.html)
             * [heftia-effects/Example/Subprocess/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/Subprocess/Main.hs)
+            * [heftia-effects/Example/FileSystemProvider/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/Example/FileSystemProvider/Main.hs)
         * [Applicative-style Parallelism](https://medium.com/@PerrottaFrancisco/learning-cats-effects-parallel-execution-f617f883e390)
             * like `cats-effect` in Scala
+            * [Data.Effect.Concurrent.Parallel](https://hackage.haskell.org/package/data-effects-0.3.0.1/docs/Data-Effect-Concurrent-Parallel.html)
+            * [Control.Monad.Hefty.Concurrent.Parallel](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-Concurrent-Parallel.html)
             * [heftia-effects/test/Test/Concurrent.hs](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/test/Test/Concurrent.hs)
 
     All of these interact through a simple, consistent, and predictable semantics based on algebraic effects.
@@ -416,7 +419,6 @@ For more details, please refer to [performance.md](https://github.com/sayo-hs/he
 
 ## Future Plans
 * Increase effects and nurture the ecosystem
-    * ✅ concurrent/parallel programming, streaming, subprocess, `co-log`: to be released in v0.5
     * file system, POSIX, and so on...
 * Write practical software using Heftia
 * Support for Applicative effects
