@@ -13,7 +13,7 @@ allow-newer: eff:primitive
 source-repository-package
     type: git
     location: https://github.com/sayo-hs/data-effects
-    tag: f4f78c801ac061e45f5305e1ade43580dc6c8357
+    tag: 48425e364068b5321c8afeee072cdc4d339c7c81
     subdir: data-effects-core
     subdir: data-effects-th
     subdir: data-effects

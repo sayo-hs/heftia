@@ -1,5 +1,3 @@
-{-# LANGUAGE UndecidableInstances #-}
-
 -- SPDX-License-Identifier: MPL-2.0
 
 {- |
@@ -18,34 +16,46 @@ import Control.Monad.Hefty (
     HFunctor,
     KeyH (KeyH),
     MemberHBy,
+    Type,
     interpretH,
-    tag,
-    tagH,
+    key,
+    keyH,
     transEffHF,
-    untag,
-    untagH,
+    unkey,
+    unkeyH,
     weaken,
     weakenNH,
-    type (#),
-    type (##),
+    type (##>),
+    type (#>),
     type (~>),
  )
+import Data.Effect.HFunctor (hfmap)
 import Data.Effect.Provider hiding (Provider, Provider_)
 import Data.Effect.Provider qualified as D
+import Data.Functor.Const (Const (Const))
 import Data.Functor.Identity (Identity (Identity))
 
 type Provider ctx i sh sf eh ef = D.Provider ctx i (ProviderEff ctx i sh sf eh ef)
-type Provider_ i sh sf eh ef = Provider Identity i sh sf eh ef
 
-newtype ProviderEff ctx i sh sf eh ef a
-    = ProviderEff {unProviderEff :: Eff (sh ': Provider ctx i sh sf eh ef ': eh) (sf ': ef) a}
+newtype ProviderEff ctx i sh sf eh ef p a
+    = ProviderEff {unProviderEff :: Eff (sh p ': Provider ctx i sh sf eh ef ': eh) (sf p ': ef) a}
+
+type Provider_ i sh sf eh ef =
+    D.Provider (Const1 Identity) (Const i :: () -> Type) (Const1 (ProviderEff_ i sh sf eh ef))
+
+newtype ProviderEff_ i sh sf eh ef a
+    = ProviderEff_ {unProviderEff_ :: Eff (sh ': Provider_ i sh sf eh ef ': eh) (sf ': ef) a}
+
+newtype Const2 ff x f a = Const2 {getConst2 :: ff f a}
+instance (HFunctor ff) => HFunctor (Const2 ff x) where
+    hfmap phi (Const2 ff) = Const2 $ hfmap phi ff
 
 runProvider
     :: forall ctx i sh sf eh ef
-     . ( forall x
-          . i
-         -> Eff (sh ': Provider ctx i sh sf eh ef ': eh) (sf ': ef) x
-         -> Eff (Provider ctx i sh sf eh ef ': eh) ef (ctx x)
+     . ( forall p x
+          . i p
+         -> Eff (sh p ': Provider ctx i sh sf eh ef ': eh) (sf p ': ef) x
+         -> Eff (Provider ctx i sh sf eh ef ': eh) ef (ctx p x)
        )
     -> Eff (Provider ctx i sh sf eh ef ': eh) ef ~> Eff eh ef
 runProvider run =
@@ -55,44 +65,61 @@ runProvider run =
 
 runProvider_
     :: forall i sh sf eh ef
-     . ( forall x
+     . (HFunctor sh)
+    => ( forall x
           . i
          -> Eff (sh ': Provider_ i sh sf eh ef ': eh) (sf ': ef) x
          -> Eff (Provider_ i sh sf eh ef ': eh) ef x
        )
     -> Eff (Provider_ i sh sf eh ef ': eh) ef ~> Eff eh ef
-runProvider_ run = runProvider \i a -> run i (Identity <$> a)
+runProvider_ run =
+    interpretH \(KeyH (Provide (Const i) f)) ->
+        runProvider_ run $
+            run
+                i
+                ( fmap (Const1 . Identity)
+                    . unProviderEff_
+                    . getConst1
+                    $ f
+                    $ Const1
+                        . ProviderEff_
+                        . transEffHF (weakenNH @2) weaken
+                )
 
 scope
-    :: forall tag ctx i eh ef a sh sf bh bf
+    :: forall key ctx i p eh ef a sh sf bh bf
      . ( MemberHBy
             (ProviderKey ctx i)
             (Provider' ctx i (ProviderEff ctx i sh sf bh bf))
             eh
-       , HFunctor sh
+       , HFunctor (sh p)
        )
-    => i
-    -> ( Eff eh ef ~> Eff (sh ## tag ': Provider ctx i sh sf bh bf ': bh) (sf # tag ': bf)
-         -> Eff (sh ## tag ': Provider ctx i sh sf bh bf ': bh) (sf # tag ': bf) a
+    => i p
+    -> ( Eff eh ef ~> Eff (key ##> sh p ': Provider ctx i sh sf bh bf ': bh) (key #> sf p ': bf)
+         -> Eff (key ##> sh p ': Provider ctx i sh sf bh bf ': bh) (key #> sf p ': bf) a
        )
-    -> Eff eh ef (ctx a)
+    -> Eff eh ef (ctx p a)
 scope i f =
     i ..! \runInScope ->
-        ProviderEff $ untagH . untag $ f (tagH . tag . unProviderEff . runInScope)
+        ProviderEff $ unkeyH . unkey $ f (keyH . key . unProviderEff . runInScope)
 
 scope_
-    :: forall tag i eh ef a sh sf bh bf
+    :: forall key i eh ef a sh sf bh bf
      . ( MemberHBy
-            (ProviderKey Identity i)
-            (Provider' Identity i (ProviderEff Identity i sh sf bh bf))
+            (ProviderKey (Const1 Identity :: () -> Type -> Type) (Const i :: () -> Type))
+            ( Provider'
+                (Const1 Identity)
+                (Const i)
+                (Const1 (ProviderEff_ i sh sf bh bf))
+            )
             eh
        , HFunctor sh
        )
     => i
-    -> ( Eff eh ef ~> Eff (sh ## tag ': Provider_ i sh sf bh bf ': bh) (sf # tag ': bf)
-         -> Eff (sh ## tag ': Provider_ i sh sf bh bf ': bh) (sf # tag ': bf) a
+    -> ( Eff eh ef ~> Eff (key ##> sh ': Provider_ i sh sf bh bf ': bh) (key #> sf ': bf)
+         -> Eff (key ##> sh ': Provider_ i sh sf bh bf ': bh) (key #> sf ': bf) a
        )
     -> Eff eh ef a
 scope_ i f =
     i .! \runInScope ->
-        ProviderEff $ untagH . untag $ f (tagH . tag . unProviderEff . runInScope)
+        ProviderEff_ $ unkeyH . unkey $ f (keyH . key . unProviderEff_ . runInScope)

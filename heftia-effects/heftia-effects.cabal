@@ -65,6 +65,9 @@ common common-base
         these,
         co-log-core,
         random,
+        process,
+        bytestring,
+        text,
 
     ghc-options: -Wall
 
@@ -90,6 +93,7 @@ library
         Control.Monad.Hefty.Concurrent.Parallel
         Control.Monad.Hefty.Concurrent.Stream
         Control.Monad.Hefty.Concurrent.Timer
+        Control.Monad.Hefty.Concurrent.Subprocess
         Control.Monad.Hefty.Log
 
     reexported-modules:
@@ -224,6 +228,14 @@ executable FileSystemProvider
 
     main-is: Main.hs
     hs-source-dirs: Example/FileSystemProvider
+    build-depends:
+        heftia-effects,
+
+executable Subprocess
+    import: common-base
+
+    main-is: Main.hs
+    hs-source-dirs: Example/Subprocess
     build-depends:
         heftia-effects,
 

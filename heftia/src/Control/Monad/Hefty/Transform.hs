@@ -593,6 +593,13 @@ retagH
 retagH = transformH $ TagH . unTagH
 {-# INLINE retagH #-}
 
+-- | Attaches the @key@ to the first-order effect at the head of the list.
+key
+    :: forall key e ef eh
+     . Eff eh (e ': ef) ~> Eff eh (key #> e ': ef)
+key = transform Key
+{-# INLINE key #-}
+
 -- | Removes the @key@ from the keyed first-order effect at the head of the list.
 unkey
     :: forall key e ef eh
@@ -608,6 +615,14 @@ rekey
      . Eff eh (key #> e ': ef) ~> Eff eh (key' #> e ': ef)
 rekey = transform $ Key . unKey
 {-# INLINE rekey #-}
+
+-- | Attaches the @key@ to the higher-order effect at the head of the list.
+keyH
+    :: forall key e ef eh
+     . (HFunctor e)
+    => Eff (e ': eh) ef ~> Eff (key ##> e ': eh) ef
+keyH = transformH KeyH
+{-# INLINE keyH #-}
 
 -- | Removes the @key@ from the keyed higher-order effect at the head of the list.
 unkeyH

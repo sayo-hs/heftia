@@ -52,20 +52,20 @@ main =
         scope_ @"fs1" "/fs1" \_ -> do
             scope_ @"fs2" "/fs2" \outer -> do
                 outer do
-                    s1 <- readFS' @"fs1" "/a/b/c"
+                    s1 <- readFS'' @"fs1" "/a/b/c"
                     liftIO $ putStrLn $ "content: " <> show s1
-                    writeFS' @"fs1" "/d/e/f" "foobar"
+                    writeFS'' @"fs1" "/d/e/f" "foobar"
 
                 liftIO $ putStrLn "-----"
 
-                s2 <- readFS' @"fs2" "/a/b/c"
+                s2 <- readFS'' @"fs2" "/a/b/c"
                 liftIO $ putStrLn $ "content: " <> show s2
-                writeFS' @"fs2" "/d/e/f" "foobar"
+                writeFS'' @"fs2" "/d/e/f" "foobar"
 
                 liftIO $ putStrLn "-----"
 
-                transactFS' @"fs2" do
-                    outer $ transactFS' @"fs1" do
+                transactFS'' @"fs2" do
+                    outer $ transactFS'' @"fs1" do
                         liftIO $ print "hello"
 
 {-
