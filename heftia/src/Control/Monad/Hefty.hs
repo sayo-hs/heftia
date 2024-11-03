@@ -13,7 +13,7 @@ delivering standard and reasonable speed.
 In its generalization, the focus is on ensuring predictable results based on
 simple, consistent semantics, while preserving soundness.
 
-= Basic Usage
+= Basic Usage #basic-usage#
 
 The following is an example of defining, using, and interpreting the first-order
 effect @Log@ for logging and the higher-order effect @Span@ for representing
@@ -70,7 +70,7 @@ prog = 'runEff' . runLog . runSpan $ do
 * When defining effects, you use the Template Haskell functions 'makeEffectF' and 'makeEffectH'.
 * The first 'Eff' type parameter is a type-level list of higher-order effects, the second is for first-order effects.
 
-= Glossary
+= Glossary #glossary#
 
 [Handler]: Interpreter for first-order effects.
 
@@ -141,7 +141,7 @@ prog = 'runEff' . runLog . runSpan $ do
 [Continuational state]:
     The state of the computation that appears through interpretation, behaving based on [continuation-based semantics](https://github.com/lexi-lambda/eff/blob/master/notes/semantics-zoo.md).
 
-= Naming Rules for Interpretation Functions
+= Naming Rules for Interpretation Functions #naming-rules-for-interpretation-functions#
 
 * Functions with an @H@, such as 'interpretH', are for higher-order effects, while those without are for first-order effects.
 
@@ -189,7 +189,7 @@ prog = 'runEff' . runLog . runSpan $ do
 Function names combine the above three attributes.
 Examples of complex combinations include 'interpretHBy' and 'interpretRecHWith'.
 
-= Semantics of effects
+= Semantics of effects #semantics-of-effects#
 
 Consider the following example.
 
@@ -295,7 +295,7 @@ __Interpreters decide what to do based only on the current state of the program'
 
 This is all there is to the reduction semantics of algebraic effects.
 
-== Independence from IO Semantics
+== Independence from IO Semantics #independence-from-io-semantics#
 
 As seen in the initial example with logs and spans, 'IO' operations are embedded as effects.
 Not limited to 'IO', any monad can be embedded as an effect.
@@ -317,7 +317,7 @@ The consistent semantics of algebraic effects prevent leaks of abstraction from 
 
 This is a significant difference from 'IO'-fused effect system libraries like [effectful](https://hackage.haskell.org/package/effectful) and [cleff](https://hackage.haskell.org/package/cleff).
 
-= Reset Semantics in Recursive Continuational Stateful Interpretation
+= Reset Semantics in Recursive Continuational Stateful Interpretation #reset-semantics-in-recursive-continuational-stateful-interpretation#
 
 When performing recursive continuational stateful interpretation, that is, when using functions with @Rec@, it's necessary to understand their semantics.
 If you are not using @Rec@ functions, you don't need to pay particular attention to this section.
@@ -412,7 +412,7 @@ prog = 'runEff' do
 [LOG] [1,2,3]
 @
 
-= Interpreting Multiple Effects Simultaneously
+= Interpreting Multiple Effects Simultaneously #interpreting-multiple-effects-simultaneously#
 
 For example, consider a situation where you want to use multiple t'Data.Effect.Except.Catch' effects simultaneously.
 The following is a case where both @String@ and @Int@ appear as exception types:
