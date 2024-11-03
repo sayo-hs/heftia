@@ -2,15 +2,14 @@
 {-# LANGUAGE DeriveAnyClass #-}
 {-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
 
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0. If a copy of the MPL was not distributed with this
--- file, You can obtain one at https://mozilla.org/MPL/2.0/.
+-- SPDX-License-Identifier: MPL-2.0
 
 {- |
 Copyright   :  (c) 2024 Sayo Koyoneda
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
-Portability :  portable
+
+Interpreters for the [non-determinism]("Data.Effect.NonDet") effects.
 -}
 module Control.Monad.Hefty.NonDet (
     module Control.Monad.Hefty.NonDet,
@@ -42,7 +41,7 @@ import Data.Effect.NonDet
 import Data.Effect.Unlift (UnliftIO)
 import UnliftIO (Exception, SomeException, throwIO, try)
 
--- | 'NonDet' effects handler for alternative answer type.
+-- | [NonDet]("Data.Effect.NonDet") effects handler for alternative answer type.
 runNonDet
     :: forall f ef a
      . (Alternative f)
@@ -57,7 +56,7 @@ runNonDet =
                 !+ nil
             )
 
--- | 'NonDet' effects handler for monoidal answer type.
+-- | [NonDet]("Data.Effect.NonDet") effects handler for monoidal answer type.
 runNonDetMonoid
     :: forall ans ef a
      . (Monoid ans)
@@ -73,7 +72,7 @@ runNonDetMonoid f =
                 !+ nil
             )
 
--- | 'Choose' effect handler for alternative answer type.
+-- | t'Choose' effect handler for alternative answer type.
 runChoose
     :: forall f ef a
      . (Alternative f)
@@ -83,7 +82,7 @@ runChoose =
     interpretBy (pure . pure) \Choose k ->
         liftA2 (<|>) (k False) (k True)
 
--- | 'Choose' effect handler for monoidal answer type.
+-- | t'Choose' effect handler for monoidal answer type.
 runChooseMonoid
     :: forall ans ef a
      . (Semigroup ans)
@@ -94,14 +93,14 @@ runChooseMonoid f =
     interpretBy f \Choose k ->
         liftA2 (<>) (k False) (k True)
 
--- | 'Empty' effect handler.
+-- | t'Empty' effect handler.
 runEmpty :: forall a ef. Eff '[] (Empty ': ef) a -> Eff '[] ef (Maybe a)
 runEmpty =
     interpretBy
         (pure . Just)
         \Empty _ -> pure Nothing
 
-{- | 'ChooseH' effect elaborator.
+{- | t'ChooseH' effect elaborator.
 
     Convert a higher-order effect of the form
 
@@ -125,16 +124,25 @@ branch a b = do
 
 infixl 3 `branch`
 
+-- | Selects one element from the list nondeterministically, branching the control as many times as the number of elements.
 choice :: (Choose <| ef, Empty <| ef) => [a] -> Eff eh ef a
 choice = \case
     [] -> empty
     x : xs -> pure x `branch` choice xs
 
+-- | Selects one element from the list nondeterministically, branching the control as many times as the number of elements. Uses t'ChooseH'.
 choiceH :: (ChooseH <<| eh, Empty <| ef) => [a] -> Eff eh ef a
 choiceH = \case
     [] -> empty
     x : xs -> pure x <|> choiceH xs
 
+{- |
+Interprets the [NonDet]("Data.Effect.NonDet") effects using IO-level exceptions.
+
+When 'empty' occurs, an 'EmptyException' is thrown, and unless all branches from
+ 'chooseH' fail due to IO-level exceptions, only the leftmost result is returned
+ as the final result.
+-}
 runNonDetIO
     :: (UnliftIO <<| eh, IO <| ef)
     => Eff (ChooseH ': eh) (Empty ': ef) a
@@ -149,6 +157,7 @@ runNonDetIO m = try do
             )
         & interpret (\Empty -> throwIO EmptyException)
 
+-- | Exception thrown when 'empty' occurs in 'runNonDetIO'.
 data EmptyException = EmptyException
     deriving stock (Show)
     deriving anyclass (Exception)

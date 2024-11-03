@@ -4,9 +4,14 @@
 
 -- SPDX-License-Identifier: MPL-2.0 AND BSD-3-Clause
 
---  (c) The University of Glasgow 2004-2008
---  (c) Sayo Koyoneda 2024
+{- |
+Copyright   :  (c) 2024 Sayo Koyoneda
+               (c) The University of Glasgow 2004-2008
+License     :  MPL-2.0 (see the LICENSE file) AND BSD-3-Clause
+Maintainer  :  ymdfield@outlook.jp
 
+Effects for subprocess.
+-}
 module Control.Monad.Hefty.Concurrent.Subprocess (
     module Control.Monad.Hefty.Concurrent.Subprocess,
     module Control.Monad.Hefty.Provider,
@@ -62,7 +67,7 @@ data Lifecycle = Kill | Wait
 
 makeEffectF [''Subprocess]
 
-type SubprocProvider eh ef = Provider SubprocResult CreateProcess (Const2 LNop) Subprocess eh ef
+type SubprocProvider eh ef = Provide SubprocResult CreateProcess (Const2 LNop) Subprocess eh ef
 
 data SubprocResult p a where
     RaceResult :: Either ExitCode a -> SubprocResult ('SubprocMode i o e 'Kill 'Kill) a

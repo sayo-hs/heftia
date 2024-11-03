@@ -6,7 +6,6 @@
 Copyright   :  (c) 2023 Sayo Koyoneda
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
-Portability :  portable
 
 Interpreter for the t'Data.Effect.State.State' effect.
 -}
@@ -38,25 +37,35 @@ import Data.Effect.State
 import Data.Functor ((<&>))
 import UnliftIO (newIORef, readIORef, writeIORef)
 
--- | Interpret the 'Get'/'Put' effects.
+-- | Interpret the 'State' effect.
 runState :: forall s ef a. s -> Eff '[] (State s ': ef) a -> Eff '[] ef (s, a)
 runState s0 = interpretStateBy s0 (curry pure) handleState
 
+-- | Interpret the 'State' effect. Do not include the final state in the return value.
 evalState :: forall s ef a. s -> Eff '[] (State s ': ef) a -> Eff '[] ef a
 evalState s0 = interpretStateBy s0 (const pure) handleState
 
+-- | Interpret the 'State' effect. Do not include the final result in the return value.
 execState :: forall s ef a. s -> Eff '[] (State s ': ef) a -> Eff '[] ef s
 execState s0 = interpretStateBy s0 (\s _ -> pure s) handleState
 
+{- |
+Interpret the 'State' effect.
+
+Interpretation is performed recursively with respect to the scopes of unelaborated higher-order effects @eh@.
+Note that the state is reset and does not persist beyond the scopes.
+-}
 evalStateRec :: forall s ef eh. s -> Eff eh (State s ': ef) ~> Eff eh ef
 evalStateRec s0 = interpretStateRecWith s0 handleState
 
+-- | A handler function for the 'State' effect.
 handleState :: StateInterpreter s (State s) (Eff eh r) ans
 handleState = \case
     Put s -> \_ k -> k s ()
     Get -> \s k -> k s s
 {-# INLINE handleState #-}
 
+-- | Interpret the 'State' effect based on an IO-fused semantics using t'Data.IORef.IORef'.
 runStateIORef
     :: forall s ef eh a
      . (IO <| ef)
@@ -71,6 +80,10 @@ runStateIORef s0 m = do
             Put s -> writeIORef ref s
     readIORef ref <&> (,a)
 
+{- |
+Interpret the 'State' effect based on an IO-fused semantics using t'Data.IORef.IORef'.
+Do not include the final state in the return value.
+-}
 evalStateIORef
     :: forall s ef eh a
      . (IO <| ef)
@@ -83,6 +96,7 @@ evalStateIORef s0 m = do
         Get -> readIORef ref
         Put s -> writeIORef ref s
 
+-- | Within the given scope, make the state roll back to the beginning of the scope in case of exceptions, etc.
 transactState :: forall s ef. (State s <| ef) => Eff '[] ef ~> Eff '[] ef
 transactState m = do
     pre <- get @s

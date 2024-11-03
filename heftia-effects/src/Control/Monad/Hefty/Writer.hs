@@ -1,17 +1,11 @@
-{-# LANGUAGE AllowAmbiguousTypes #-}
-
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0. If a copy of the MPL was not distributed with this
--- file, You can obtain one at https://mozilla.org/MPL/2.0/.
+-- SPDX-License-Identifier: MPL-2.0
 
 {- |
 Copyright   :  (c) 2023 Sayo Koyoneda
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
-Portability :  portable
 
-Interpreter and elaborator for the t'Data.Effect.Writer.Writer' effect class.
-See [README.md](https://github.com/sayo-hs/heftia/blob/master/README.md).
+Interpreters for the [Writer]("Data.Effect.Writer") effects.
 -}
 module Control.Monad.Hefty.Writer (
     module Control.Monad.Hefty.Writer,
@@ -32,26 +26,30 @@ import Control.Monad.Hefty (
  )
 import Data.Effect.Writer
 
--- | 'Writer' effect handler with post-applying censor semantics.
+-- | Interpret the [Writer]("Data.Effect.Writer") effects with post-applying censor semantics.
 runWriterPost :: (Monoid w) => Eff '[WriterH w] (Tell w ': ef) a -> Eff '[] ef (w, a)
 runWriterPost = runTell . runWriterHPost
 
--- | 'Writer' effect handler with pre-applying censor semantics.
+-- | Interpret the [Writer]("Data.Effect.Writer") effects with pre-applying censor semantics.
 runWriterPre :: (Monoid w) => Eff '[WriterH w] (Tell w ': ef) a -> Eff '[] ef (w, a)
 runWriterPre = runTell . runWriterHPre
 
+-- | Interpret the t'Tell' effect.
 runTell :: (Monoid w) => Eff '[] (Tell w ': ef) a -> Eff '[] ef (w, a)
 runTell = interpretStateBy mempty (curry pure) handleTell
 
+-- | A handler function for the 'Tell' effect.
 handleTell :: (Monoid w) => StateInterpreter w (Tell w) (Eff '[] ef) (w, a)
 handleTell (Tell w') w k = k (w <> w') ()
 {-# INLINE handleTell #-}
 
+-- | Interpret the 'WriterH' effect with post-applying censor semantics.
 runWriterHPost :: (Monoid w, Tell w <| ef) => Eff '[WriterH w] ef ~> Eff '[] ef
 runWriterHPost = interpretH \case
     Listen m -> intercept m
     Censor f m -> censorPost f m
 
+-- | Interpret the 'WriterH' effect with pre-applying censor semantics.
 runWriterHPre :: (Monoid w, Tell w <| ef) => Eff '[WriterH w] ef ~> Eff '[] ef
 runWriterHPre = interpretH \case
     Listen m -> intercept m
@@ -83,6 +81,7 @@ confiscate
     -> Eff '[] ef (w, a)
 confiscate = interposeStateBy mempty (curry pure) handleTell
 
+-- | 'censor' with post-applying semantics.
 censorPost
     :: forall w ef
      . (Tell w <| ef, Monoid w)
@@ -93,6 +92,7 @@ censorPost f m = do
     tell $ f w
     pure a
 
+-- | 'censor' with pre-applying semantics.
 censorPre
     :: forall w eh ef
      . (Tell w <| ef, Monoid w)

@@ -2,6 +2,13 @@
 
 -- SPDX-License-Identifier: MPL-2.0
 
+{- |
+Copyright   :  (c) 2024 Sayo Koyoneda
+License     :  MPL-2.0 (see the LICENSE file)
+Maintainer  :  ymdfield@outlook.jp
+
+Interpreters for the [Parallel]("Data.Effect.Concurrent.Parallel") effects.
+-}
 module Control.Monad.Hefty.Concurrent.Parallel (
     module Control.Monad.Hefty.Concurrent.Parallel,
     module Data.Effect.Concurrent.Parallel,

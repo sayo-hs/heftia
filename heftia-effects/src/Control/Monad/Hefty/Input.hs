@@ -1,12 +1,11 @@
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0. If a copy of the MPL was not distributed with this
--- file, You can obtain one at https://mozilla.org/MPL/2.0/.
+-- SPDX-License-Identifier: MPL-2.0
 
 {- |
 Copyright   :  (c) 2024 Sayo Koyoneda
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
-Portability :  portable
+
+Interpreters for the t'Input' effect.
 -}
 module Control.Monad.Hefty.Input (
     module Control.Monad.Hefty.Input,
@@ -21,18 +20,25 @@ import Data.Effect.Input
 import Data.Effect.State (gets, put)
 import Data.List (uncons)
 
+-- | Interprets the t'Input' effect by executing the given input handler each time an input is required.
 runInputEff
     :: forall i ef eh
      . Eff eh ef i
     -> Eff eh (Input i ': ef) ~> Eff eh ef
 runInputEff a = interpret \Input -> a
 
+-- | Interprets the t'Input' effect by providing the given constant as input.
 runInputConst
     :: forall i ef eh
      . i
     -> Eff eh (Input i ': ef) ~> Eff eh ef
 runInputConst i = interpret \Input -> pure i
 
+{- |
+Interprets the t'Input' effect by using the given list as a series of inputs.
+
+Each time 'input' is called, it retrieves elements from the list one by one from the beginning, and after all elements are consumed, 'Nothing' is returned indefinitely.
+-}
 runInputList :: forall i r. [i] -> Eff '[] (Input (Maybe i) ': r) ~> Eff '[] r
 runInputList is =
     raiseUnder

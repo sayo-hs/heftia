@@ -2,6 +2,13 @@
 
 -- SPDX-License-Identifier: MPL-2.0
 
+{- |
+Copyright   :  (c) 2024 Sayo Koyoneda
+License     :  MPL-2.0 (see the LICENSE file)
+Maintainer  :  ymdfield@outlook.jp
+
+Interpreters for the [Timer]("Data.Effect.Concurrent.Timer") effects.
+-}
 module Control.Monad.Hefty.Concurrent.Timer (
     module Control.Monad.Hefty.Concurrent.Timer,
     module Data.Effect.Concurrent.Timer,
@@ -58,6 +65,7 @@ runCyclicTimer a = do
                     Continue () k -> put =<< raise (k delta)
         & evalState timer0
 
+-- | Re-zeros the clock time in the local scope.
 restartClock :: (Timer <| ef) => eh :!! ef ~> eh :!! ef
 restartClock a = do
     t0 <- clock

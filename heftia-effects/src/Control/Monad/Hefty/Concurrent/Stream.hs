@@ -1,7 +1,12 @@
 {-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
 
--- SPDX-License-Identifier: MPL-2.0
+{- |
+Copyright   :  (c) 2024 Sayo Koyoneda
+License     :  MPL-2.0 (see the LICENSE file)
+Maintainer  :  ymdfield@outlook.jp
 
+Coroutine-based, composable, and resumable concurrent streams.
+-}
 module Control.Monad.Hefty.Concurrent.Stream (
     module Control.Monad.Hefty.Concurrent.Stream,
     module Control.Monad.Hefty.Input,
