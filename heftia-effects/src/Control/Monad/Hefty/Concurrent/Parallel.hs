@@ -1,3 +1,4 @@
+{-# LANGUAGE CPP #-}
 {-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
 
 -- SPDX-License-Identifier: MPL-2.0
@@ -16,6 +17,9 @@ module Control.Monad.Hefty.Concurrent.Parallel (
 )
 where
 
+#if ( __GLASGOW_HASKELL__ < 906 )
+import Control.Applicative (liftA2)
+#endif
 import Control.Monad (forever)
 import Control.Monad.Hefty (
     Eff,
