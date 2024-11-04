@@ -2,7 +2,7 @@
 
 [![Hackage](https://img.shields.io/hackage/v/heftia.svg?logo=haskell&label=heftia)](https://hackage.haskell.org/package/heftia)
 [![Hackage](https://img.shields.io/hackage/v/heftia-effects.svg?logo=haskell&label=heftia-effects)](https://hackage.haskell.org/package/heftia-effects)
-[![Stackage](https://www.stackage.org/package/heftia-effects/badge/nightly?label=Stackage)](https://www.stackage.org/package/heftia-effects)
+[![Stackage Nightly](https://www.stackage.org/package/heftia-effects/badge/nightly)](https://www.stackage.org/package/heftia-effects)
 [![Build status](https://img.shields.io/github/actions/workflow/status/sayo-hs/heftia/haskell.yml?branch=master)](https://github.com/sayo-hs/heftia/actions)
 
 Heftia is an extensible effects library for Haskell that generalizes "Algebraic Effects and Handlers" to higher-order effects, providing users with maximum flexibility and delivering standard and reasonable speed.
