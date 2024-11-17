@@ -53,7 +53,8 @@ import Data.Effect.OpenUnion.Internal.HO (
     (!!+),
     type (<<|),
  )
-import Data.FTCQueue (FTCQueue, ViewL (TOne, (:|)), tviewl, (><))
+import Data.FTCQueue (FTCQueue, ViewL (TOne, (:|)), tsingleton, tviewl, (><))
+import Data.Functor ((<&>))
 
 -- * Running t`Eff`
 
@@ -612,3 +613,11 @@ qApp q' x = case tviewl q' of
     k :| t -> case k x of
         Val y -> qApp t y
         Op u q -> Op u (q >< t)
+
+interleave :: Eff eh ef a -> Eff eh ef b -> Eff eh ef (a, b)
+interleave (Val x) m = (x,) <$> m
+interleave m (Val x) = m <&> (,x)
+interleave (Op u k) (Op u' k') = do
+    x <- Op u (tsingleton pure)
+    y <- Op u' (tsingleton pure)
+    interleave (qApp k x) (qApp k' y)

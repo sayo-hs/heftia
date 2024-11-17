@@ -78,6 +78,7 @@ library
         Control.Monad.Hefty.Writer
         Control.Monad.Hefty.State
         Control.Monad.Hefty.Except
+        Control.Monad.Hefty.SubJump
         Control.Monad.Hefty.ShiftReset
         Control.Monad.Hefty.NonDet
         Control.Monad.Hefty.Coroutine
@@ -113,6 +114,7 @@ library
         Data.Effect.Writer,
         Data.Effect.State,
         Data.Effect.Except,
+        Data.Effect.SubJump,
         Data.Effect.ShiftReset,
         Data.Effect.NonDet,
         Data.Effect.Coroutine,
@@ -196,6 +198,15 @@ executable Continuation
     hs-source-dirs: Example/Continuation
     build-depends:
         heftia-effects,
+
+executable SubJump
+    import: common-base
+
+    main-is: Main.hs
+    hs-source-dirs: Example/SubJump
+    build-depends:
+        heftia-effects,
+        extra >= 1.7.14 && < 1.9,
 
 executable ShiftReset
     import: common-base

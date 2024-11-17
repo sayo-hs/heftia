@@ -10,16 +10,11 @@ where
 
 import Control.Monad.Hefty (
     Eff,
-    MemberHBy,
-    interpret,
-    interpretBy,
     interpretH,
     interpretHBy,
     interpretRecHWith,
     raiseH,
     runEff,
-    send0,
-    sendH,
     type (~>),
  )
 import Data.Effect.Key (KeyH (KeyH))
@@ -47,20 +42,7 @@ withShift = runEff . evalShift
 
 runShift_ :: forall eh ef. Eff (Shift_ (Eff eh ef) ': eh) ef ~> Eff eh ef
 runShift_ = interpretRecHWith \(KeyH (Shift_' initiate)) k -> initiate k id
+{-# DEPRECATED runShift_ "Use Control.Monad.Hefty.SubJump" #-}
 
 runReset :: forall eh ef. Eff (Reset ': eh) ef ~> Eff eh ef
 runReset = interpretH \(Reset a) -> a
-
-runShiftF :: Eff '[] (ShiftF (Eff '[] ef ans) ': ef) ans -> Eff '[] ef ans
-runShiftF = interpretBy pure \(ShiftF initiate) resume -> initiate resume
-
-runShiftEff :: (Monad n) => (a -> n ans) -> Eff '[] '[ShiftF (n ans), n] a -> n ans
-runShiftEff f =
-    runEff
-        . interpretBy (send0 . f) \(ShiftF initiate) resume ->
-            send0 $ initiate $ runEff . resume
-
-runShiftAsF
-    :: (MemberHBy ShiftKey (Shift' ans n) eh)
-    => Eff eh (ShiftF (n ans) ': ef) ~> Eff eh ef
-runShiftAsF = interpret $ sendH . fromShiftF

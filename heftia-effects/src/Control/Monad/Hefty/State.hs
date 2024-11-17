@@ -23,6 +23,7 @@ import Control.Monad.Hefty (
     interposeStateBy,
     interpret,
     interpretBy,
+    interpretH,
     interpretRecWith,
     interpretStateBy,
     interpretStateRecWith,
@@ -31,8 +32,12 @@ import Control.Monad.Hefty (
     type (<|),
     type (~>),
  )
-import Control.Monad.Hefty.Reader (runAsk)
-import Data.Effect.Reader (Ask (Ask), ask)
+import Control.Monad.Hefty.Reader (
+    Ask (..),
+    Local (..),
+    ask,
+    runAsk,
+ )
 import Data.Effect.State
 import Data.Functor ((<&>))
 import UnliftIO (newIORef, readIORef, writeIORef)
@@ -121,3 +126,13 @@ evalStateNaiveRec s0 =
             Get -> (ask @s >>=)
             Put s -> \k -> k () & interpose @(Ask s) \Ask -> pure s
         >>> runAsk @s s0
+
+localToState :: forall r eh ef. (State r <| ef) => Eff (Local r ': eh) ef ~> Eff eh ef
+localToState =
+    interpretH \(Local f a) -> do
+        save <- get @r
+        put $ f save
+        a <* put save
+
+askToGet :: forall r ef eh. (State r <| ef) => Eff eh (Ask r ': ef) ~> Eff eh ef
+askToGet = interpret \Ask -> get

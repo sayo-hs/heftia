@@ -15,33 +15,27 @@ import Control.Monad.Hefty (
     sendN,
     unkey,
     (&),
-    type (!!),
-    type ($),
-    type (+),
-    type (:+:),
  )
-import Control.Monad.Hefty.Reader (runReader)
-import Control.Monad.Hefty.ShiftReset (Shift, ShiftEff (ShiftEff), evalShift, runShift_)
+import Control.Monad.Hefty.Reader (runAsk, runLocal, runReader)
+import Control.Monad.Hefty.ShiftReset (Shift, ShiftEff (ShiftEff), evalShift)
 import Control.Monad.Hefty.State (evalState)
 import Data.Effect.Key (type (#>))
 import Data.Effect.Reader (Ask, Local, ask, local)
-import Data.Effect.ShiftReset (Shift_, getCC, getCC_)
+import Data.Effect.ShiftReset (getCC)
 import Data.Effect.State (State, get'', modify)
 import Data.Functor ((<&>))
 
 main :: IO ()
 main = do
-    putStrLn "[handleReaderThenShift]"
-    handleReaderThenShift
+    putStrLn "[interpretAskThenShift]"
+    interpretAskThenShift
 
     putStrLn ""
-    putStrLn "[handleShiftThenReader]"
-    handleShiftThenReader
+    putStrLn "[interpretShiftThenAsk]"
+    interpretShiftThenAsk
 
 {-
-===== result =====
-
-[handleReaderThenShift]
+[interpretAskThenShift]
 [local scope outer] env = 1
 [local scope inner] env = 2
 [local scope outer] env = 1
@@ -54,7 +48,7 @@ main = do
 [local scope inner] env = 2
 [local scope outer] env = 1
 
-[handleShiftThenReader]
+[interpretShiftThenAsk]
 [local scope outer] env = 1
 [local scope inner] env = 2
 [local scope outer] env = 2
@@ -68,8 +62,8 @@ main = do
 [local scope outer] env = 32
 -}
 
-handleReaderThenShift :: IO ()
-handleReaderThenShift =
+interpretAskThenShift :: IO ()
+interpretAskThenShift =
     prog
         & runReader 1
         & runEff
@@ -91,19 +85,20 @@ handleReaderThenShift =
                 sendN @1 $ liftIO $ putStrLn $ "[local scope inner] env = " ++ show env'
                 send k
 
-handleShiftThenReader :: IO ()
-handleShiftThenReader = do
+interpretShiftThenAsk :: IO ()
+interpretShiftThenAsk = do
     prog
-        & runShift_
-        & runReader 1
+        & runLocal
+        & evalShift
+        & runAsk 1
         & (evalState 0 . unkey)
         & runEff
   where
     prog
-        :: (r ~ (Ask Int + "counter" #> State Int + IO))
-        => Shift_ (Local Int !! r) :+: Local Int !! r $ ()
+        :: (r ~ '[Ask Int, "counter" #> State Int, IO])
+        => Eff '[Local Int, Shift () '[] r] r ()
     prog = do
-        k <- getCC_
+        ShiftEff k <- getCC
         env <- ask @Int
         liftIO $ putStrLn $ "[local scope outer] env = " ++ show env
         local @Int (* 2) do
