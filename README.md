@@ -353,7 +353,7 @@ About the internal *elaboration* mechanism: https://sayo-hs.github.io/jekyll/upd
 | `freer-simple`      | No                   | Multi-shot             | Yes           | Yes                               | Yes                      | Algebraic Effects                |
 | `polysemy`          | Yes                  | No                     | Yes           | Yes                               | Yes                      | Weaving-based (functorial state) |
 | `effectful`         | Yes                  | No                     | Yes           | No (based on the `IO` monad)      | Yes                      | IO-fused                         |
-| `bluefin`           | Yes                  | No                     | Yes           | No (based on the `IO` monad)      | Yes                      | IO-fused                         |
+| `bluefin`           | Yes                  | No                     | Yes           | No (based on the `IO` monad)      | ? [^5]                   | IO-fused                         |
 | `eff`               | Yes                  | Multi-shot             | Yes           | No (based on the `IO` monad)      | Yes                      | Algebraic Effects & IO-fused [^6]|
 | `speff`             | Yes                  | Multi-shot (restriction: [^4]) | Yes   | No (based on the `IO` monad)      | Yes                      | Algebraic Effects & IO-fused     |
 | `in-other-words`    | Yes                  | Multi-shot?            | Yes           | Yes                               | No?                      | Carrier dependent                |
@@ -365,6 +365,7 @@ About the internal *elaboration* mechanism: https://sayo-hs.github.io/jekyll/upd
 
 [^3]: Effects do not appear in the type signature and can potentially cause unhandled errors at runtime
 [^4]: Scoped Resumption only. e.g. Coroutines are not supported.
+[^5]: https://discourse.haskell.org/t/bluefin-compared-to-effectful-video/10723/27?u=ymdfield
 [^6]: https://github.com/hasura/eff/issues/12
 
 Heftia can simply be described as a higher-order version of `freer-simple`.
