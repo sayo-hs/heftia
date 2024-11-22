@@ -353,7 +353,7 @@ About the internal *elaboration* mechanism: https://sayo-hs.github.io/jekyll/upd
 | `freer-simple`      | No                   | Multi-shot             | Yes           | Yes                               | Yes                      | Algebraic Effects                |
 | `polysemy`          | Yes                  | No                     | Yes           | Yes                               | Yes                      | Weaving-based (functorial state) |
 | `effectful`         | Yes                  | No                     | Yes           | No (based on the `IO` monad)      | Yes                      | IO-fused                         |
-| `bluefin`           | ? [^7]               | No                     | Yes           | No (based on the `IO` monad)      | ? [^5]                   | IO-fused                         |
+| `bluefin`           | [^7]                 | No                     | Yes           | No (based on the `IO` monad)      | [^5]                     | IO-fused                         |
 | `eff`               | Yes                  | Multi-shot             | Yes           | No (based on the `IO` monad)      | Yes                      | Algebraic Effects & IO-fused [^6]|
 | `speff`             | Yes                  | Multi-shot (restriction: [^4]) | Yes   | No (based on the `IO` monad)      | Yes                      | Algebraic Effects & IO-fused     |
 | `in-other-words`    | Yes                  | Multi-shot?            | Yes           | Yes                               | No?                      | Carrier dependent                |
