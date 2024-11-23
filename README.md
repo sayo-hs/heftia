@@ -421,7 +421,9 @@ For more details, please refer to [performance.md](https://github.com/sayo-hs/he
 
 ## Future Plans
 * Increase effects and nurture the ecosystem
-    * file system, POSIX, and so on...
+    * File systems, shell scripting, POSIX, networking, Web, markup processing/template engines, multimedia, etc.
+* Simplify types: from `Eff eh ef` to `Eff es`
+* Further speedup
 * Write practical software using Heftia
 * Support for Applicative effects
 * (Support for [Linear](https://hackage.haskell.org/package/linear-base) effects?)
