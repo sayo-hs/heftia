@@ -94,6 +94,7 @@ main = runUnliftIO . runTimerIO $ do
             >>> Unit @Int @() consume
 
 {-
+[Parallel effect-based (purer & non-IO-fused) machinery interpretation example]
 Transform 1 to 101
 101
 Transform 2 to 102
