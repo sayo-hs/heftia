@@ -2,7 +2,8 @@
 
 [![Hackage](https://img.shields.io/hackage/v/heftia.svg?logo=haskell&label=heftia)](https://hackage.haskell.org/package/heftia)
 [![Hackage](https://img.shields.io/hackage/v/heftia-effects.svg?logo=haskell&label=heftia-effects)](https://hackage.haskell.org/package/heftia-effects)
-[![Stackage Nightly](https://www.stackage.org/package/heftia-effects/badge/nightly)](https://www.stackage.org/package/heftia-effects)
+[![Stackage LTS](https://www.stackage.org/package/heftia-effects/badge/lts)](https://www.stackage.org/lts/package/heftia-effects)
+[![Stackage Nightly](https://www.stackage.org/package/heftia-effects/badge/nightly)](https://www.stackage.org/nightly/package/heftia-effects)
 [![Build status](https://img.shields.io/github/actions/workflow/status/sayo-hs/heftia/haskell.yml?branch=develop)](https://github.com/sayo-hs/heftia/actions)
 
 Heftia is an extensible effects library for Haskell that generalizes "Algebraic Effects and Handlers" to higher-order effects, providing users with maximum flexibility and delivering standard and reasonable speed.
@@ -349,19 +350,19 @@ About the internal *elaboration* mechanism: https://sayo-hs.github.io/jekyll/upd
 
 | Library or Language | Higher-Order Effects | Delimited Continuation | Effect System | Purely Monadic                    | Dynamic Effect Rewriting | Semantics                        |
 | ------------------- | -------------------- | ---------------------- | --------------| --------------------------------- | ------------------------ | -------------------------------- |
-| `heftia`            | Yes                  | Multi-shot             | Yes           | Yes                               | Yes                      | Algebraic Effects                |
-| `freer-simple`      | No                   | Multi-shot             | Yes           | Yes                               | Yes                      | Algebraic Effects                |
-| `polysemy`          | Yes                  | No                     | Yes           | Yes                               | Yes                      | Weaving-based (functorial state) |
-| `effectful`         | Yes                  | No                     | Yes           | No (based on the `IO` monad)      | Yes                      | IO-fused                         |
-| `bluefin`           | [^7]                 | No                     | Yes           | No (based on the `IO` monad)      | [^5]                     | IO-fused                         |
-| `eff`               | Yes                  | Multi-shot             | Yes           | No (based on the `IO` monad)      | Yes                      | Algebraic Effects & IO-fused [^6]|
-| `speff`             | Yes                  | Multi-shot (restriction: [^4]) | Yes   | No (based on the `IO` monad)      | Yes                      | Algebraic Effects & IO-fused     |
-| `in-other-words`    | Yes                  | Multi-shot?            | Yes           | Yes                               | No?                      | Carrier dependent                |
-| `mtl`               | Yes                  | Multi-shot (`ContT`)   | Yes           | Yes                               | No                       | Carrier dependent                |
-| `fused-effects`     | Yes                  | No?                    | Yes           | Yes                               | No                       | Carrier dependent & Weaving-based (functorial state) |
-| Koka-lang           | No                   | Multi-shot             | Yes           | No (language built-in)            | Yes                      | Algebraic Effects                |
-| Eff-lang            | No                   | Multi-shot             | Yes           | No (language built-in)            | Yes                      | Algebraic Effects                |
-| OCaml-lang 5        | ?                    | One-shot               | No [^3]       | No (language built-in)            | ?                        | Algebraic Effects                |
+| `heftia`            | ✅                   | Multi-shot             | ✅            | ✅                                | ✅                       | Algebraic Effects                |
+| `freer-simple`      | ❌                   | Multi-shot             | ✅            | ✅                                | ✅                       | Algebraic Effects                |
+| `polysemy`          | ✅                   | ❌                     | ✅            | ✅                                | ✅                       | Weaving-based (functorial state) |
+| `effectful`         | ✅                   | ❌                     | ✅            | ❌ (based on the `IO` monad)      | ✅                       | IO-fused                         |
+| `bluefin`           | [^7]                 | ❌                     | ✅            | ❌ (based on the `IO` monad)      | [^5]                     | IO-fused                         |
+| `eff`               | ✅                   | Multi-shot             | ✅            | ❌ (based on the `IO` monad)      | ✅                       | Algebraic Effects & IO-fused [^6]|
+| `speff`             | ✅                   | Multi-shot (restriction: [^4]) | ✅    | ❌ (based on the `IO` monad)      | ✅                       | Algebraic Effects & IO-fused     |
+| `in-other-words`    | ✅                   | Multi-shot?            | ✅            | ✅                                | ❌?                      | Carrier dependent                |
+| `mtl`               | ✅                   | Multi-shot (`ContT`)   | ✅            | ✅                                | ❌                       | Carrier dependent                |
+| `fused-effects`     | ✅                   | ❌?                    | ✅            | ✅                                | ❌                       | Carrier dependent & Weaving-based (functorial state) |
+| Koka-lang           | ❌                   | Multi-shot             | ✅            | ❌ (language built-in)            | ✅                       | Algebraic Effects                |
+| Eff-lang            | ❌                   | Multi-shot             | ✅            | ❌ (language built-in)            | ✅                       | Algebraic Effects                |
+| OCaml-lang 5        | ?                    | One-shot               | ❌ [^3]       | ❌ (language built-in)            | ?                        | Algebraic Effects                |
 
 [^3]: Effects do not appear in the type signature and can potentially cause unhandled errors at runtime
 [^4]: Scoped Resumption only. e.g. Coroutines are not supported.
