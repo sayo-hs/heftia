@@ -14,8 +14,8 @@ Please refer to the documentation of the [top-level module]("Control.Monad.Hefty
 module Control.Monad.Hefty.Types where
 
 import Control.Applicative (Alternative, empty, (<|>))
-import Control.Effect (SendFOE, SendHOE, sendFOE, sendHOE, type (~>))
-import Control.Effect.Key (ByKey (ByKey), SendFOEBy, SendHOEBy, key, sendFOEBy, sendHOEBy)
+import Control.Effect (Free, unEff, type (~>))
+import Control.Effect qualified as D
 import Control.Monad (MonadPlus)
 import Control.Monad.Error.Class (MonadError, catchError, throwError)
 import Control.Monad.Fix (MonadFix, mfix)
@@ -24,58 +24,41 @@ import Control.Monad.RWS (MonadRWS)
 import Control.Monad.Reader.Class (MonadReader, ask, local)
 import Control.Monad.State.Class (MonadState, get, put)
 import Control.Monad.Writer.Class (MonadWriter, listen, pass, tell)
+import Data.Coerce (coerce)
 import Data.Effect.Except (Catch, Throw, catch'', throw'')
-import Data.Effect.Fail (Fail)
-import Data.Effect.Fail qualified as E
-import Data.Effect.Fix (Fix)
-import Data.Effect.Fix qualified as E
-import Data.Effect.Key (Key (Key), KeyH (KeyH))
 import Data.Effect.NonDet (ChooseH, Empty, chooseH)
 import Data.Effect.NonDet qualified as E
-import Data.Effect.OpenUnion.Internal (ElemAt)
-import Data.Effect.OpenUnion.Internal.FO (MemberBy, Union, inj, inj0, injN, type (<|))
-import Data.Effect.OpenUnion.Internal.HO (MemberHBy, UnionH, inj0H, injH, injNH, type (<<|))
-import Data.Effect.OpenUnion.Sum (SumToRecUnionList)
+import Data.Effect.OpenUnion
 import Data.Effect.Reader (Ask, Local, ask'', local'')
 import Data.Effect.State (State, get'', put'')
-import Data.Effect.Unlift (UnliftIO)
-import Data.Effect.Unlift qualified as E
 import Data.Effect.Writer (Tell, WriterH, listen'', tell'')
-import Data.FTCQueue (FTCQueue, tsingleton, (|>))
+import Data.FTCQueue (FTCQueue, ViewL (..), tsingleton, tviewl, (><), (|>))
 import Data.Function ((&))
 import Data.Kind (Type)
 import Data.Tuple (swap)
 import GHC.TypeNats (KnownNat)
 import UnliftIO (MonadUnliftIO, withRunInIO)
 
-{- | The 'Eff' monad represents computations with effects.
-It supports higher-order effects @eh@ and first-order effects @ef@.
+{-
+import Data.Effect.Fail (Fail)
+import Data.Effect.Fail qualified as E
+import Data.Effect.Fix (Fix)
+import Data.Effect.Fix qualified as E
+import Data.Effect.Unlift (UnliftIO)
+import Data.Effect.Unlift qualified as E
+import Data.Effect.OpenUnion.Sum (SumToRecUnionList)
 -}
-data Eff eh ef a
+
+data Freer f a
     = -- | A pure value.
       Val a
     | -- | An effectful operation, which can be either a higher-order effect or a first-order effect.
       forall x. Op
-        (Either (UnionH eh (Eff eh ef) x) (Union ef x))
-        (FTCQueue (Eff eh ef) x a)
+        (f x)
+        (FTCQueue (Freer f) x a)
         -- ^ the continuation of the operation.
 
-infixr 4 :!!
-
-{- | Type-level infix operator for 'Eff'.
-Allows writing @eh :!! ef@ instead of @Eff eh ef@.
--}
-type (:!!) = Eff
-
-infixr 5 !!
-
-{- | An infix operator version of t`Eff` for sum notation.
-
-Example:
-
-@Span t'Control.Monad.Hefty.Types.!!' FileSystem t'Data.Effect.OpenUnion.Sum.+' Time t'Data.Effect.OpenUnion.Sum.+' Log t'Data.Effect.OpenUnion.Sum.+' t'IO' t'Control.Effect.~>' t'IO'@
--}
-type eh !! ef = SumToRecUnionList UnionH eh :!! SumToRecUnionList Union ef
+type Eff = D.Eff Freer
 
 infixr 3 $
 infixr 4 $$
@@ -103,63 +86,18 @@ infix 2 ~~>
 -- | Type alias for a natural transformation style elaborator.
 type e ~~> f = e f ~> f
 
--- | Send a first-order effect @e@ to the t`Eff` carrier.
-send :: (e <| ef) => e ~> Eff eh ef
-send = sendUnion . inj
-{-# INLINE send #-}
-
--- | Send a higher-order effect @e@ to the t`Eff` carrier.
-sendH :: (e <<| eh) => e (Eff eh ef) ~> Eff eh ef
-sendH = sendUnionH . injH
-{-# INLINE sendH #-}
-
--- | Send the first-order effect @e@ at the head of the list to the t`Eff` carrier.
-send0 :: e ~> Eff eh (e ': ef)
-send0 = sendUnion . inj0
-{-# INLINE send0 #-}
-
--- | Send the higher-order effect @e@ at the head of the list to the t`Eff` carrier.
-send0H :: e (Eff (e ': eh) ef) ~> Eff (e ': eh) ef
-send0H = sendUnionH . inj0H
-{-# INLINE send0H #-}
-
--- | Send the @i@-th first-order effect in the list to the t`Eff` carrier.
-sendN :: forall i ef eh. (KnownNat i) => ElemAt i ef ~> Eff eh ef
-sendN = sendUnion . injN @i
-{-# INLINE sendN #-}
-
--- | Send the @i@-th higher-order effect in the list to the t`Eff` carrier.
-sendNH :: forall i eh ef. (KnownNat i) => ElemAt i eh (Eff eh ef) ~> Eff eh ef
-sendNH = sendUnionH . injNH @i
-{-# INLINE sendNH #-}
-
--- | Send an open union of all first-order effects to the t`Eff` carrier.
-sendUnion :: Union ef a -> Eff eh ef a
-sendUnion = sendUnionBy pure
-{-# INLINE sendUnion #-}
-
 -- | Send an open union of all first-order effects, along with its continuation, to the t`Eff` carrier.
-sendUnionBy :: (a -> Eff eh ef ans) -> Union ef a -> Eff eh ef ans
-sendUnionBy k u = Op (Right u) (tsingleton k)
-{-# INLINE sendUnionBy #-}
+sendAnyBy :: (a -> Eff es ans) -> Union es (Eff es) a -> Eff es ans
+sendAnyBy k u = D.Eff $ Op u (tsingleton $ unEff . k)
+{-# INLINE sendAnyBy #-}
 
--- | Send an open union of all higher-order effects to the t`Eff` carrier.
-sendUnionH :: UnionH eh (Eff eh ef) a -> Eff eh ef a
-sendUnionH = sendUnionHBy pure
-{-# INLINE sendUnionH #-}
-
--- | Send an open union of all higher-order effects, along with its continuation, to the t`Eff` carrier.
-sendUnionHBy :: (a -> Eff eh ef ans) -> UnionH eh (Eff eh ef) a -> Eff eh ef ans
-sendUnionHBy k u = Op (Left u) (tsingleton k)
-{-# INLINE sendUnionHBy #-}
-
-instance Functor (Eff eh ef) where
+instance Functor (Freer f) where
     fmap f = \case
         Val x -> Val (f x)
         Op u q -> Op u (q |> (Val . f))
     {-# INLINE fmap #-}
 
-instance Applicative (Eff eh ef) where
+instance Applicative (Freer f) where
     pure = Val
     {-# INLINE pure #-}
 
@@ -168,11 +106,34 @@ instance Applicative (Eff eh ef) where
     Op u q <*> m = Op u (q |> (<$> m))
     {-# INLINE (<*>) #-}
 
-instance Monad (Eff eh ef) where
+instance Monad (Freer f) where
     m >>= k = case m of
         Val x -> k x
         Op e q -> Op e (q |> k)
     {-# INLINE (>>=) #-}
+
+instance Free Monad Freer where
+    liftFree f = Op f (tsingleton pure)
+    runFree i = loop
+      where
+        loop = \case
+            Val x -> pure x
+            Op f q -> i f >>= k
+              where
+                k = loop . qApp q
+
+    {-# INLINE liftFree #-}
+    {-# INLINE runFree #-}
+
+-- | Applies a value to a Kleisli arrow in 'FTCQueue' representation.
+qApp :: FTCQueue (Freer f) a b -> a -> Freer f b
+qApp q' x = case tviewl q' of
+    TOne k -> k x
+    k :| t -> case k x of
+        Val y -> qApp t y
+        Op u q -> Op u (q >< t)
+
+{-
 
 instance (e <| ef) => SendFOE e (Eff eh ef) where
     sendFOE = send
@@ -290,3 +251,4 @@ instance (Fix <<| eh) => MonadFix (Eff eh ef) where
 instance (UnliftIO <<| eh, IO <| ef) => MonadUnliftIO (Eff eh ef) where
     withRunInIO = E.withRunInIO
     {-# INLINE withRunInIO #-}
+-}

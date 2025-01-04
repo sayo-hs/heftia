@@ -75,35 +75,32 @@ library
 
     exposed-modules:
         Control.Monad.Hefty.Reader
-        Control.Monad.Hefty.Writer
-        Control.Monad.Hefty.State
-        Control.Monad.Hefty.Except
-        Control.Monad.Hefty.SubJump
-        Control.Monad.Hefty.ShiftReset
-        Control.Monad.Hefty.NonDet
-        Control.Monad.Hefty.Coroutine
-        Control.Monad.Hefty.Input
-        Control.Monad.Hefty.Output
-        Control.Monad.Hefty.Resource
-        Control.Monad.Hefty.Unlift
-        Control.Monad.Hefty.Provider
-        Control.Monad.Hefty.KVStore
-        Control.Monad.Hefty.Fresh
-        Control.Monad.Hefty.Fail
-        Control.Monad.Hefty.Concurrent.Parallel
-        Control.Monad.Hefty.Concurrent.Stream
-        Control.Monad.Hefty.Concurrent.Timer
-        Control.Monad.Hefty.Concurrent.Subprocess
-        Control.Monad.Hefty.Log
+        -- Control.Monad.Hefty.Writer
+        -- Control.Monad.Hefty.State
+        -- Control.Monad.Hefty.Except
+        -- Control.Monad.Hefty.SubJump
+        -- Control.Monad.Hefty.ShiftReset
+        -- Control.Monad.Hefty.NonDet
+        -- Control.Monad.Hefty.Coroutine
+        -- Control.Monad.Hefty.Input
+        -- Control.Monad.Hefty.Output
+        -- Control.Monad.Hefty.Resource
+        -- Control.Monad.Hefty.Unlift
+        -- Control.Monad.Hefty.Provider
+        -- Control.Monad.Hefty.KVStore
+        -- Control.Monad.Hefty.Fresh
+        -- Control.Monad.Hefty.Fail
+        -- Control.Monad.Hefty.Concurrent.Parallel
+        -- Control.Monad.Hefty.Concurrent.Stream
+        -- Control.Monad.Hefty.Concurrent.Timer
+        -- Control.Monad.Hefty.Concurrent.Subprocess
+        -- Control.Monad.Hefty.Log
 
     reexported-modules:
-        Control.Monad.Hefty,
-        Data.Effect.OpenUnion,
+        -- Control.Monad.Hefty,
         Data.Effect,
         Data.Effect.TH,
         Data.Effect.Tag,
-        Data.Effect.Key,
-        Data.Effect.Key.TH,
         Data.Effect.HFunctor,
         Data.Effect.HFunctor.HCont,
         Data.Effect.HFunctor.TH,
@@ -114,21 +111,21 @@ library
         Data.Effect.Writer,
         Data.Effect.State,
         Data.Effect.Except,
-        Data.Effect.SubJump,
-        Data.Effect.ShiftReset,
+        -- Data.Effect.SubJump,
+        -- Data.Effect.ShiftReset,
         Data.Effect.NonDet,
         Data.Effect.Coroutine,
-        Data.Effect.Input,
-        Data.Effect.Output,
-        Data.Effect.Resource,
-        Data.Effect.Unlift,
-        Data.Effect.Provider,
-        Data.Effect.KVStore,
-        Data.Effect.Fresh,
-        Data.Effect.Fail,
-        Data.Effect.Concurrent.Parallel,
-        Data.Effect.Concurrent.Timer,
-        Data.Effect.Log,
+        -- Data.Effect.Input,
+        -- Data.Effect.Output,
+        -- Data.Effect.Resource,
+        -- Data.Effect.Unlift,
+        -- Data.Effect.Provider,
+        -- Data.Effect.KVStore,
+        -- Data.Effect.Fresh,
+        -- Data.Effect.Fail,
+        -- Data.Effect.Concurrent.Parallel,
+        -- Data.Effect.Concurrent.Timer,
+        -- Data.Effect.Log,
 
     -- Modules included in this executable, other than Main.
     -- other-modules:
@@ -303,8 +300,8 @@ benchmark heftia-bench
         PackageImports
 
     other-modules:
-        BenchCountdown
-        BenchCatch
+        -- BenchCountdown
+        -- BenchCatch
         BenchLocal
-        BenchCoroutine
-        BenchPyth
+        -- BenchCoroutine
+        -- BenchPyth

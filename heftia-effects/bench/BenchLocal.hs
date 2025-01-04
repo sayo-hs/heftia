@@ -6,32 +6,34 @@
 module BenchLocal where
 
 import Control.Carrier.Reader qualified as F
-import Control.Monad.Hefty qualified as H
-import Control.Monad.Hefty.Reader qualified as H
+import Control.Monad.Hefty.Types qualified as H
+import Data.Effect.OpenUnion qualified as H
+import Data.Effect.Reader qualified as H
 import Effectful qualified as EL
 import Effectful.Reader.Dynamic qualified as EL
 import Polysemy qualified as P
 import Polysemy.Reader qualified as P
+import "data-effects" Control.Effect.Interpret qualified as HD
 import "eff" Control.Effect qualified as E
 
-programHeftia :: (H.Member (H.Ask Int) ef, H.MemberH (H.Local Int) eh) => Int -> H.Eff eh ef Int
+programHeftia :: (H.Ask Int `H.In` es, H.Local Int `H.In` es) => Int -> H.Eff es Int
 programHeftia = \case
-    0 -> H.ask
-    n -> H.local @Int (+ 1) (programHeftia (n - 1))
+    0 -> H.ask'_
+    n -> H.local'_ @Int (+ 1) (programHeftia (n - 1))
 {-# NOINLINE programHeftia #-}
 
 localHeftia :: Int -> Int
-localHeftia n = H.runPure $ H.runAsk @Int 0 $ H.runLocal @Int $ programHeftia n
+localHeftia n = HD.runPure $ H.runAsk @_ @_ @_ @Int 0 $ H.runLocal @Int $ programHeftia n
 
 localHeftiaDeep0, localHeftiaDeep1, localHeftiaDeep2, localHeftiaDeep3, localHeftiaDeep4, localHeftiaDeep5 :: Int -> Int
-localHeftiaDeep0 n = H.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @Int 0 $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runLocal @Int $ programHeftia n
-localHeftiaDeep1 n = H.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @Int 0 $ hrun $ hrun $ hrun $ hrun $ H.runLocal @Int $ hrun $ programHeftia n
-localHeftiaDeep2 n = H.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @Int 0 $ hrun $ hrun $ hrun $ H.runLocal @Int $ hrun $ hrun $ programHeftia n
-localHeftiaDeep3 n = H.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @Int 0 $ hrun $ hrun $ H.runLocal @Int $ hrun $ hrun $ hrun $ programHeftia n
-localHeftiaDeep4 n = H.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @Int 0 $ hrun $ H.runLocal @Int $ hrun $ hrun $ hrun $ hrun $ programHeftia n
-localHeftiaDeep5 n = H.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @Int 0 $ H.runLocal @Int $ hrun $ hrun $ hrun $ hrun $ hrun $ programHeftia n
+localHeftiaDeep0 n = HD.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @_ @_ @_ @Int 0 $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runLocal @Int $ programHeftia n
+localHeftiaDeep1 n = HD.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @_ @_ @_ @Int 0 $ hrun $ hrun $ hrun $ hrun $ H.runLocal @Int $ hrun $ programHeftia n
+localHeftiaDeep2 n = HD.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @_ @_ @_ @Int 0 $ hrun $ hrun $ hrun $ H.runLocal @Int $ hrun $ hrun $ programHeftia n
+localHeftiaDeep3 n = HD.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @_ @_ @_ @Int 0 $ hrun $ hrun $ H.runLocal @Int $ hrun $ hrun $ hrun $ programHeftia n
+localHeftiaDeep4 n = HD.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @_ @_ @_ @Int 0 $ hrun $ H.runLocal @Int $ hrun $ hrun $ hrun $ hrun $ programHeftia n
+localHeftiaDeep5 n = HD.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @_ @_ @_ @Int 0 $ H.runLocal @Int $ hrun $ hrun $ hrun $ hrun $ hrun $ programHeftia n
 
-hrun :: H.Eff eh (H.Ask () ': ef) a -> H.Eff eh ef a
+hrun :: H.Eff (H.Ask () ': es) a -> H.Eff es a
 hrun = H.runAsk ()
 
 programSem :: (P.Reader Int `P.Member` es) => Int -> P.Sem es Int

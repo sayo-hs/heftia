@@ -59,24 +59,16 @@ source-repository head
 
 library
     exposed-modules:
-        Control.Monad.Hefty
+        -- Control.Monad.Hefty
         Control.Monad.Hefty.Types
-        Control.Monad.Hefty.Interpret
-        Control.Monad.Hefty.Interpret.State
-        Control.Monad.Hefty.Transform
-        Data.Effect.OpenUnion
-        Data.Effect.OpenUnion.Internal
-        Data.Effect.OpenUnion.Internal.FO
-        Data.Effect.OpenUnion.Internal.HO
-        Data.Effect.OpenUnion.Sum
+        -- Control.Monad.Hefty.Interpret
+        -- Control.Monad.Hefty.Interpret.State
         Data.FTCQueue
 
     reexported-modules:
         Data.Effect,
         Data.Effect.TH,
         Data.Effect.Tag,
-        Data.Effect.Key,
-        Data.Effect.Key.TH,
         Data.Effect.HFunctor,
         Data.Effect.HFunctor.HCont,
         Data.Effect.HFunctor.TH,

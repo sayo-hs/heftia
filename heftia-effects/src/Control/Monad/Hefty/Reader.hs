@@ -13,18 +13,9 @@ module Control.Monad.Hefty.Reader (
 )
 where
 
-import Control.Monad.Hefty (
-    Eff,
-    interpose,
-    interpret,
-    interpretH,
-    (&),
-    type (<|),
-    type (~>),
-    type (~~>),
- )
 import Data.Effect.Reader
 
+{-
 -- | Interpret the t'Ask'/t'Local' effects.
 runReader
     :: forall r eh ef
@@ -52,3 +43,4 @@ runAsk
      . r
     -> Eff eh (Ask r ': ef) ~> Eff eh ef
 runAsk r = interpret \Ask -> pure r
+-}
