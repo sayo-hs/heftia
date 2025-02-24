@@ -3,7 +3,7 @@
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 {- |
-Copyright   :  (c) 2024 Sayo Koyoneda
+Copyright   :  (c) 2024 Sayo contributors
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 Portability :  portable

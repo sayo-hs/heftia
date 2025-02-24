@@ -5,7 +5,7 @@
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 {- |
-Copyright   :  (c) 2016 Allele Dev; 2017 Ixperta Solutions s.r.o.; 2017 Alexis King; 2024 Sayo Koyoneda
+Copyright   :  (c) 2016 Allele Dev; 2017 Ixperta Solutions s.r.o.; 2017 Alexis King; 2024 Sayo contributors
 License     :  MPL-2.0 (see the LICENSE file) AND BSD-3-Clause (see the LICENSE.BSD3 file)
 Maintainer  :  ymdfield@outlook.jp
 

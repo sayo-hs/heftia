@@ -5,7 +5,7 @@
 -- SPDX-License-Identifier: MPL-2.0 AND BSD-3-Clause
 
 {- |
-Copyright   :  (c) 2024 Sayo Koyoneda
+Copyright   :  (c) 2024 Sayo contributors
                (c) The University of Glasgow 2004-2008
 License     :  MPL-2.0 (see the LICENSE file) AND BSD-3-Clause
 Maintainer  :  ymdfield@outlook.jp

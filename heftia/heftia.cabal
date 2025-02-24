@@ -1,6 +1,6 @@
 cabal-version:      2.4
 name:               heftia
-version:            0.5.0.0
+version:            0.6.0.0
 
 -- A short (one-line) description of the package.
 synopsis: higher-order algebraic effects done right
@@ -32,12 +32,12 @@ bug-reports: https://github.com/sayo-hs/heftia
 -- The license under which the package is released.
 license:            MPL-2.0
 license-file:       LICENSE
-author:             Sayo Koyoneda <ymdfield@outlook.jp>
-maintainer:         Sayo Koyoneda <ymdfield@outlook.jp>
+author:             Sayo contributors <ymdfield@outlook.jp>
+maintainer:         ymdfield <ymdfield@outlook.jp>
 
 -- A copyright notice.
 copyright:
-    2023-2024 Sayo Koyoneda
+    2023-2025 Sayo contributors
     2016 Allele Dev; 2017 Ixperta Solutions s.r.o.; 2017 Alexis King
 category: Control, Monads
 

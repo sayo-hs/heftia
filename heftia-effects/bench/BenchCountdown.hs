@@ -1,5 +1,5 @@
 -- SPDX-License-Identifier: BSD-3-Clause
--- (c) 2022 Xy Ren; 2024 Sayo Koyoneda
+-- (c) 2022 Xy Ren; 2024 Sayo contributors
 
 -- Benchmarking effect invocation and monadic bind
 module BenchCountdown where

@@ -1,6 +1,6 @@
 cabal-version:      2.4
 name:               heftia-effects
-version:            0.5.0.0
+version:            0.6.0.0
 
 -- A short (one-line) description of the package.
 synopsis: higher-order algebraic effects done right
@@ -16,11 +16,11 @@ bug-reports: https://github.com/sayo-hs/heftia
 -- The license under which the package is released.
 license:            MPL-2.0
 license-file:       LICENSE
-author:             Sayo Koyoneda <ymdfield@outlook.jp>
-maintainer:         Sayo Koyoneda <ymdfield@outlook.jp>
+author:             Sayo contributors <ymdfield@outlook.jp>
+maintainer:         ymdfield <ymdfield@outlook.jp>
 
 -- A copyright notice.
-copyright: 2023-2024 Sayo Koyoneda
+copyright: 2023-2024 Sayo contributors
 category: Control, Effect, Monads
 
 extra-doc-files:
@@ -57,7 +57,7 @@ common common-base
     build-depends:
         base >= 4.17 && < 4.21,
         data-effects ^>= 0.4,
-        heftia ^>= 0.5,
+        heftia ^>= 0.6,
         time >= 1.11.1 && < 1.15,
         unliftio ^>= 0.2,
         unbounded-delays ^>= 0.1.1,
