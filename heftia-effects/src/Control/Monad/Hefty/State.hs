@@ -70,37 +70,6 @@ handleState = \case
     Get -> \s k -> k s s
 {-# INLINE handleState #-}
 
--- | Interpret the 'State' effect based on an IO-fused semantics using t'Data.IORef.IORef'.
-runStateIORef
-    :: forall s ef eh a
-     . (IO <| ef)
-    => s
-    -> Eff eh (State s ': ef) a
-    -> Eff eh ef (s, a)
-runStateIORef s0 m = do
-    ref <- newIORef s0
-    a <-
-        m & interpret \case
-            Get -> readIORef ref
-            Put s -> writeIORef ref s
-    readIORef ref <&> (,a)
-
-{- |
-Interpret the 'State' effect based on an IO-fused semantics using t'Data.IORef.IORef'.
-Do not include the final state in the return value.
--}
-evalStateIORef
-    :: forall s ef eh a
-     . (IO <| ef)
-    => s
-    -> Eff eh (State s ': ef) a
-    -> Eff eh ef a
-evalStateIORef s0 m = do
-    ref <- newIORef s0
-    m & interpret \case
-        Get -> readIORef ref
-        Put s -> writeIORef ref s
-
 -- | Within the given scope, make the state roll back to the beginning of the scope in case of exceptions, etc.
 transactState :: forall s ef. (State s <| ef) => Eff '[] ef ~> Eff '[] ef
 transactState m = do
@@ -126,13 +95,3 @@ evalStateNaiveRec s0 =
             Get -> (ask @s >>=)
             Put s -> \k -> k () & interpose @(Ask s) \Ask -> pure s
         >>> runAsk @s s0
-
-localToState :: forall r eh ef. (State r <| ef) => Eff (Local r ': eh) ef ~> Eff eh ef
-localToState =
-    interpretH \(Local f a) -> do
-        save <- get @r
-        put $ f save
-        a <* put save
-
-askToGet :: forall r ef eh. (State r <| ef) => Eff eh (Ask r ': ef) ~> Eff eh ef
-askToGet = interpret \Ask -> get

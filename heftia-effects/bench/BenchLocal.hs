@@ -23,15 +23,15 @@ programHeftia = \case
 {-# NOINLINE programHeftia #-}
 
 localHeftia :: Int -> Int
-localHeftia n = HD.runPure $ H.runAsk @_ @_ @_ @Int 0 $ H.runLocal @Int $ programHeftia n
+localHeftia n = HD.runPure $ H.runAsk @Int 0 $ H.runLocal @Int $ programHeftia n
 
 localHeftiaDeep0, localHeftiaDeep1, localHeftiaDeep2, localHeftiaDeep3, localHeftiaDeep4, localHeftiaDeep5 :: Int -> Int
-localHeftiaDeep0 n = HD.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @_ @_ @_ @Int 0 $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runLocal @Int $ programHeftia n
-localHeftiaDeep1 n = HD.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @_ @_ @_ @Int 0 $ hrun $ hrun $ hrun $ hrun $ H.runLocal @Int $ hrun $ programHeftia n
-localHeftiaDeep2 n = HD.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @_ @_ @_ @Int 0 $ hrun $ hrun $ hrun $ H.runLocal @Int $ hrun $ hrun $ programHeftia n
-localHeftiaDeep3 n = HD.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @_ @_ @_ @Int 0 $ hrun $ hrun $ H.runLocal @Int $ hrun $ hrun $ hrun $ programHeftia n
-localHeftiaDeep4 n = HD.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @_ @_ @_ @Int 0 $ hrun $ H.runLocal @Int $ hrun $ hrun $ hrun $ hrun $ programHeftia n
-localHeftiaDeep5 n = HD.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @_ @_ @_ @Int 0 $ H.runLocal @Int $ hrun $ hrun $ hrun $ hrun $ hrun $ programHeftia n
+localHeftiaDeep0 n = HD.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @Int 0 $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runLocal @Int $ programHeftia n
+localHeftiaDeep1 n = HD.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @Int 0 $ hrun $ hrun $ hrun $ hrun $ H.runLocal @Int $ hrun $ programHeftia n
+localHeftiaDeep2 n = HD.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @Int 0 $ hrun $ hrun $ hrun $ H.runLocal @Int $ hrun $ hrun $ programHeftia n
+localHeftiaDeep3 n = HD.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @Int 0 $ hrun $ hrun $ H.runLocal @Int $ hrun $ hrun $ hrun $ programHeftia n
+localHeftiaDeep4 n = HD.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @Int 0 $ hrun $ H.runLocal @Int $ hrun $ hrun $ hrun $ hrun $ programHeftia n
+localHeftiaDeep5 n = HD.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runAsk @Int 0 $ H.runLocal @Int $ hrun $ hrun $ hrun $ hrun $ hrun $ programHeftia n
 
 hrun :: H.Eff (H.Ask () ': es) a -> H.Eff es a
 hrun = H.runAsk ()

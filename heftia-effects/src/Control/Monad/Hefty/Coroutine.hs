@@ -26,11 +26,3 @@ runCoroutine
      . Eff '[] (Yield a b ': ef) ans
     -> Eff '[] ef (Status (Eff '[] ef) a b ans)
 runCoroutine = interpretBy (pure . Done) (\(Yield a) k -> pure $ Continue a k)
-
--- | Converts the t'Input' effect into the [coroutine]("Data.Effect.Coroutine")'s t'Yield' effect.
-inputToYield :: Input i ~> Yield () i
-inputToYield Input = Yield ()
-
--- | Converts the t'Output' effect into the [coroutine]("Data.Effect.Coroutine")'s t'Yield' effect.
-outputToYield :: Output o ~> Yield o ()
-outputToYield (Output o) = Yield o

@@ -53,17 +53,3 @@ handleThrow (Throw e) _ = pure $ Left e
 elabCatch :: (Throw e <| ef) => Catch e ~~> Eff '[] ef
 elabCatch (Catch action hdl) = action & interposeWith \(Throw e) _ -> hdl e
 {-# INLINE elabCatch #-}
-
--- | Interpret the t'Throw' effect based on an IO-fused semantics using IO-level exceptions.
-runThrowIO
-    :: forall e eh ef
-     . (IO <| ef, Exception e)
-    => Eff eh (Throw e ': ef) ~> Eff eh ef
-runThrowIO = interpret \(Throw e) -> throwIO e
-
--- | Interpret the t'Catch' effect based on an IO-fused semantics using IO-level exceptions.
-runCatchIO
-    :: forall e eh ef
-     . (UnliftIO <<| eh, IO <| ef, Exception e)
-    => Eff (Catch e ': eh) ef ~> Eff eh ef
-runCatchIO = interpretH \(Catch action hdl) -> IO.catch action hdl

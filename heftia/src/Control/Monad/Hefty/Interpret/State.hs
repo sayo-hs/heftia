@@ -16,104 +16,111 @@ single state type @s@, especially for effects like t'Data.Effect.State.State' or
 -}
 module Control.Monad.Hefty.Interpret.State where
 
-import Control.Effect (type (~>))
-import Control.Monad.Hefty.Interpret (qApp)
-import Control.Monad.Hefty.Types (Eff (Op, Val), sendUnionBy, sendUnionHBy)
-import Data.Effect.OpenUnion.Internal (IsSuffixOf)
-import Data.Effect.OpenUnion.Internal.FO (Union, prj, weakens, (!+), type (<|))
-import Data.Effect.OpenUnion.Internal.HO (UnionH, hfmapUnion, nilH)
+import Control.Effect (unEff, type (~>))
+import Control.Monad.Hefty.Types (Eff, Freer (Op, Val), qApp, sendUnionBy)
+import Data.Effect.HFunctor (hfmap)
+import Data.Effect.OpenUnion (FOEs, KnownOrder, Membership, Union, Weaken, coerceFOEs, labelMembership, project, weakens, (!+), (:>))
 import Data.Kind (Type)
 
--- | An ad-hoc stateful version of t'Control.Monad.Hefty.Types.Interpreter' for performance.
-type StateInterpreter s e m (ans :: Type) = forall x. e x -> s -> (s -> x -> m ans) -> m ans
-
--- | An ad-hoc stateful version of t'Control.Monad.Hefty.Types.Elaborator' for performance.
-type StateElaborator s e m ans = StateInterpreter s (e m) m ans
+-- | An ad-hoc stateful version of t'Control.Monad.Hefty.Types.Handler' for performance.
+type StateHandler s e m n (ans :: Type) = forall x. e m x -> s -> (s -> x -> n ans) -> n ans
 
 -- * Interpretation functions
 
 interpretStateBy
-    :: forall s e ef ans a
-     . s
-    -> (s -> a -> Eff '[] ef ans)
-    -> StateInterpreter s e (Eff '[] ef) ans
-    -> Eff '[] (e ': ef) a
-    -> Eff '[] ef ans
+    :: forall s e es ans a
+     . (KnownOrder e, FOEs es)
+    => s
+    -> (s -> a -> Eff es ans)
+    -> StateHandler s e (Eff (e ': es)) (Eff es) ans
+    -> Eff (e ': es) a
+    -> Eff es ans
 interpretStateBy = reinterpretStateBy
 {-# INLINE interpretStateBy #-}
 
 reinterpretStateBy
-    :: forall s e ef' ef ans a
-     . (ef `IsSuffixOf` ef')
+    :: forall s e es' es ans a
+     . (Weaken es es', KnownOrder e, FOEs es)
     => s
-    -> (s -> a -> Eff '[] ef' ans)
-    -> StateInterpreter s e (Eff '[] ef') ans
-    -> Eff '[] (e ': ef) a
-    -> Eff '[] ef' ans
+    -> (s -> a -> Eff es' ans)
+    -> StateHandler s e (Eff (e ': es)) (Eff es') ans
+    -> Eff (e ': es) a
+    -> Eff es' ans
 reinterpretStateBy s0 ret hdl =
-    iterStateAllEffHFBy s0 ret nilH (hdl !+ \u s k -> sendUnionBy (k s) (weakens u))
+    iterStateAllEffBy s0 ret (hdl !+ \u s k -> sendUnionBy (k s) (weakens $ coerceFOEs u))
 {-# INLINE reinterpretStateBy #-}
 
 interpretStateRecWith
-    :: forall s e ef eh a
-     . s
-    -> (forall ans. StateInterpreter s e (Eff eh ef) ans)
-    -> Eff eh (e ': ef) a
-    -> Eff eh ef a
+    :: forall s e es a
+     . (KnownOrder e)
+    => s
+    -> (forall ans. StateHandler s e (Eff (e ': es)) (Eff es) ans)
+    -> Eff (e ': es) a
+    -> Eff es a
 interpretStateRecWith = reinterpretStateRecWith
 {-# INLINE interpretStateRecWith #-}
 
 reinterpretStateRecWith
-    :: forall s e ef' ef eh a
-     . (ef `IsSuffixOf` ef')
+    :: forall s e es' es a
+     . (Weaken es es', KnownOrder e)
     => s
-    -> (forall ans. StateInterpreter s e (Eff eh ef') ans)
-    -> Eff eh (e ': ef) a
-    -> Eff eh ef' a
+    -> (forall ans. StateHandler s e (Eff (e ': es)) (Eff es') ans)
+    -> Eff (e ': es) a
+    -> Eff es' a
 reinterpretStateRecWith s0 hdl = loop s0
   where
-    loop :: s -> Eff eh (e ': ef) ~> Eff eh ef'
+    loop :: s -> Eff (e ': es) ~> Eff es'
     loop s =
-        iterStateAllEffHFBy
+        iterStateAllEffBy
             s
             (const pure)
-            (\u s' k -> sendUnionHBy (k s') $ hfmapUnion (loop s') u)
-            (hdl !+ \u s' k -> sendUnionBy (k s') (weakens u))
+            (hdl !+ \u s' k -> sendUnionBy (k s') (weakens $ hfmap (loop s') u))
 {-# INLINE reinterpretStateRecWith #-}
 
 -- * Interposition functions
 
 interposeStateBy
-    :: forall s e ef ans a
-     . (e <| ef)
+    :: forall s e es ans a
+     . (e :> es, FOEs es)
     => s
-    -> (s -> a -> Eff '[] ef ans)
-    -> StateInterpreter s e (Eff '[] ef) ans
-    -> Eff '[] ef a
-    -> Eff '[] ef ans
-interposeStateBy s0 ret f =
-    iterStateAllEffHFBy s0 ret nilH \u s k ->
-        maybe (sendUnionBy (k s) u) (\e -> f e s k) (prj @e u)
+    -> (s -> a -> Eff es ans)
+    -> StateHandler s e (Eff es) (Eff es) ans
+    -> Eff es a
+    -> Eff es ans
+interposeStateBy = interposeStateForBy labelMembership
 {-# INLINE interposeStateBy #-}
+
+interposeStateForBy
+    :: forall s e es ans a
+     . (KnownOrder e, FOEs es)
+    => Membership e es
+    -> s
+    -> (s -> a -> Eff es ans)
+    -> StateHandler s e (Eff es) (Eff es) ans
+    -> Eff es a
+    -> Eff es ans
+interposeStateForBy i s0 ret f =
+    iterStateAllEffBy s0 ret \u s k ->
+        maybe (sendUnionBy (k s) u) (\e -> f e s k) (project i u)
+{-# INLINE interposeStateForBy #-}
 
 -- * Transformation to monads
 
-iterStateAllEffHFBy
-    :: forall s eh ef m ans a
+iterStateAllEffBy
+    :: forall s es m ans a
      . (Monad m)
     => s
     -> (s -> a -> m ans)
-    -> StateInterpreter s (UnionH eh (Eff eh ef)) m ans
-    -> StateInterpreter s (Union ef) m ans
-    -> Eff eh ef a
+    -> StateHandler s (Union es) (Eff es) m ans
+    -> Eff es a
     -> m ans
-iterStateAllEffHFBy s0 ret fh ff = loop s0
+iterStateAllEffBy s0 ret hdl = loop s0 . unEff
   where
     loop s = \case
         Val x -> ret s x
-        Op u q -> either (`fh` s) (`ff` s) u k
+        Op u q -> hdl u s k
           where
             k s' = loop s' . qApp q
-{-# INLINE iterStateAllEffHFBy #-}
+{-# INLINE iterStateAllEffBy #-}
 
 -- TODO: add other pattern functions.

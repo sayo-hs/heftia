@@ -91,11 +91,3 @@ censorPost f m = do
     (w, a) <- confiscate m
     tell $ f w
     pure a
-
--- | 'censor' with pre-applying semantics.
-censorPre
-    :: forall w eh ef
-     . (Tell w <| ef, Monoid w)
-    => (w -> w)
-    -> Eff eh ef ~> Eff eh ef
-censorPre f = interpose @(Tell w) \(Tell w) -> tell $ f w

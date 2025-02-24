@@ -20,20 +20,6 @@ import Data.Effect.Input
 import Data.Effect.State (gets, put)
 import Data.List (uncons)
 
--- | Interprets the t'Input' effect by executing the given input handler each time an input is required.
-runInputEff
-    :: forall i ef eh
-     . Eff eh ef i
-    -> Eff eh (Input i ': ef) ~> Eff eh ef
-runInputEff a = interpret \Input -> a
-
--- | Interprets the t'Input' effect by providing the given constant as input.
-runInputConst
-    :: forall i ef eh
-     . i
-    -> Eff eh (Input i ': ef) ~> Eff eh ef
-runInputConst i = interpret \Input -> pure i
-
 {- |
 Interprets the t'Input' effect by using the given list as a series of inputs.
 

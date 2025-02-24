@@ -61,8 +61,8 @@ library
     exposed-modules:
         -- Control.Monad.Hefty
         Control.Monad.Hefty.Types
-        -- Control.Monad.Hefty.Interpret
-        -- Control.Monad.Hefty.Interpret.State
+        Control.Monad.Hefty.Interpret
+        Control.Monad.Hefty.Interpret.State
         Data.FTCQueue
 
     reexported-modules:
@@ -73,8 +73,6 @@ library
         Data.Effect.HFunctor.HCont,
         Data.Effect.HFunctor.TH,
         Control.Effect,
-        Control.Effect.Tag,
-        Control.Effect.Key,
 
     -- Modules included in this executable, other than Main.
     -- other-modules:
@@ -83,7 +81,7 @@ library
     -- other-extensions:
     build-depends:
         base                          >= 4.17 && < 4.21,
-        data-effects                  ^>= 0.3.0.1,
+        data-effects                  ^>= 0.4,
         mtl                           >= 2.2.2 && < 2.4,
         unliftio                      ^>= 0.2,
 
