@@ -40,9 +40,5 @@ runShift f =
 withShift :: Eff '[Shift ans '[] '[Eff eh ef]] '[Eff eh ef] ans -> Eff eh ef ans
 withShift = runEff . evalShift
 
-runShift_ :: forall eh ef. Eff (Shift_ (Eff eh ef) ': eh) ef ~> Eff eh ef
-runShift_ = interpretRecHWith \(KeyH (Shift_' initiate)) k -> initiate k id
-{-# DEPRECATED runShift_ "Use Control.Monad.Hefty.SubJump" #-}
-
 runReset :: forall eh ef. Eff (Reset ': eh) ef ~> Eff eh ef
 runReset = interpretH \(Reset a) -> a

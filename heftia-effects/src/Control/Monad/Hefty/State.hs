@@ -18,40 +18,36 @@ where
 import Control.Arrow ((>>>))
 import Control.Monad.Hefty (
     Eff,
-    StateInterpreter,
+    FOEs,
+    StateHandler,
     interpose,
     interposeStateBy,
-    interpret,
     interpretBy,
-    interpretH,
     interpretRecWith,
     interpretStateBy,
     interpretStateRecWith,
     raiseUnder,
     (&),
-    type (<|),
+    (:>),
     type (~>),
  )
 import Control.Monad.Hefty.Reader (
     Ask (..),
-    Local (..),
     ask,
     runAsk,
  )
 import Data.Effect.State
-import Data.Functor ((<&>))
-import UnliftIO (newIORef, readIORef, writeIORef)
 
 -- | Interpret the 'State' effect.
-runState :: forall s ef a. s -> Eff '[] (State s ': ef) a -> Eff '[] ef (s, a)
+runState :: forall s es a. (FOEs es) => s -> Eff (State s ': es) a -> Eff es (s, a)
 runState s0 = interpretStateBy s0 (curry pure) handleState
 
 -- | Interpret the 'State' effect. Do not include the final state in the return value.
-evalState :: forall s ef a. s -> Eff '[] (State s ': ef) a -> Eff '[] ef a
+evalState :: forall s es a. s -> (FOEs es) => Eff (State s ': es) a -> Eff es a
 evalState s0 = interpretStateBy s0 (const pure) handleState
 
 -- | Interpret the 'State' effect. Do not include the final result in the return value.
-execState :: forall s ef a. s -> Eff '[] (State s ': ef) a -> Eff '[] ef s
+execState :: forall s es a. (FOEs es) => s -> Eff (State s ': es) a -> Eff es s
 execState s0 = interpretStateBy s0 (\s _ -> pure s) handleState
 
 {- |
@@ -60,18 +56,18 @@ Interpret the 'State' effect.
 Interpretation is performed recursively with respect to the scopes of unelaborated higher-order effects @eh@.
 Note that the state is reset and does not persist beyond the scopes.
 -}
-evalStateRec :: forall s ef eh. s -> Eff eh (State s ': ef) ~> Eff eh ef
+evalStateRec :: forall s es. s -> Eff (State s ': es) ~> Eff es
 evalStateRec s0 = interpretStateRecWith s0 handleState
 
 -- | A handler function for the 'State' effect.
-handleState :: StateInterpreter s (State s) (Eff eh r) ans
+handleState :: StateHandler s (State s) f g ans
 handleState = \case
     Put s -> \_ k -> k s ()
     Get -> \s k -> k s s
 {-# INLINE handleState #-}
 
 -- | Within the given scope, make the state roll back to the beginning of the scope in case of exceptions, etc.
-transactState :: forall s ef. (State s <| ef) => Eff '[] ef ~> Eff '[] ef
+transactState :: forall s es a. (State s :> es, FOEs es) => Eff es a -> Eff es a
 transactState m = do
     pre <- get @s
     (post, a) <- interposeStateBy pre (curry pure) handleState m
@@ -79,7 +75,7 @@ transactState m = do
     pure a
 
 -- | A naive but somewhat slower version of 'runState' that does not use ad-hoc optimizations.
-runStateNaive :: forall s ef a. s -> Eff '[] (State s ': ef) a -> Eff '[] ef (s, a)
+runStateNaive :: forall s es a. (FOEs es) => s -> Eff (State s ': es) a -> Eff es (s, a)
 runStateNaive s0 m = do
     f <-
         m & interpretBy (\a -> pure \s -> pure (s, a)) \case
@@ -88,7 +84,7 @@ runStateNaive s0 m = do
     f s0
 
 -- | A naive but somewhat slower version of 'evalStateRec' that does not use ad-hoc optimizations.
-evalStateNaiveRec :: forall s ef eh. s -> Eff eh (State s ': ef) ~> Eff eh ef
+evalStateNaiveRec :: forall s es. s -> Eff (State s ': es) ~> Eff es
 evalStateNaiveRec s0 =
     raiseUnder
         >>> interpretRecWith \case

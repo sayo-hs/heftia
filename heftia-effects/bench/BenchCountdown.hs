@@ -25,7 +25,7 @@ import Polysemy.Reader qualified as P
 import Polysemy.State qualified as P
 import "eff" Control.Effect qualified as EF
 
-programHeftia :: (H.Member (H.State Int) es) => H.Eff '[] es Int
+programHeftia :: (H.State Int H.:> es) => H.Eff es Int
 programHeftia = do
     x <- H.get @Int
     if x == 0
@@ -39,17 +39,16 @@ countdownHeftia :: Int -> (Int, Int)
 countdownHeftia n = H.runPure $ H.runState n programHeftia
 
 countdownHeftiaDeep :: Int -> (Int, Int)
-countdownHeftiaDeep n = H.runPure $ runR $ runR $ runR $ runR $ runR $ H.runState n $ runR $ runR $ runR $ runR $ runR $ programHeftia
-  where
-    runR = H.runAsk ()
+countdownHeftiaDeep n = H.runPure $ hrunR $ hrunR $ hrunR $ hrunR $ hrunR $ H.runState n $ hrunR $ hrunR $ hrunR $ hrunR $ hrunR $ programHeftia
 
 countdownHeftiaNaive :: Int -> (Int, Int)
 countdownHeftiaNaive n = H.runPure $ H.runStateNaive n programHeftia
 
 countdownHeftiaNaiveDeep :: Int -> (Int, Int)
-countdownHeftiaNaiveDeep n = H.runPure $ runR $ runR $ runR $ runR $ runR $ H.runStateNaive n $ runR $ runR $ runR $ runR $ runR $ programHeftia
-  where
-    runR = H.runAsk ()
+countdownHeftiaNaiveDeep n = H.runPure $ hrunR $ hrunR $ hrunR $ hrunR $ hrunR $ H.runStateNaive n $ hrunR $ hrunR $ hrunR $ hrunR $ hrunR $ programHeftia
+
+hrunR :: H.Eff (H.Ask () ': es) a -> H.Eff es a
+hrunR = H.runAsk ()
 
 programFreer :: (FS.Member (FS.State Int) es) => FS.Eff es Int
 programFreer = do

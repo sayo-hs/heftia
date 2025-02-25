@@ -1,12 +1,8 @@
 -- SPDX-License-Identifier: MPL-2.0 AND BSD-3-Clause
 
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0. If a copy of the MPL was not distributed with this
--- file, You can obtain one at https://mozilla.org/MPL/2.0/.
-
 {- |
 Copyright   :  (c) 2016 Allele Dev; 2017 Ixperta Solutions s.r.o.; 2017 Alexis King; 2024 Sayo contributors
-License     :  MPL-2.0 (see the LICENSE file) AND BSD-3-Clause (see the LICENSE.BSD3 file)
+License     :  MPL-2.0 AND BSD-3-Clause (see the LICENSE and LICENSE.BSD3 files)
 Maintainer  :  ymdfield@outlook.jp
 
 This module provides an ad-hoc specialized version of

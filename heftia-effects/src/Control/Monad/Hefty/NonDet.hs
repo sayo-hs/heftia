@@ -23,32 +23,17 @@ import Control.Applicative (liftA2)
 #endif
 import Control.Applicative qualified as A
 import Control.Arrow ((>>>))
-import Control.Monad.Hefty (
-    Eff,
-    bundleN,
-    interpret,
-    interpretBy,
-    interpretH,
-    nil,
-    (!+),
-    (&),
-    type (<<|),
-    type (<|),
-    type (~>),
- )
-import Data.Bool (bool)
+import Control.Monad.Hefty (Eff, FOEs, bundle, interpretBy, nil, (!+))
 import Data.Effect.NonDet
-import Data.Effect.Unlift (UnliftIO)
-import UnliftIO (Exception, SomeException, throwIO, try)
 
 -- | [NonDet]("Data.Effect.NonDet") effects handler for alternative answer type.
 runNonDet
-    :: forall f ef a
-     . (Alternative f)
-    => Eff '[] (Choose ': Empty ': ef) a
-    -> Eff '[] ef (f a)
+    :: forall f es a
+     . (Alternative f, FOEs es)
+    => Eff (Choose ': Empty ': es) a
+    -> Eff es (f a)
 runNonDet =
-    bundleN @2
+    bundle
         >>> interpretBy
             (pure . pure)
             ( (\Choose k -> liftA2 (<|>) (k False) (k True))
@@ -58,13 +43,13 @@ runNonDet =
 
 -- | [NonDet]("Data.Effect.NonDet") effects handler for monoidal answer type.
 runNonDetMonoid
-    :: forall ans ef a
-     . (Monoid ans)
-    => (a -> Eff '[] ef ans)
-    -> Eff '[] (Choose ': Empty ': ef) a
-    -> Eff '[] ef ans
+    :: forall ans es a
+     . (Monoid ans, FOEs es)
+    => (a -> Eff es ans)
+    -> Eff (Choose ': Empty ': es) a
+    -> Eff es ans
 runNonDetMonoid f =
-    bundleN @2
+    bundle
         >>> interpretBy
             f
             ( (\Choose k -> liftA2 (<>) (k False) (k True))
@@ -74,27 +59,27 @@ runNonDetMonoid f =
 
 -- | t'Choose' effect handler for alternative answer type.
 runChoose
-    :: forall f ef a
-     . (Alternative f)
-    => Eff '[] (Choose ': ef) a
-    -> Eff '[] ef (f a)
+    :: forall f es a
+     . (Alternative f, FOEs es)
+    => Eff (Choose ': es) a
+    -> Eff es (f a)
 runChoose =
     interpretBy (pure . pure) \Choose k ->
         liftA2 (<|>) (k False) (k True)
 
 -- | t'Choose' effect handler for monoidal answer type.
 runChooseMonoid
-    :: forall ans ef a
-     . (Semigroup ans)
-    => (a -> Eff '[] ef ans)
-    -> Eff '[] (Choose ': ef) a
-    -> Eff '[] ef ans
+    :: forall ans es a
+     . (Semigroup ans, FOEs es)
+    => (a -> Eff es ans)
+    -> Eff (Choose ': es) a
+    -> Eff es ans
 runChooseMonoid f =
     interpretBy f \Choose k ->
         liftA2 (<>) (k False) (k True)
 
 -- | t'Empty' effect handler.
-runEmpty :: forall a ef. Eff '[] (Empty ': ef) a -> Eff '[] ef (Maybe a)
+runEmpty :: forall a es. (FOEs es) => Eff (Empty ': es) a -> Eff es (Maybe a)
 runEmpty =
     interpretBy
         (pure . Just)

@@ -59,7 +59,7 @@ source-repository head
 
 library
     exposed-modules:
-        -- Control.Monad.Hefty
+        Control.Monad.Hefty
         Control.Monad.Hefty.Types
         Control.Monad.Hefty.Interpret
         Control.Monad.Hefty.Interpret.State

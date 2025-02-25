@@ -21,7 +21,7 @@ import Polysemy.Error qualified as P
 import Polysemy.Reader qualified as P
 import "eff" Control.Effect qualified as E
 
-programHeftia :: (H.Member (H.Throw ()) ef, H.MemberH (H.Catch ()) eh) => Int -> H.Eff eh ef a
+programHeftia :: (H.Throw () H.:> es, H.Catch () H.:> es) => Int -> H.Eff es a
 programHeftia = \case
     0 -> H.throw ()
     n -> H.catch (programHeftia (n - 1)) \() -> H.throw ()
@@ -38,7 +38,7 @@ catchHeftiaDeep3 n = H.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runThrow $
 catchHeftiaDeep4 n = H.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runThrow $ hrun $ H.runCatch @() $ hrun $ hrun $ hrun $ hrun $ programHeftia n
 catchHeftiaDeep5 n = H.runPure $ hrun $ hrun $ hrun $ hrun $ hrun $ H.runThrow $ H.runCatch @() $ hrun $ hrun $ hrun $ hrun $ hrun $ programHeftia n
 
-hrun :: H.Eff eh (H.Ask () ': ef) a -> H.Eff eh ef a
+hrun :: H.Eff (H.Ask () ': es) a -> H.Eff es a
 hrun = H.runAsk ()
 
 programSem :: (P.Error () `P.Member` es) => Int -> P.Sem es a

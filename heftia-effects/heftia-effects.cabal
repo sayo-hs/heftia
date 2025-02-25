@@ -76,12 +76,12 @@ library
     exposed-modules:
         Control.Monad.Hefty.Reader
         -- Control.Monad.Hefty.Writer
-        -- Control.Monad.Hefty.State
+        Control.Monad.Hefty.State
         Control.Monad.Hefty.Except
         -- Control.Monad.Hefty.SubJump
         -- Control.Monad.Hefty.ShiftReset
-        -- Control.Monad.Hefty.NonDet
-        -- Control.Monad.Hefty.Coroutine
+        Control.Monad.Hefty.NonDet
+        Control.Monad.Hefty.Coroutine
         -- Control.Monad.Hefty.Input
         -- Control.Monad.Hefty.Output
         -- Control.Monad.Hefty.Resource
@@ -298,8 +298,8 @@ benchmark heftia-bench
         PackageImports
 
     other-modules:
-        -- BenchCountdown
-        -- BenchCatch
+        BenchCountdown
+        BenchCatch
         BenchLocal
-        -- BenchCoroutine
-        -- BenchPyth
+        BenchCoroutine
+        BenchPyth

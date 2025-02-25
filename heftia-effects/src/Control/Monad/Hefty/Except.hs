@@ -13,43 +13,37 @@ module Control.Monad.Hefty.Except (
 )
 where
 
-import Control.Exception (Exception)
 import Control.Monad.Hefty (
     Eff,
-    Interpreter,
+    FOEs,
+    Handler,
     interposeWith,
     interpret,
     interpretBy,
-    interpretH,
     (&),
-    type (<<|),
-    type (<|),
-    type (~>),
+    type (:>),
     type (~~>),
  )
 import Data.Effect.Except
-import Data.Effect.Unlift (UnliftIO)
-import UnliftIO (throwIO)
-import UnliftIO qualified as IO
 
 -- | Interpret the t'Throw'/t'Catch' effects.
-runExcept :: Eff '[Catch e] (Throw e ': r) a -> Eff '[] r (Either e a)
+runExcept :: forall e es a. (FOEs es) => Eff (Catch e ': Throw e ': es) a -> Eff es (Either e a)
 runExcept = runThrow . runCatch
 
 -- | Interpret the t'Throw' effect.
-runThrow :: Eff '[] (Throw e ': r) a -> Eff '[] r (Either e a)
+runThrow :: forall e es a. (FOEs es) => Eff (Throw e ': es) a -> Eff es (Either e a)
 runThrow = interpretBy (pure . Right) handleThrow
 
 -- | Interpret the t'Catch' effect.
-runCatch :: (Throw e <| ef) => Eff '[Catch e] ef ~> Eff '[] ef
-runCatch = interpretH elabCatch
+runCatch :: forall e es a. (Throw e :> es, FOEs es) => Eff (Catch e ': es) a -> Eff es a
+runCatch = interpret elabCatch
 
--- | A handler function for the t'Throw' effect.
-handleThrow :: Interpreter (Throw e) (Eff '[] r) (Either e a)
+-- | A handler for the t'Throw' effect.
+handleThrow :: forall e f g a. (Applicative g) => Handler (Throw e) f g (Either e a)
 handleThrow (Throw e) _ = pure $ Left e
 {-# INLINE handleThrow #-}
 
--- | A elaborator function for the t'Catch' effect.
-elabCatch :: (Throw e <| ef) => Catch e ~~> Eff '[] ef
+-- | A handler for the t'Catch' effect.
+elabCatch :: forall e es. (Throw e :> es, FOEs es) => Catch e ~~> Eff es
 elabCatch (Catch action hdl) = action & interposeWith \(Throw e) _ -> hdl e
 {-# INLINE elabCatch #-}

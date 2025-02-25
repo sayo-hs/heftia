@@ -2,13 +2,9 @@
 
 -- SPDX-License-Identifier: MPL-2.0 AND BSD-3-Clause
 
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0. If a copy of the MPL was not distributed with this
--- file, You can obtain one at https://mozilla.org/MPL/2.0/.
-
 {- |
 Copyright   :  (c) 2016 Allele Dev; 2017 Ixperta Solutions s.r.o.; 2017 Alexis King; 2024 Sayo contributors
-License     :  MPL-2.0 (see the LICENSE file) AND BSD-3-Clause (see the LICENSE.BSD3 file)
+License     :  MPL-2.0 AND BSD-3-Clause (see the LICENSE and LICENSE.BSD3 files)
 Maintainer  :  ymdfield@outlook.jp
 
 This module provides functions for interpretation.
@@ -33,7 +29,7 @@ import Control.Monad.Hefty.Types (
     sendUnionBy,
  )
 import Data.Effect (Emb)
-import Data.Effect.HFunctor (HFunctor, hfmap)
+import Data.Effect.HFunctor (hfmap)
 import Data.Effect.OpenUnion (
     Elem (extract, project, (!+)),
     FOEs,
@@ -95,7 +91,7 @@ Note that during interpretation, the continuational state is reset (delimited) a
 -}
 interpretRecWith
     :: forall e es a
-     . (KnownOrder e, HFunctor e)
+     . (KnownOrder e)
     => (forall ans. Handler e (Eff es) (Eff es) ans)
     -> Eff (e ': es) a
     -> Eff es a
@@ -123,7 +119,7 @@ reinterpretBy ret hdl = iterAllEffBy ret (hdl !+ flip sendUnionBy . weakens . co
 
 reinterpretRecWith
     :: forall e es' es a
-     . (Weaken es es', KnownOrder e, HFunctor e)
+     . (Weaken es es', KnownOrder e)
     => (forall ans. Handler e (Eff es') (Eff es') ans)
     -> Eff (e ': es) a
     -> Eff es' a

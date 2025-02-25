@@ -15,6 +15,7 @@ module Control.Monad.Hefty.Types where
 
 import Control.Effect (Free, unEff)
 import Control.Effect qualified as D
+import Data.Effect (Effect)
 import Data.Effect.OpenUnion (Union)
 import Data.FTCQueue (FTCQueue, ViewL (..), tsingleton, tviewl, (><), (|>))
 import Data.Kind (Type)
@@ -30,7 +31,7 @@ data Freer f a
 
 type Eff = D.Eff Freer
 
-type Handler e m n (ans :: Type) = forall x. e m x -> (x -> n ans) -> n ans
+type Handler (e :: Effect) m n (ans :: Type) = forall x. e m x -> (x -> n ans) -> n ans
 
 sendUnionBy :: (a -> Eff es ans) -> Union es (Eff es) a -> Eff es ans
 sendUnionBy k u = D.Eff $ Op u (tsingleton $ unEff . k)
