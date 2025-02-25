@@ -27,3 +27,4 @@ runCoroutine
     => Eff (Yield a b ': es) ans
     -> Eff es (Status (Eff es) a b ans)
 runCoroutine = interpretBy (pure . Done) (\(Yield a) k -> pure $ Continue a k)
+{-# INLINE runCoroutine #-}

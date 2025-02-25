@@ -41,14 +41,17 @@ import Data.Effect.State
 -- | Interpret the 'State' effect.
 runState :: forall s es a. (FOEs es) => s -> Eff (State s ': es) a -> Eff es (s, a)
 runState s0 = interpretStateBy s0 (curry pure) handleState
+{-# INLINE runState #-}
 
 -- | Interpret the 'State' effect. Do not include the final state in the return value.
 evalState :: forall s es a. s -> (FOEs es) => Eff (State s ': es) a -> Eff es a
 evalState s0 = interpretStateBy s0 (const pure) handleState
+{-# INLINE evalState #-}
 
 -- | Interpret the 'State' effect. Do not include the final result in the return value.
 execState :: forall s es a. (FOEs es) => s -> Eff (State s ': es) a -> Eff es s
 execState s0 = interpretStateBy s0 (\s _ -> pure s) handleState
+{-# INLINE execState #-}
 
 {- |
 Interpret the 'State' effect.
@@ -58,6 +61,7 @@ Note that the state is reset and does not persist beyond the scopes.
 -}
 evalStateRec :: forall s es. s -> Eff (State s ': es) ~> Eff es
 evalStateRec s0 = interpretStateRecWith s0 handleState
+{-# INLINE evalStateRec #-}
 
 -- | A handler function for the 'State' effect.
 handleState :: StateHandler s (State s) f g ans
@@ -73,6 +77,7 @@ transactState m = do
     (post, a) <- interposeStateBy pre (curry pure) handleState m
     put post
     pure a
+{-# INLINE transactState #-}
 
 -- | A naive but somewhat slower version of 'runState' that does not use ad-hoc optimizations.
 runStateNaive :: forall s es a. (FOEs es) => s -> Eff (State s ': es) a -> Eff es (s, a)
@@ -82,6 +87,7 @@ runStateNaive s0 m = do
             Get -> \k -> pure \s -> k s >>= ($ s)
             Put s -> \k -> pure \_ -> k () >>= ($ s)
     f s0
+{-# INLINE runStateNaive #-}
 
 -- | A naive but somewhat slower version of 'evalStateRec' that does not use ad-hoc optimizations.
 evalStateNaiveRec :: forall s es. s -> Eff (State s ': es) ~> Eff es
@@ -91,3 +97,4 @@ evalStateNaiveRec s0 =
             Get -> (ask @s >>=)
             Put s -> \k -> k () & interpose @(Ask s) \Ask -> pure s
         >>> runAsk @s s0
+{-# INLINE evalStateNaiveRec #-}

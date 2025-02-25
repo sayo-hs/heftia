@@ -40,6 +40,7 @@ runNonDet =
                 !+ (\Empty _ -> pure A.empty)
                 !+ nil
             )
+{-# INLINE runNonDet #-}
 
 -- | [NonDet]("Data.Effect.NonDet") effects handler for monoidal answer type.
 runNonDetMonoid
@@ -56,6 +57,7 @@ runNonDetMonoid f =
                 !+ (\Empty _ -> pure mempty)
                 !+ nil
             )
+{-# INLINE runNonDetMonoid #-}
 
 -- | t'Choose' effect handler for alternative answer type.
 runChoose
@@ -66,6 +68,7 @@ runChoose
 runChoose =
     interpretBy (pure . pure) \Choose k ->
         liftA2 (<|>) (k False) (k True)
+{-# INLINE runChoose #-}
 
 -- | t'Choose' effect handler for monoidal answer type.
 runChooseMonoid
@@ -77,6 +80,7 @@ runChooseMonoid
 runChooseMonoid f =
     interpretBy f \Choose k ->
         liftA2 (<>) (k False) (k True)
+{-# INLINE runChooseMonoid #-}
 
 -- | t'Empty' effect handler.
 runEmpty :: forall a es. (FOEs es) => Eff (Empty ': es) a -> Eff es (Maybe a)
@@ -84,3 +88,4 @@ runEmpty =
     interpretBy
         (pure . Just)
         \Empty _ -> pure Nothing
+{-# INLINE runEmpty #-}

@@ -29,14 +29,17 @@ import Data.Effect.Except
 -- | Interpret the t'Throw'/t'Catch' effects.
 runExcept :: forall e es a. (FOEs es) => Eff (Catch e ': Throw e ': es) a -> Eff es (Either e a)
 runExcept = runThrow . runCatch
+{-# INLINE runExcept #-}
 
 -- | Interpret the t'Throw' effect.
 runThrow :: forall e es a. (FOEs es) => Eff (Throw e ': es) a -> Eff es (Either e a)
 runThrow = interpretBy (pure . Right) handleThrow
+{-# INLINE runThrow #-}
 
 -- | Interpret the t'Catch' effect.
 runCatch :: forall e es a. (Throw e :> es, FOEs es) => Eff (Catch e ': es) a -> Eff es a
 runCatch = interpret elabCatch
+{-# INLINE runCatch #-}
 
 -- | A handler for the t'Throw' effect.
 handleThrow :: forall e f g a. (Applicative g) => Handler (Throw e) f g (Either e a)
