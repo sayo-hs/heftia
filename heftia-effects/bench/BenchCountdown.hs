@@ -8,6 +8,7 @@ import Control.Carrier.Reader qualified as F
 import Control.Carrier.State.Strict qualified as F
 import Control.Ev.Eff qualified as E
 import Control.Ev.Util qualified as E
+import Control.Monad.Ev qualified as HE
 import Control.Monad.Freer qualified as FS
 import Control.Monad.Freer.Reader qualified as FS
 import Control.Monad.Freer.State qualified as FS
@@ -20,6 +21,7 @@ import Control.Monad.State.Strict qualified as M
 import Effectful qualified as EL
 import Effectful.Reader.Dynamic qualified as EL
 import Effectful.State.Dynamic qualified as EL
+import GHC.IO (unsafePerformIO)
 import Polysemy qualified as P
 import Polysemy.Reader qualified as P
 import Polysemy.State qualified as P
@@ -49,6 +51,25 @@ countdownHeftiaNaiveDeep n = H.runPure $ hrunR $ hrunR $ hrunR $ hrunR $ hrunR $
 
 hrunR :: H.Eff (H.Ask () ': es) a -> H.Eff es a
 hrunR = H.runAsk ()
+
+programHeftiaEv :: (H.State Int H.:> es) => HE.Eff es Int
+programHeftiaEv = do
+    x <- H.get @Int
+    if x == 0
+        then pure x
+        else do
+            H.put (x - 1)
+            programHeftiaEv
+{-# NOINLINE programHeftiaEv #-}
+
+countdownHeftiaEv :: Int -> (Int, Int)
+countdownHeftiaEv n = unsafePerformIO $ HE.runEvEff $ HE.runStateEv n programHeftiaEv
+
+countdownHeftiaEvDeep :: Int -> (Int, Int)
+countdownHeftiaEvDeep n = unsafePerformIO $ HE.runEvEff $ runR $ runR $ runR $ runR $ runR $ HE.runStateEv n $ runR $ runR $ runR $ runR $ runR $ programHeftiaEv
+  where
+    runR :: HE.Eff (H.Ask () ': es) a -> HE.Eff es a
+    runR = H.runAsk ()
 
 programFreer :: (FS.Member (FS.State Int) es) => FS.Eff es Int
 programFreer = do
