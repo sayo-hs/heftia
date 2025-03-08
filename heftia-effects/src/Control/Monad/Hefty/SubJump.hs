@@ -14,10 +14,12 @@ module Control.Monad.Hefty.SubJump (
 where
 
 import Control.Arrow ((>>>))
-import Control.Effect.Interpret (interpose)
+import Control.Effect (emb)
+import Control.Effect.Interpret (interpose, runEff)
 import Control.Monad.Hefty (Eff, MemberBy, interpret, interpretBy, (&))
-import Data.Effect (Catch)
-import Data.Effect.Except (Catch (Catch), Throw (Throw))
+import Control.Monad.Hefty.ShiftReset (runThrowExit)
+import Data.Effect (Catch, Emb)
+import Data.Effect.Except (Catch (Catch), Throw (Throw), throw)
 import Data.Effect.OpenUnion (FOEs, (:>))
 import Data.Effect.SubJump
 import Data.Functor.Contravariant qualified as C
@@ -44,3 +46,11 @@ catchToSubJump m =
     m & interpret \(Catch thing hdl) ->
         callCC_ @ref \exit ->
             thing & interpose @(Throw e) \(Throw e) -> fmap absurd . exit =<< hdl e
+
+runSubJumpExit :: (Monad m) => Eff '[SubJump (C.Op (Eff '[Throw a, Emb m] Void)), Throw a, Emb m] a -> m a
+runSubJumpExit = runEff . runThrowExit . runSubJump throw
+
+runUnliftSubJump :: forall es' es a ref. (SubJump ref :> es', Emb (Eff es') :> es) => Eff (SubJump ref ': es) a -> Eff es a
+runUnliftSubJump = interpret \case
+    SubFork -> emb subFork
+    Jump ref x -> emb $ jump ref x
