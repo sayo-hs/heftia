@@ -79,7 +79,7 @@ library
         Control.Monad.Hefty.State
         Control.Monad.Hefty.Except
         -- Control.Monad.Hefty.SubJump
-        -- Control.Monad.Hefty.ShiftReset
+        Control.Monad.Hefty.ShiftReset
         Control.Monad.Hefty.NonDet
         Control.Monad.Hefty.Coroutine
         -- Control.Monad.Hefty.Input
