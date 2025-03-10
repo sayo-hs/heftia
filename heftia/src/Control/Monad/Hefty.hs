@@ -469,6 +469,8 @@ module Control.Monad.Hefty (
     type (~~>),
     FOEs,
     type (:>),
+    type In,
+    type Has,
     type (++),
     (!:),
     (!::),
@@ -643,7 +645,7 @@ import Control.Monad.Hefty.Types (
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect
 import Data.Effect.HFunctor.TH
-import Data.Effect.HandlerVec (FOEs, HFunctors, empty, (!:), (:>), type (++))
+import Data.Effect.HandlerVec (FOEs, HFunctors, Has, In, empty, (!:), (:>), type (++))
 import Data.Effect.TH
 import Data.Effect.Tag
 import Data.Kind (Type)

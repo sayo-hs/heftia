@@ -6,8 +6,7 @@
 module BenchLocal where
 
 import Control.Carrier.Reader qualified as F
-import Control.Monad.Hefty.Types qualified as H
-import Data.Effect.OpenUnion qualified as H
+import Control.Monad.Hefty qualified as H
 import Data.Effect.Reader qualified as H
 import Effectful qualified as EL
 import Effectful.Reader.Dynamic qualified as EL
