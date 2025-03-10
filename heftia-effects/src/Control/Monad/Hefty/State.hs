@@ -19,6 +19,7 @@ import Control.Arrow ((>>>))
 import Control.Monad.Hefty (
     Eff,
     FOEs,
+    HFunctors,
     StateHandler,
     interpose,
     interposeStateBy,
@@ -59,7 +60,7 @@ Interpret the 'State' effect.
 Interpretation is performed recursively with respect to the scopes of unelaborated higher-order effects @eh@.
 Note that the state is reset and does not persist beyond the scopes.
 -}
-evalStateRec :: forall s es. s -> Eff (State s ': es) ~> Eff es
+evalStateRec :: forall s es. (HFunctors es) => s -> Eff (State s ': es) ~> Eff es
 evalStateRec s0 = interpretStateRecWith s0 handleState
 {-# INLINE evalStateRec #-}
 
@@ -90,7 +91,7 @@ runStateNaive s0 m = do
 {-# INLINE runStateNaive #-}
 
 -- | A naive but somewhat slower version of 'evalStateRec' that does not use ad-hoc optimizations.
-evalStateNaiveRec :: forall s es. s -> Eff (State s ': es) ~> Eff es
+evalStateNaiveRec :: forall s es. (HFunctors es) => s -> Eff (State s ': es) ~> Eff es
 evalStateNaiveRec s0 =
     raiseUnder
         >>> interpretRecWith \case

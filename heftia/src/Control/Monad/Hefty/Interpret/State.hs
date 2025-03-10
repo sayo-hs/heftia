@@ -12,11 +12,30 @@ single state type @s@, especially for effects like t'Data.Effect.State.State' or
 -}
 module Control.Monad.Hefty.Interpret.State where
 
-import Control.Effect (unEff, type (~>))
-import Control.Monad.Hefty.Types (Eff, Freer (Op, Val), qApp, sendUnionBy)
-import Data.Effect.HFunctor (hfmap)
-import Data.Effect.OpenUnion (FOEs, KnownOrder, Membership, Union, Weaken, coerceFOEs, labelMembership, project, weakens, (!+), (:>))
+import Control.Effect (Free (liftFree), runAllEff, sendFor, type (~>))
+import Control.Effect qualified as D
+import Control.Monad.Hefty.Types (Eff, Freer (Op, Val), qApp)
+import Data.Effect.HandlerVec (
+    FOEs,
+    HFunctors,
+    HandlerVec,
+    KnownOrder,
+    Membership,
+    Suffix,
+    compareMembership,
+    generate,
+    generateHF,
+    hcfmapVec,
+    hfmapElem,
+    labelMembership,
+    suffix,
+    weakensFor,
+    (!:),
+    (:>),
+ )
 import Data.Kind (Type)
+import Data.Type.Equality (type (:~:) (Refl))
+import GHC.Generics ((:+:) (L1, R1))
 
 -- | An ad-hoc stateful version of t'Control.Monad.Hefty.Types.Handler' for performance.
 type StateHandler s e m n (ans :: Type) = forall x. e m x -> s -> (s -> x -> n ans) -> n ans
@@ -36,21 +55,23 @@ interpretStateBy = reinterpretStateBy
 
 reinterpretStateBy
     :: forall s e es' es ans a
-     . (Weaken es es', KnownOrder e, FOEs es)
+     . (Suffix es es', KnownOrder e, FOEs es)
     => s
     -> (s -> a -> Eff es' ans)
     -> StateHandler s e (Eff (e ': es)) (Eff es') ans
     -> Eff (e ': es) a
     -> Eff es' ans
 reinterpretStateBy s0 ret hdl =
-    iterStateAllEffBy s0 ret (hdl !+ \u s k -> sendUnionBy (k s) (weakens $ coerceFOEs u))
+    transEffStateBy s0 ret hdl \v ->
+        liftFree . L1 !: generate (suffix v) \i ->
+            liftFree . R1 . sendFor (weakensFor i)
 {-# INLINE reinterpretStateBy #-}
 
 interpretStateRecWith
     :: forall s e es a
-     . (KnownOrder e)
+     . (KnownOrder e, HFunctors es)
     => s
-    -> (forall ans. StateHandler s e (Eff (e ': es)) (Eff es) ans)
+    -> (forall ans. StateHandler s e (Eff es) (Eff es) ans)
     -> Eff (e ': es) a
     -> Eff es a
 interpretStateRecWith = reinterpretStateRecWith
@@ -58,19 +79,17 @@ interpretStateRecWith = reinterpretStateRecWith
 
 reinterpretStateRecWith
     :: forall s e es' es a
-     . (Weaken es es', KnownOrder e)
+     . (Suffix es es', KnownOrder e, HFunctors es)
     => s
-    -> (forall ans. StateHandler s e (Eff (e ': es)) (Eff es') ans)
+    -> (forall ans. StateHandler s e (Eff es') (Eff es') ans)
     -> Eff (e ': es) a
     -> Eff es' a
 reinterpretStateRecWith s0 hdl = loop s0
   where
     loop :: s -> Eff (e ': es) ~> Eff es'
     loop s =
-        iterStateAllEffBy
-            s
-            (const pure)
-            (hdl !+ \u s' k -> sendUnionBy (k s') (weakens $ hfmap (loop s') u))
+        transEffStateBy s (const pure) (\e s' -> hdl (hfmapElem (loop s') e) s') \v ->
+            liftFree . L1 !: hcfmapVec (loop s) (generateHF (suffix v) \i -> liftFree . R1 . sendFor (weakensFor i))
 {-# INLINE reinterpretStateRecWith #-}
 
 -- * Interposition functions
@@ -95,28 +114,42 @@ interposeStateForBy
     -> StateHandler s e (Eff es) (Eff es) ans
     -> Eff es a
     -> Eff es ans
-interposeStateForBy i s0 ret f =
-    iterStateAllEffBy s0 ret \u s k ->
-        maybe (sendUnionBy (k s) u) (\e -> f e s k) (project i u)
+interposeStateForBy i s0 ret hdl =
+    transEffStateBy s0 ret hdl \v -> generate v \j ->
+        liftFree . case compareMembership i j of
+            Just Refl -> L1
+            Nothing -> R1 . sendFor j
 {-# INLINE interposeStateForBy #-}
 
--- * Transformation to monads
-
-iterStateAllEffBy
-    :: forall s es m ans a
-     . (Monad m)
-    => s
-    -> (s -> a -> m ans)
-    -> StateHandler s (Union es) (Eff es) m ans
+transEffStateBy
+    :: s
+    -> (s -> a -> Eff es' ans)
+    -> StateHandler s e (Eff es) (Eff es') ans
+    -> ( forall r
+          . HandlerVec es' (Eff es') (Freer r)
+         -> HandlerVec es (Eff es) (Freer (e (Eff es) :+: Eff es'))
+       )
     -> Eff es a
-    -> m ans
-iterStateAllEffBy s0 ret hdl = loop s0 . unEff
+    -> Eff es' ans
+transEffStateBy s0 ret hdl f (D.Eff m) =
+    D.Eff \v -> runAllEff v . delimitState s0 ret hdl . m . f $ v
+{-# INLINE transEffStateBy #-}
+
+delimitState
+    :: s
+    -> (s -> a -> Eff es' ans)
+    -> StateHandler s e (Eff es) (Eff es') ans
+    -> Freer (e (Eff es) :+: Eff es') a
+    -> Eff es' ans
+delimitState s0 ret hdl = loop s0
   where
     loop s = \case
         Val x -> ret s x
-        Op u q -> hdl u s k
-          where
-            k s' = loop s' . qApp q
-{-# INLINE iterStateAllEffBy #-}
+        Op u q ->
+            let k s' = loop s' . qApp q
+             in case u of
+                    L1 e -> hdl e s k
+                    R1 n -> n >>= k s
+{-# INLINE delimitState #-}
 
 -- TODO: add other pattern functions.

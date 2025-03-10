@@ -22,8 +22,8 @@ import Control.Applicative (Alternative ((<|>)), (<|>))
 import Control.Applicative (liftA2)
 #endif
 import Control.Applicative qualified as A
-import Control.Arrow ((>>>))
-import Control.Monad.Hefty (Eff, FOEs, bundle, interpretBy, nil, (!+))
+import Control.Monad.Hefty (Eff, FOEs, interpretBy, interpretsBy, (!::))
+import Data.Effect.HandlerVec qualified as V
 import Data.Effect.NonDet
 
 -- | [NonDet]("Data.Effect.NonDet") effects handler for alternative answer type.
@@ -33,13 +33,12 @@ runNonDet
     => Eff (Choose ': Empty ': es) a
     -> Eff es (f a)
 runNonDet =
-    bundle
-        >>> interpretBy
-            (pure . pure)
-            ( (\Choose k -> liftA2 (<|>) (k False) (k True))
-                !+ (\Empty _ -> pure A.empty)
-                !+ nil
-            )
+    interpretsBy
+        (pure . pure)
+        ( (\Choose k -> liftA2 (<|>) (k False) (k True))
+            !:: (\Empty _ -> pure A.empty)
+            !:: V.empty
+        )
 {-# INLINE runNonDet #-}
 
 -- | [NonDet]("Data.Effect.NonDet") effects handler for monoidal answer type.
@@ -50,13 +49,12 @@ runNonDetMonoid
     -> Eff (Choose ': Empty ': es) a
     -> Eff es ans
 runNonDetMonoid f =
-    bundle
-        >>> interpretBy
-            f
-            ( (\Choose k -> liftA2 (<>) (k False) (k True))
-                !+ (\Empty _ -> pure mempty)
-                !+ nil
-            )
+    interpretsBy
+        f
+        ( (\Choose k -> liftA2 (<>) (k False) (k True))
+            !:: (\Empty _ -> pure mempty)
+            !:: V.empty
+        )
 {-# INLINE runNonDetMonoid #-}
 
 -- | t'Choose' effect handler for alternative answer type.

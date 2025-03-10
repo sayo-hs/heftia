@@ -467,6 +467,12 @@ module Control.Monad.Hefty (
     Handler,
     type (~>),
     type (~~>),
+    FOEs,
+    type (:>),
+    type (++),
+    (!:),
+    (!::),
+    empty,
     perform,
     perform',
     perform'',
@@ -474,8 +480,6 @@ module Control.Monad.Hefty (
     sendAt,
     sendFor,
     emb,
-    sendUnion,
-    sendUnionBy,
 
     -- * Interpreting effects
 
@@ -485,13 +489,17 @@ module Control.Monad.Hefty (
 
     -- ** Standard functions
     interpret,
+    interprets,
     interpretWith,
     interpretBy,
+    interpretsBy,
     interpretRecWith,
 
     -- ** Reinterpretation functions
     reinterpret,
+    reinterprets,
     reinterpretBy,
+    reinterpretsBy,
     reinterpretWith,
     reinterpretRecWith,
 
@@ -507,9 +515,7 @@ module Control.Monad.Hefty (
 
     -- ** Transformation to monads
     iterEff,
-    iterEffBy,
     iterAllEff,
-    iterAllEffBy,
 
     -- ** Utilities
     stateless,
@@ -531,9 +537,6 @@ module Control.Monad.Hefty (
     interposeStateBy,
     interposeStateForBy,
 
-    -- *** Transformation to monads
-    iterStateAllEffBy,
-
     -- * Transforming effects
 
     -- ** Rewriting effectful operations
@@ -546,7 +549,6 @@ module Control.Monad.Hefty (
     rewriteOn,
     rewriteIn,
     rewriteFor,
-    transAll,
 
     -- ** Manipulating the effect list (without rewriting effectful operations)
 
@@ -560,20 +562,15 @@ module Control.Monad.Hefty (
     raisePrefix1,
     raiseSuffix1,
 
-    -- *** Bundling functions
-    bundle,
-    unbundle,
-
     -- *** Manipulating Tags & Keys
     tag,
     untag,
 
     -- * Misc
-    HFunctor,
+    HFunctors,
     Type,
     liftIO,
     module Data.Effect,
-    module Data.Effect.OpenUnion,
     module Data.Effect.Tag,
     module Data.Effect.TH,
     module Data.Effect.HFunctor.TH,
@@ -581,8 +578,8 @@ module Control.Monad.Hefty (
 ) where
 
 import Control.Effect hiding (Eff)
+import Control.Effect.Interpret (interprets, reinterprets)
 import Control.Effect.Transform (
-    bundle,
     raise,
     raisePrefix,
     raisePrefix1,
@@ -596,13 +593,11 @@ import Control.Effect.Transform (
     rewriteIn,
     rewriteOn,
     tag,
-    transAll,
     transform,
     translate,
     translateFor,
     translateIn,
     translateOn,
-    unbundle,
     untag,
  )
 import Control.Monad.Hefty.Interpret (
@@ -618,17 +613,18 @@ import Control.Monad.Hefty.Interpret (
     interpretBy,
     interpretRecWith,
     interpretWith,
+    interpretsBy,
     iterAllEff,
-    iterAllEffBy,
     iterEff,
-    iterEffBy,
     reinterpret,
     reinterpretBy,
     reinterpretRecWith,
     reinterpretWith,
+    reinterpretsBy,
     runEff,
     runPure,
     stateless,
+    (!::),
  )
 import Control.Monad.Hefty.Interpret.State (
     StateHandler,
@@ -636,7 +632,6 @@ import Control.Monad.Hefty.Interpret.State (
     interposeStateForBy,
     interpretStateBy,
     interpretStateRecWith,
-    iterStateAllEffBy,
     reinterpretStateBy,
     reinterpretStateRecWith,
  )
@@ -644,13 +639,11 @@ import Control.Monad.Hefty.Types (
     Eff,
     Freer (..),
     Handler,
-    sendUnionBy,
  )
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect
-import Data.Effect.HFunctor (HFunctor)
 import Data.Effect.HFunctor.TH
-import Data.Effect.OpenUnion
+import Data.Effect.HandlerVec (FOEs, HFunctors, empty, (!:), (:>), type (++))
 import Data.Effect.TH
 import Data.Effect.Tag
 import Data.Kind (Type)

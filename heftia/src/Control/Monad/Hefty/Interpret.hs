@@ -16,8 +16,7 @@ module Control.Monad.Hefty.Interpret (
 )
 where
 
-import Control.Arrow ((>>>))
-import Control.Effect (hoist, unEff, type (~>))
+import Control.Effect (liftFree, runAllEff, sendFor, type (~>))
 import Control.Effect qualified as D
 import Control.Effect.Interpret hiding (runEff, runPure)
 import Control.Effect.Interpret qualified as D
@@ -26,25 +25,32 @@ import Control.Monad.Hefty.Types (
     Freer (Op, Val),
     Handler,
     qApp,
-    sendUnionBy,
  )
-import Data.Effect (Emb)
-import Data.Effect.HFunctor (hfmap)
-import Data.Effect.OpenUnion (
-    Elem (extract, project, (!+)),
+import Data.Effect (Emb, Nop)
+import Data.Effect.HandlerVec (
     FOEs,
+    HFunctors,
+    HandlerVec,
     KnownOrder,
     Membership,
-    Union,
-    Weaken,
-    coerceFOEs,
+    Suffix,
+    compareMembership,
+    empty,
+    generate,
+    generateHF,
+    hcfmapVec,
+    hfmapElem,
     labelMembership,
-    nil,
-    weakens,
-    type (:>),
+    suffix,
+    vmapVec,
+    weakensFor,
+    (!:),
+    (:>),
+    type (++),
  )
-import Data.FTCQueue (tsingleton)
-import Data.Functor ((<&>))
+import Data.Effect.HandlerVec qualified as V
+import Data.Type.Equality (type (:~:) (Refl))
+import GHC.Generics (type (:+:) (L1, R1))
 
 -- * Running t`Eff`
 
@@ -55,10 +61,10 @@ runEff = D.runEff
 
 -- | Extracts the value from a computation that contains only pure values without any effect.
 runPure :: Eff '[] a -> a
-runPure =
-    unEff >>> \case
+runPure (D.Eff m) =
+    case m @(Nop _) empty of
         Val x -> x
-        Op u _ -> nil u
+        Op r _ -> case r of {}
 {-# INLINE runPure #-}
 
 -- * Standard continuational interpretation functions
@@ -84,6 +90,29 @@ interpretBy
 interpretBy = reinterpretBy
 {-# INLINE interpretBy #-}
 
+interpretsBy
+    :: forall es r ans a
+     . (FOEs r)
+    => (a -> Eff r ans)
+    -> Handlers es (Eff (es ++ r)) (Eff r) ans
+    -> Eff (es ++ r) a
+    -> Eff r ans
+interpretsBy = reinterpretsBy @_ @r
+{-# INLINE interpretsBy #-}
+
+-- Handler bundle
+
+type Handlers es m n ans = HandlerVec es m (HandlerCC n ans)
+
+newtype HandlerCC n ans x = HandlerCC {getHandlerCC :: (x -> n ans) -> n ans}
+
+infixr 5 !::
+(!::) :: (KnownOrder e) => Handler e m n ans -> Handlers es m n ans -> Handlers (e ': es) m n ans
+h !:: v = HandlerCC . h !: v
+{-# INLINE (!::) #-}
+
+--
+
 {- | Interprets the effect @e@ at the head of the list using the provided continuational stateful handler.
 
 Interpretation is performed recursively with respect to the scopes of unhandled higher-order effects.
@@ -91,7 +120,7 @@ Note that during interpretation, the continuational state is reset (delimited) a
 -}
 interpretRecWith
     :: forall e es a
-     . (KnownOrder e)
+     . (KnownOrder e, HFunctors es)
     => (forall ans. Handler e (Eff es) (Eff es) ans)
     -> Eff (e ': es) a
     -> Eff es a
@@ -100,7 +129,7 @@ interpretRecWith = reinterpretRecWith
 
 reinterpretWith
     :: forall e es' es a
-     . (Weaken es es', KnownOrder e, FOEs es)
+     . (Suffix es es', KnownOrder e, FOEs es)
     => Handler e (Eff (e ': es)) (Eff es') a
     -> Eff (e ': es) a
     -> Eff es' a
@@ -108,25 +137,43 @@ reinterpretWith = reinterpretBy pure
 {-# INLINE reinterpretWith #-}
 
 reinterpretBy
-    :: forall e es' es ans a
-     . (Weaken es es', KnownOrder e, FOEs es)
+    :: forall e es es' ans a
+     . (KnownOrder e, FOEs es, Suffix es es')
     => (a -> Eff es' ans)
     -> Handler e (Eff (e ': es)) (Eff es') ans
     -> Eff (e ': es) a
     -> Eff es' ans
-reinterpretBy ret hdl = iterAllEffBy ret (hdl !+ flip sendUnionBy . weakens . coerceFOEs)
+reinterpretBy ret hdl =
+    transEffBy ret hdl \v ->
+        liftFree . L1 !: generate (suffix v) \i ->
+            liftFree . R1 . sendFor (weakensFor i)
 {-# INLINE reinterpretBy #-}
+
+reinterpretsBy
+    :: forall es r r' ans a
+     . (FOEs r, Suffix r r')
+    => (a -> Eff r' ans)
+    -> Handlers es (Eff (es ++ r)) (Eff r') ans
+    -> Eff (es ++ r) a
+    -> Eff r' ans
+reinterpretsBy ret hdl =
+    transEffsBy ret \v ->
+        vmapVec (liftFree . L1) hdl
+            `V.concat` generate @r (suffix v) \i ->
+                liftFree . R1 . sendFor (weakensFor i)
+{-# INLINE reinterpretsBy #-}
 
 reinterpretRecWith
     :: forall e es' es a
-     . (Weaken es es', KnownOrder e)
+     . (Suffix es es', KnownOrder e, HFunctors es)
     => (forall ans. Handler e (Eff es') (Eff es') ans)
     -> Eff (e ': es) a
     -> Eff es' a
 reinterpretRecWith hdl = loop
   where
     loop :: Eff (e ': es) ~> Eff es'
-    loop = iterAllEffBy pure ((hdl !+ flip sendUnionBy . weakens) . hfmap loop)
+    loop = transEffBy pure (hdl . hfmapElem loop) \v ->
+        liftFree . L1 !: hcfmapVec loop (generateHF (suffix v) \i -> liftFree . R1 . sendFor (weakensFor i))
 {-# INLINE reinterpretRecWith #-}
 
 -- * Interposition functions
@@ -162,7 +209,7 @@ Note that during interpretation, the continuational state is reset (delimited) a
 -}
 interposeRecWith
     :: forall e es a
-     . (e :> es, KnownOrder e)
+     . (e :> es, KnownOrder e, HFunctors es)
     => (forall ans. Handler e (Eff es) (Eff es) ans)
     -- ^ Effect handler
     -> Eff es a
@@ -170,17 +217,6 @@ interposeRecWith
 interposeRecWith = interposeRecForWith labelMembership
 {-# INLINE interposeRecWith #-}
 
-preinterposeRecWith
-    :: forall e es a
-     . (e :> es)
-    => (forall ans. Handler e (Eff es) (Eff es) ans)
-    -- ^ Effect handler
-    -> Eff es a
-    -> Eff es a
-preinterposeRecWith = preinterposeRecForWith labelMembership
-{-# INLINE preinterposeRecWith #-}
-
--- | Reinterprets (hooks) the effect @e@ in the list using the provided value handler and continuational stateful handler.
 interposeForBy
     :: forall e es ans a
      . (KnownOrder e, FOEs es)
@@ -192,7 +228,10 @@ interposeForBy
     -> Eff es a
     -> Eff es ans
 interposeForBy i ret hdl =
-    iterAllEffBy ret \u -> maybe (`sendUnionBy` u) hdl (project i u)
+    transEffBy ret hdl \v -> generate v \j ->
+        liftFree . case compareMembership i j of
+            Just Refl -> L1
+            Nothing -> R1 . sendFor j
 {-# INLINE interposeForBy #-}
 
 -- | Reinterprets (hooks) the effect @e@ in the list using the provided continuational stateful handler.
@@ -214,7 +253,7 @@ Note that during interpretation, the continuational state is reset (delimited) a
 -}
 interposeRecForWith
     :: forall e es a
-     . (KnownOrder e)
+     . (KnownOrder e, HFunctors es)
     => Membership e es
     -> (forall ans. Handler e (Eff es) (Eff es) ans)
     -- ^ Effect handler
@@ -224,68 +263,75 @@ interposeRecForWith i hdl = loop
   where
     loop :: Eff es ~> Eff es
     loop =
-        iterAllEffBy
-            pure
-            (hfmap loop >>> \u -> maybe (`sendUnionBy` u) hdl (project i u))
+        transEffBy pure hdl \v ->
+            hcfmapVec loop $ generateHF v \j ->
+                liftFree . case compareMembership i j of
+                    Just Refl -> L1
+                    Nothing -> R1 . sendFor j
 {-# INLINE interposeRecForWith #-}
-
-preinterposeRecForWith
-    :: forall e es a
-     . (KnownOrder e)
-    => Membership e es
-    -> (forall ans. Handler e (Eff es) (Eff es) ans)
-    -- ^ Effect handler
-    -> Eff es a
-    -> Eff es a
-preinterposeRecForWith i hdl = loop
-  where
-    loop :: Eff es ~> Eff es
-    loop =
-        iterAllEffBy
-            pure
-            ( ((D.Eff . hoist (hfmap loop) . unEff) .)
-                . \u -> maybe (`sendUnionBy` u) hdl (project i u)
-            )
-{-# INLINE preinterposeRecForWith #-}
 
 {- TODO: add the patterns:
     - interpose{In,On}By
     - interpose{In,On}With
     - interposeRec{In,On}With
-    - preinterposeRec{In,On}With
+    - preinterposeRec{,In,On,For}With
 -}
 
--- * Transformation to monads
-
-iterEffBy
-    :: forall e m ans a
-     . (Monad m, KnownOrder e)
-    => (a -> m ans)
-    -- ^ Value handler
-    -> Handler e (Eff '[e]) m ans
-    -- ^ Effect handler
-    -> Eff '[e] a
-    -> m ans
-iterEffBy ret hdl = iterAllEffBy ret (hdl . extract)
-{-# INLINE iterEffBy #-}
-
-iterAllEffBy
-    :: forall es m ans a
-     . (Monad m)
-    => (a -> m ans)
-    -- ^ Value handler
-    -> Handler (Union es) (Eff es) m ans
-    -- ^ Effect handler
+transEffsBy
+    :: (a -> Eff es' ans)
+    -> ( forall r
+          . HandlerVec es' (Eff es') (Freer r)
+         -> HandlerVec es (Eff es) (Freer (HandlerCC (Eff es') ans :+: Eff es'))
+       )
     -> Eff es a
-    -> m ans
-iterAllEffBy ret hdl = loop . unEff
+    -> Eff es' ans
+transEffsBy ret f (D.Eff m) =
+    D.Eff \v -> runAllEff v . delimits ret . m . f $ v
+{-# INLINE transEffsBy #-}
+
+delimits
+    :: (a -> Eff es' ans)
+    -> Freer (HandlerCC (Eff es') ans :+: Eff es') a
+    -> Eff es' ans
+delimits ret = loop
   where
     loop = \case
         Val x -> ret x
-        Op u q -> hdl u k
-          where
-            k = loop . qApp q
-{-# INLINE iterAllEffBy #-}
+        Op s q ->
+            let k = loop . qApp q
+             in case s of
+                    L1 (HandlerCC initiate) -> initiate k
+                    R1 n -> n >>= k
+{-# INLINE delimits #-}
+
+transEffBy
+    :: (a -> Eff es' ans)
+    -> Handler e (Eff es) (Eff es') ans
+    -> ( forall r
+          . HandlerVec es' (Eff es') (Freer r)
+         -> HandlerVec es (Eff es) (Freer (e (Eff es) :+: Eff es'))
+       )
+    -> Eff es a
+    -> Eff es' ans
+transEffBy ret hdl f (D.Eff m) =
+    D.Eff \v -> runAllEff v . delimit ret hdl . m . f $ v
+{-# INLINE transEffBy #-}
+
+delimit
+    :: (a -> Eff es' ans)
+    -> Handler e (Eff es) (Eff es') ans
+    -> Freer (e (Eff es) :+: Eff es') a
+    -> Eff es' ans
+delimit ret hdl = loop
+  where
+    loop = \case
+        Val x -> ret x
+        Op s q ->
+            let k = loop . qApp q
+             in case s of
+                    L1 e -> hdl e k
+                    R1 n -> n >>= k
+{-# INLINE delimit #-}
 
 -- * Utilities
 
@@ -293,11 +339,3 @@ iterAllEffBy ret hdl = loop . unEff
 stateless :: forall e m n ans. (Monad n) => (e m ~> n) -> Handler e m n ans
 stateless i e k = i e >>= k
 {-# INLINE stateless #-}
-
-interleave :: Eff es a -> Eff es b -> Eff es (a, b)
-interleave (D.Eff (Val x)) m = (x,) <$> m
-interleave m (D.Eff (Val x)) = m <&> (,x)
-interleave (D.Eff (Op u k)) (D.Eff (Op u' k')) = do
-    x <- D.Eff $ Op u (tsingleton pure)
-    y <- D.Eff $ Op u' (tsingleton pure)
-    interleave (D.Eff $ qApp k x) (D.Eff $ qApp k' y)

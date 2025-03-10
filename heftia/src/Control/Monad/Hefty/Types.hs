@@ -1,4 +1,5 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE DerivingVia #-}
 {-# LANGUAGE UndecidableInstances #-}
 
 -- SPDX-License-Identifier: MPL-2.0
@@ -13,10 +14,9 @@ Please refer to the documentation of the [top-level module]("Control.Monad.Hefty
 -}
 module Control.Monad.Hefty.Types where
 
-import Control.Effect (Free, unEff)
+import Control.Effect (Free, ViaFree)
 import Control.Effect qualified as D
 import Data.Effect (Effect)
-import Data.Effect.OpenUnion (Union)
 import Data.FTCQueue (FTCQueue, ViewL (..), tsingleton, tviewl, (><), (|>))
 import Data.Kind (Type)
 
@@ -31,11 +31,9 @@ data Freer f a
 
 type Eff = D.Eff Freer
 
-type Handler (e :: Effect) m n (ans :: Type) = forall x. e m x -> (x -> n ans) -> n ans
+type Ecc r = D.EffFrame Freer r
 
-sendUnionBy :: (a -> Eff es ans) -> Union es (Eff es) a -> Eff es ans
-sendUnionBy k u = D.Eff $ Op u (tsingleton $ unEff . k)
-{-# INLINE sendUnionBy #-}
+type Handler (e :: Effect) m n (ans :: Type) = forall x. e m x -> (x -> n ans) -> n ans
 
 instance Functor (Freer f) where
     fmap f = \case
@@ -64,12 +62,14 @@ instance Free Monad Freer where
       where
         loop = \case
             Val x -> pure x
-            Op f q -> i f >>= k
-              where
-                k = loop . qApp q
+            Op f q -> i f >>= loop . qApp q
 
     {-# INLINE liftFree #-}
     {-# INLINE runFree #-}
+
+deriving via D.Eff (ViaFree Freer) es instance Functor (Eff es)
+deriving via D.Eff (ViaFree Freer) es instance Applicative (Eff es)
+deriving via D.Eff (ViaFree Freer) es instance Monad (Eff es)
 
 -- | Applies a value to a Kleisli arrow in 'FTCQueue' representation.
 qApp :: FTCQueue (Freer f) a b -> a -> Freer f b
