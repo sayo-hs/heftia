@@ -20,4 +20,4 @@ allow-newer: eff:primitive
 
 benchmarks: True
 tests: True
-profiling: True
+profiling: False
