@@ -1,5 +1,5 @@
 -- SPDX-License-Identifier: BSD-3-Clause
--- (c) 2022 Xy Ren; 2024 Sayo Koyoneda
+-- (c) 2022 Xy Ren; 2024 Sayo contributors
 
 module BenchCoroutine where
 
@@ -33,12 +33,12 @@ coroutineFreerDeep n = FS.run $ run $ run $ run $ run $ run $ loopStatusFreer =<
   where
     run = FS.runReader ()
 
-programHeftia :: (H.Member (H.Yield Int Int) es) => Int -> H.Eff '[] es [Int]
+programHeftia :: (H.Yield Int Int H.:> es) => Int -> H.Eff es [Int]
 programHeftia upbound =
     forM [1 .. upbound] H.yield
 {-# NOINLINE programHeftia #-}
 
-loopStatusHeftia :: H.Status (H.Eff '[] ef) Int Int r -> H.Eff '[] ef r
+loopStatusHeftia :: H.Status (H.Eff es) Int Int r -> H.Eff es r
 loopStatusHeftia = \case
     H.Done r -> pure r
     H.Continue i f -> loopStatusHeftia =<< f (i + 100)
@@ -50,6 +50,7 @@ coroutineHeftia n = H.runPure $ loopStatusHeftia =<< H.runCoroutine (programHeft
 coroutineHeftiaDeep :: Int -> [Int]
 coroutineHeftiaDeep n = H.runPure $ run $ run $ run $ run $ run $ loopStatusHeftia =<< H.runCoroutine (run $ run $ run $ run $ run $ programHeftia n)
   where
+    run :: H.Eff (H.Ask () ': es) a -> H.Eff es a
     run = H.runAsk ()
 
 programEff :: (E.Coroutine Int Int E.:< es) => Int -> E.Eff es [Int]

@@ -1,6 +1,6 @@
 cabal-version:      2.4
 name:               heftia
-version:            0.5.0.0
+version:            0.6.0.0
 
 -- A short (one-line) description of the package.
 synopsis: higher-order algebraic effects done right
@@ -32,12 +32,12 @@ bug-reports: https://github.com/sayo-hs/heftia
 -- The license under which the package is released.
 license:            MPL-2.0
 license-file:       LICENSE
-author:             Sayo Koyoneda <ymdfield@outlook.jp>
-maintainer:         Sayo Koyoneda <ymdfield@outlook.jp>
+author:             Sayo contributors <ymdfield@outlook.jp>
+maintainer:         ymdfield <ymdfield@outlook.jp>
 
 -- A copyright notice.
 copyright:
-    2023-2024 Sayo Koyoneda
+    2023-2025 Sayo contributors
     2016 Allele Dev; 2017 Ixperta Solutions s.r.o.; 2017 Alexis King
 category: Control, Monads
 
@@ -63,26 +63,17 @@ library
         Control.Monad.Hefty.Types
         Control.Monad.Hefty.Interpret
         Control.Monad.Hefty.Interpret.State
-        Control.Monad.Hefty.Transform
-        Data.Effect.OpenUnion
-        Data.Effect.OpenUnion.Internal
-        Data.Effect.OpenUnion.Internal.FO
-        Data.Effect.OpenUnion.Internal.HO
-        Data.Effect.OpenUnion.Sum
         Data.FTCQueue
 
     reexported-modules:
         Data.Effect,
         Data.Effect.TH,
         Data.Effect.Tag,
-        Data.Effect.Key,
-        Data.Effect.Key.TH,
         Data.Effect.HFunctor,
         Data.Effect.HFunctor.HCont,
         Data.Effect.HFunctor.TH,
+        Data.Effect.OpenUnion,
         Control.Effect,
-        Control.Effect.Tag,
-        Control.Effect.Key,
 
     -- Modules included in this executable, other than Main.
     -- other-modules:
@@ -91,7 +82,7 @@ library
     -- other-extensions:
     build-depends:
         base                          >= 4.17 && < 4.21,
-        data-effects                  ^>= 0.3.0.1,
+        data-effects                  ^>= 0.4,
         mtl                           >= 2.2.2 && < 2.4,
         unliftio                      ^>= 0.2,
 

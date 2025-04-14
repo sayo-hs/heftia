@@ -3,7 +3,7 @@
 -- SPDX-License-Identifier: MPL-2.0
 
 {- |
-Copyright   :  (c) 2024 Sayo Koyoneda
+Copyright   :  (c) 2024-2025 Sayo contributors
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 
@@ -460,26 +460,28 @@ Similarly, this can be done for first-order effects using '!+', 'nil', and 'bund
 -}
 module Control.Monad.Hefty (
     -- * Basics
-    Eff (Op, Val),
-    type (:!!),
-    type (!!),
-    type (+),
-    type (:+:),
+    Eff,
+    Freer (Op, Val),
     type ($),
     type ($$),
-    Interpreter,
-    Elaborator,
+    AlgHandler,
+    type (~>),
     type (~~>),
+    FOEs,
+    type (:>),
+    type In,
+    type Has,
+    type (++),
+    (!:),
+    (!++),
+    nil,
+    perform,
+    perform',
+    perform'',
     send,
-    sendH,
-    send0,
-    send0H,
-    sendN,
-    sendNH,
-    sendUnion,
-    sendUnionBy,
-    sendUnionH,
-    sendUnionHBy,
+    sendAt,
+    sendFor,
+    emb,
 
     -- * Interpreting effects
 
@@ -488,332 +490,148 @@ module Control.Monad.Hefty (
     runPure,
 
     -- ** Standard functions
-
-    -- *** For first-order effects
     interpret,
+    interprets,
     interpretWith,
     interpretBy,
-    interpretRecWith,
-
-    -- *** For higher-order effects
-    interpretH,
-    interpretHWith,
-    interpretHBy,
-    interpretRecHWith,
+    interpretsBy,
 
     -- ** Reinterpretation functions
-
-    -- *** For first-order effects
     reinterpret,
-    reinterpretN,
+    reinterprets,
     reinterpretBy,
-    reinterpretNBy,
+    reinterpretsBy,
     reinterpretWith,
-    reinterpretNWith,
-    reinterpretRecWith,
-    reinterpretRecNWith,
-
-    -- *** For higher-order effects
-    reinterpretH,
-    reinterpretNH,
-    reinterpretHWith,
-    reinterpretNHWith,
-    reinterpretHBy,
-    reinterpretNHBy,
-    reinterpretRecHWith,
-    reinterpretRecNHWith,
 
     -- ** Interposition functions
-
-    -- *** For first-order effects
     interpose,
     interposeWith,
     interposeBy,
-    interposeRecWith,
-
-    -- *** For higher-order effects
-    interposeH,
-    interposeRecHWith,
+    interposeFor,
+    interposeForWith,
+    interposeForBy,
 
     -- ** Transformation to monads
-    iterEffBy,
-    iterEffHBy,
-    iterEffRecH,
-    iterEffRecHWith,
-    iterEffRecHFWith,
-    iterEffHFBy,
-    iterAllEffHF,
-    iterAllEffHFBy,
-
-    -- ** Layer manipulation
-    splitLayer,
-    mergeLayer,
+    iterAllEff,
 
     -- ** Utilities
     stateless,
+    interpretAll,
 
     -- ** Ad-hoc stateful interpretation
 
     -- | Theses entities provides an ad-hoc specialized version to accelerate interpretations that have a
     -- single state type @s@, especially for effects like t'Data.Effect.State.State' or
     --  [@Writer@]("Data.Effect.Writer").
-    StateElaborator,
-    StateInterpreter,
+    StateHandler,
 
     -- *** Interpretation functions
     interpretStateBy,
     reinterpretStateBy,
-    interpretStateRecWith,
-    reinterpretStateRecWith,
 
     -- *** Interposition functions
     interposeStateBy,
-
-    -- *** Transformation to monads
-    iterStateAllEffHFBy,
+    interposeStateForBy,
 
     -- * Transforming effects
 
     -- ** Rewriting effectful operations
     transform,
-    transformH,
     translate,
-    translateH,
+    translateOn,
+    translateIn,
+    translateFor,
     rewrite,
-    rewriteH,
-    transEff,
-    transEffH,
-    transEffHF,
+    rewriteOn,
+    rewriteIn,
+    rewriteFor,
 
     -- ** Manipulating the effect list (without rewriting effectful operations)
 
     -- *** Insertion functions
     raise,
     raises,
-    raiseN,
-    raiseAll,
-    raiseUnder,
     raisesUnder,
-    raiseNUnder,
-    raiseH,
-    raisesH,
-    raiseNH,
-    raiseAllH,
-    raiseUnderH,
-    raiseNUnderH,
-
-    -- *** Merging functions
-    subsume,
-    subsumes,
-    subsumeN,
-    subsumeUnder,
-    subsumesUnder,
-    subsumeNUnder,
-    subsumeH,
-    subsumesH,
-    subsumeNH,
-    subsumeUnderH,
-    subsumeNUnderH,
-
-    -- ** Bundling functions
-    bundle,
-    bundleN,
-    unbundle,
-    unbundleN,
-    bundleUnder,
-    unbundleUnder,
-    bundleAll,
-    unbundleAll,
-    bundleH,
-    unbundleH,
-    bundleUnderH,
-    unbundleUnderH,
-    bundleAllH,
-    unbundleAllH,
+    raiseUnder,
+    raisePrefix,
+    raiseSuffix,
+    raisePrefix1,
+    raiseSuffix1,
 
     -- *** Manipulating Tags & Keys
     tag,
     untag,
-    retag,
-    tagH,
-    untagH,
-    retagH,
-    key,
-    unkey,
-    rekey,
-    keyH,
-    unkeyH,
-    rekeyH,
 
     -- * Misc
-    HFunctor,
-    ReaderKey,
-    WriterKey,
-    StateKey,
-    ErrorKey,
     Type,
     liftIO,
-    module Data.Effect.OpenUnion,
     module Data.Effect,
     module Data.Effect.Tag,
-    module Data.Effect.Key,
     module Data.Effect.TH,
     module Data.Effect.HFunctor.TH,
-    module Data.Effect.Key.TH,
     module Control.Effect,
 ) where
 
+import Control.Effect hiding (Eff)
+import Control.Effect.Interpret (interprets, reinterprets)
+import Control.Effect.Transform (
+    raise,
+    raisePrefix,
+    raisePrefix1,
+    raiseSuffix,
+    raiseSuffix1,
+    raiseUnder,
+    raises,
+    raisesUnder,
+    rewrite,
+    rewriteFor,
+    rewriteIn,
+    rewriteOn,
+    tag,
+    transform,
+    translate,
+    translateFor,
+    translateIn,
+    translateOn,
+    untag,
+ )
 import Control.Monad.Hefty.Interpret (
     interpose,
     interposeBy,
-    interposeH,
-    interposeRecHWith,
-    interposeRecWith,
+    interposeFor,
+    interposeForBy,
+    interposeForWith,
     interposeWith,
     interpret,
+    interpretAll,
     interpretBy,
-    interpretH,
-    interpretHBy,
-    interpretHWith,
-    interpretRecHWith,
-    interpretRecWith,
     interpretWith,
-    iterAllEffHF,
-    iterAllEffHFBy,
-    iterEffBy,
-    iterEffHBy,
-    iterEffHFBy,
-    iterEffRecH,
-    iterEffRecHFWith,
-    iterEffRecHWith,
-    mergeLayer,
+    interpretsBy,
+    iterAllEff,
     reinterpret,
     reinterpretBy,
-    reinterpretH,
-    reinterpretHBy,
-    reinterpretHWith,
-    reinterpretN,
-    reinterpretNBy,
-    reinterpretNH,
-    reinterpretNHBy,
-    reinterpretNHWith,
-    reinterpretNWith,
-    reinterpretRecHWith,
-    reinterpretRecNHWith,
-    reinterpretRecNWith,
-    reinterpretRecWith,
     reinterpretWith,
+    reinterpretsBy,
     runEff,
     runPure,
-    splitLayer,
     stateless,
  )
-
 import Control.Monad.Hefty.Interpret.State (
-    StateElaborator,
-    StateInterpreter,
+    StateHandler,
     interposeStateBy,
+    interposeStateForBy,
     interpretStateBy,
-    interpretStateRecWith,
-    iterStateAllEffHFBy,
     reinterpretStateBy,
-    reinterpretStateRecWith,
  )
-import Control.Monad.Hefty.Transform (
-    bundle,
-    bundleAll,
-    bundleAllH,
-    bundleH,
-    bundleN,
-    bundleUnder,
-    bundleUnderH,
-    key,
-    keyH,
-    raise,
-    raiseAll,
-    raiseAllH,
-    raiseH,
-    raiseN,
-    raiseNH,
-    raiseNUnder,
-    raiseNUnderH,
-    raiseUnder,
-    raiseUnderH,
-    raises,
-    raisesH,
-    raisesUnder,
-    rekey,
-    rekeyH,
-    retag,
-    retagH,
-    rewrite,
-    rewriteH,
-    subsume,
-    subsumeH,
-    subsumeN,
-    subsumeNH,
-    subsumeNUnder,
-    subsumeNUnderH,
-    subsumeUnder,
-    subsumeUnderH,
-    subsumes,
-    subsumesH,
-    subsumesUnder,
-    tag,
-    tagH,
-    transEff,
-    transEffH,
-    transEffHF,
-    transform,
-    transformH,
-    translate,
-    translateH,
-    unbundle,
-    unbundleAll,
-    unbundleAllH,
-    unbundleH,
-    unbundleN,
-    unbundleUnder,
-    unbundleUnderH,
-    unkey,
-    unkeyH,
-    untag,
-    untagH,
- )
-
-import Control.Effect
 import Control.Monad.Hefty.Types (
-    Eff (..),
-    Elaborator,
-    ErrorKey,
-    Interpreter,
-    ReaderKey,
-    StateKey,
-    WriterKey,
-    send,
-    send0,
-    send0H,
-    sendH,
-    sendN,
-    sendNH,
-    sendUnion,
-    sendUnionBy,
-    sendUnionH,
-    sendUnionHBy,
-    type (!!),
-    type ($),
-    type ($$),
-    type (:!!),
-    type (~~>),
+    AlgHandler,
+    Eff,
+    Freer (..),
  )
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect
-import Data.Effect.HFunctor (HFunctor)
 import Data.Effect.HFunctor.TH
-import Data.Effect.Key
-import Data.Effect.Key.TH
-import Data.Effect.OpenUnion
-import Data.Effect.OpenUnion.Sum (type (:+:))
+import Data.Effect.OpenUnion (FOEs, Has, In, nil, (!++), (!:), (:>), type (++))
 import Data.Effect.TH
 import Data.Effect.Tag
 import Data.Kind (Type)

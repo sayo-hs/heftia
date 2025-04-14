@@ -3,7 +3,7 @@
 -- file, You can obtain one at https://mozilla.org/MPL/2.0/.
 
 {- |
-Copyright   :  (c) 2024 Sayo Koyoneda
+Copyright   :  (c) 2024 Sayo contributors
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 Portability :  portable
@@ -37,11 +37,3 @@ runKVStorePure initial =
     raiseUnder
         >>> runKVStoreAsState
         >>> runState initial
-
-runKVStoreAsState
-    :: forall k v r
-     . (Ord k, State (Map k v) <| r)
-    => Eff '[] (KVStore k v ': r) ~> Eff '[] r
-runKVStoreAsState = interpret \case
-    LookupKV k -> get <&> Map.lookup k
-    UpdateKV k v -> modify $ Map.update (const v) k

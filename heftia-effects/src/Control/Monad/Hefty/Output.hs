@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: MPL-2.0
 
 {- |
-Copyright   :  (c) 2024 Sayo Koyoneda
+Copyright   :  (c) 2024 Sayo contributors
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 
@@ -20,19 +20,6 @@ import Control.Monad.Hefty.Writer (handleTell)
 import Data.Effect.Output
 import Data.Effect.State (modify)
 import Data.Effect.Writer (Tell (Tell))
-
--- | Interprets the t'Output' effect using the given output handler.
-runOutputEff
-    :: forall o ef eh
-     . (o -> Eff eh ef ())
-    -> Eff eh (Output o ': ef) ~> Eff eh ef
-runOutputEff f = interpret \(Output o) -> f o
-
--- | Interprets the t'Output' effect by ignoring the outputs.
-ignoreOutput
-    :: forall o ef eh
-     . Eff eh (Output o ': ef) ~> Eff eh ef
-ignoreOutput = runOutputEff $ const $ pure ()
 
 -- | Interprets the t'Output' effect by accumulating the outputs into a list.
 runOutputList

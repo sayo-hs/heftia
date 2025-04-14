@@ -1,7 +1,7 @@
 -- SPDX-License-Identifier: MPL-2.0
 
 {- |
-Copyright   :  (c) 2023 Sayo Koyoneda
+Copyright   :  (c) 2023 Sayo contributors
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 
@@ -91,11 +91,3 @@ censorPost f m = do
     (w, a) <- confiscate m
     tell $ f w
     pure a
-
--- | 'censor' with pre-applying semantics.
-censorPre
-    :: forall w eh ef
-     . (Tell w <| ef, Monoid w)
-    => (w -> w)
-    -> Eff eh ef ~> Eff eh ef
-censorPre f = interpose @(Tell w) \(Tell w) -> tell $ f w

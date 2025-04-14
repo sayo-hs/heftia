@@ -3,7 +3,7 @@
 -- SPDX-License-Identifier: MPL-2.0
 
 {- |
-Copyright   :  (c) 2023 Sayo Koyoneda
+Copyright   :  (c) 2023 Sayo contributors
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 
@@ -15,124 +15,55 @@ module Control.Monad.Hefty.State (
 )
 where
 
-import Control.Arrow ((>>>))
 import Control.Monad.Hefty (
     Eff,
-    StateInterpreter,
-    interpose,
+    FOEs,
+    StateHandler,
     interposeStateBy,
-    interpret,
     interpretBy,
-    interpretH,
-    interpretRecWith,
     interpretStateBy,
-    interpretStateRecWith,
-    raiseUnder,
     (&),
-    type (<|),
-    type (~>),
- )
-import Control.Monad.Hefty.Reader (
-    Ask (..),
-    Local (..),
-    ask,
-    runAsk,
+    (:>),
  )
 import Data.Effect.State
-import Data.Functor ((<&>))
-import UnliftIO (newIORef, readIORef, writeIORef)
 
 -- | Interpret the 'State' effect.
-runState :: forall s ef a. s -> Eff '[] (State s ': ef) a -> Eff '[] ef (s, a)
+runState :: forall s es a. (FOEs es) => s -> Eff (State s ': es) a -> Eff es (s, a)
 runState s0 = interpretStateBy s0 (curry pure) handleState
+{-# INLINE runState #-}
 
 -- | Interpret the 'State' effect. Do not include the final state in the return value.
-evalState :: forall s ef a. s -> Eff '[] (State s ': ef) a -> Eff '[] ef a
+evalState :: forall s es a. s -> (FOEs es) => Eff (State s ': es) a -> Eff es a
 evalState s0 = interpretStateBy s0 (const pure) handleState
+{-# INLINE evalState #-}
 
 -- | Interpret the 'State' effect. Do not include the final result in the return value.
-execState :: forall s ef a. s -> Eff '[] (State s ': ef) a -> Eff '[] ef s
+execState :: forall s es a. (FOEs es) => s -> Eff (State s ': es) a -> Eff es s
 execState s0 = interpretStateBy s0 (\s _ -> pure s) handleState
-
-{- |
-Interpret the 'State' effect.
-
-Interpretation is performed recursively with respect to the scopes of unelaborated higher-order effects @eh@.
-Note that the state is reset and does not persist beyond the scopes.
--}
-evalStateRec :: forall s ef eh. s -> Eff eh (State s ': ef) ~> Eff eh ef
-evalStateRec s0 = interpretStateRecWith s0 handleState
+{-# INLINE execState #-}
 
 -- | A handler function for the 'State' effect.
-handleState :: StateInterpreter s (State s) (Eff eh r) ans
+handleState :: StateHandler s (State s) f g ans
 handleState = \case
     Put s -> \_ k -> k s ()
     Get -> \s k -> k s s
 {-# INLINE handleState #-}
 
--- | Interpret the 'State' effect based on an IO-fused semantics using t'Data.IORef.IORef'.
-runStateIORef
-    :: forall s ef eh a
-     . (IO <| ef)
-    => s
-    -> Eff eh (State s ': ef) a
-    -> Eff eh ef (s, a)
-runStateIORef s0 m = do
-    ref <- newIORef s0
-    a <-
-        m & interpret \case
-            Get -> readIORef ref
-            Put s -> writeIORef ref s
-    readIORef ref <&> (,a)
-
-{- |
-Interpret the 'State' effect based on an IO-fused semantics using t'Data.IORef.IORef'.
-Do not include the final state in the return value.
--}
-evalStateIORef
-    :: forall s ef eh a
-     . (IO <| ef)
-    => s
-    -> Eff eh (State s ': ef) a
-    -> Eff eh ef a
-evalStateIORef s0 m = do
-    ref <- newIORef s0
-    m & interpret \case
-        Get -> readIORef ref
-        Put s -> writeIORef ref s
-
 -- | Within the given scope, make the state roll back to the beginning of the scope in case of exceptions, etc.
-transactState :: forall s ef. (State s <| ef) => Eff '[] ef ~> Eff '[] ef
+transactState :: forall s es a. (State s :> es, FOEs es) => Eff es a -> Eff es a
 transactState m = do
     pre <- get @s
     (post, a) <- interposeStateBy pre (curry pure) handleState m
     put post
     pure a
+{-# INLINE transactState #-}
 
 -- | A naive but somewhat slower version of 'runState' that does not use ad-hoc optimizations.
-runStateNaive :: forall s ef a. s -> Eff '[] (State s ': ef) a -> Eff '[] ef (s, a)
+runStateNaive :: forall s es a. (FOEs es) => s -> Eff (State s ': es) a -> Eff es (s, a)
 runStateNaive s0 m = do
     f <-
         m & interpretBy (\a -> pure \s -> pure (s, a)) \case
             Get -> \k -> pure \s -> k s >>= ($ s)
             Put s -> \k -> pure \_ -> k () >>= ($ s)
     f s0
-
--- | A naive but somewhat slower version of 'evalStateRec' that does not use ad-hoc optimizations.
-evalStateNaiveRec :: forall s ef eh. s -> Eff eh (State s ': ef) ~> Eff eh ef
-evalStateNaiveRec s0 =
-    raiseUnder
-        >>> interpretRecWith \case
-            Get -> (ask @s >>=)
-            Put s -> \k -> k () & interpose @(Ask s) \Ask -> pure s
-        >>> runAsk @s s0
-
-localToState :: forall r eh ef. (State r <| ef) => Eff (Local r ': eh) ef ~> Eff eh ef
-localToState =
-    interpretH \(Local f a) -> do
-        save <- get @r
-        put $ f save
-        a <* put save
-
-askToGet :: forall r ef eh. (State r <| ef) => Eff eh (Ask r ': ef) ~> Eff eh ef
-askToGet = interpret \Ask -> get
+{-# INLINE runStateNaive #-}

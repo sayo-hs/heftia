@@ -3,7 +3,7 @@
 -- SPDX-License-Identifier: MPL-2.0
 
 {- |
-Copyright   :  (c) 2024 Sayo Koyoneda
+Copyright   :  (c) 2024 Sayo contributors
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 
@@ -38,18 +38,6 @@ import Data.Time.Clock (diffTimeToPicoseconds, picosecondsToDiffTime)
 import Data.Void (Void, absurd)
 import GHC.Clock (getMonotonicTimeNSec)
 
-runTimerIO
-    :: forall eh ef
-     . (IO <| ef)
-    => eh :!! Timer ': ef ~> eh :!! ef
-runTimerIO =
-    interpret \case
-        Clock -> do
-            t <- getMonotonicTimeNSec & liftIO
-            pure $ picosecondsToDiffTime $ fromIntegral t * 1000
-        Sleep t ->
-            Thread.delay (diffTimeToPicoseconds t `quot` 1000_000) & liftIO
-
 runCyclicTimer
     :: forall ef
      . (Timer <| ef)
@@ -64,13 +52,3 @@ runCyclicTimer a = do
                     Done x -> absurd x
                     Continue () k -> put =<< raise (k delta)
         & evalState timer0
-
--- | Re-zeros the clock time in the local scope.
-restartClock :: (Timer <| ef) => eh :!! ef ~> eh :!! ef
-restartClock a = do
-    t0 <- clock
-    a & interpose \case
-        Clock -> do
-            t <- clock
-            pure $ t - t0
-        other -> send other
