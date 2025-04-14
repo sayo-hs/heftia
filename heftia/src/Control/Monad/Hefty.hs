@@ -464,7 +464,7 @@ module Control.Monad.Hefty (
     Freer (Op, Val),
     type ($),
     type ($$),
-    Handler,
+    AlgHandler,
     type (~>),
     type (~~>),
     FOEs,
@@ -473,8 +473,8 @@ module Control.Monad.Hefty (
     type Has,
     type (++),
     (!:),
-    (!::),
-    empty,
+    (!++),
+    nil,
     perform,
     perform',
     perform'',
@@ -495,7 +495,6 @@ module Control.Monad.Hefty (
     interpretWith,
     interpretBy,
     interpretsBy,
-    interpretRecWith,
 
     -- ** Reinterpretation functions
     reinterpret,
@@ -503,24 +502,21 @@ module Control.Monad.Hefty (
     reinterpretBy,
     reinterpretsBy,
     reinterpretWith,
-    reinterpretRecWith,
 
     -- ** Interposition functions
     interpose,
     interposeWith,
     interposeBy,
-    interposeRecWith,
     interposeFor,
     interposeForWith,
     interposeForBy,
-    interposeRecForWith,
 
     -- ** Transformation to monads
-    iterEff,
     iterAllEff,
 
     -- ** Utilities
     stateless,
+    interpretAll,
 
     -- ** Ad-hoc stateful interpretation
 
@@ -532,8 +528,6 @@ module Control.Monad.Hefty (
     -- *** Interpretation functions
     interpretStateBy,
     reinterpretStateBy,
-    interpretStateRecWith,
-    reinterpretStateRecWith,
 
     -- *** Interposition functions
     interposeStateBy,
@@ -569,7 +563,6 @@ module Control.Monad.Hefty (
     untag,
 
     -- * Misc
-    HFunctors,
     Type,
     liftIO,
     module Data.Effect,
@@ -608,44 +601,37 @@ import Control.Monad.Hefty.Interpret (
     interposeFor,
     interposeForBy,
     interposeForWith,
-    interposeRecForWith,
-    interposeRecWith,
     interposeWith,
     interpret,
+    interpretAll,
     interpretBy,
-    interpretRecWith,
     interpretWith,
     interpretsBy,
     iterAllEff,
-    iterEff,
     reinterpret,
     reinterpretBy,
-    reinterpretRecWith,
     reinterpretWith,
     reinterpretsBy,
     runEff,
     runPure,
     stateless,
-    (!::),
  )
 import Control.Monad.Hefty.Interpret.State (
     StateHandler,
     interposeStateBy,
     interposeStateForBy,
     interpretStateBy,
-    interpretStateRecWith,
     reinterpretStateBy,
-    reinterpretStateRecWith,
  )
 import Control.Monad.Hefty.Types (
+    AlgHandler,
     Eff,
     Freer (..),
-    Handler,
  )
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect
 import Data.Effect.HFunctor.TH
-import Data.Effect.HandlerVec (FOEs, HFunctors, Has, In, empty, (!:), (:>), type (++))
+import Data.Effect.OpenUnion (FOEs, Has, In, nil, (!++), (!:), (:>), type (++))
 import Data.Effect.TH
 import Data.Effect.Tag
 import Data.Kind (Type)

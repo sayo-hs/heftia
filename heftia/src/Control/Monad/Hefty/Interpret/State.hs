@@ -12,30 +12,24 @@ single state type @s@, especially for effects like t'Data.Effect.State.State' or
 -}
 module Control.Monad.Hefty.Interpret.State where
 
-import Control.Effect (Free (liftFree), runAllEff, sendFor, type (~>))
+import Control.Effect (unEff)
 import Control.Effect qualified as D
 import Control.Monad.Hefty.Types (Eff, Freer (Op, Val), qApp)
-import Data.Effect.HandlerVec (
+import Data.Effect.OpenUnion (
     FOEs,
-    HFunctors,
-    HandlerVec,
     KnownOrder,
     Membership,
     Suffix,
-    compareMembership,
-    generate,
-    generateHF,
-    hcfmapVec,
-    hfmapElem,
+    coerceFOEs,
     labelMembership,
-    suffix,
-    weakensFor,
+    project,
+    weakens,
     (!:),
     (:>),
  )
+import Data.FTCQueue (tsingleton)
+import Data.Function ((&))
 import Data.Kind (Type)
-import Data.Type.Equality (type (:~:) (Refl))
-import GHC.Generics ((:+:) (L1, R1))
 
 -- | An ad-hoc stateful version of t'Control.Monad.Hefty.Types.Handler' for performance.
 type StateHandler s e m n (ans :: Type) = forall x. e m x -> s -> (s -> x -> n ans) -> n ans
@@ -61,36 +55,14 @@ reinterpretStateBy
     -> StateHandler s e (Eff (e ': es)) (Eff es') ans
     -> Eff (e ': es) a
     -> Eff es' ans
-reinterpretStateBy s0 ret hdl =
-    transEffStateBy s0 ret hdl \v ->
-        liftFree . L1 !: generate (suffix v) \i ->
-            liftFree . R1 . sendFor (weakensFor i)
-{-# INLINE reinterpretStateBy #-}
-
-interpretStateRecWith
-    :: forall s e es a
-     . (KnownOrder e, HFunctors es)
-    => s
-    -> (forall ans. StateHandler s e (Eff es) (Eff es) ans)
-    -> Eff (e ': es) a
-    -> Eff es a
-interpretStateRecWith = reinterpretStateRecWith
-{-# INLINE interpretStateRecWith #-}
-
-reinterpretStateRecWith
-    :: forall s e es' es a
-     . (Suffix es es', KnownOrder e, HFunctors es)
-    => s
-    -> (forall ans. StateHandler s e (Eff es') (Eff es') ans)
-    -> Eff (e ': es) a
-    -> Eff es' a
-reinterpretStateRecWith s0 hdl = loop s0
+reinterpretStateBy s0 ret hdl = loop s0
   where
-    loop :: s -> Eff (e ': es) ~> Eff es'
-    loop s =
-        transEffStateBy s (const pure) (\e s' -> hdl (hfmapElem (loop s') e) s') \v ->
-            liftFree . L1 !: hcfmapVec (loop s) (generateHF (suffix v) \i -> liftFree . R1 . sendFor (weakensFor i))
-{-# INLINE reinterpretStateRecWith #-}
+    loop s (D.Eff m) = case m of
+        Val x -> ret s x
+        Op u q ->
+            let k s' = loop s' . D.Eff . qApp q
+             in u & (\e -> hdl e s k) !: D.Eff . (`Op` (tsingleton $ unEff . k s0)) . weakens . coerceFOEs
+{-# INLINE reinterpretStateBy #-}
 
 -- * Interposition functions
 
@@ -114,42 +86,15 @@ interposeStateForBy
     -> StateHandler s e (Eff es) (Eff es) ans
     -> Eff es a
     -> Eff es ans
-interposeStateForBy i s0 ret hdl =
-    transEffStateBy s0 ret hdl \v -> generate v \j ->
-        liftFree . case compareMembership i j of
-            Just Refl -> L1
-            Nothing -> R1 . sendFor j
-{-# INLINE interposeStateForBy #-}
-
-transEffStateBy
-    :: s
-    -> (s -> a -> Eff es' ans)
-    -> StateHandler s e (Eff es) (Eff es') ans
-    -> ( forall r
-          . HandlerVec es' (Eff es') (Freer r)
-         -> HandlerVec es (Eff es) (Freer (e (Eff es) :+: Eff es'))
-       )
-    -> Eff es a
-    -> Eff es' ans
-transEffStateBy s0 ret hdl f (D.Eff m) =
-    D.Eff \v -> runAllEff v . delimitState s0 ret hdl . m . f $ v
-{-# INLINE transEffStateBy #-}
-
-delimitState
-    :: s
-    -> (s -> a -> Eff es' ans)
-    -> StateHandler s e (Eff es) (Eff es') ans
-    -> Freer (e (Eff es) :+: Eff es') a
-    -> Eff es' ans
-delimitState s0 ret hdl = loop s0
+interposeStateForBy i s0 ret hdl = loop s0
   where
-    loop s = \case
+    loop s (D.Eff m) = case m of
         Val x -> ret s x
         Op u q ->
-            let k s' = loop s' . qApp q
-             in case u of
-                    L1 e -> hdl e s k
-                    R1 n -> n >>= k s
-{-# INLINE delimitState #-}
+            let k s' = loop s' . D.Eff . qApp q
+             in case project i u of
+                    Just e -> hdl e s k
+                    Nothing -> D.Eff $ Op u (tsingleton $ unEff . k s0)
+{-# INLINE interposeStateForBy #-}
 
 -- TODO: add other pattern functions.

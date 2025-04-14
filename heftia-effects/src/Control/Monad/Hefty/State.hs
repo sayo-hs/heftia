@@ -15,27 +15,15 @@ module Control.Monad.Hefty.State (
 )
 where
 
-import Control.Arrow ((>>>))
 import Control.Monad.Hefty (
     Eff,
     FOEs,
-    HFunctors,
     StateHandler,
-    interpose,
     interposeStateBy,
     interpretBy,
-    interpretRecWith,
     interpretStateBy,
-    interpretStateRecWith,
-    raiseUnder,
     (&),
     (:>),
-    type (~>),
- )
-import Control.Monad.Hefty.Reader (
-    Ask (..),
-    ask,
-    runAsk,
  )
 import Data.Effect.State
 
@@ -53,16 +41,6 @@ evalState s0 = interpretStateBy s0 (const pure) handleState
 execState :: forall s es a. (FOEs es) => s -> Eff (State s ': es) a -> Eff es s
 execState s0 = interpretStateBy s0 (\s _ -> pure s) handleState
 {-# INLINE execState #-}
-
-{- |
-Interpret the 'State' effect.
-
-Interpretation is performed recursively with respect to the scopes of unelaborated higher-order effects @eh@.
-Note that the state is reset and does not persist beyond the scopes.
--}
-evalStateRec :: forall s es. (HFunctors es) => s -> Eff (State s ': es) ~> Eff es
-evalStateRec s0 = interpretStateRecWith s0 handleState
-{-# INLINE evalStateRec #-}
 
 -- | A handler function for the 'State' effect.
 handleState :: StateHandler s (State s) f g ans
@@ -89,13 +67,3 @@ runStateNaive s0 m = do
             Put s -> \k -> pure \_ -> k () >>= ($ s)
     f s0
 {-# INLINE runStateNaive #-}
-
--- | A naive but somewhat slower version of 'evalStateRec' that does not use ad-hoc optimizations.
-evalStateNaiveRec :: forall s es. (HFunctors es) => s -> Eff (State s ': es) ~> Eff es
-evalStateNaiveRec s0 =
-    raiseUnder
-        >>> interpretRecWith \case
-            Get -> (ask @s >>=)
-            Put s -> \k -> k () & interpose @(Ask s) \Ask -> pure s
-        >>> runAsk @s s0
-{-# INLINE evalStateNaiveRec #-}

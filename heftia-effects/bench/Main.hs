@@ -19,7 +19,6 @@ main =
                 bgroup
                     (show x)
                     [ bench "heftia" $ nf countdownHeftia x
-                    , bench "heftia.ev" $ nf countdownHeftiaEv x
                     , bench "freer" $ nf countdownFreer x
                     , bench "polyemy" $ nf countdownSem x
                     , bench "fused" $ nf countdownFused x
@@ -33,7 +32,6 @@ main =
                 bgroup
                     (show x)
                     [ bench "heftia.5+5" $ nf countdownHeftiaDeep x
-                    , bench "heftia.ev.5+5" $ nf countdownHeftiaEvDeep x
                     , bench "freer.5+5" $ nf countdownFreerDeep x
                     , bench "polysemy.5+5" $ nf countdownSemDeep x
                     , bench "fused.5+5" $ nf countdownFusedDeep x

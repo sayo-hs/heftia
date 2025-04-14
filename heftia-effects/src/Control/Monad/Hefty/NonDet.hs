@@ -22,8 +22,7 @@ import Control.Applicative (Alternative ((<|>)), (<|>))
 import Control.Applicative (liftA2)
 #endif
 import Control.Applicative qualified as A
-import Control.Monad.Hefty (Eff, FOEs, interpretBy, interpretsBy, (!::))
-import Data.Effect.HandlerVec qualified as V
+import Control.Monad.Hefty (Eff, FOEs, interpretBy, interpretsBy, nil, (!:))
 import Data.Effect.NonDet
 
 -- | [NonDet]("Data.Effect.NonDet") effects handler for alternative answer type.
@@ -36,8 +35,8 @@ runNonDet =
     interpretsBy
         (pure . pure)
         ( (\Choose k -> liftA2 (<|>) (k False) (k True))
-            !:: (\Empty _ -> pure A.empty)
-            !:: V.empty
+            !: (\Empty _ -> pure A.empty)
+            !: nil
         )
 {-# INLINE runNonDet #-}
 
@@ -52,8 +51,8 @@ runNonDetMonoid f =
     interpretsBy
         f
         ( (\Choose k -> liftA2 (<>) (k False) (k True))
-            !:: (\Empty _ -> pure mempty)
-            !:: V.empty
+            !: (\Empty _ -> pure mempty)
+            !: nil
         )
 {-# INLINE runNonDetMonoid #-}
 

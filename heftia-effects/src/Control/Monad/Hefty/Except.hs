@@ -14,9 +14,9 @@ module Control.Monad.Hefty.Except (
 where
 
 import Control.Monad.Hefty (
+    AlgHandler,
     Eff,
     FOEs,
-    Handler,
     interposeWith,
     interpret,
     interpretBy,
@@ -42,7 +42,7 @@ runCatch = interpret elabCatch
 {-# INLINE runCatch #-}
 
 -- | A handler for the t'Throw' effect.
-handleThrow :: forall e f g a. (Applicative g) => Handler (Throw e) f g (Either e a)
+handleThrow :: forall e f g a. (Applicative g) => AlgHandler (Throw e) f g (Either e a)
 handleThrow (Throw e) _ = pure $ Left e
 {-# INLINE handleThrow #-}
 

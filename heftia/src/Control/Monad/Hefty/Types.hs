@@ -14,7 +14,7 @@ Please refer to the documentation of the [top-level module]("Control.Monad.Hefty
 -}
 module Control.Monad.Hefty.Types where
 
-import Control.Effect (Free, ViaFree)
+import Control.Effect (Free)
 import Control.Effect qualified as D
 import Data.Effect (Effect)
 import Data.FTCQueue (FTCQueue, ViewL (..), tsingleton, tviewl, (><), (|>))
@@ -31,9 +31,7 @@ data Freer f a
 
 type Eff = D.Eff Freer
 
-type Ecc r = D.EffFrame Freer r
-
-type Handler (e :: Effect) m n (ans :: Type) = forall x. e m x -> (x -> n ans) -> n ans
+type AlgHandler (e :: Effect) m n (ans :: Type) = forall x. e m x -> (x -> n ans) -> n ans
 
 instance Functor (Freer f) where
     fmap f = \case
@@ -66,10 +64,6 @@ instance Free Monad Freer where
 
     {-# INLINE liftFree #-}
     {-# INLINE runFree #-}
-
-deriving via D.Eff (ViaFree Freer) es instance Functor (Eff es)
-deriving via D.Eff (ViaFree Freer) es instance Applicative (Eff es)
-deriving via D.Eff (ViaFree Freer) es instance Monad (Eff es)
 
 -- | Applies a value to a Kleisli arrow in 'FTCQueue' representation.
 qApp :: FTCQueue (Freer f) a b -> a -> Freer f b

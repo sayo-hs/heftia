@@ -64,7 +64,6 @@ library
         Control.Monad.Hefty.Interpret
         Control.Monad.Hefty.Interpret.State
         Data.FTCQueue
-        Control.Monad.Ev
 
     reexported-modules:
         Data.Effect,
@@ -73,6 +72,7 @@ library
         Data.Effect.HFunctor,
         Data.Effect.HFunctor.HCont,
         Data.Effect.HFunctor.TH,
+        Data.Effect.OpenUnion,
         Control.Effect,
 
     -- Modules included in this executable, other than Main.
