@@ -12,11 +12,13 @@ import Control.Effect (Free, type (~>))
 import Control.Effect qualified as D
 import Control.Effect.Interpret (interpret)
 import Control.Effect.Transform (raiseUnder)
-import Data.Effect (Emb (Emb), UnliftIO)
+import Data.Effect (Emb (Emb), State (Get, Put), UnliftIO)
 import Data.Effect.OpenUnion (Union, nil)
 import Data.Effect.State (State, evalStateIORef, execStateIORef, runStateIORef)
 import Data.Effect.Unlift (pattern WithRunInIO)
-import UnliftIO (MonadIO, MonadUnliftIO, liftIO, withRunInIO)
+import Data.Function ((&))
+import Data.Functor ((<&>))
+import UnliftIO (MonadIO, MonadUnliftIO, liftIO, newIORef, readIORef, withRunInIO, writeIORef)
 
 newtype Ev f a = Ev {unEv :: (f ~> IO) -> IO a}
 
@@ -41,6 +43,10 @@ instance Monad (Ev f) where
 
 instance MonadIO (Ev f) where
     liftIO m = Ev \_ -> m
+    {-# INLINE liftIO #-}
+
+instance {-# OVERLAPPING #-} MonadIO (Eff es) where
+    liftIO m = D.Eff $ liftIO m
     {-# INLINE liftIO #-}
 
 instance MonadUnliftIO (Ev f) where
@@ -75,10 +81,6 @@ runEvEff :: Eff '[] a -> IO a
 runEvEff = interpretAllEv nil
 {-# INLINE runEvEff #-}
 
-runStateEv :: s -> Eff (State s ': es) a -> Eff es (s, a)
-runStateEv s = impure . runStateIORef s . raiseUnder
-{-# INLINE runStateEv #-}
-
 evalStateEv :: s -> Eff (State s ': es) a -> Eff es a
 evalStateEv s = impure . evalStateIORef s . raiseUnder
 {-# INLINE evalStateEv #-}
@@ -86,3 +88,17 @@ evalStateEv s = impure . evalStateIORef s . raiseUnder
 execStateEv :: s -> Eff (State s ': es) a -> Eff es s
 execStateEv s = impure . execStateIORef s . raiseUnder
 {-# INLINE execStateEv #-}
+
+runStateEv
+    :: forall s es a
+     . s
+    -> Eff (State s ': es) a
+    -> Eff es (s, a)
+runStateEv s0 m = do
+    ref <- newIORef s0
+    a <-
+        m & interpret \case
+            Get -> readIORef ref
+            Put s -> writeIORef ref s
+    readIORef ref <&> (,a)
+{-# INLINE runStateEv #-}
