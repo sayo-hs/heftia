@@ -1,45 +1,35 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE OverloadedStrings #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
 
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0. If a copy of the MPL was not distributed with this
--- file, You can obtain one at https://mozilla.org/MPL/2.0/.
+-- SPDX-License-Identifier: MPL-2.0
 
 module Main where
 
 import Control.Arrow ((>>>))
+import Control.Effect.Transform (subsumeUnder)
 import Control.Monad (when)
 import Control.Monad.Hefty (
-    Type,
+    Eff,
+    Effect,
+    Emb,
+    FOEs,
     interpose,
-    interposeH,
     interpret,
-    interpretH,
     liftIO,
     makeEffectF,
     makeEffectH,
     raise,
-    raiseH,
     raiseUnder,
-    reinterpretH,
+    reinterpret,
     runEff,
-    subsume,
     (&),
-    type (!!),
-    type (+),
-    type (:!!),
-    type (<:),
-    type (<<:),
-    type (<<|),
-    type (<|),
+    type (:>),
     type (~>),
     type (~~>),
  )
 import Control.Monad.Hefty.Reader (runReader)
 import Control.Monad.Hefty.State (evalState)
-import Control.Monad.IO.Class (MonadIO)
 import Data.Effect.Reader (Ask, Local, ask, local)
 import Data.Effect.State (get, modify)
 import Data.Text (Text)
@@ -48,21 +38,21 @@ import Data.Text.IO qualified as T
 import Data.Time (UTCTime, getCurrentTime)
 import Data.Time.Format (defaultTimeLocale, formatTime)
 
-data Log a where
-    Logging :: Text -> Log ()
-makeEffectF [''Log]
+data Log :: Effect where
+    Logging :: Text -> Log f ()
+makeEffectF ''Log
 
-logToIO :: (IO <| r) => eh :!! Log ': r ~> eh :!! r
+logToIO :: (Emb IO :> es) => Eff (Log ': es) ~> Eff es
 logToIO = interpret \(Logging msg) -> liftIO $ T.putStrLn msg
 
-data Time a where
-    CurrentTime :: Time UTCTime
-makeEffectF [''Time]
+data Time :: Effect where
+    CurrentTime :: Time f UTCTime
+makeEffectF ''Time
 
-timeToIO :: (IO <| r) => eh :!! Time ': r ~> eh :!! r
+timeToIO :: (Emb IO :> es) => Eff (Time ': es) ~> Eff es
 timeToIO = interpret \CurrentTime -> liftIO getCurrentTime
 
-logWithTime :: (Log <| ef, Time <| ef) => eh :!! ef ~> eh :!! ef
+logWithTime :: (Log :> es, Time :> es) => Eff es ~> Eff es
 logWithTime = interpose \(Logging msg) -> do
     t <- currentTime
     logging $ "[" <> iso8601 t <> "] " <> msg
@@ -71,25 +61,25 @@ iso8601 :: UTCTime -> Text
 iso8601 t = T.take 23 (T.pack $ formatTime defaultTimeLocale "%FT%T.%q" t) <> "Z"
 
 -- | An effect that introduces a scope that represents a chunk of logs.
-data LogChunk f (a :: Type) where
+data LogChunk :: Effect where
     LogChunk
         :: Text
         -- ^ chunk name
         -> f a
         -> LogChunk f a
 
-makeEffectH [''LogChunk]
+makeEffectH ''LogChunk
 
 -- | Ignore chunk names and output logs in log chunks as they are.
-runLogChunk :: LogChunk ': eh :!! ef ~> eh :!! ef
-runLogChunk = interpretH \(LogChunk _ m) -> m
+runLogChunk :: Eff (LogChunk ': es) ~> Eff es
+runLogChunk = interpret \(LogChunk _ m) -> m
 
-data FileSystem a where
-    Mkdir :: FilePath -> FileSystem ()
-    WriteToFile :: FilePath -> Text -> FileSystem ()
-makeEffectF [''FileSystem]
+data FileSystem :: Effect where
+    Mkdir :: FilePath -> FileSystem f ()
+    WriteToFile :: FilePath -> Text -> FileSystem f ()
+makeEffectF ''FileSystem
 
-runDummyFS :: (IO <| r) => eh :!! FileSystem ': r ~> eh :!! r
+runDummyFS :: (Emb IO :> es) => Eff (FileSystem ': es) ~> Eff es
 runDummyFS = interpret \case
     Mkdir path ->
         liftIO $ putStrLn $ "<runDummyFS> mkdir " <> path
@@ -98,22 +88,22 @@ runDummyFS = interpret \case
 
 -- | Create directories according to the log-chunk structure and save one log in one file.
 saveLogChunk
-    :: forall eh ef
-     . (LogChunk <<| eh, Log <| ef, FileSystem <| ef, Time <| ef)
-    => eh :!! ef ~> eh :!! ef
+    :: forall es
+     . (LogChunk :> es, Log :> es, FileSystem :> es, Time :> es)
+    => Eff es ~> Eff es
 saveLogChunk =
     raise
-        >>> raiseH
+        >>> raise
         >>> hookCreateDirectory
         >>> hookWriteFile
         >>> runReader @FilePath "./log/"
   where
     hookCreateDirectory
         , hookWriteFile
-            :: (Local FilePath ': eh :!! Ask FilePath ': ef)
-                ~> (Local FilePath ': eh :!! Ask FilePath ': ef)
+            :: Eff (Local FilePath ': Ask FilePath ': es)
+                ~> Eff (Local FilePath ': Ask FilePath ': es)
     hookCreateDirectory =
-        interposeH \(LogChunk chunkName a) -> logChunk chunkName do
+        interpose \(LogChunk chunkName a) -> logChunk chunkName do
             chunkBeginAt <- currentTime
             let dirName = T.unpack $ iso8601 chunkBeginAt <> "-" <> chunkName
             local @FilePath (++ dirName ++ "/") do
@@ -129,15 +119,15 @@ saveLogChunk =
             logging msg
 
 -- | Limit the number of logs in a log chunk to the first @n@ logs.
-limitLogChunk :: (Log <| ef) => Int -> '[LogChunk] :!! Log ': ef ~> '[LogChunk] :!! Log ': ef
-limitLogChunk n = reinterpretH $ elabLimitLogChunk n
+limitLogChunk :: forall es. (Log :> es, FOEs es) => Int -> Eff (LogChunk ': Log ': es) ~> Eff (LogChunk ': Log ': es)
+limitLogChunk n = reinterpret $ handleLimitLogChunk n
 
-elabLimitLogChunk :: (Log <| ef) => Int -> LogChunk ~~> '[LogChunk] :!! Log ': ef
-elabLimitLogChunk n (LogChunk name a) =
+handleLimitLogChunk :: (Log :> es, FOEs es) => Int -> LogChunk ~~> Eff (LogChunk ': Log ': es)
+handleLimitLogChunk n (LogChunk name a) =
     logChunk name do
-        raise . raiseH $ limitLog $ runLogChunk $ limitLogChunk n a
+        raise . raise $ limitLog $ runLogChunk $ limitLogChunk n a
   where
-    limitLog :: (Log <| ef) => '[] :!! Log ': ef ~> '[] :!! ef
+    limitLog :: (Log :> es, FOEs es) => Eff (Log ': es) ~> Eff es
     limitLog a' =
         evalState @Int 0 $
             raiseUnder a' & interpret \(Logging msg) -> do
@@ -149,7 +139,7 @@ elabLimitLogChunk n (LogChunk name a) =
 
                     modify @Int (+ 1)
 
-logExample :: (LogChunk <<: m, Log <: m, MonadIO m) => m ()
+logExample :: (LogChunk :> es, Log :> es, Emb IO :> es) => Eff es ()
 logExample = do
     logging "out of chunk scope 1"
     logging "out of chunk scope 2"
@@ -182,18 +172,18 @@ saveThenLimit =
     logExample
         & saveLogChunk
         & limitLogChunk 2
-        & subsume @Log
+        & subsumeUnder
         & runApp
 
 limitThenSave :: IO ()
 limitThenSave =
     logExample
         & limitLogChunk 2
-        & subsume @Log
+        & subsumeUnder
         & saveLogChunk
         & runApp
 
-runApp :: LogChunk !! FileSystem + Time + Log + IO ~> IO
+runApp :: Eff '[LogChunk, FileSystem, Time, Log, Emb IO] ~> IO
 runApp =
     runLogChunk
         >>> runDummyFS

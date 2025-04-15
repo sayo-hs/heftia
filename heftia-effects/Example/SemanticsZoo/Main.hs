@@ -14,13 +14,12 @@ module Main where
 
 import Control.Applicative ((<|>))
 import Control.Monad.Hefty (
+    Eff,
+    Effect,
     interpret,
     makeEffectF,
     runPure,
-    type ($),
-    type (:!!),
-    type (<<|),
-    type (<|),
+    type (:>),
     type (~>),
  )
 import Control.Monad.Hefty.Except (runCatch, runThrow)
@@ -36,7 +35,7 @@ import Data.Monoid (Sum (Sum))
 
 statePlusExcept :: IO ()
 statePlusExcept = do
-    let action :: (State Bool <| ef, Throw () <| ef, Catch () <<| eh) => (eh :!! ef) Bool
+    let action :: (State Bool :> es, Throw () :> es, Catch () :> es) => Eff es Bool
         action = do
             (put True *> throw ()) `catch` \() -> pure ()
             get
@@ -48,16 +47,14 @@ statePlusExcept = do
 
 nonDetPlusExcept :: IO ()
 nonDetPlusExcept = do
-    let action1
-            , action2
-                :: (Empty <| ef, ChooseH <<| eh, Throw () <| ef, Catch () <<| eh) => eh :!! ef $ Bool
+    let action1, action2 :: (Empty :> es, ChooseH :> es, Throw () :> es, Catch () :> es) => Eff es Bool
         action1 = (pure True <|> throw ()) `catch` \() -> pure False
         action2 = (throw () <|> pure True) `catch` \() -> pure False
 
         testAllPattern
-            :: ( forall eh ef
-                  . (Empty <| ef, ChooseH <<| eh, Throw () <| ef, Catch () <<| eh)
-                 => (eh :!! ef) Bool
+            :: ( forall es
+                  . (Empty :> es, ChooseH :> es, Throw () :> es, Catch () :> es)
+                 => Eff es Bool
                )
             -> String
             -> IO ()
@@ -78,8 +75,8 @@ nonDetPlusExcept = do
 nonDetPlusWriter :: IO ()
 nonDetPlusWriter = do
     let action
-            :: (Empty <| ef, ChooseH <<| eh, Tell (Sum Int) <| ef, WriterH (Sum Int) <<| eh)
-            => eh :!! ef $ (Sum Int, Bool)
+            :: (Empty :> es, ChooseH :> es, Tell (Sum Int) :> es, WriterH (Sum Int) :> es)
+            => Eff es (Sum Int, Bool)
         action = listen $ add 1 *> (add 2 $> True <|> add 3 $> False)
           where
             add = tell . Sum @Int
@@ -94,16 +91,16 @@ nonDetPlusWriter = do
         runTell @(Sum Int) . runNonDet @[] . runWriterHPre @(Sum Int) . runChooseH $
             action
 
-data SomeEff a where
-    SomeAction :: SomeEff String
-makeEffectF [''SomeEff]
+data SomeEff :: Effect where
+    SomeAction :: SomeEff f String
+makeEffectF ''SomeEff
 
 theIssue12 :: IO ()
 theIssue12 = do
-    let action :: (Catch String <<| eh, Throw String <| ef, SomeEff <| ef) => eh :!! ef $ String
+    let action :: (Catch String :> es, SomeEff :> es) => Eff es String
         action = someAction `catch` \(_ :: String) -> pure "caught"
 
-        runSomeEff :: (Throw String <| ef) => eh :!! SomeEff ': ef ~> eh :!! ef
+        runSomeEff :: (Throw String :> es) => Eff (SomeEff ': es) ~> Eff es
         runSomeEff = interpret \SomeAction -> throw "not caught"
 
     putStr "interpret SomeEff then runCatch : ( runThrow . runCatch . runSomeEff $ action ) = "

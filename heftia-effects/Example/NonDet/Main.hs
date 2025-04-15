@@ -1,7 +1,6 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE DeriveAnyClass #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
 
 -- SPDX-License-Identifier: MPL-2.0
 
@@ -9,16 +8,18 @@ module Main where
 
 import Control.Monad.Hefty (
     Eff,
+    Effect,
+    Emb,
+    In,
     interpret,
     liftIO,
     makeEffectF,
     runEff,
     (&),
-    type (<:),
-    type (<|),
+    type (:>),
     type (~>),
  )
-import Control.Monad.Hefty.Except (Throw, joinEither, runThrowIO, throw)
+import Control.Monad.Hefty.Except (Throw, joinEither, runThrowIO, throw'_)
 import Control.Monad.Hefty.NonDet (Choose, Empty, choice, runNonDetMonoid)
 import Data.Function (fix)
 import Data.Functor ((<&>))
@@ -29,9 +30,9 @@ import System.FilePath (splitDirectories, (</>))
 import UnliftIO (Exception)
 
 -- | Effect for file system operations
-data FileSystem a where
-    ListDirectory :: FilePath -> FileSystem (Either NotADir [FilePath])
-    GetFileSize :: FilePath -> FileSystem (Either NotAFile Integer)
+data FileSystem :: Effect where
+    ListDirectory :: FilePath -> FileSystem f (Either NotADir [FilePath])
+    GetFileSize :: FilePath -> FileSystem f (Either NotAFile Integer)
 
 -- | Exception for when a directory was expected but found a file
 data NotAFile = NotAFile
@@ -41,7 +42,7 @@ data NotADir = NotADir
     deriving (Show)
     deriving anyclass (Exception)
 
-makeEffectF [''FileSystem]
+makeEffectF ''FileSystem
 
 -- | Exception for when an entry does not exist at the specified path
 data EntryNotFound = EntryNotFound
@@ -50,9 +51,9 @@ data EntryNotFound = EntryNotFound
 
 -- | Aggregate the sizes of all files under the given path
 totalFileSize
-    :: (Choose <| ef, Empty <| ef, FileSystem <| ef, Throw NotADir <| ef, IO <| ef)
+    :: (Choose :> es, Empty :> es, FileSystem :> es, Throw NotADir :> es, Emb IO :> es)
     => FilePath
-    -> Eff '[] ef (Sum Integer)
+    -> Eff es (Sum Integer)
 totalFileSize path = do
     entities :: [FilePath] <- listDirectory path & joinEither
     entity :: FilePath <- choice entities -- Non-deterministically /pick/ one item from the list
@@ -129,9 +130,9 @@ Interpreter for the FileSystem effect that virtualizes the file system in memory
 based on a given FSTree, instead of performing actual IO.
 -}
 runDummyFS
-    :: (Throw EntryNotFound <| ef, Throw NotADir <| ef)
+    :: (Throw EntryNotFound `In` es, Throw NotADir `In` es)
     => FSTree
-    -> Eff eh (FileSystem ': ef) ~> Eff eh ef
+    -> Eff (FileSystem ': es) ~> Eff es
 runDummyFS root = interpret \case
     ListDirectory path ->
         lookupFS path root <&> \case
@@ -144,10 +145,10 @@ runDummyFS root = interpret \case
 
 -- | Lookup the directory structure by path
 lookupFS
-    :: (Throw EntryNotFound <: m, Throw NotADir <: m, Monad m)
+    :: (Throw EntryNotFound `In` es, Throw NotADir `In` es)
     => FilePath
     -> FSTree
-    -> m FSTree
+    -> Eff es FSTree
 lookupFS path =
     splitDirectories path & fix \dive -> \case
         [] -> pure
@@ -155,5 +156,5 @@ lookupFS path =
             Dir currentDir -> do
                 case currentDir Map.!? dirName of
                     Just restTree -> dive restPath restTree
-                    Nothing -> throw EntryNotFound
-            File _ -> throw NotADir
+                    Nothing -> throw'_ EntryNotFound
+            File _ -> throw'_ NotADir

@@ -1,5 +1,3 @@
-{-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
-
 -- SPDX-License-Identifier: MPL-2.0
 
 {- |

@@ -556,18 +556,23 @@ module Control.Monad.Hefty (
     raises,
     raisesUnder,
     raiseUnder,
+    Suffix,
+    SuffixUnder,
     onlyFOEs,
     WeakenHOEs,
     RemoveHOEs,
     raisePrefix,
     raiseSuffix,
     raisePrefix1,
+    subsume,
+    subsumeUnder,
 
-    -- *** Manipulating Tags & Keys
+    -- *** Manipulating Tags
     tag,
     untag,
 
     -- * Misc
+    KnownOrder,
     Type,
     liftIO,
     module Data.Effect,
@@ -592,6 +597,8 @@ import Control.Effect.Transform (
     rewriteFor,
     rewriteIn,
     rewriteOn,
+    subsume,
+    subsumeUnder,
     tag,
     transform,
     translate,
@@ -637,7 +644,7 @@ import Control.Monad.Hefty.Types (
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect
 import Data.Effect.HFunctor.TH
-import Data.Effect.OpenUnion (FOEs, Has, In, RemoveHOEs, WeakenHOEs, nil, (!++), (!:), (:>), type (++))
+import Data.Effect.OpenUnion (FOEs, Has, In, KnownOrder, RemoveHOEs, Suffix, SuffixUnder, WeakenHOEs, nil, (!++), (!:), (:>), type (++))
 import Data.Effect.TH
 import Data.Effect.Tag
 import Data.Kind (Type)

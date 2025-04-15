@@ -61,7 +61,6 @@ common common-base
         time >= 1.11.1 && < 1.15,
         unliftio ^>= 0.2,
         unbounded-delays ^>= 0.1.1,
-        ghc-typelits-knownnat ^>= 0.7,
         containers > 0.6.5 && < 0.8,
         co-log-core ^>= 0.3.2,
         process ^>= 1.6.15,
@@ -163,11 +162,11 @@ executable Teletype
     build-depends:
         heftia-effects,
 
-executable KeyedEffects
+executable KeyTeletype
     import: common-base
 
     main-is: Main.hs
-    hs-source-dirs: Example/KeyedEffects
+    hs-source-dirs: Example/KeyTeletype
     build-depends:
         heftia-effects,
 
@@ -189,24 +188,6 @@ executable Continuation
     build-depends:
         heftia-effects,
 
-executable CC
-    import: common-base
-
-    main-is: Main.hs
-    hs-source-dirs: Example/CC
-    build-depends:
-        heftia-effects,
-        extra >= 1.7.14 && < 1.9,
-
-executable ShiftReset
-    import: common-base
-
-    main-is: Main.hs
-    hs-source-dirs: Example/ShiftReset
-    build-depends:
-        heftia-effects,
-        extra >= 1.7.14 && < 1.9,
-
 executable Writer
     import: common-base
 
@@ -223,11 +204,11 @@ executable SemanticsZoo
     build-depends:
         heftia-effects,
 
-executable FileSystemProvider
+executable DatabaseProvider
     import: common-base
 
     main-is: Main.hs
-    hs-source-dirs: Example/FileSystemProvider
+    hs-source-dirs: Example/DatabaseProvider
     build-depends:
         heftia-effects,
 
