@@ -11,14 +11,15 @@ module Control.Monad.Hefty.Fresh (
 ) where
 
 import Control.Arrow ((>>>))
-import Control.Monad.Hefty (CC, Eff, interpret, raiseUnder, (:>))
+import Control.Monad.Hefty (Eff, FOEs, interpret, raiseUnder, (:>))
+import Control.Monad.Hefty.State (runState)
 import Data.Effect.Fresh
-import Data.Effect.State (State, get, modify, runStateCC)
+import Data.Effect.State (State, get, modify)
 import Numeric.Natural (Natural)
 
-runFreshNatural :: (CC ref :> es) => Eff (Fresh Natural ': es) a -> Eff es (Natural, a)
+runFreshNatural :: (FOEs es) => Eff (Fresh Natural ': es) a -> Eff es (Natural, a)
 runFreshNatural =
-    raiseUnder >>> runFreshNaturalAsState >>> runStateCC 0
+    raiseUnder >>> runFreshNaturalAsState >>> runState 0
 {-# INLINE runFreshNatural #-}
 
 runFreshNaturalAsState

@@ -16,19 +16,19 @@ module Control.Monad.Hefty.KVStore (
 where
 
 import Control.Arrow ((>>>))
-import Control.Monad.Hefty (CC, Eff, raiseUnder, (:>))
+import Control.Monad.Hefty (Eff, FOEs, raiseUnder)
+import Control.Monad.Hefty.State (runState)
 import Data.Effect.KVStore
-import Data.Effect.State (runStateCC)
 import Data.Map (Map)
 
 runKVStoreCC
-    :: forall k v a es ref
-     . (Ord k, CC ref :> es)
+    :: forall k v a es
+     . (Ord k, FOEs es)
     => Map k v
     -> Eff (KVStore k v ': es) a
     -> Eff es (Map k v, a)
 runKVStoreCC initial =
     raiseUnder
         >>> runKVStoreAsState
-        >>> runStateCC initial
+        >>> runState initial
 {-# INLINE runKVStoreCC #-}
