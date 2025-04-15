@@ -17,10 +17,12 @@ import Control.Effect qualified as D
 import Control.Monad.Hefty.Types (Eff, Freer (Op, Val), qApp)
 import Data.Effect.OpenUnion (
     FOEs,
+    In,
     KnownOrder,
     Membership,
     Suffix,
     coerceFOEs,
+    identityMembership,
     labelMembership,
     project,
     weakens,
@@ -76,6 +78,17 @@ interposeStateBy
     -> Eff es ans
 interposeStateBy = interposeStateForBy labelMembership
 {-# INLINE interposeStateBy #-}
+
+interposeStateInBy
+    :: forall s e es ans a
+     . (e `In` es, FOEs es)
+    => s
+    -> (s -> a -> Eff es ans)
+    -> StateHandler s e (Eff es) (Eff es) ans
+    -> Eff es a
+    -> Eff es ans
+interposeStateInBy = interposeStateForBy identityMembership
+{-# INLINE interposeStateInBy #-}
 
 interposeStateForBy
     :: forall s e es ans a

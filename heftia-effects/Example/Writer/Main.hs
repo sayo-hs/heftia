@@ -8,7 +8,7 @@ import Control.Monad.Hefty (liftIO, runEff, type (<:), type (<<:))
 import Control.Monad.Hefty.Writer (runTell, runWriterHPost, runWriterHPre)
 import Data.Effect.Writer (Tell, WriterH, censor, tell)
 
-hello :: (Tell String <: m, Monad m) => m ()
+hello :: (Tell String :> es) => Eff es ()
 hello = do
     tell "Hello"
     tell " world!"

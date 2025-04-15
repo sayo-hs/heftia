@@ -14,7 +14,7 @@ import Control.Monad (MonadPlus)
 import Control.Monad.Freer qualified as FS
 import Control.Monad.Freer.NonDet qualified as FS
 import Control.Monad.Freer.Reader qualified as FS
-import Control.Monad.Hefty qualified as H hiding (empty)
+import Control.Monad.Hefty qualified as H
 import Control.Monad.Hefty.NonDet qualified as H
 import Control.Monad.Hefty.Reader qualified as H
 import Control.Monad.Identity qualified as M

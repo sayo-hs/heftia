@@ -20,45 +20,20 @@ where
 #if ( __GLASGOW_HASKELL__ < 906 )
 import Control.Applicative (liftA2)
 #endif
-import Control.Monad (forever)
-import Control.Monad.Hefty (
-    Eff,
-    interpret,
-    interpretH,
-    liftIO,
-    raiseAllH,
-    transform,
-    type (<<|),
-    type (<|),
-    type (~>),
-    type (~~>),
- )
+import Control.Effect.Transform (onlyFirstOrder)
+import Control.Monad.Hefty (Eff, transform, (:>))
 import Control.Monad.Hefty.Coroutine (inputToYield, runCoroutine)
-import Control.Monad.Hefty.Unlift (UnliftIO)
 import Data.Effect.Concurrent.Parallel
 import Data.Effect.Coroutine (Status (Continue, Done))
 import Data.Effect.Input
-import Data.Function (fix)
-import UnliftIO (
-    MonadIO,
-    MonadUnliftIO,
-    atomically,
-    mask,
-    newEmptyTMVarIO,
-    putTMVar,
-    readTMVar,
-    tryReadTMVar,
-    uninterruptibleMask_,
-    withRunInIO,
- )
-import UnliftIO.Concurrent (forkIO, killThread, threadDelay)
+import Data.Effect.OpenUnion (RemoveHOEs, WeakenHOEs)
 
-polling :: (Poll <<| eh) => Eff eh ef a -> Eff '[] (Input (Maybe a) ': ef) r -> Eff eh ef r
+polling :: (Poll :> es, WeakenHOEs es) => Eff es a -> Eff (Input (Maybe a) ': RemoveHOEs es) a -> Eff es a
 polling pollee poller =
     poldl
         ( \case
             Done r -> const $ pure $ Left r
-            Continue () k -> fmap Right . raiseAllH . k
+            Continue () k -> fmap Right . onlyFirstOrder . k
         )
-        (raiseAllH $ runCoroutine $ transform inputToYield poller)
+        (onlyFirstOrder $ runCoroutine $ transform inputToYield poller)
         pollee

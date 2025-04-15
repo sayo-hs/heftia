@@ -7,46 +7,46 @@
 
 module Main where
 
-import Control.Effect.Key (SendFOEBy)
 import Control.Monad.Hefty (
-    MemberBy,
-    interpose,
+    Eff,
+    Effect,
+    Emb,
+    Has,
+    interposeOn,
     interpret,
     liftIO,
     makeEffectF,
     runEff,
-    unkey,
-    type (:!!),
-    type (<|),
+    untag,
+    (:>),
     type (~>),
  )
-import Data.Effect.Key (unKey, type (#>))
 
-data Teletype a where
-    ReadTTY :: Teletype String
-    WriteTTY :: String -> Teletype ()
+data Teletype :: Effect where
+    ReadTTY :: Teletype f String
+    WriteTTY :: String -> Teletype f ()
 
-makeEffectF [''Teletype]
+makeEffectF ''Teletype
 
-teletypeToIO :: (IO <| r) => eh :!! Teletype ': r ~> eh :!! r
+teletypeToIO :: (Emb IO :> es) => Eff (Teletype ': es) ~> Eff es
 teletypeToIO = interpret \case
     ReadTTY -> liftIO getLine
     WriteTTY msg -> liftIO $ putStrLn msg
 
-echo :: (SendFOEBy "tty1" Teletype m, Monad m) => m ()
+echo :: (Has "tty1" Teletype es) => Eff es ()
 echo = do
-    i <- readTTY'' @"tty1"
+    i <- readTTY' @"tty1"
     case i of
         "" -> pure ()
-        _ -> writeTTY'' @"tty1" i >> echo
+        _ -> writeTTY' @"tty1" i >> echo
 
-strong :: (MemberBy "tty1" Teletype ef) => eh :!! ef ~> eh :!! ef
+strong :: (Has "tty1" Teletype es) => Eff es ~> Eff es
 strong =
-    interpose @("tty1" #> _) \e -> case unKey e of
-        ReadTTY -> readTTY'' @"tty1"
-        WriteTTY msg -> writeTTY'' @"tty1" $ msg <> "!"
+    interposeOn @"tty1" \case
+        ReadTTY -> readTTY' @"tty1"
+        WriteTTY msg -> writeTTY' @"tty1" $ msg <> "!"
 
 main :: IO ()
 main = runEff do
     liftIO $ putStrLn "Please enter something..."
-    teletypeToIO . unkey @"tty1" . strong . strong $ echo
+    teletypeToIO . untag @"tty1" . strong . strong $ echo

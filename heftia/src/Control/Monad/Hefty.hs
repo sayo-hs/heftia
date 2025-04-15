@@ -505,6 +505,8 @@ module Control.Monad.Hefty (
 
     -- ** Interposition functions
     interpose,
+    interposeOn,
+    interposeIn,
     interposeWith,
     interposeBy,
     interposeFor,
@@ -531,6 +533,7 @@ module Control.Monad.Hefty (
 
     -- *** Interposition functions
     interposeStateBy,
+    interposeStateInBy,
     interposeStateForBy,
 
     -- * Transforming effects
@@ -553,10 +556,12 @@ module Control.Monad.Hefty (
     raises,
     raisesUnder,
     raiseUnder,
+    onlyFirstOrder,
+    WeakenHOEs,
+    RemoveHOEs,
     raisePrefix,
     raiseSuffix,
     raisePrefix1,
-    raiseSuffix1,
 
     -- *** Manipulating Tags & Keys
     tag,
@@ -573,13 +578,13 @@ module Control.Monad.Hefty (
 ) where
 
 import Control.Effect hiding (Eff)
-import Control.Effect.Interpret (interprets, reinterprets)
+import Control.Effect.Interpret (interposeIn, interposeOn, interprets, reinterprets)
 import Control.Effect.Transform (
+    onlyFirstOrder,
     raise,
     raisePrefix,
     raisePrefix1,
     raiseSuffix,
-    raiseSuffix1,
     raiseUnder,
     raises,
     raisesUnder,
@@ -620,6 +625,7 @@ import Control.Monad.Hefty.Interpret.State (
     StateHandler,
     interposeStateBy,
     interposeStateForBy,
+    interposeStateInBy,
     interpretStateBy,
     reinterpretStateBy,
  )
@@ -631,7 +637,7 @@ import Control.Monad.Hefty.Types (
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect
 import Data.Effect.HFunctor.TH
-import Data.Effect.OpenUnion (FOEs, Has, In, nil, (!++), (!:), (:>), type (++))
+import Data.Effect.OpenUnion (FOEs, Has, In, RemoveHOEs, WeakenHOEs, nil, (!++), (!:), (:>), type (++))
 import Data.Effect.TH
 import Data.Effect.Tag
 import Data.Kind (Type)

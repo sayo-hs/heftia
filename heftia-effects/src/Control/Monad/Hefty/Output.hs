@@ -14,31 +14,30 @@ module Control.Monad.Hefty.Output (
 where
 
 import Control.Arrow ((>>>))
-import Control.Monad.Hefty (Eff, interpret, interpretStateBy, raiseUnder, type (~>))
-import Control.Monad.Hefty.State (runState)
+import Control.Monad.Hefty (CC, Eff, FOEs, interpret, interpretStateBy, raiseUnder, (:>))
 import Control.Monad.Hefty.Writer (handleTell)
 import Data.Effect.Output
-import Data.Effect.State (modify)
+import Data.Effect.State (modify, runStateCC)
 import Data.Effect.Writer (Tell (Tell))
 
 -- | Interprets the t'Output' effect by accumulating the outputs into a list.
 runOutputList
-    :: forall o a ef
-     . Eff '[] (Output o ': ef) a
-    -> Eff '[] ef ([o], a)
+    :: forall o a es ref
+     . (CC ref :> es)
+    => Eff (Output o ': es) a
+    -> Eff es ([o], a)
 runOutputList =
     raiseUnder
         >>> interpret (\(Output o) -> modify (o :))
-        >>> runState []
+        >>> runStateCC []
 
 -- | Interprets the t'Output' effect by accumulating the outputs into a monoid.
 runOutputMonoid
-    :: forall o w a ef
-     . ( Monoid w
-       )
+    :: forall o w a es
+     . (Monoid w, FOEs es)
     => (o -> w)
-    -> Eff '[] (Output o ': ef) a
-    -> Eff '[] ef (w, a)
+    -> Eff (Output o ': es) a
+    -> Eff es (w, a)
 runOutputMonoid f =
     interpretStateBy mempty (curry pure) \(Output o) ->
         handleTell $ Tell $ f o

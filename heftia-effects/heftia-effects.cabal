@@ -40,7 +40,7 @@ source-repository head
     subdir: heftia-effects
 
 common common-base
-    ghc-options:      -Wall
+    ghc-options:      -Wall -Wredundant-constraints
     default-language: GHC2021
 
     default-extensions:
@@ -68,33 +68,30 @@ common common-base
         bytestring >= 0.11.1 && < 0.13,
         text >= 1.2.5 && < 2.2,
 
-    ghc-options: -Wall
-
 library
     import: common-base
 
     exposed-modules:
         Control.Monad.Hefty.Reader
-        -- Control.Monad.Hefty.Writer
+        Control.Monad.Hefty.Writer
         Control.Monad.Hefty.State
         Control.Monad.Hefty.Except
-        -- Control.Monad.Hefty.SubJump
-        -- Control.Monad.Hefty.ShiftReset
+        Control.Monad.Hefty.CC
+        Control.Monad.Hefty.Shift
         Control.Monad.Hefty.NonDet
         Control.Monad.Hefty.Coroutine
-        -- Control.Monad.Hefty.Input
-        -- Control.Monad.Hefty.Output
-        -- Control.Monad.Hefty.Resource
+        Control.Monad.Hefty.Input
+        Control.Monad.Hefty.Output
         Control.Monad.Hefty.Unlift
-        -- Control.Monad.Hefty.Provider
-        -- Control.Monad.Hefty.KVStore
-        -- Control.Monad.Hefty.Fresh
-        -- Control.Monad.Hefty.Fail
-        -- Control.Monad.Hefty.Concurrent.Parallel
-        -- Control.Monad.Hefty.Concurrent.Stream
-        -- Control.Monad.Hefty.Concurrent.Timer
-        -- Control.Monad.Hefty.Concurrent.Subprocess
-        -- Control.Monad.Hefty.Log
+        Control.Monad.Hefty.Provider
+        Control.Monad.Hefty.KVStore
+        Control.Monad.Hefty.Fresh
+        Control.Monad.Hefty.Fail
+        Control.Monad.Hefty.Concurrent.Parallel
+        Control.Monad.Hefty.Concurrent.Stream
+        Control.Monad.Hefty.Concurrent.Timer
+        Control.Monad.Hefty.Concurrent.Subprocess
+        Control.Monad.Hefty.Log
 
     reexported-modules:
         -- Control.Monad.Hefty,
@@ -109,21 +106,20 @@ library
         Data.Effect.Writer,
         Data.Effect.State,
         Data.Effect.Except,
-        -- Data.Effect.SubJump,
-        -- Data.Effect.ShiftReset,
+        Data.Effect.CC,
+        Data.Effect.Shift,
         Data.Effect.NonDet,
         Data.Effect.Coroutine,
-        -- Data.Effect.Input,
-        -- Data.Effect.Output,
-        -- Data.Effect.Resource,
+        Data.Effect.Input,
+        Data.Effect.Output,
         Data.Effect.Unlift,
-        -- Data.Effect.Provider,
-        -- Data.Effect.KVStore,
-        -- Data.Effect.Fresh,
-        -- Data.Effect.Fail,
-        -- Data.Effect.Concurrent.Parallel,
-        -- Data.Effect.Concurrent.Timer,
-        -- Data.Effect.Log,
+        Data.Effect.Provider,
+        Data.Effect.KVStore,
+        Data.Effect.Fresh,
+        Data.Effect.Fail,
+        Data.Effect.Concurrent.Parallel,
+        Data.Effect.Concurrent.Timer,
+        Data.Effect.Log,
 
     -- Modules included in this executable, other than Main.
     -- other-modules:
@@ -194,11 +190,11 @@ executable Continuation
     build-depends:
         heftia-effects,
 
-executable SubJump
+executable CC
     import: common-base
 
     main-is: Main.hs
-    hs-source-dirs: Example/SubJump
+    hs-source-dirs: Example/CC
     build-depends:
         heftia-effects,
         extra >= 1.7.14 && < 1.9,
