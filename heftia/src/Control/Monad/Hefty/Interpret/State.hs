@@ -63,7 +63,7 @@ reinterpretStateBy s0 ret hdl = loop s0
         Val x -> ret s x
         Op u q ->
             let k s' = loop s' . D.Eff . qApp q
-             in u & (\e -> hdl e s k) !: D.Eff . (`Op` (tsingleton $ unEff . k s0)) . weakens . coerceFOEs
+             in u & (\e -> hdl e s k) !: D.Eff . (`Op` (tsingleton $ unEff . k s)) . weakens . coerceFOEs
 {-# INLINE reinterpretStateBy #-}
 
 -- * Interposition functions
@@ -107,7 +107,7 @@ interposeStateForBy i s0 ret hdl = loop s0
             let k s' = loop s' . D.Eff . qApp q
              in case project i u of
                     Just e -> hdl e s k
-                    Nothing -> D.Eff $ Op u (tsingleton $ unEff . k s0)
+                    Nothing -> D.Eff $ Op u (tsingleton $ unEff . k s)
 {-# INLINE interposeStateForBy #-}
 
 -- TODO: add other pattern functions.

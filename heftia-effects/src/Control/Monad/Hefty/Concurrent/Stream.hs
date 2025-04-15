@@ -28,7 +28,7 @@ import Control.Monad.Hefty (
     interpret,
     interpretsBy,
     nil,
-    onlyFirstOrder,
+    onlyFOEs,
     raise,
     reinterprets,
     untag,
@@ -158,11 +158,11 @@ machine :: (WeakenHOEs es) => Eff (Input i ': Output o ': RemoveHOEs es) ans -> 
 machine =
     interpretsBy
         (pure . Terminated)
-        ( (\Input k -> pure $ Waiting $ Machine . onlyFirstOrder . k)
-            !: (\(Output o) k -> pure $ Produced o $ Machine $ onlyFirstOrder $ k ())
+        ( (\Input k -> pure $ Waiting $ Machine . onlyFOEs . k)
+            !: (\(Output o) k -> pure $ Produced o $ Machine $ onlyFOEs $ k ())
             !: nil
         )
-        >>> onlyFirstOrder
+        >>> onlyFOEs
         >>> Machine
 
 runMachinery

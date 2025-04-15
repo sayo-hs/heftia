@@ -20,7 +20,7 @@ where
 #if ( __GLASGOW_HASKELL__ < 906 )
 import Control.Applicative (liftA2)
 #endif
-import Control.Effect.Transform (onlyFirstOrder)
+import Control.Effect.Transform (onlyFOEs)
 import Control.Monad.Hefty (Eff, transform, (:>))
 import Control.Monad.Hefty.Coroutine (inputToYield, runCoroutine)
 import Data.Effect.Concurrent.Parallel
@@ -28,12 +28,12 @@ import Data.Effect.Coroutine (Status (Continue, Done))
 import Data.Effect.Input
 import Data.Effect.OpenUnion (RemoveHOEs, WeakenHOEs)
 
-polling :: (Poll :> es, WeakenHOEs es) => Eff es a -> Eff (Input (Maybe a) ': RemoveHOEs es) a -> Eff es a
+polling :: (Poll :> es, WeakenHOEs es) => Eff es a -> Eff (Input (Maybe a) ': RemoveHOEs es) b -> Eff es b
 polling pollee poller =
     poldl
         ( \case
             Done r -> const $ pure $ Left r
-            Continue () k -> fmap Right . onlyFirstOrder . k
+            Continue () k -> fmap Right . onlyFOEs . k
         )
-        (onlyFirstOrder $ runCoroutine $ transform inputToYield poller)
+        (onlyFOEs $ runCoroutine $ transform inputToYield poller)
         pollee

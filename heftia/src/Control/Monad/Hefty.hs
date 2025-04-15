@@ -556,7 +556,7 @@ module Control.Monad.Hefty (
     raises,
     raisesUnder,
     raiseUnder,
-    onlyFirstOrder,
+    onlyFOEs,
     WeakenHOEs,
     RemoveHOEs,
     raisePrefix,
@@ -580,7 +580,7 @@ module Control.Monad.Hefty (
 import Control.Effect hiding (Eff)
 import Control.Effect.Interpret (interposeIn, interposeOn, interprets, reinterprets)
 import Control.Effect.Transform (
-    onlyFirstOrder,
+    onlyFOEs,
     raise,
     raisePrefix,
     raisePrefix1,

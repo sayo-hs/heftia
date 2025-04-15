@@ -8,12 +8,11 @@ module Test.Semantics where
 import Control.Applicative ((<|>))
 import Control.Effect (type (~>))
 import Control.Monad.Hefty (
+    Eff,
+    Effect,
     interpret,
     runPure,
-    type ($),
-    type (:!!),
-    type (<<|),
-    type (<|),
+    (:>),
  )
 import Control.Monad.Hefty.Except (runCatch, runThrow)
 import Control.Monad.Hefty.NonDet (runChooseH, runNonDet)
@@ -30,7 +29,7 @@ import Test.Hspec (Spec, describe, it, shouldBe)
 
 spec_State_Except :: Spec
 spec_State_Except = describe "State & Except semantics" do
-    let action :: (State Bool <| ef, Throw () <| ef, Catch () <<| eh) => (eh :!! ef) Bool
+    let action :: (State Bool :> es, Throw () :> es, Catch () :> es) => Eff es Bool
         action = do
             (put True *> throw ()) `catch` \() -> pure ()
             get
@@ -44,7 +43,7 @@ spec_NonDet_Except :: Spec
 spec_NonDet_Except = describe "NonDet & Except semantics" do
     let action1
             , action2
-                :: (Empty <| ef, ChooseH <<| eh, Throw () <| ef, Catch () <<| eh) => eh :!! ef $ Bool
+                :: (Empty :> es, ChooseH :> es, Throw () :> es, Catch () :> es) => Eff es Bool
         action1 = (pure True <|> throw ()) `catch` \() -> pure False
         action2 = (throw () <|> pure True) `catch` \() -> pure False
 
@@ -60,8 +59,8 @@ spec_NonDet_Except = describe "NonDet & Except semantics" do
 spec_NonDet_Writer :: Spec
 spec_NonDet_Writer = describe "NonDet & Writer semantics" do
     let action
-            :: (Empty <| ef, ChooseH <<| eh, Tell (Sum Int) <| ef, WriterH (Sum Int) <<| eh)
-            => eh :!! ef $ (Sum Int, Bool)
+            :: (Empty :> es, ChooseH :> es, Tell (Sum Int) :> es, WriterH (Sum Int) :> es)
+            => Eff es (Sum Int, Bool)
         action = listen $ add 1 *> (add 2 $> True <|> add 3 $> False)
           where
             add = tell . Sum @Int
@@ -71,16 +70,16 @@ spec_NonDet_Writer = describe "NonDet & Writer semantics" do
     it "runTell   . runNonDet $ listen $ add 1 *> (add 2 $> True <|> add 3 $> False)  ==>  (6, [(3, True), (4, False)])" do
         runPure (runTell @(Sum Int) . runNonDet @[] . runWriterHPre @(Sum Int) . runChooseH $ action) `shouldBe` (6, [(3, True), (4, False)])
 
-data SomeEff a where
-    SomeAction :: SomeEff String
-makeEffectF [''SomeEff]
+data SomeEff :: Effect where
+    SomeAction :: SomeEff f String
+makeEffectF ''SomeEff
 
 spec_The_issue_12 :: Spec
 spec_The_issue_12 = describe "hasura/eff#12 semantics" do
-    let action :: (Catch String <<| eh, Throw String <| ef, SomeEff <| ef) => eh :!! ef $ String
+    let action :: (Catch String :> es, SomeEff :> es) => Eff es String
         action = someAction `catch` \(_ :: String) -> pure "caught"
 
-        runSomeEff :: (Throw String <| ef) => eh :!! SomeEff ': ef ~> eh :!! ef
+        runSomeEff :: (Throw String :> es) => Eff (SomeEff ': es) ~> Eff es
         runSomeEff = interpret (\SomeAction -> throw "not caught")
 
     it "runCatch . interpret (\\SomeAction -> throw \"not caught\") $ someAction `catch` \"caught\"  ==>  Right \"caught\"" do
