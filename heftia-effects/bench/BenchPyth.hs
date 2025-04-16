@@ -17,11 +17,13 @@ import Control.Monad.Freer.Reader qualified as FS
 import Control.Monad.Hefty qualified as H
 import Control.Monad.Hefty.NonDet qualified as H
 import Control.Monad.Hefty.Reader qualified as H
+import Control.Monad.Hefty.Shift qualified as H
 import Control.Monad.Identity qualified as M
 import Control.Monad.Logic qualified as M
 import Control.Monad.Reader qualified as M
 import Control.Mp.Eff qualified as Mp
 import Control.Mp.Util qualified as Mp
+import Data.List (singleton)
 import "eff" Control.Effect qualified as EF
 
 programFreer :: (FS.Member FS.NonDet es) => Int -> FS.Eff es (Int, Int, Int)
@@ -60,6 +62,15 @@ pythHeftia n = H.runPure $ H.runNonDet $ programHeftia n
 
 pythHeftiaDeep :: Int -> [(Int, Int, Int)]
 pythHeftiaDeep n = H.runPure $ run $ run $ run $ run $ run $ H.runNonDet $ run $ run $ run $ run $ run $ programHeftia n
+  where
+    run :: H.Eff (H.Ask () ': es) a -> H.Eff es a
+    run = H.runAsk ()
+
+pythHeftiaShift :: Int -> [(Int, Int, Int)]
+pythHeftiaShift n = H.runPure $ H.evalShift $ H.runNonDetShift $ singleton <$> programHeftia n
+
+pythHeftiaShiftDeep :: Int -> [(Int, Int, Int)]
+pythHeftiaShiftDeep n = H.runPure $ H.evalShift $ run $ run $ run $ run $ run $ H.runNonDetShift $ run $ run $ run $ run $ run $ singleton <$> programHeftia n
   where
     run :: H.Eff (H.Ask () ': es) a -> H.Eff es a
     run = H.runAsk ()

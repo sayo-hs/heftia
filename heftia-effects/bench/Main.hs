@@ -19,7 +19,8 @@ main =
                 bgroup
                     (show x)
                     [ bench "heftia" $ nf countdownHeftia x
-                    , bench "freer" $ nf countdownFreer x
+                    , -- , bench "heftia.naive" $ nf countdownHeftiaNaive x -- no optimization
+                      bench "freer" $ nf countdownFreer x
                     , bench "polyemy" $ nf countdownSem x
                     , bench "fused" $ nf countdownFused x
                     , bench "effectful" $ nf countdownEffectful x
@@ -32,7 +33,8 @@ main =
                 bgroup
                     (show x)
                     [ bench "heftia.5+5" $ nf countdownHeftiaDeep x
-                    , bench "freer.5+5" $ nf countdownFreerDeep x
+                    , -- , bench "heftia.naive.5+5" $ nf countdownHeftiaNaiveDeep x -- no optimization
+                      bench "freer.5+5" $ nf countdownFreerDeep x
                     , bench "polysemy.5+5" $ nf countdownSemDeep x
                     , bench "fused.5+5" $ nf countdownFusedDeep x
                     , bench "effectful.5+5" $ nf countdownEffectfulDeep x
@@ -41,7 +43,7 @@ main =
                     , bench "mtl.5+5" $ nf countdownMtlDeep x
                     ]
         , bgroup "catch.shallow" $
-            [10000] <&> \x ->
+            [1000] <&> \x ->
                 bgroup
                     (show x)
                     [ bench "heftia" $ nf catchHeftia x
@@ -101,7 +103,8 @@ main =
                 bgroup
                     (show x)
                     [ bench "heftia" $ nf pythHeftia x
-                    , bench "freer" $ nf pythFreer x
+                    , -- , bench "heftia.shift" $ nf pythHeftiaShift x -- tricky method
+                      bench "freer" $ nf pythFreer x
                     , bench "fused" $ nf pythFused x
                     , bench "ev" $ nf pythEv x
                     , bench "mp" $ nf pythMp x
@@ -113,7 +116,8 @@ main =
                 bgroup
                     (show x)
                     [ bench "heftia.5+5" $ nf pythHeftiaDeep x
-                    , bench "freer.5+5" $ nf pythFreerDeep x
+                    , -- , bench "heftia.shift.5+5" $ nf pythHeftiaShiftDeep x -- tricky method
+                      bench "freer.5+5" $ nf pythFreerDeep x
                     , bench "fused.5+5" $ nf pythFusedDeep x
                     , bench "ev.5+5" $ nf pythEvDeep x
                     , bench "mp.5+5" $ nf pythMpDeep x
