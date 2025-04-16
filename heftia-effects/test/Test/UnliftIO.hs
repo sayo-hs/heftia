@@ -15,6 +15,6 @@ spec_UnliftIO = describe "MonadUnliftIO safety" do
         x <- runUnliftIO do
             m <- evalStateIORef @Int 0 do
                 withRunInIO \run -> do
-                    pure $ run $ get @Int
+                    pure $ run get
             liftIO m
         x `shouldBe` 0
