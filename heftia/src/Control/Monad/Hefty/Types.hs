@@ -23,7 +23,7 @@ import Data.Kind (Type)
 data Freer f a
     = -- | A pure value.
       Val a
-    | -- | An effectful operation, which can be either a higher-order effect or a first-order effect.
+    | -- | An effectful operation.
       forall x. Op
         (f x)
         (FTCQueue (Freer f) x a)
