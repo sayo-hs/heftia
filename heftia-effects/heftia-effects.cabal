@@ -257,7 +257,6 @@ benchmark heftia-bench
 
     build-depends:
         heftia-effects,
-        freer-simple ^>= 1.2,
         polysemy ^>= 1.9,
         fused-effects ^>= 1.1,
         effectful >= 2.3 && < 2.6,
@@ -269,6 +268,9 @@ benchmark heftia-bench
 
     if impl(ghc >= 9.6) && impl(ghc < 9.10)
        build-depends: eff
+
+    if impl(ghc < 9.10)
+       build-depends: freer-simple ^>= 1.2
 
     default-extensions:
         PackageImports

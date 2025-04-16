@@ -30,11 +30,12 @@ Algebraic effects provide a consistent and predictable framework for handling si
 Research in cutting-edge languages like [Koka](https://koka-lang.github.io/koka/doc/index.html), [Eff lang](https://www.eff-lang.org/), and [OCaml 5](https://ocaml.org/manual/effects.html) is advancing the understanding and implementation of algebraic effects, establishing them as **the programming paradigm of the future**.
 
 Heftia extends this by supporting higher-order algebraic effects, allowing for more expressive and modular effect management.
-This leads to more maintainable and extensible applications compared to non-algebraic effect libraries, positioning Heftia at **the forefront of modern effect handling techniques**.
+This positions Heftia at **the forefront of modern effect handling techniques**.
 
 Furthermore, **Heftia is functionally a superset of other effect libraries**, especially those based on `ReaderT` over `IO`.
 In other words, anything that is possible with other libraries is also possible with this library.
 This is because Heftia supports `MonadUnliftIO` in the form of higher-order effects.
+
 `MonadUnliftIO` is a typeclass that ensures safety in exception handling.
 Heftia completely resolves runtime-error issues[^8] present in certain usages of `MonadUnliftIO` with `effectful` and `bluefin`, thereby demonstrating stronger safety guarantees.
 Moreover, Heftia delivers strong performance.
