@@ -1,20 +1,16 @@
 # Performance
 
 Overall, the performance of this library is positioned roughly in the middle between the fast (`effectful`, `eveff`, etc.) and slow (`polysemy`, `fused-effects`, etc.) libraries, and can be considered average.
-In all benchmarks, the speed is nearly equivalent to `freer-simple`, only slightly slower.
+In all benchmarks, the speed is nearly equivalent to `freer-simple`.
 
-In the State benchmark, it is about 3-6x faster than `polysemy` and about 2-7x slower than `effectful`.
+In the State benchmark, it is about 2-6x faster than `polysemy` and about 2-9x slower than `effectful`.
 
 In the Throw/Catch benchmark, it is slightly faster than `effectful` in the fastest case, and at least 2x as fast as `polysemy` in the other cases.
 
 In the Ask/Local benchmark, it still outperforms `polysemy` and `fused-effects` in deep effect stack cases.
 
-Non-deterministic computations are somewhat slow;
-in cases with a shallow effect stack, they are about 5x slower than `fused-effects`.
-However, because their performance in terms of stack depth is better than that of `fused-effects`,
-they catch up to `fused-effects` in speed at around a depth of 5.
-Since among the practical extensible effects libraries, only `fused-effects` and `freer-simple` support non-deterministic computations,
-this shouldn't be too much of a problem.
+Non-deterministic computations is comparable to that of other libraries.
+Polysemy does not support non-deterministic computations, and among practical extensible effects libraries, only `fused-effects` currently supports them.
 
 The coroutine performance is on par with `freer-simple`, maintaining similar speed without any noticeable degradation compared to other effects.
 Moreover, the other libraries such as `eff` and `mpeff`, aside from this library and `freer-simple`, likely suffer from the $O(n^2)$ issue mentioned in the "Reflection without Remorse" paper.
@@ -22,18 +18,6 @@ In comparison, these libraries are significantly slower, approximately 50x slowe
 
 Furthermore, since there are differences among libraries in their support for higher-order effects and continuations,
 please note that, for example, in the Throw/Catch benchmark, only libraries that support higher-order effects are included in the comparison.
-
-Below is a table showing the speedup factor of `heftia` when `mtl` is set to 1x (`mtl`'s computation time divided by `heftia`'s computation time).
-Larger values indicate that `heftia` is faster.
-
-| Benchmark             | Speedup       |
-| --------------------- | ------------- |
-| state, shallow        | 2.0x         |
-| state, deep           | 6.6x         |
-| throw/catch, shallow  | 0.3x         |
-| throw/catch, deep     | 1.2 - 6.5x  |
-| nondet, shallow       | 0.2x         |
-| nondet, deep          | 0.7x         |
 
 ## Reproduction
 The benchmark code is available at [heftia-effects/bench](https://github.com/sayo-hs/heftia/blob/v0.6.0/heftia-effects/bench).
