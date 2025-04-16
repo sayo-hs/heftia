@@ -29,12 +29,19 @@ module Data.FTCQueue (
     tviewl,
 ) where
 
+import Control.Category (Category ((.)), id)
+import Prelude hiding ((.))
+
 {- | Non-empty tree. Deconstruction operations make it more and more
 left-leaning
 -}
 data FTCQueue m a b where
     Leaf :: (a -> m b) -> FTCQueue m a b
     Node :: FTCQueue m a x -> FTCQueue m x b -> FTCQueue m a b
+
+instance (Applicative f) => Category (FTCQueue f) where
+    id = Leaf pure
+    (.) = flip Node
 
 -- | Build a leaf from a single operation. [O(1)]
 tsingleton :: (a -> m b) -> FTCQueue m a b

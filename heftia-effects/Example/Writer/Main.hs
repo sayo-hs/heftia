@@ -1,19 +1,17 @@
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0. If a copy of the MPL was not distributed with this
--- file, You can obtain one at https://mozilla.org/MPL/2.0/.
+-- SPDX-License-Identifier: MPL-2.0
 
 module Main where
 
-import Control.Monad.Hefty (liftIO, runEff, type (<:), type (<<:))
+import Control.Monad.Hefty (Eff, liftIO, runEff, type (:>))
 import Control.Monad.Hefty.Writer (runTell, runWriterHPost, runWriterHPre)
 import Data.Effect.Writer (Tell, WriterH, censor, tell)
 
-hello :: (Tell String <: m, Monad m) => m ()
+hello :: (Tell String :> es) => Eff es ()
 hello = do
     tell "Hello"
     tell " world!"
 
-censorHello :: (Tell String <: m, WriterH String <<: m, Monad m) => m ()
+censorHello :: (Tell String :> es, WriterH String :> es) => Eff es ()
 censorHello =
     censor
         ( \s ->

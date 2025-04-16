@@ -2,18 +2,18 @@
 
 module Test.Writer where
 
-import Control.Effect (type (<:), type (<<:))
+import Control.Monad.Hefty (Eff, (:>))
 import Control.Monad.Hefty.Interpret (runEff)
 import Control.Monad.Hefty.Writer (runTell, runWriterHPost, runWriterHPre)
 import Data.Effect.Writer (Tell, WriterH, censor, tell)
 import Test.Hspec (Spec, describe, it, shouldBe)
 
-hello :: (Tell String <: m, Monad m) => m ()
+hello :: (Tell String :> es) => Eff es ()
 hello = do
     tell "Hello"
     tell " world!"
 
-censorHello :: (Tell String <: m, WriterH String <<: m, Monad m) => m ()
+censorHello :: (Tell String :> es, WriterH String :> es) => Eff es ()
 censorHello =
     censor
         ( \s ->

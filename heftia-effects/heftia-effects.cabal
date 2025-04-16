@@ -1,6 +1,6 @@
-cabal-version:      2.4
+cabal-version:      3.0
 name:               heftia-effects
-version:            0.5.0.0
+version:            0.6.0.0
 
 -- A short (one-line) description of the package.
 synopsis: higher-order algebraic effects done right
@@ -16,11 +16,11 @@ bug-reports: https://github.com/sayo-hs/heftia
 -- The license under which the package is released.
 license:            MPL-2.0
 license-file:       LICENSE
-author:             Sayo Koyoneda <ymdfield@outlook.jp>
-maintainer:         Sayo Koyoneda <ymdfield@outlook.jp>
+author:             Sayo contributors <ymdfield@outlook.jp>
+maintainer:         ymdfield <ymdfield@outlook.jp>
 
 -- A copyright notice.
-copyright: 2023-2024 Sayo Koyoneda
+copyright: 2023-2025 Sayo contributors
 category: Control, Effect, Monads
 
 extra-doc-files:
@@ -28,19 +28,16 @@ extra-doc-files:
     NOTICE
     README.md
 
-tested-with:
-    GHC == 9.8.2
-    GHC == 9.6.6
-    GHC == 9.4.1
+tested-with: GHC == {9.6.2, 9.8.4, 9.10.1, 9.12.2}
 
 source-repository head
     type: git
     location: https://github.com/sayo-hs/heftia
-    tag: v0.5.0
+    tag: v0.6.0
     subdir: heftia-effects
 
 common common-base
-    ghc-options:      -Wall
+    ghc-options:      -Wall -Wredundant-constraints
     default-language: GHC2021
 
     default-extensions:
@@ -55,20 +52,17 @@ common common-base
         PatternSynonyms
 
     build-depends:
-        base >= 4.17 && < 4.21,
-        data-effects ^>= 0.3.0.1,
-        heftia ^>= 0.5,
+        base >= 4.17 && < 4.22,
+        data-effects ^>= 0.4,
+        heftia ^>= 0.6,
         time >= 1.11.1 && < 1.15,
         unliftio ^>= 0.2,
         unbounded-delays ^>= 0.1.1,
-        ghc-typelits-knownnat ^>= 0.7,
         containers > 0.6.5 && < 0.8,
         co-log-core ^>= 0.3.2,
         process ^>= 1.6.15,
         bytestring >= 0.11.1 && < 0.13,
         text >= 1.2.5 && < 2.2,
-
-    ghc-options: -Wall
 
 library
     import: common-base
@@ -78,12 +72,12 @@ library
         Control.Monad.Hefty.Writer
         Control.Monad.Hefty.State
         Control.Monad.Hefty.Except
-        Control.Monad.Hefty.ShiftReset
+        Control.Monad.Hefty.CC
+        Control.Monad.Hefty.Shift
         Control.Monad.Hefty.NonDet
         Control.Monad.Hefty.Coroutine
         Control.Monad.Hefty.Input
         Control.Monad.Hefty.Output
-        Control.Monad.Hefty.Resource
         Control.Monad.Hefty.Unlift
         Control.Monad.Hefty.Provider
         Control.Monad.Hefty.KVStore
@@ -96,29 +90,24 @@ library
         Control.Monad.Hefty.Log
 
     reexported-modules:
-        Control.Monad.Hefty,
-        Data.Effect.OpenUnion,
+        -- Control.Monad.Hefty,
         Data.Effect,
         Data.Effect.TH,
         Data.Effect.Tag,
-        Data.Effect.Key,
-        Data.Effect.Key.TH,
         Data.Effect.HFunctor,
         Data.Effect.HFunctor.HCont,
         Data.Effect.HFunctor.TH,
         Control.Effect,
-        Control.Effect.Tag,
-        Control.Effect.Key,
         Data.Effect.Reader,
         Data.Effect.Writer,
         Data.Effect.State,
         Data.Effect.Except,
-        Data.Effect.ShiftReset,
+        Data.Effect.CC,
+        Data.Effect.Shift,
         Data.Effect.NonDet,
         Data.Effect.Coroutine,
         Data.Effect.Input,
         Data.Effect.Output,
-        Data.Effect.Resource,
         Data.Effect.Unlift,
         Data.Effect.Provider,
         Data.Effect.KVStore,
@@ -147,6 +136,7 @@ test-suite test
         Test.Pyth
         Test.Coroutine
         Test.Concurrent
+        Test.UnliftIO
 
     hs-source-dirs: test
 
@@ -162,7 +152,6 @@ test-suite test
 
     type: exitcode-stdio-1.0
 
-
 executable Teletype
     import: common-base
 
@@ -171,11 +160,11 @@ executable Teletype
     build-depends:
         heftia-effects,
 
-executable KeyedEffects
+executable KeyTeletype
     import: common-base
 
     main-is: Main.hs
-    hs-source-dirs: Example/KeyedEffects
+    hs-source-dirs: Example/KeyTeletype
     build-depends:
         heftia-effects,
 
@@ -197,15 +186,6 @@ executable Continuation
     build-depends:
         heftia-effects,
 
-executable ShiftReset
-    import: common-base
-
-    main-is: Main.hs
-    hs-source-dirs: Example/ShiftReset
-    build-depends:
-        heftia-effects,
-        extra >= 1.7.14 && < 1.9,
-
 executable Writer
     import: common-base
 
@@ -222,11 +202,11 @@ executable SemanticsZoo
     build-depends:
         heftia-effects,
 
-executable FileSystemProvider
+executable DatabaseProvider
     import: common-base
 
     main-is: Main.hs
-    hs-source-dirs: Example/FileSystemProvider
+    hs-source-dirs: Example/DatabaseProvider
     build-depends:
         heftia-effects,
 
@@ -275,7 +255,6 @@ benchmark heftia-bench
 
     build-depends:
         heftia-effects,
-        freer-simple ^>= 1.2,
         polysemy ^>= 1.9,
         fused-effects ^>= 1.1,
         effectful >= 2.3 && < 2.6,
@@ -287,6 +266,9 @@ benchmark heftia-bench
 
     if impl(ghc >= 9.6) && impl(ghc < 9.10)
        build-depends: eff
+
+    if impl(ghc < 9.10)
+       build-depends: freer-simple ^>= 1.2
 
     default-extensions:
         PackageImports

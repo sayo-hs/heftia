@@ -1,6 +1,6 @@
-cabal-version:      2.4
+cabal-version:      3.0
 name:               heftia
-version:            0.5.0.0
+version:            0.6.0.0
 
 -- A short (one-line) description of the package.
 synopsis: higher-order algebraic effects done right
@@ -8,21 +8,21 @@ synopsis: higher-order algebraic effects done right
 -- A longer description of the package.
 description:
     This is the core package for [heftia-effects](https://hackage.haskell.org/package/heftia-effects).
-    .
+
     Heftia is an extensible effects library that generalizes "Algebraic Effects and Handlers" to higher-order effects, providing users with maximum flexibility and delivering standard and reasonable speed.
     In its generalization, the focus is on ensuring predictable results based on simple, consistent semantics, while preserving soundness.
-    .
+
     Please refer to the [Haddock documentation](https://hackage.haskell.org/package/heftia-0.5.0.0/docs/Control-Monad-Hefty.html) for usage and semantics.
     For information on performance, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/v0.5.0/benchmark/performance.md).
-    .
+
     This library is inspired by the paper:
-    .
+
     * Casper Bach Poulsen and Cas van der Rest. 2023. Hefty Algebras: Modular
         Elaboration of Higher-Order Algebraic Effects. Proc. ACM Program. Lang. 7,
         POPL, Article 62 (January 2023), 31 pages. <https://doi.org/10.1145/3571255>
-    .
+
     The /elaboration/ approach proposed in the above paper allows for a straightforward treatment of higher-order effects.
-    .
+
     Heftia's data structure is an extension of the Freer monad, designed to be theoretically straightforward by eliminating ad-hoc elements.
 
 
@@ -32,12 +32,12 @@ bug-reports: https://github.com/sayo-hs/heftia
 -- The license under which the package is released.
 license:            MPL-2.0
 license-file:       LICENSE
-author:             Sayo Koyoneda <ymdfield@outlook.jp>
-maintainer:         Sayo Koyoneda <ymdfield@outlook.jp>
+author:             Sayo contributors <ymdfield@outlook.jp>
+maintainer:         ymdfield <ymdfield@outlook.jp>
 
 -- A copyright notice.
 copyright:
-    2023-2024 Sayo Koyoneda
+    2023-2025 Sayo contributors
     2016 Allele Dev; 2017 Ixperta Solutions s.r.o.; 2017 Alexis King
 category: Control, Monads
 
@@ -46,15 +46,12 @@ extra-doc-files:
     NOTICE
     README.md
 
-tested-with:
-    GHC == 9.8.2
-    GHC == 9.6.6
-    GHC == 9.4.1
+tested-with: GHC == {9.6.2, 9.8.4, 9.10.1, 9.12.2}
 
 source-repository head
     type: git
     location: https://github.com/sayo-hs/heftia
-    tag: v0.5.0
+    tag: v0.6.0
     subdir: heftia
 
 library
@@ -63,26 +60,17 @@ library
         Control.Monad.Hefty.Types
         Control.Monad.Hefty.Interpret
         Control.Monad.Hefty.Interpret.State
-        Control.Monad.Hefty.Transform
-        Data.Effect.OpenUnion
-        Data.Effect.OpenUnion.Internal
-        Data.Effect.OpenUnion.Internal.FO
-        Data.Effect.OpenUnion.Internal.HO
-        Data.Effect.OpenUnion.Sum
         Data.FTCQueue
 
     reexported-modules:
         Data.Effect,
         Data.Effect.TH,
         Data.Effect.Tag,
-        Data.Effect.Key,
-        Data.Effect.Key.TH,
         Data.Effect.HFunctor,
         Data.Effect.HFunctor.HCont,
         Data.Effect.HFunctor.TH,
+        Data.Effect.OpenUnion,
         Control.Effect,
-        Control.Effect.Tag,
-        Control.Effect.Key,
 
     -- Modules included in this executable, other than Main.
     -- other-modules:
@@ -90,8 +78,8 @@ library
     -- LANGUAGE extensions used by modules in this package.
     -- other-extensions:
     build-depends:
-        base                          >= 4.17 && < 4.21,
-        data-effects                  ^>= 0.3.0.1,
+        base                          >= 4.17 && < 4.22,
+        data-effects                  ^>= 0.4,
         mtl                           >= 2.2.2 && < 2.4,
         unliftio                      ^>= 0.2,
 

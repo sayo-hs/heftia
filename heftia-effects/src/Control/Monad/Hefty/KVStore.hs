@@ -1,12 +1,9 @@
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0. If a copy of the MPL was not distributed with this
--- file, You can obtain one at https://mozilla.org/MPL/2.0/.
+-- SPDX-License-Identifier: MPL-2.0
 
 {- |
-Copyright   :  (c) 2024 Sayo Koyoneda
+Copyright   :  (c) 2024-2025 Sayo contributors
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
-Portability :  portable
 
 This module provides handlers for the t`KVStore` effect, comes
 from [@Polysemy.KVStore@](https://hackage.haskell.org/package/polysemy-kvstore-0.1.3.0/docs/Polysemy-KVStore.html)
@@ -19,29 +16,19 @@ module Control.Monad.Hefty.KVStore (
 where
 
 import Control.Arrow ((>>>))
-import Control.Monad.Hefty (Eff, interpret, raiseUnder, type (<|), type (~>))
+import Control.Monad.Hefty (Eff, FOEs, raiseUnder)
 import Control.Monad.Hefty.State (runState)
 import Data.Effect.KVStore
-import Data.Effect.State (State, get, modify)
-import Data.Functor ((<&>))
 import Data.Map (Map)
-import Data.Map qualified as Map
 
-runKVStorePure
-    :: forall k v r a
-     . (Ord k)
+runKVStoreCC
+    :: forall k v a es
+     . (Ord k, FOEs es)
     => Map k v
-    -> Eff '[] (KVStore k v ': r) a
-    -> Eff '[] r (Map k v, a)
-runKVStorePure initial =
+    -> Eff (KVStore k v ': es) a
+    -> Eff es (Map k v, a)
+runKVStoreCC initial =
     raiseUnder
         >>> runKVStoreAsState
         >>> runState initial
-
-runKVStoreAsState
-    :: forall k v r
-     . (Ord k, State (Map k v) <| r)
-    => Eff '[] (KVStore k v ': r) ~> Eff '[] r
-runKVStoreAsState = interpret \case
-    LookupKV k -> get <&> Map.lookup k
-    UpdateKV k v -> modify $ Map.update (const v) k
+{-# INLINE runKVStoreCC #-}

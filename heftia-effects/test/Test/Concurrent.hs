@@ -1,12 +1,12 @@
 {-# LANGUAGE ApplicativeDo #-}
-{-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
+{-# OPTIONS_GHC -fconstraint-solver-iterations=16 #-}
 
 -- SPDX-License-Identifier: MPL-2.0
 
 module Test.Concurrent where
 
 import Control.Applicative ((<|>))
-import Control.Monad.Hefty (Eff, liftIO, runEff, type (<<|), type (<|))
+import Control.Monad.Hefty (Eff, Emb, liftIO, onlyFOEs, runEff, (:>))
 import Control.Monad.Hefty.Concurrent.Parallel (
     Concurrently (Concurrently, runConcurrently),
     Parallel,
@@ -25,7 +25,7 @@ import Test.Hspec (Spec, it, shouldBe)
 spec_Concurrent :: Spec
 spec_Concurrent = do
     let
-        prog :: (Parallel <<| eh, IO <| ef) => Eff eh ef (String, String)
+        prog :: (Parallel :> es, Emb IO :> es) => Eff es (String, String)
         prog = runTimerIO . runStateIORef "" . runConcurrently $ do
             r <- Concurrently do
                 sleep 0.001
@@ -67,7 +67,7 @@ spec_Concurrent = do
     it "Cancel" do
         (s, ((), b)) <-
             runUnliftIO . runTimerIO . runStateIORef "" . runConcurrentIO $
-                sleep 0.001 `cancels` do
+                sleep 0.001 `cancels` onlyFOEs do
                     modify (<> "A")
                     sleep 0.002
                     modify (<> "B")

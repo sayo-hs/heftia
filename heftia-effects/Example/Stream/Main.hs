@@ -1,4 +1,4 @@
-{-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
+{-# OPTIONS_GHC -fconstraint-solver-iterations=16 #-}
 
 -- SPDX-License-Identifier: MPL-2.0
 
@@ -7,7 +7,7 @@ module Main where
 
 import Control.Arrow ((>>>))
 import Control.Monad (forever, void, when)
-import Control.Monad.Hefty (Eff, liftIO, raiseAllH, type (<:), type (<|))
+import Control.Monad.Hefty (Eff, Emb, FOEs, liftIO, onlyFOEs, type (:>))
 import Control.Monad.Hefty.Concurrent.Parallel (runParallelIO)
 import Control.Monad.Hefty.Concurrent.Stream (
     Input,
@@ -21,7 +21,6 @@ import Control.Monad.Hefty.Concurrent.Stream (
 import Control.Monad.Hefty.Concurrent.Timer (Timer, runTimerIO, sleep)
 import Control.Monad.Hefty.Except (runThrow, throw)
 import Control.Monad.Hefty.Unlift (runUnliftIO)
-import Control.Monad.IO.Class (MonadIO)
 import Data.Foldable (for_)
 import UnliftIO (bracket_)
 
@@ -38,19 +37,19 @@ produce = void do
         sleep 0.5
 @
 -}
-produce :: (Output Int <| ef, Timer <| ef) => Eff '[] ef ()
+produce :: (Output Int :> es, Timer :> es, FOEs es) => Eff es ()
 produce = void . runThrow @() $
     for_ [1 ..] \(i :: Int) -> do
         when (i == 5) $ throw ()
         output i
         sleep 0.5
 
-consume :: (Input Int <: m, Timer <: m, MonadIO m) => m ()
+consume :: (Input Int :> es, Timer :> es, Emb IO :> es) => Eff es ()
 consume = forever do
     liftIO . print =<< input @Int
     sleep 0.5
 
-plus100 :: (Input Int <: m, Output Int <: m, Timer <: m, MonadIO m) => m ()
+plus100 :: (Input Int :> es, Output Int :> es, Timer :> es, Emb IO :> es) => Eff es ()
 plus100 = forever do
     i <- input @Int
     let o = i + 100
@@ -84,7 +83,7 @@ main = runUnliftIO . runTimerIO $ do
             bracket_
                 (liftIO $ putStrLn "Acquiring resource")
                 (liftIO $ putStrLn "Releasing resource")
-                (raiseAllH produce)
+                (onlyFOEs produce)
 
     runMachineryIO_ $
         Unit @() @Int do

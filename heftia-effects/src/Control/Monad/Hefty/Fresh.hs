@@ -1,12 +1,9 @@
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0. If a copy of the MPL was not distributed with this
--- file, You can obtain one at https://mozilla.org/MPL/2.0/.
+-- SPDX-License-Identifier: MPL-2.0
 
 {- |
-Copyright   :  (c) 2024 Sayo Koyoneda
+Copyright   :  (c) 2024-2025 Sayo contributors
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
-Portability :  portable
 -}
 module Control.Monad.Hefty.Fresh (
     module Control.Monad.Hefty.Fresh,
@@ -14,18 +11,21 @@ module Control.Monad.Hefty.Fresh (
 ) where
 
 import Control.Arrow ((>>>))
-import Control.Monad.Hefty (Eff, interpret, raiseUnder, type (<|), type (~>))
+import Control.Monad.Hefty (Eff, FOEs, interpret, raiseUnder, (:>))
 import Control.Monad.Hefty.State (runState)
 import Data.Effect.Fresh
 import Data.Effect.State (State, get, modify)
 import Numeric.Natural (Natural)
 
-runFreshNatural :: Eff '[] (Fresh Natural ': r) a -> Eff '[] r (Natural, a)
+runFreshNatural :: (FOEs es) => Eff (Fresh Natural ': es) a -> Eff es (Natural, a)
 runFreshNatural =
     raiseUnder >>> runFreshNaturalAsState >>> runState 0
+{-# INLINE runFreshNatural #-}
 
 runFreshNaturalAsState
-    :: (State Natural <| r)
-    => Eff eh (Fresh Natural ': r) ~> Eff eh r
+    :: (State Natural :> es)
+    => Eff (Fresh Natural ': es) a
+    -> Eff es a
 runFreshNaturalAsState =
-    interpret \Fresh -> get @Natural <* modify @Natural (+ 1)
+    interpret \Fresh -> get <* modify (+ 1)
+{-# INLINE runFreshNaturalAsState #-}

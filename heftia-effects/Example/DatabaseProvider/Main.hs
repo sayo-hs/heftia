@@ -1,0 +1,92 @@
+{-# LANGUAGE AllowAmbiguousTypes #-}
+{-# LANGUAGE TemplateHaskell #-}
+
+-- SPDX-License-Identifier: MPL-2.0
+
+module Main where
+
+import Control.Monad.Hefty (
+    Eff,
+    Effect,
+    Emb,
+    Freer,
+    interprets,
+    liftIO,
+    makeEffectF,
+    makeEffectH,
+    nil,
+    runEff,
+    (!:),
+    type (:>),
+    type (~>),
+ )
+import Control.Monad.Hefty.Provider (Provider, provide_, runProvider_)
+import Data.Functor.Identity (Identity)
+
+data DatabaseF :: Effect where
+    ReadDB :: FilePath -> DatabaseF f String
+    WriteDB :: FilePath -> String -> DatabaseF f ()
+
+data DatabaseH :: Effect where
+    TransactDB :: m a -> DatabaseH m a
+makeEffectF ''DatabaseF
+makeEffectH ''DatabaseH
+
+type DBProvider es = Provider Freer Identity FilePath '[DatabaseH, DatabaseF] es
+
+runDummyDBProvider :: (Emb IO :> es) => Eff (DBProvider es ': es) ~> Eff es
+runDummyDBProvider =
+    runProvider_ \workDir ->
+        interprets $
+            ( \(TransactDB m) -> do
+                liftIO $ putStrLn $ "[DUMMY DB " <> workDir <> "] START TRANSACTION"
+                r <- m
+                liftIO $ putStrLn $ "[DUMMY DB " <> workDir <> "] END TRANSACTION"
+                pure r
+            )
+                !: ( \case
+                        ReadDB path -> do
+                            liftIO $ putStrLn $ "[DUMMY DB " <> workDir <> "] readDB " <> show path
+                            pure $ "DUMMY CONTENT on " <> workDir <> path
+                        WriteDB path s -> do
+                            liftIO $ putStrLn $ "[DUMMY DB " <> workDir <> "] writeDB " <> show path <> " " <> show s
+                   )
+                !: nil
+
+main :: IO ()
+main =
+    runEff . runDummyDBProvider $
+        provide_ "/db1" \_ -> do
+            provide_ "/db2" \outer -> do
+                outer do
+                    s1 <- readDB "/a/b/c"
+                    liftIO $ putStrLn $ "content: " <> show s1
+                    writeDB "/d/e/f" "foobar"
+
+                liftIO $ putStrLn "-----"
+
+                s2 <- readDB "/a/b/c"
+                liftIO $ putStrLn $ "content: " <> show s2
+                writeDB "/d/e/f" "foobar"
+
+                liftIO $ putStrLn "-----"
+
+                transactDB do
+                    outer $ transactDB do
+                        liftIO $ print "hello"
+
+{-
+[DUMMY DB /db1] readDB "/a/b/c"
+content: "DUMMY CONTENT on /db1/a/b/c"
+[DUMMY DB /db1] writeDB "/d/e/f" "foobar"
+-----
+[DUMMY DB /db2] readDB "/a/b/c"
+content: "DUMMY CONTENT on /db2/a/b/c"
+[DUMMY DB /db2] writeDB "/d/e/f" "foobar"
+-----
+[DUMMY DB /db2] START TRANSACTION
+[DUMMY DB /db1] START TRANSACTION
+"hello"
+[DUMMY DB /db1] END TRANSACTION
+[DUMMY DB /db2] END TRANSACTION
+-}

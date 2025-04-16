@@ -1,5 +1,5 @@
 -- SPDX-License-Identifier: BSD-3-Clause
--- (c) 2022 Xy Ren; 2024 Sayo Koyoneda
+-- (c) 2022 Xy Ren; 2024 Sayo contributors
 
 -- Benchmarking yield-intensive code
 module BenchPyth where
@@ -17,11 +17,13 @@ import Control.Monad.Freer.Reader qualified as FS
 import Control.Monad.Hefty qualified as H
 import Control.Monad.Hefty.NonDet qualified as H
 import Control.Monad.Hefty.Reader qualified as H
+import Control.Monad.Hefty.Shift qualified as H
 import Control.Monad.Identity qualified as M
 import Control.Monad.Logic qualified as M
 import Control.Monad.Reader qualified as M
 import Control.Mp.Eff qualified as Mp
 import Control.Mp.Util qualified as Mp
+import Data.List (singleton)
 import "eff" Control.Effect qualified as EF
 
 programFreer :: (FS.Member FS.NonDet es) => Int -> FS.Eff es (Int, Int, Int)
@@ -43,13 +45,14 @@ pythFreerDeep n = FS.run $ run $ run $ run $ run $ run $ FS.makeChoiceA $ run $ 
   where
     run = FS.runReader ()
 
-programHeftia :: (H.Member H.Choose es, H.Member H.Empty es) => Int -> H.Eff '[] es (Int, Int, Int)
+programHeftia :: (H.Choose H.:> es, H.Empty H.:> es) => Int -> H.Eff es (Int, Int, Int)
 programHeftia upbound = do
     x <- choice upbound
     y <- choice upbound
     z <- choice upbound
     if x * x + y * y == z * z then return (x, y, z) else H.empty
   where
+    choice :: (H.Choose H.:> es, H.Empty H.:> es) => Int -> H.Eff es Int
     choice 0 = H.empty
     choice n = choice (n - 1) `H.branch` pure n
 {-# NOINLINE programHeftia #-}
@@ -60,6 +63,16 @@ pythHeftia n = H.runPure $ H.runNonDet $ programHeftia n
 pythHeftiaDeep :: Int -> [(Int, Int, Int)]
 pythHeftiaDeep n = H.runPure $ run $ run $ run $ run $ run $ H.runNonDet $ run $ run $ run $ run $ run $ programHeftia n
   where
+    run :: H.Eff (H.Ask () ': es) a -> H.Eff es a
+    run = H.runAsk ()
+
+pythHeftiaShift :: Int -> [(Int, Int, Int)]
+pythHeftiaShift n = H.runPure $ H.evalShift $ H.runNonDetShift $ singleton <$> programHeftia n
+
+pythHeftiaShiftDeep :: Int -> [(Int, Int, Int)]
+pythHeftiaShiftDeep n = H.runPure $ H.evalShift $ run $ run $ run $ run $ run $ H.runNonDetShift $ run $ run $ run $ run $ run $ singleton <$> programHeftia n
+  where
+    run :: H.Eff (H.Ask () ': es) a -> H.Eff es a
     run = H.runAsk ()
 
 programFused :: (Monad m, Alternative m) => Int -> m (Int, Int, Int)

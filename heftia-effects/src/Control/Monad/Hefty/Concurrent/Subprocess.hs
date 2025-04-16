@@ -1,11 +1,10 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
-{-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
 
 -- SPDX-License-Identifier: MPL-2.0 AND BSD-3-Clause
 
 {- |
-Copyright   :  (c) 2024 Sayo Koyoneda
+Copyright   :  (c) 2024 Sayo contributors
                (c) The University of Glasgow 2004-2008
 License     :  MPL-2.0 (see the LICENSE file) AND BSD-3-Clause
 Maintainer  :  ymdfield@outlook.jp
@@ -16,7 +15,7 @@ module Control.Monad.Hefty.Concurrent.Subprocess (
     module Control.Monad.Hefty.Concurrent.Subprocess,
     module Control.Monad.Hefty.Provider,
     module System.Process,
-    module System.Posix.Types,
+    module System.Process.Internals,
     module System.IO,
     module System.Exit,
     module Data.ByteString,
@@ -28,15 +27,14 @@ import Control.Concurrent (forkIO)
 import Control.Monad (liftM2)
 import Control.Monad.Hefty (
     Eff,
-    LNop,
+    Effect,
+    Emb,
+    Freer,
     interpret,
-    interpretH,
     liftIO,
     makeEffectF,
     (&),
-    type (<<|),
-    type (<|),
-    type (~>),
+    (:>),
  )
 import Control.Monad.Hefty.Provider
 import Control.Monad.Hefty.Unlift (UnliftIO, withRunInIO)
@@ -46,28 +44,28 @@ import Data.Function (fix)
 import Data.Maybe (fromJust, isNothing)
 import System.Exit (ExitCode)
 import System.IO (Handle)
-import System.Posix.Types (GroupID, UserID)
 import System.Process (CmdSpec (RawCommand, ShellCommand))
 import System.Process qualified as Raw
+import System.Process.Internals (GroupID, UserID)
 import UnliftIO (TMVar, atomically, finally, mask, newEmptyTMVarIO, putTMVar, readTMVar, tryReadTMVar, uninterruptibleMask_)
 import UnliftIO.Concurrent (ThreadId, killThread)
 import UnliftIO.Process (terminateProcess, waitForProcess)
 
-data Subprocess p a where
-    WriteStdin :: ByteString -> Subprocess ('SubprocMode 'Piped o e lp 'Kill) ()
-    TryWriteStdin :: ByteString -> Subprocess ('SubprocMode 'Piped o e lp ls) Bool
-    ReadStdout :: Subprocess ('SubprocMode i 'Piped e lp ls) ByteString
-    ReadStderr :: Subprocess ('SubprocMode i o 'Piped lp ls) ByteString
-    PollSubproc :: Subprocess ('SubprocMode i o e lp 'Wait) (Maybe ExitCode)
+data Subprocess p :: Effect where
+    WriteStdin :: ByteString -> Subprocess ('SubprocMode 'Piped o e lp 'Kill) f ()
+    TryWriteStdin :: ByteString -> Subprocess ('SubprocMode 'Piped o e lp ls) f Bool
+    ReadStdout :: Subprocess ('SubprocMode i 'Piped e lp ls) f ByteString
+    ReadStderr :: Subprocess ('SubprocMode i o 'Piped lp ls) f ByteString
+    PollSubproc :: Subprocess ('SubprocMode i o e lp 'Wait) f (Maybe ExitCode)
 
 data SubprocMode = SubprocMode StreamMode StreamMode StreamMode Lifecycle Lifecycle
 
 data StreamMode = Piped | NoPipe
 data Lifecycle = Kill | Wait
 
-makeEffectF [''Subprocess]
+makeEffectF ''Subprocess
 
-type SubprocProvider eh ef = Provide SubprocResult CreateProcess (Const2 LNop) Subprocess eh ef
+type SubprocProvider es = Scoped Freer SubprocResult CreateProcess '[Subprocess] es
 
 data SubprocResult p a where
     RaceResult :: Either ExitCode a -> SubprocResult ('SubprocMode i o e 'Kill 'Kill) a
@@ -78,9 +76,9 @@ data SubprocResult p a where
 deriving stock instance (Show a) => Show (SubprocResult p a)
 deriving stock instance (Eq a) => Eq (SubprocResult p a)
 
-runSubprocIO :: (UnliftIO <<| eh, IO <| ef) => Eff (SubprocProvider eh ef ': eh) ef ~> Eff eh ef
+runSubprocIO :: (UnliftIO :> es, Emb IO :> es) => Eff (SubprocProvider es ': es) a -> Eff es a
 runSubprocIO =
-    runProvider \cp@CreateProcess {subprocLifecycle, scopeLifecycle} m ->
+    runScoped \cp@CreateProcess {subprocLifecycle, scopeLifecycle} m ->
         withRunInIO \run -> do
             (hi, ho, he, ph) <- Raw.createProcess (toRawCreateProcess cp) & liftIO
             procStatus <- newEmptyTMVarIO
@@ -92,7 +90,6 @@ runSubprocIO =
 
                 tScope <- runThread scopeStatus $ restore . run $ do
                     m
-                        & interpretH \case {}
                         & interpret \case
                             WriteStdin s -> hPut (fromJust hi) s & liftIO
                             TryWriteStdin s -> do

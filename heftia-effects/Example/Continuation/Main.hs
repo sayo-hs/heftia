@@ -1,41 +1,40 @@
 {-# LANGUAGE AllowAmbiguousTypes #-}
 {-# LANGUAGE TemplateHaskell #-}
 
--- This Source Code Form is subject to the terms of the Mozilla Public
--- License, v. 2.0. If a copy of the MPL was not distributed with this
--- file, You can obtain one at https://mozilla.org/MPL/2.0/.
+-- SPDX-License-Identifier: MPL-2.0
 
 module Main where
 
 import Control.Monad.Hefty (
+    Eff,
+    Effect,
+    FOEs,
     interposeBy,
     interpret,
-    interpretH,
     liftIO,
     makeEffectF,
     makeEffectH,
     runEff,
     (&),
-    type (:!!),
-    type (<|),
+    (:>),
     type (~>),
     type (~~>),
  )
 
 type ForkID = Int
 
-data Fork a where
-    Fork :: Fork ForkID
-makeEffectF [''Fork]
+data Fork :: Effect where
+    Fork :: Fork f ForkID
+makeEffectF ''Fork
 
-runForkSingle :: eh :!! Fork ': r ~> eh :!! r
+runForkSingle :: Eff (Fork ': es) ~> Eff es
 runForkSingle = interpret \Fork -> pure 0
 
 data ResetFork f a where
     ResetFork :: (Monoid w) => f w -> ResetFork f w
-makeEffectH [''ResetFork]
+makeEffectH ''ResetFork
 
-applyResetFork :: (Fork <| r) => Int -> ResetFork ~~> '[] :!! r
+applyResetFork :: (Fork :> es, FOEs es) => Int -> ResetFork ~~> Eff es
 applyResetFork numberOfFork (ResetFork m) =
     m & interposeBy pure \Fork resume -> do
         r <- mapM resume [1 .. numberOfFork]
@@ -45,7 +44,7 @@ main :: IO ()
 main =
     runEff
         . runForkSingle
-        . interpretH (applyResetFork 4)
+        . interpret (applyResetFork 4)
         $ do
             liftIO . putStrLn . (("[out of scope] " ++) . show) =<< fork
             s <- resetFork do

@@ -13,11 +13,13 @@ import Control.Monad.Hefty (
     Eff,
     Effect,
     Emb,
-    interpose,
+    Has,
+    interposeOn,
     interpret,
     liftIO,
     makeEffectF,
     runEff,
+    untag,
     (:>),
     type (~>),
  )
@@ -33,20 +35,20 @@ teletypeToIO = interpret \case
     ReadTTY -> liftIO getLine
     WriteTTY msg -> liftIO $ putStrLn msg
 
-echo :: (Teletype :> es) => Eff es ()
+echo :: (Has "tty1" Teletype es) => Eff es ()
 echo = do
-    i <- readTTY
+    i <- readTTY' @"tty1"
     case i of
         "" -> pure ()
-        _ -> writeTTY i >> echo
+        _ -> writeTTY' @"tty1" i >> echo
 
-strong :: (Teletype :> es) => Eff es ~> Eff es
+strong :: (Has "tty1" Teletype es) => Eff es ~> Eff es
 strong =
-    interpose \case
-        ReadTTY -> readTTY
-        WriteTTY msg -> writeTTY $ msg <> "!"
+    interposeOn @"tty1" \case
+        ReadTTY -> readTTY' @"tty1"
+        WriteTTY msg -> writeTTY' @"tty1" $ msg <> "!"
 
 main :: IO ()
 main = runEff do
     liftIO $ putStrLn "Please enter something..."
-    teletypeToIO . strong . strong $ echo
+    teletypeToIO . untag @"tty1" . strong . strong $ echo

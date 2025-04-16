@@ -1,7 +1,9 @@
-{-# OPTIONS_GHC -fplugin GHC.TypeLits.KnownNat.Solver #-}
+{-# LANGUAGE UndecidableInstances #-}
+
+-- SPDX-License-Identifier: MPL-2.0
 
 {- |
-Copyright   :  (c) 2024 Sayo Koyoneda
+Copyright   :  (c) 2024 Sayo contributors
 License     :  MPL-2.0 (see the LICENSE file)
 Maintainer  :  ymdfield@outlook.jp
 
@@ -20,18 +22,20 @@ import Control.Category qualified as C
 import Control.Monad (forM_, forever)
 import Control.Monad.Hefty (
     Eff,
-    bundleN,
+    Emb,
+    FOEs,
+    RemoveHOEs,
+    WeakenHOEs,
     interpret,
-    interpretBy,
+    interpretsBy,
     nil,
+    onlyFOEs,
     raise,
-    raiseAllH,
-    reinterpret,
-    unkey,
-    (!+),
+    reinterprets,
+    untag,
+    (!:),
     (&),
-    type (<<|),
-    type (<|),
+    (:>),
     type (~>),
  )
 import Control.Monad.Hefty.Concurrent.Parallel (Parallel, liftP2)
@@ -54,19 +58,19 @@ import UnliftIO (
  )
 import UnliftIO.Concurrent (forkIO, killThread)
 
-data Machinery eh ef ans i o where
+data Machinery es ans i o where
     Unit
-        :: forall i o ans eh ef
-         . Eff eh (Input i ': Output o ': ef) ans
-        -> Machinery eh ef ans i o
+        :: forall i o ans es
+         . Eff (Input i ': Output o ': es) ans
+        -> Machinery es ans i o
     Connect
-        :: forall a b c ans eh ef
-         . Machinery eh ef ans a b
-        -> Machinery eh ef ans b c
-        -> Machinery eh ef ans a c
+        :: forall a b c ans es
+         . Machinery es ans a b
+        -> Machinery es ans b c
+        -> Machinery es ans a c
 
-instance Category (Machinery eh ef ans) where
-    id :: forall a. Machinery eh ef ans a a
+instance Category (Machinery es ans) where
+    id :: forall a. Machinery es ans a a
     id =
         Unit . forever $
             input @a >>= output
@@ -76,15 +80,15 @@ instance Category (Machinery eh ef ans) where
     {-# INLINE id #-}
     {-# INLINE (.) #-}
 
-instance Arrow (Machinery '[] ef ans) where
+instance (FOEs es) => Arrow (Machinery es ans) where
     arr (f :: b -> c) =
         Unit . forever $
             input @b >>= output . f
 
     first
         :: forall b c d
-         . Machinery '[] ef ans b c
-        -> Machinery '[] ef ans (b, d) (c, d)
+         . Machinery es ans b c
+        -> Machinery es ans (b, d) (c, d)
     first = \case
         Unit m -> Unit $ evalState (Left Seq.Empty) $ buffering m
         Connect a b -> Connect (first a) (first b)
@@ -93,44 +97,43 @@ instance Arrow (Machinery '[] ef ans) where
     {-# INLINE first #-}
 
 buffering
-    :: forall b c d ans eh ef
-     . Eff eh (Input b ': Output c ': ef) ans
-    -> Eff eh (State (Either (Seq c) d) ': Input (b, d) ': Output (c, d) ': ef) ans
+    :: forall b c d ans es
+     . Eff (Input b ': Output c ': es) ans
+    -> Eff (State (Either (Seq c) d) ': Input (b, d) ': Output (c, d) ': es) ans
 buffering =
-    bundleN @2
-        >>> reinterpret
-            ( ( \Input -> do
-                    (b, d) <- input
+    reinterprets
+        ( ( \Input -> do
+                (b, d) <- input
 
+                get'' @"buffer" >>= \case
+                    Right _ -> pure ()
+                    Left outputQueue -> forM_ outputQueue \c -> output (c, d)
+
+                put'' @"buffer" $ Right d
+
+                pure b
+          )
+            !: ( \(Output c) ->
                     get'' @"buffer" >>= \case
-                        Right _ -> pure ()
-                        Left outputQueue -> forM_ outputQueue \c -> output (c, d)
+                        Right d -> output (c, d)
+                        Left outputQueue -> put'' @"buffer" $ Left $ outputQueue :|> c
+               )
+            !: nil
+        )
+        >>> untag @"buffer"
 
-                    put'' @"buffer" $ Right d
-
-                    pure b
-              )
-                !+ ( \(Output c) ->
-                        get'' @"buffer" >>= \case
-                            Right d -> output (c, d)
-                            Left outputQueue -> put'' @"buffer" $ Left $ outputQueue :|> c
-                   )
-                !+ nil
-            )
-        >>> unkey @"buffer"
-
-instance ArrowChoice (Machinery '[] ef ans) where
+instance (FOEs es) => ArrowChoice (Machinery es ans) where
     left = leftMachinery
     {-# INLINE left #-}
 
 leftMachinery
-    :: forall b c d ans eh ef
-     . Machinery eh ef ans b c
-    -> Machinery eh ef ans (Either b d) (Either c d)
+    :: forall b c d ans es
+     . Machinery es ans b c
+    -> Machinery es ans (Either b d) (Either c d)
 leftMachinery = \case
     Unit m ->
-        bundleN @2 m
-            & reinterpret
+        m
+            & reinterprets
                 ( ( \Input -> fix \next ->
                         input @(Either b d) >>= \case
                             Left x -> pure x
@@ -138,8 +141,8 @@ leftMachinery = \case
                                 output @(Either c d) $ Right o
                                 next
                   )
-                    !+ (\(Output o) -> output @(Either c d) $ Left o)
-                    !+ nil
+                    !: (\(Output o) -> output @(Either c d) $ Left o)
+                    !: nil
                 )
             & Unit
     Connect a b -> Connect (leftMachinery a) (leftMachinery b)
@@ -152,30 +155,29 @@ data MachineStatus f ans i o
     | Waiting (i -> Machine f ans i o)
     | Produced o (Machine f ans i o)
 
-machine :: Eff '[] (Input i ': Output o ': ef) ans -> Machine (Eff eh ef) ans i o
+machine :: (WeakenHOEs es) => Eff (Input i ': Output o ': RemoveHOEs es) ans -> Machine (Eff es) ans i o
 machine =
-    bundleN @2
-        >>> interpretBy
-            (pure . Terminated)
-            ( (\Input k -> pure $ Waiting $ Machine . raiseAllH . k)
-                !+ (\(Output o) k -> pure $ Produced o $ Machine $ raiseAllH $ k ())
-                !+ nil
-            )
-        >>> raiseAllH
+    interpretsBy
+        (pure . Terminated)
+        ( (\Input k -> pure $ Waiting $ Machine . onlyFOEs . k)
+            !: (\(Output o) k -> pure $ Produced o $ Machine $ onlyFOEs $ k ())
+            !: nil
+        )
+        >>> onlyFOEs
         >>> Machine
 
 runMachinery
-    :: forall i o ans eh ef
-     . (Parallel <<| eh, Semigroup ans)
-    => Machinery '[] ef ans i o
-    -> Eff eh ef (MachineStatus (Eff eh ef) ans i o)
+    :: forall i o ans es
+     . (Parallel :> es, Semigroup ans, WeakenHOEs es)
+    => Machinery (RemoveHOEs es) ans i o
+    -> Eff es (MachineStatus (Eff es) ans i o)
 runMachinery = runMachineryL . mviewl
 
 runMachineryL
-    :: forall i o ans eh ef
-     . (Parallel <<| eh, Semigroup ans)
-    => MachineryViewL '[] ef ans i o
-    -> Eff eh ef (MachineStatus (Eff eh ef) ans i o)
+    :: forall i o ans es
+     . (Parallel :> es, Semigroup ans, WeakenHOEs es)
+    => MachineryViewL (RemoveHOEs es) ans i o
+    -> Eff es (MachineStatus (Eff es) ans i o)
 runMachineryL = \case
     MOne m -> runMachine $ machine m
     MCons m ms -> do
@@ -196,15 +198,15 @@ runMachineryL = \case
             (Terminated ans, Waiting _) -> pure $ Terminated ans
             (Produced _ _, Terminated ans) -> pure $ Terminated ans
 
-newtype MachineryIO eh ef ans i o = MachineryIO {unMachineryIO :: Machinery eh ef ans i o}
+newtype MachineryIO es ans i o = MachineryIO {unMachineryIO :: Machinery es ans i o}
     deriving newtype (Category)
 
-instance (IO <| ef) => Arrow (MachineryIO eh ef ans) where
+instance (Emb IO :> es) => Arrow (MachineryIO es ans) where
     arr (f :: b -> c) =
         MachineryIO . Unit . forever $
             input @b >>= output . f
 
-    first :: forall b c d. MachineryIO eh ef ans b c -> MachineryIO eh ef ans (b, d) (c, d)
+    first :: forall b c d. MachineryIO es ans b c -> MachineryIO es ans (b, d) (c, d)
     first =
         unMachineryIO
             >>> MachineryIO . \case
@@ -218,26 +220,26 @@ instance (IO <| ef) => Arrow (MachineryIO eh ef ans) where
     {-# INLINE arr #-}
     {-# INLINE first #-}
 
-instance (IO <| ef) => ArrowChoice (MachineryIO eh ef ans) where
+instance (Emb IO :> es) => ArrowChoice (MachineryIO es ans) where
     left = MachineryIO . leftMachinery . unMachineryIO
     {-# INLINE left #-}
 
 runMachineryIO
-    :: forall i o ans eh ef
-     . (UnliftIO <<| eh, IO <| ef)
-    => Eff eh ef i
-    -> (o -> Eff eh ef ())
-    -> Machinery eh ef ans i o
-    -> Eff eh ef ans
+    :: forall i o ans es
+     . (UnliftIO :> es, Emb IO :> es)
+    => Eff es i
+    -> (o -> Eff es ())
+    -> Machinery es ans i o
+    -> Eff es ans
 runMachineryIO i o = runMachineryIOL i o . mviewl
 
 runMachineryIOL
-    :: forall i o ans eh ef
-     . (UnliftIO <<| eh, IO <| ef)
-    => Eff eh ef i
-    -> (o -> Eff eh ef ())
-    -> MachineryViewL eh ef ans i o
-    -> Eff eh ef ans
+    :: forall i o ans es
+     . (UnliftIO :> es, Emb IO :> es)
+    => Eff es i
+    -> (o -> Eff es ())
+    -> MachineryViewL es ans i o
+    -> Eff es ans
 runMachineryIOL i o = \case
     MOne m -> runUnit o m
     MCons a b ->
@@ -255,17 +257,17 @@ runMachineryIOL i o = \case
                 atomically (readTMVar ans)
                     <* uninterruptibleMask_ (killThread t1 *> killThread t2)
   where
-    runUnit :: (o' -> Eff eh ef ()) -> Eff eh (Input i ': Output o' ': ef) ~> Eff eh ef
+    runUnit :: (o' -> Eff es ()) -> Eff (Input i ': Output o' ': es) ~> Eff es
     runUnit o' m =
         m
             & interpret (\Input -> raise i)
             & interpret (\(Output x) -> o' x)
 
 runMachineryIO_
-    :: forall ans eh ef
-     . (UnliftIO <<| eh, IO <| ef)
-    => Machinery eh ef ans () ()
-    -> Eff eh ef ans
+    :: forall ans es
+     . (UnliftIO :> es, Emb IO :> es)
+    => Machinery es ans () ()
+    -> Eff es ans
 runMachineryIO_ = runMachineryIO (pure ()) (const $ pure ())
 {-# INLINE runMachineryIO_ #-}
 
@@ -276,26 +278,26 @@ Left view deconstruction data structure for Machinery Pipeline.
 
 This allows the number of generated threads to be reduced to the number of machine units.
 -}
-data MachineryViewL eh ef ans i o where
+data MachineryViewL es ans i o where
     MOne
-        :: forall i o ans eh ef
-         . Eff eh (Input i ': Output o ': ef) ans
-        -> MachineryViewL eh ef ans i o
+        :: forall i o ans es
+         . Eff (Input i ': Output o ': es) ans
+        -> MachineryViewL es ans i o
     MCons
-        :: forall a b c ans eh ef
-         . Eff eh (Input a ': Output b ': ef) ans
-        -> Machinery eh ef ans b c
-        -> MachineryViewL eh ef ans a c
+        :: forall a b c ans es
+         . Eff (Input a ': Output b ': es) ans
+        -> Machinery es ans b c
+        -> MachineryViewL es ans a c
 
 -- | Left view deconstruction for Machinery Pipeline. [average O(1)]
-mviewl :: Machinery eh ef ans i o -> MachineryViewL eh ef ans i o
+mviewl :: Machinery es ans i o -> MachineryViewL es ans i o
 mviewl = \case
     Unit m -> MOne m
     Connect a b -> connect a b
   where
     connect
-        :: Machinery eh ef ans a b
-        -> Machinery eh ef ans b c
-        -> MachineryViewL eh ef ans a c
+        :: Machinery es ans a b
+        -> Machinery es ans b c
+        -> MachineryViewL es ans a c
     connect (Unit m) r = m `MCons` r
     connect (Connect a b) r = connect a (Connect b r)
