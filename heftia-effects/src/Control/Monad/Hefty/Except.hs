@@ -17,11 +17,11 @@ import Control.Monad.Hefty (
     AlgHandler,
     Eff,
     FOEs,
-    interposeWith,
+    In,
+    interposeInWith,
     interpret,
     interpretBy,
     (&),
-    type (:>),
     type (~~>),
  )
 import Data.Effect.Except
@@ -37,8 +37,8 @@ runThrow = interpretBy (pure . Right) handleThrow
 {-# INLINE runThrow #-}
 
 -- | Interpret the t'Catch' effect.
-runCatch :: forall e es a. (Throw e :> es, FOEs es) => Eff (Catch e ': es) a -> Eff es a
-runCatch = interpret elabCatch
+runCatch :: forall e es a. (Throw e `In` es, FOEs es) => Eff (Catch e ': es) a -> Eff es a
+runCatch = interpret handleCatch
 {-# INLINE runCatch #-}
 
 -- | A handler for the t'Throw' effect.
@@ -47,6 +47,6 @@ handleThrow (Throw e) _ = pure $ Left e
 {-# INLINE handleThrow #-}
 
 -- | A handler for the t'Catch' effect.
-elabCatch :: forall e es. (Throw e :> es, FOEs es) => Catch e ~~> Eff es
-elabCatch (Catch action hdl) = action & interposeWith \(Throw e) _ -> hdl e
-{-# INLINE elabCatch #-}
+handleCatch :: forall e es. (Throw e `In` es, FOEs es) => Catch e ~~> Eff es
+handleCatch (Catch action hdl) = action & interposeInWith \(Throw e) _ -> hdl e
+{-# INLINE handleCatch #-}

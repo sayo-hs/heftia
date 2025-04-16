@@ -33,10 +33,9 @@ runNonDet
 runNonDet =
     interpretsBy
         (pure . pure)
-        ( (\Choose k -> liftA2 (<|>) (k False) (k True))
+        $ (\Choose k -> liftA2 (<|>) (k False) (k True))
             !: (\Empty _ -> pure A.empty)
             !: nil
-        )
 {-# INLINE runNonDet #-}
 
 -- | [NonDet]("Data.Effect.NonDet") effects handler for monoidal answer type.
@@ -46,13 +45,12 @@ runNonDetMonoid
     => (a -> Eff es ans)
     -> Eff (Choose ': Empty ': es) a
     -> Eff es ans
-runNonDetMonoid f =
+runNonDetMonoid ret =
     interpretsBy
-        f
-        ( (\Choose k -> liftA2 (<>) (k False) (k True))
+        ret
+        $ (\Choose k -> liftA2 (<>) (k False) (k True))
             !: (\Empty _ -> pure mempty)
             !: nil
-        )
 {-# INLINE runNonDetMonoid #-}
 
 -- | t'Choose' effect handler for alternative answer type.

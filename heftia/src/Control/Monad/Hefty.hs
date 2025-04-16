@@ -26,19 +26,19 @@ named spans in a program.
 import "Control.Monad.Hefty"
 import Prelude hiding (log, span)
 
-data Log a where
+data Log :: t'Effect' where
     Log :: String -> Log ()
-'makeEffectF' [''Log]
+'makeEffectF' ''Log
 
-data Span m (a :: Type) where
+data Span :: t'Effect' where
     Span :: String -> m a -> Span m a
-'makeEffectH' [''Span]
+'makeEffectH' ''Span
 
-runLog :: ('IO' t'Data.Effect.OpenUnion.<|' ef) => 'Eff' eh (Log ': ef) t'Control.Effect.~>' 'Eff' eh ef
+runLog :: (@t'Emb'@ 'IO' t'Data.Effect.OpenUnion.:>' es) => 'Eff' (Log ': es) t'Control.Effect.~>' 'Eff' es
 runLog = 'interpret' \\(Log msg) -> liftIO $ putStrLn $ "[LOG] " <> msg
 
-runSpan :: ('IO' t'Data.Effect.OpenUnion.<|' ef) => 'Eff' (Span ': eh) ef t'Control.Effect.~>' 'Eff' eh ef
-runSpan = 'interpretH' \\(Span name m) -> do
+runSpan :: (@t'Emb'@ 'IO' t'Data.Effect.OpenUnion.:>' es) => 'Eff' (Span ': es) t'Control.Effect.~>' 'Eff' es
+runSpan = 'interpret' \\(Span name m) -> do
     'liftIO' $ 'putStrLn' $ "[Start span '" <> name <> "']"
     r <- m
     'liftIO' $ 'putStrLn' $ "[End span '" <> name <> "']"
@@ -68,95 +68,55 @@ prog = 'runEff' . runLog . runSpan $ do
 
 
 * When defining effects, you use the Template Haskell functions 'makeEffectF' and 'makeEffectH'.
-* The first 'Eff' type parameter is a type-level list of higher-order effects, the second is for first-order effects.
 
-= Glossary #glossary#
+= Algebraic Handler #algebraic-handler#
 
-[Handler]: Interpreter for first-order effects.
+An interpreter function that realizes features related to the continuation in algebraic effects.
 
-[Elaborator]:
-    Interpreter for higher-order effects.
+It is a function that takes two arguments: an effectful operation and a continuation, which is the continuation of the computation from that operation, and returns the computation up to the end of the computation being interpreted.
 
-    Elaboration is generally performed by editing first-order (or higher-order) effectful operations within the computation held by the higher-order effect being elaborated.
+By ignoring the continuation argument, it allows for global escapes like the 'Data.Effect.Except.Throw' effect.
 
-    @
-    [runCatch](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-Except.html#v:runCatch) :: (@t'Data.Effect.Except.Throw'@ e t'Data.Effect.OpenUnion.<|' ef) => 'Eff' '[@t'Data.Effect.Except.Catch'@ e] ef t'Control.Effect.~>' 'Eff' '[] ef
-    runCatch = 'interpretH' elabCatch
+@
+[runThrow](https://hackage.haskell.org/package/heftia-effects-0.6.0.0/docs/Control-Monad-Hefty-Except.html#v:runThrow) :: ('FOEs' es) => 'Eff' (@t'Data.Effect.Except.Throw'@ e ': es) a -> 'Eff' es ('Either' e a)
+runThrow = 'interpretBy' ('pure' '.' 'Right') handleThrow
 
-    [elabCatch](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-Except.html#v:elabCatch) :: (@t'Data.Effect.Except.Throw'@ e t'Data.Effect.OpenUnion.<|' ef) => t'Data.Effect.Except.Catch' e t'Control.Monad.Hefty.~~>' 'Eff' '[] ef
-    elabCatch (@v'Data.Effect.Except.Catch'@ action hdl) = action & 'interposeWith' \\(@v'Data.Effect.Except.Throw'@ e) _ -> hdl e
-    @
+[handleThrow](https://hackage.haskell.org/package/heftia-effects-0.6.0.0/docs/Control-Monad-Hefty-Except.html#v:handleThrow) :: 'Applicative' g => 'AlgHandler' (@t'Data.Effect.Except.Throw'@ e) f g ('Either' e a)
+handleThrow (@v'Data.Effect.Except.Throw'@ e) _ = 'pure' $ 'Left' e
+@
 
-    Here, @elabCatch@ is the elaborator for the t'Data.Effect.Except.Catch' effect.
+Here, @handleThrow@ is the algebraic handler for the t'Data.Effect.Except.Throw' effect.
 
-[Interpretation \/ Handling \/ Elaboration]:
-    The act of performing interpretation, or the process thereof.
+By calling the continuation argument multiple times, it allows for non-deterministic computations like the "Data.Effect.NonDet" effect.
 
-    Also, an /interpreter function/ refers to a function represented by a natural transformation t'Control.Effect.~>' or of type 'Interpreter', that is, one that takes an effectful operation as an argument.
-    On the other hand, when we say /interpretation function/, we mean a function of the form @'Eff' eh ef ~> 'Eff' eh' ef'@, that is, one that takes the 'Eff' monad as an argument.
-    In the previous example, @elabCatch@ is the /interpreter function/ for the t'Data.Effect.Except.Catch' effect, and @runCatch@ is the /interpretation function/ for the t'Data.Effect.Except.Catch' effect.
+@
+[runNonDet](https://hackage.haskell.org/package/heftia-effects-0.6.0.0/docs/Control-Monad-Hefty-NonDet.html#v:runNonDet)
+    :: ('Alternative' f)
+    => 'Eff' (@t'Data.Effect.NonDet.Choose'@ ': t'Data.Effect.NonDet.Empty' ': es) a
+    -> 'Eff' es (f a)
+runNonDet =
+    'interpretsBy'
+        ('pure' . 'pure')
+        $ (\\@v'Data.Effect.NonDet.Choose'@ k -> 'liftA2' ('<|>') (k 'False') (k 'True'))
+            '!:' (\\@v'Data.Effect.NonDet.Empty'@ _ -> 'pure' 'empty')
+            '!:' 'nil'
+@
 
-    The interpretation function may also be called an /interpreter/.
+The function passed as the second argument to 'interpretBy'\/'interpretsBy' is the algebraic handler.
 
-[Continuational stateful interpreter]:
-    An interpreter function that realizes features related to the continuation in algebraic effects.
+Additionally, what is passed as the first argument to 'interpretBy'\/'interpretsBy' is called a /value handler/.
+This extends the continuation in the computation being interpreted.
 
-    It is a function that takes two arguments: an effectful operation and a continuation, which is the continuation of the computation from that operation, and returns the computation up to the end of the computation being interpreted.
-
-    By ignoring the continuation argument, it allows for global escapes like the 'Data.Effect.Except.Throw' effect.
-
-    @
-    [runThrow](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-Except.html#v:runThrow) :: 'Eff' '[] (@t'Data.Effect.Except.Throw'@ e ': r) a -> 'Eff' '[] r ('Either' e a)
-    runThrow = 'interpretBy' ('pure' '.' 'Right') handleThrow
-
-    [handleThrow](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-Except.html#v:handleThrow) :: 'Interpreter' (@t'Data.Effect.Except.Throw'@ e) ('Eff' '[] r) ('Either' e a)
-    handleThrow (@v'Data.Effect.Except.Throw'@ e) _ = 'pure' $ 'Left' e
-    @
-
-    Here, @handleThrow@ is the continuational stateful handler for the t'Data.Effect.Except.Throw' effect.
-
-    By calling the continuation argument multiple times, it allows for non-deterministic computations like the "Data.Effect.NonDet" effect.
-
-    @
-    [runNonDet](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-NonDet.html#v:runNonDet)
-        :: forall f ef a
-        . ('Alternative' f)
-        => 'Eff' '[] (@t'Data.Effect.NonDet.Choose'@ ': t'Data.Effect.NonDet.Empty' ': ef) a
-        -> 'Eff' '[] ef (f a)
-    runNonDet =
-        'bundleN' \@2
-            '>>>' 'interpretBy'
-                ('pure' . 'pure')
-                ( (\\@v'Data.Effect.NonDet.Choose'@ k -> 'liftA2' ('<|>') (k 'False') (k 'True'))
-                    '!+' (\\@v'Data.Effect.NonDet.Empty'@ _ -> 'pure' 'empty')
-                    '!+' 'nil'
-                )
-    @
-
-    The function passed as the second argument to 'interpretBy' is the continuational stateful handler.
-
-    Additionally, what is passed as the first argument to 'interpretBy' is called a /value handler/.
-    This extends the continuation in the computation being interpreted.
-
-[Continuational state]:
-    The state of the computation that appears through interpretation, behaving based on [continuation-based semantics](https://github.com/lexi-lambda/eff/blob/master/notes/semantics-zoo.md).
+We shall call the state of computation that emerges through algebraic interpretation and behaves according to [continuation-based semantics](https://github.com/lexi-lambda/eff/blob/master/notes/semantics-zoo.md)
+a \"algebraic state\".
 
 = Naming Rules for Interpretation Functions #naming-rules-for-interpretation-functions#
-
-* Functions with an @H@, such as 'interpretH', are for higher-order effects, while those without are for first-order effects.
-
-    @
-    'interpret' :: e t'Control.Effect.~>' 'Eff' eh ef -> 'Eff' (e ': eh) ef ~> 'Eff' eh ef
-    'interpretH' :: e ('Eff' eh ef) t'Control.Effect.~>' 'Eff' eh ef -> 'Eff' (e ': eh) ef t'Control.Effect.~>' 'Eff' eh ef
-    @
-
-    Note: t'Control.Effect.~>' binds more tightly than @->@.
 
 * Functions may additionally have @With@ or @By@ at the end of their names.
 
     * These provide functionality equivalent to "Algebraic Effects and Handlers," meaning they offer access to delimited continuations during interpretation.
 
-    * Functions in the @By@ family take two arguments: a value handler and a continuational stateful effect interpreter. They are the most generalized form.
+    * Functions in the @By@ family take two arguments: a value handler and a algebraic effect handler. They are the most generalized form.
 
     * Functions in the @With@ family omit the value handler and take only the effect interpreter as an argument.
 
@@ -168,52 +128,31 @@ prog = 'runEff' . runLog . runSpan $ do
         therefore, you cannot maintain internal state or perform behaviors like
         global escapes or non-deterministic computations during interpretation.
 
-* Functions that perform recursive continuational stateful interpretation have @Rec@ additionally added.
-
-    * Non-recursive continuational stateful interpretation functions like 'interpretWith' cannot be used unless the higher-order effects are empty:
-
-        @
-        'interpretWith' :: e t'Control.Effect.~>' 'Eff' '[] ef -> 'Eff' '[] (e ': ef) t'Control.Effect.~>' 'Eff' '[] ef
-        @
-
-    * The @Rec@ versions can be used even when @eh@ is not empty.
-
-        @
-        'interpretRecWith' :: e t'Control.Effect.~>' 'Eff' eh ef -> 'Eff' eh (e ': ef) t'Control.Effect.~>' 'Eff' eh ef
-        @
-
-    * When using this type of function, pay attention to their /reset semantics/. This is discussed later.
-
-    * In principle, they cannot take value handlers, so there is no combination with @By@.
-
-Function names combine the above three attributes.
-Examples of complex combinations include 'interpretHBy' and 'interpretRecHWith'.
-
 = Semantics of effects #semantics-of-effects#
 
 Consider the following example.
 
 @
-data SomeEff a where
-    SomeAction :: SomeEff String
-'makeEffectF' [''SomeEff]
+data SomeEff :: Effect where
+    SomeAction :: SomeEff m a
+'makeEffectF' ''SomeEff
 
 -- | Throws an exception when \'SomeAction\' is encountered
-runSomeEff :: (@t'Data.Effect.Except.Throw'@ String t'Data.Effect.OpenUnion.<|' ef) => 'Eff' eh (SomeEff ': ef) t'Control.Effect.~>' 'Eff' eh ef
+runSomeEff :: (@t'Data.Effect.Except.Throw'@ String t'Data.Effect.OpenUnion.:>' es) => 'Eff' (SomeEff ': es) t'Control.Effect.~>' 'Eff' es
 runSomeEff = 'interpret' \\SomeAction -> v'Data.Effect.Except.throw' "not caught"
 
 -- | Catches the exception if \'someAction\' results in one
-action :: (SomeEff t'Data.Effect.OpenUnion.<|' ef, t'Data.Effect.Except.Catch' String t'Data.Effect.OpenUnion.<<|' eh, t'Data.Effect.Except.Throw' String '<|' ef) => Eff eh ef
+action :: (SomeEff t'Data.Effect.OpenUnion.:>' es, t'Data.Effect.Except.Catch' String t'Data.Effect.OpenUnion.:>' es, t'Data.Effect.Except.Throw' String '<|' ef) => Eff es String
 action = someAction \`@v'Data.Effect.Except.catch'@\` \\(_ :: String) -> 'pure' "caught"
 
 prog1 :: IO ()
-prog1 = 'runPure' . runThrow \@String . runCatch \@String . runSomeEff $ action
+prog1 = 'runPure' . runThrow . runCatch \@String . runSomeEff $ action
 
 >>> prog1
 Right "caught"
 
 prog2 :: IO ()
-prog2 = 'runPure' . runThrow \@String . runSomeEff . runCatch \@String $ action
+prog2 = 'runPure' . runThrow . runSomeEff . runCatch \@String $ action
 
 >>> prog2
 Left "not caught"
@@ -228,15 +167,15 @@ By properly understanding and becoming familiar with this semantics, users can q
 Let's revisit the definition of @runCatch@:
 
 @
-[runCatch](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-Except.html#v:runCatch) :: (@t'Data.Effect.Except.Throw'@ e t'Data.Effect.OpenUnion.<|' ef) => 'Eff' '[@t'Data.Effect.Except.Catch'@ e] ef t'Control.Effect.~>' 'Eff' '[] ef
-runCatch = 'interpretH' elabCatch
+[runCatch](https://hackage.haskell.org/package/heftia-effects-0.6.0.0/docs/Control-Monad-Hefty-Except.html#v:runCatch) :: (@t'Data.Effect.Except.Throw'@ e `@t'Data.Effect.OpenUnion.In'@` es) => 'Eff' (@t'Data.Effect.Except.Catch'@ e ': es) t'Control.Effect.~>' 'Eff' es
+runCatch = 'interpret' elabCatch
 
-[elabCatch](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-Except.html#v:elabCatch) :: (@t'Data.Effect.Except.Throw'@ e t'Data.Effect.OpenUnion.<|' ef) => t'Data.Effect.Except.Catch' e t'Control.Monad.Hefty.~~>' 'Eff' '[] ef
-elabCatch (@v'Data.Effect.Except.Catch'@ action hdl) = action & 'interposeWith' \\(@v'Data.Effect.Except.Throw'@ e) _ -> hdl e
+[handleCatch](https://hackage.haskell.org/package/heftia-effects-0.6.0.0/docs/Control-Monad-Hefty-Except.html#v:handleCatch) :: (@t'Data.Effect.Except.Throw'@ e `@t'Data.Effect.OpenUnion.In'@` es) => t'Data.Effect.Except.Catch' e t'Control.Monad.Hefty.~~>' 'Eff' es
+handleCatch (@v'Data.Effect.Except.Catch'@ action hdl) = action & 'interposeWith' \\(@v'Data.Effect.Except.Throw'@ e) _ -> hdl e
 @
 
 When @runCatch@ encounters code like @... (action \`catch\` hdl) ...@ in the program, it rewrites that part to @... ('interposeWith' (\\(@v'Data.Effect.Except.Throw'@ e) _ -> hdl e) action) ...@.
-In general, functions like 'interpretH' and 'interposeH' behave this way—they recursively rewrite the target higher-order effects according to the given elaborator.
+In general, functions like 'interpret' and 'interpose' behave this way—they recursively rewrite the target higher-order effects according to the given handler.
 Rewriting proceeds from the deepest scope toward the outer scopes.
 
 The same applies to first-order effects. Handling an effect means rewriting the effects that appear in the program.
@@ -304,9 +243,9 @@ Embedded 'IO' can be viewed as instruction scripts, and to avoid confusion when 
 Rather than thinking "Haskell represents side effects via a type-level tag called 'IO'", it's better to think:
 
 * Haskell is a purely functional language where you cannot write anything other than pure functions.
-* 'IO' is just an opaque algebraic data type whose definition you cannot see, no different from others.
+* 'IO' is just an opaque algebraic data type whose definition you cannot see, but no different from others.
 * The runtime system treats the value @main@ as a sequence of instructions to be executed on the CPU.
-* Programming with side effects in Haskell is meta-programming where you write a pure function program that outputs 'IO' type instruction scripts.
+* Programming with side effects in Haskell is meta-programming where you write a pure function program that outputs 'IO'-typed instruction scripts.
 
 In fact, the semantics of effects in Heftia are completely isolated from the level of 'IO'.
 Considerations at the 'IO' level, such as "asynchronous exceptions might be thrown",
@@ -317,146 +256,44 @@ The consistent semantics of algebraic effects prevent leaks of abstraction from 
 
 This is a significant difference from 'IO'-fused effect system libraries like [effectful](https://hackage.haskell.org/package/effectful) and [cleff](https://hackage.haskell.org/package/cleff).
 
-= Reset Semantics in Recursive Continuational Stateful Interpretation #reset-semantics-in-recursive-continuational-stateful-interpretation#
-
-When performing recursive continuational stateful interpretation, that is, when using functions with @Rec@, it's necessary to understand their semantics.
-If you are not using @Rec@ functions, you don't need to pay particular attention to this section.
-
-[@evalStateRec@](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-State.html#v:evalStateRec) is a variant of
- [@evalState@](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-State.html#v:evalState),
-a handler for the @State@ effect that can be used even when higher-order effects are unelaborated:
-
-@
-[@evalStateRec@](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-State.html#v:evalStateRec) :: s -> 'Eff' eh (@t'Data.Effect.State.State'@ s ': ef) t'Control.Effect.~>' 'Eff' eh ef
-[@evalState@](https://hackage.haskell.org/package/heftia-effects-0.5.0.0/docs/Control-Monad-Hefty-State.html#v:evalState) :: s -> 'Eff' '[] (@t'Data.Effect.State.State'@ s ': ef) t'Control.Effect.~>' 'Eff' '[] ef
-@
-
-@evalStateRec@ uses @Rec@ functions internally. When a function uses @Rec@ functions internally, it's best to reflect that in its naming.
-
-Now, if you perform @evalStateRec@ before elaborating higher-order effects, the following occurs.
-Note that we are using the @Log@ and @Span@ effects introduced in the first example.
-
-@
-import Prelude hiding (log, span)
-
-prog :: IO ()
-prog = 'runEff' do
-    runLog . runSpan . evalStateRec \@[Int] [] $ do
-
-        v'Data.Effect.State.modify' \@[Int] (++ [1])
-        log . show =<< v'Data.Effect.State.get' \@[Int]
-
-        span \"A\" do
-            v'Data.Effect.State.modify' \@[Int] (++ [2])
-            log . show =<< v'Data.Effect.State.get' \@[Int]
-
-        v'Data.Effect.State.modify' \@[Int] (++ [3])
-        log . show =<< v'Data.Effect.State.get' \@[Int]
-
-    'pure' ()
-
->>> prog
-[LOG] [1]
-[Start span 'A']
-[LOG] [1,2]
-[End span 'A']
-[LOG] [1,3]
-@
-
-After exiting span @A@, the added @2@ has disappeared. As shown, state changes within the scope may not be preserved after exiting the scope.
-
-This is a fundamental limitation of state preservation.
-When attempting to perform continuational stateful interpretation of an effect,
-if there are unelaborated higher-order effects remaining, resets of this continuational state occur for each scope of those higher-order effects.
-For higher-order effects that have already been elaborated and removed from the list at that point, there is naturally no impact.
-
-This is simply because @evalStateRec@ (generally all @Rec@ functions) recursively applies @evalState@ to the scopes of unelaborated higher-order effects.
-Interpretation occurs independently for each scope, and the state is not carried over.
-
-From the perspective of @shift/reset@ delimited continuations, this phenomenon can be seen as @reset@s being inserted at the scopes of unelaborated higher-order effects.
-
-Whether this behavior occurs can be determined in advance.
-This reset behavior occurs only when using @Rec@ functions and when the program passed to that function performs unelaborated higher-order effects internally.
-The reset behavior occurs locally only at the points where those effects are performed.
-Whether an unelaborated higher-order effect @e@ is performed internally can generally be determined by looking at the type signature of the effectful program.
-Given an effectful program @p@, if its type signature includes @e@ in the list of higher-order effects,
-or if the constraint part includes @e t'Data.Effect.OpenUnion.<<|' eh@ or @e t'Control.Effect.<<:' m@, then you know that higher-order effect is being used.
-If not, @e@ cannot be performed internally in the function @p@.
-
-If you do not desire this reset behavior, you can avoid it by elaborating all higher-order effects first and emptying them when performing continuational stateful interpretation without using @Rec@ functions:
-
-@
-import Prelude hiding (log, span)
-
-prog :: IO ()
-prog = 'runEff' do
-    runLog . evalState \@[Int] [] . runSpan $ do
-
-        v'Data.Effect.State.modify' \@[Int] (++ [1])
-        log . show =<< v'Data.Effect.State.get' \@[Int]
-
-        span \"A\" do
-            v'Data.Effect.State.modify' \@[Int] (++ [2])
-            log . show =<< v'Data.Effect.State.get' \@[Int]
-
-        v'Data.Effect.State.modify' \@[Int] (++ [3])
-        log . show =<< v'Data.Effect.State.get' \@[Int]
-
-    'pure' ()
-
->>> prog
-[LOG] [1]
-[Start span 'A']
-[LOG] [1,2]
-[Ene span 'A']
-[LOG] [1,2,3]
-@
-
 = Interpreting Multiple Effects Simultaneously #interpreting-multiple-effects-simultaneously#
 
 For example, consider a situation where you want to use multiple t'Data.Effect.Except.Catch' effects simultaneously.
 The following is a case where both @String@ and @Int@ appear as exception types:
 
 @
-prog :: 'Eff' '[@t'Data.Effect.Except.Catch'@ String, @t'Data.Effect.Except.Catch'@ Int] '[@t'Data.Effect.Except.Throw'@ String, @t'Data.Effect.Except.Throw'@ Int] ()
+prog :: 'Eff' '[@t'Data.Effect.Except.Catch'@ String, @t'Data.Effect.Except.Catch'@ Int, @t'Data.Effect.Except.Throw'@ String, @t'Data.Effect.Except.Throw'@ Int] ()
 @
 
 In this case, you may get stuck trying to use @runCatch@.
 This is because @runCatch@ has the following type signature:
 
 @
-runCatch :: (@t'Data.Effect.Except.Throw'@ e t'Data.Effect.OpenUnion.<|' ef) => 'Eff' '[@t'Data.Effect.Except.Catch'@ e] ef t'Control.Effect.~>' 'Eff' '[] ef
+runCatch :: (@t'Data.Effect.Except.Throw'@ e `@t'Data.Effect.OpenUnion.In'@` es, 'FOEs' es) => 'Eff' (@t'Data.Effect.Except.Catch'@ e ': es) t'Control.Effect.~>' 'Eff' es
 @
 
-You cannot write @runCatch \@Int . runCatch \@String@. It requires the higher-order effects to be empty after interpretation:
+You cannot write @runCatch . runCatch@. It requires the higher-order effects to be exhausted after interpretation:
 
 
->runCatch @String . runCatch @Int $ prog
->                   ^^^^^^^^^^^^^
+>     runCatch . runCatch $ prog
+>                ^^^^^^^^
 >
->• Couldn't match type: '[]
->                 with: '[Catch String]
->  Expected: Eff '[Catch Int] ef x -> Eff '[Catch String] ef x
->    Actual: Eff '[Catch Int] ef x -> Eff '[] ef x
->• In the second argument of ‘(.)’, namely ‘runCatch @Int’
->  In the first argument of ‘($)’, namely
->    ‘runCatch @String . runCatch @Int’
->  In the expression: runCatch @String . runCatch @Int $ prog
+>   • No instance for ‘Data.Effect.FirstOrder (Catch Int)’
+>       arising from a use of ‘runCatch’
+>   • In the second argument of ‘(.)’, namely ‘runCatch’
+>     In the first argument of ‘($)’, namely ‘runCatch . runCatch’
+>     In the expression: runCatch . runCatch $ prog
 
-In situations like this, where you want to perform continuational stateful elaboration on multiple higher-order effects simultaneously,
+In situations like this, where you want to perform algebraic interpretation on multiple higher-order effects simultaneously,
 you generally cannot reduce the higher-order effect list step by step or via multi-staging.
-Instead, you need to elaborate /all of them at once simultaneously/.
+Instead, you need to interpret /all of them at once simultaneously/.
 
-This is possible by pattern matching on the open union of higher-order effects using the '!!+' operator.
+This is possible by 'interprets' family and pattern matching on the open union using the '!:' operator.
 
 @
-prog' :: 'Eff' '[] '[@t'Data.Effect.Except.Throw'@ String, @t'Data.Effect.Except.Throw'@ Int] ()
-prog' = 'interpretH' (elabCatch \@String '!!+' elabCatch \@Int '!!+' 'nilH') . 'bundleAllH' $ prog
+prog' :: 'Eff' '[@t'Data.Effect.Except.Throw'@ String, @t'Data.Effect.Except.Throw'@ Int] ()
+prog' = 'interprets' (handleCatch '!:' handleCatch '!:' 'nil') prog
 @
-
-'bundleAllH' collects the entire list of higher-order effects into a single higher-order effect using an open union.
-
-Similarly, this can be done for first-order effects using '!+', 'nil', and 'bundleAll'.
 -}
 module Control.Monad.Hefty (
     -- * Basics
@@ -507,8 +344,12 @@ module Control.Monad.Hefty (
     interpose,
     interposeOn,
     interposeIn,
-    interposeWith,
     interposeBy,
+    interposeOnBy,
+    interposeInBy,
+    interposeWith,
+    interposeOnWith,
+    interposeInWith,
     interposeFor,
     interposeForWith,
     interposeForBy,
@@ -613,6 +454,10 @@ import Control.Monad.Hefty.Interpret (
     interposeFor,
     interposeForBy,
     interposeForWith,
+    interposeInBy,
+    interposeInWith,
+    interposeOnBy,
+    interposeOnWith,
     interposeWith,
     interpret,
     interpretAll,

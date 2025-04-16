@@ -29,12 +29,16 @@ import Control.Monad.Hefty.Types (
 import Data.Effect (Emb)
 import Data.Effect.OpenUnion (
     FOEs,
+    Has,
+    In,
     KnownLength,
     KnownOrder,
     Membership,
     Suffix,
     Union,
     coerceFOEs,
+    identityMembership,
+    keyMembership,
     labelMembership,
     nil,
     project,
@@ -44,6 +48,7 @@ import Data.Effect.OpenUnion (
     (:>),
     type (++),
  )
+import Data.Effect.Tag (unTag)
 import Data.FTCQueue (tsingleton)
 import Data.Function ((&))
 
@@ -64,7 +69,7 @@ runPure (D.Eff m) =
 
 -- * Standard continuational interpretation functions
 
--- | Interprets the effect @e@ at the head of the list using the provided continuational stateful handler.
+-- | Interprets the effect @e@ at the head of the list using the provided algebraic handler.
 interpretWith
     :: forall e es a
      . (KnownOrder e, FOEs es)
@@ -74,7 +79,7 @@ interpretWith
 interpretWith = reinterpretWith
 {-# INLINE interpretWith #-}
 
--- | Interprets the effect @e@ at the head of the list using the provided value handler and continuational stateful handler.
+-- | Interprets the effect @e@ at the head of the list using the provided value handler and algebraic handler.
 interpretBy
     :: forall e es ans a
      . (KnownOrder e, FOEs es)
@@ -139,7 +144,7 @@ reinterpretsBy ret hdl = loop
 
 -- * Interposition functions
 
--- | Reinterprets (hooks) the effect @e@ in the list using the provided value handler and continuational stateful handler.
+-- | Reinterprets (hooks) the effect @e@ in the list using the provided value handler and algebraic handler.
 interposeBy
     :: forall e es ans a
      . (e :> es, FOEs es)
@@ -152,7 +157,7 @@ interposeBy
 interposeBy = interposeForBy labelMembership
 {-# INLINE interposeBy #-}
 
--- | Reinterprets (hooks) the effect @e@ in the list using the provided continuational stateful handler.
+-- | Reinterprets (hooks) the effect @e@ in the list using the provided algebraic handler.
 interposeWith
     :: forall e es a
      . (e :> es, FOEs es)
@@ -163,22 +168,53 @@ interposeWith
 interposeWith = interposeForWith labelMembership
 {-# INLINE interposeWith #-}
 
--- | Reinterprets (hooks) the effect @e@ in the list using the provided continuational stateful handler.
-interposeForWith
-    :: forall e es a
-     . (KnownOrder e, FOEs es)
-    => Membership e es
-    -> AlgHandler e (Eff es) (Eff es) a
+-- | Reinterprets (hooks) the effect @e@ in the list using the provided value handler and algebraic handler.
+interposeOnBy
+    :: forall key e es ans a
+     . (Has key e es, FOEs es)
+    => (a -> Eff es ans)
+    -- ^ Value handler
+    -> AlgHandler e (Eff es) (Eff es) ans
+    -- ^ Effect handler
+    -> Eff es a
+    -> Eff es ans
+interposeOnBy ret hdl = interposeForBy (keyMembership @key) ret (hdl . unTag)
+{-# INLINE interposeOnBy #-}
+
+-- | Reinterprets (hooks) the effect @e@ in the list using the provided algebraic handler.
+interposeOnWith
+    :: forall key e es a
+     . (Has key e es, FOEs es)
+    => AlgHandler e (Eff es) (Eff es) a
     -- ^ Effect handler
     -> Eff es a
     -> Eff es a
-interposeForWith i = interposeForBy i pure
-{-# INLINE interposeForWith #-}
+interposeOnWith hdl = interposeForWith (keyMembership @key) (hdl . unTag)
+{-# INLINE interposeOnWith #-}
 
-{- TODO: add the patterns:
-    - interpose{In,On}By
-    - interpose{In,On}With
--}
+-- | Reinterprets (hooks) the effect @e@ in the list using the provided value handler and algebraic handler.
+interposeInBy
+    :: forall e es ans a
+     . (e `In` es, FOEs es)
+    => (a -> Eff es ans)
+    -- ^ Value handler
+    -> AlgHandler e (Eff es) (Eff es) ans
+    -- ^ Effect handler
+    -> Eff es a
+    -> Eff es ans
+interposeInBy = interposeForBy identityMembership
+{-# INLINE interposeInBy #-}
+
+-- | Reinterprets (hooks) the effect @e@ in the list using the provided algebraic handler.
+interposeInWith
+    :: forall e es a
+     . (e `In` es, FOEs es)
+    => AlgHandler e (Eff es) (Eff es) a
+    -- ^ Effect handler
+    -> Eff es a
+    -> Eff es a
+interposeInWith = interposeForWith identityMembership
+{-# INLINE interposeInWith #-}
 
 interposeForBy
     :: forall e es ans a
@@ -201,9 +237,21 @@ interposeForBy i ret hdl = loop
                     Nothing -> D.Eff $ Op u (tsingleton $ unEff . k)
 {-# INLINE interposeForBy #-}
 
+-- | Reinterprets (hooks) the effect @e@ in the list using the provided algebraic handler.
+interposeForWith
+    :: forall e es a
+     . (KnownOrder e, FOEs es)
+    => Membership e es
+    -> AlgHandler e (Eff es) (Eff es) a
+    -- ^ Effect handler
+    -> Eff es a
+    -> Eff es a
+interposeForWith i = interposeForBy i pure
+{-# INLINE interposeForWith #-}
+
 -- * Utilities
 
--- | Lifts a stateless handler into a continuational stateful handler.
+-- | Lifts a stateless handler into a algebraic handler.
 stateless :: forall e m n ans. (Monad n) => (e m ~> n) -> AlgHandler e m n ans
 stateless i e k = i e >>= k
 {-# INLINE stateless #-}
