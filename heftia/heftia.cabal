@@ -51,7 +51,7 @@ tested-with: GHC == {9.6.2, 9.8.4, 9.10.1, 9.12.2}
 source-repository head
     type: git
     location: https://github.com/sayo-hs/heftia
-    tag: v0.5.0
+    tag: v0.6.0
     subdir: heftia
 
 library

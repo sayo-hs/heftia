@@ -11,7 +11,7 @@ source-repository-package
 source-repository-package
     type: git
     location: https://github.com/sayo-hs/data-effects
-    tag: df6ea5b2811ec3da2f9ca3ba8efad210bb1976d3
+    tag: 4440681a7c71113ff3f0d83dc76eb23a67c8c202
     subdir: data-effects-core
     subdir: data-effects-th
     subdir: data-effects

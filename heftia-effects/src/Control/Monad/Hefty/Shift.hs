@@ -12,7 +12,6 @@ module Control.Monad.Hefty.Shift (
 where
 
 import Control.Monad.Hefty (AlgHandler, Eff, interpretBy)
-import Data.Effect (Shift (Abort, Call, SubShiftFork))
 import Data.Effect.OpenUnion (FOEs)
 import Data.Effect.Shift
 import Data.Functor.Contravariant (Op (Op))

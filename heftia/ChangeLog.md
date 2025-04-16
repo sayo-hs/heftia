@@ -32,3 +32,8 @@
 
 * Fixed a bug in the lookup of keyed effects.
 * Added missing functions such as `key`, `keyH`, `raiseAll`, and `raiseAllH`.
+
+## 0.6.0.0 -- 2025-04-16
+
+* Introduced the new v4 interface.
+    * Unified first-order and higher-order effect interfaces.

@@ -35,3 +35,8 @@
 * Renamed `Control.Monad.Hefty.Writer.listen` -> `intercept`
 * Reexported `Data.Effect.*` from the interpreters module `Control.Monad.Hefty.*`.
 * Generalized `runUnliftIO` to use any monad that is an instance of `MonadUnliftIO`.
+
+## 0.6.0.0 -- 2025-04-16
+
+* Introduced the new v4 interface.
+    * Unified first-order and higher-order effect interfaces.
