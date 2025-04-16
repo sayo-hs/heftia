@@ -142,17 +142,17 @@ runSomeEff :: (@t'Data.Effect.Except.Throw'@ String t'Data.Effect.OpenUnion.:>' 
 runSomeEff = 'interpret' \\SomeAction -> v'Data.Effect.Except.throw' "not caught"
 
 -- | Catches the exception if \'someAction\' results in one
-action :: (SomeEff t'Data.Effect.OpenUnion.:>' es, t'Data.Effect.Except.Catch' String t'Data.Effect.OpenUnion.:>' es, t'Data.Effect.Except.Throw' String '<|' ef) => Eff es String
+action :: (SomeEff t'Data.Effect.OpenUnion.:>' es, t'Data.Effect.Except.Catch' String t'Data.Effect.OpenUnion.:>' es, t'Data.Effect.Except.Throw' String t'Data.Effect.OpenUnion.:>' es) => Eff es String
 action = someAction \`@v'Data.Effect.Except.catch'@\` \\(_ :: String) -> 'pure' "caught"
 
 prog1 :: IO ()
-prog1 = 'runPure' . runThrow . runCatch \@String . runSomeEff $ action
+prog1 = 'runPure' . runThrow . runCatch . runSomeEff $ action
 
 >>> prog1
 Right "caught"
 
 prog2 :: IO ()
-prog2 = 'runPure' . runThrow . runSomeEff . runCatch \@String $ action
+prog2 = 'runPure' . runThrow . runSomeEff . runCatch $ action
 
 >>> prog2
 Left "not caught"
@@ -196,7 +196,7 @@ The program is rewritten into a program like the above.
 Next, when @runCatch@ is applied to this, it evaluates to:
 
 @
-    runCatch \@String $ v'Data.Effect.Except.throw' "not caught" \`@v'Data.Effect.Except.catch'@\` \\(_ :: String) -> 'pure' "caught"
+    runCatch $ v'Data.Effect.Except.throw' "not caught" \`@v'Data.Effect.Except.catch'@\` \\(_ :: String) -> 'pure' "caught"
 ==> 'interposeWith' (\\(@v'Data.Effect.Except.Throw'@ e) _ -> 'pure' "caught") $ v'Data.Effect.Except.throw' "not caught"
 ==> 'pure' "caught"
 @
@@ -206,8 +206,8 @@ In this way, the exception is caught.
 On the other hand, in @prog2@, when @runCatch@ is applied to @action@:
 
 @
-    runCatch \@String action
- =  runCatch \@String $ someAction \`@v'Data.Effect.Except.catch'@\` \\(_ :: String) -> 'pure' "caught"
+    runCatch action
+ =  runCatch $ someAction \`@v'Data.Effect.Except.catch'@\` \\(_ :: String) -> 'pure' "caught"
 ==> 'interposeWith' (\\(@v'Data.Effect.Except.Throw'@ e) _ -> 'pure' "caught") $ someAction
 @
 
