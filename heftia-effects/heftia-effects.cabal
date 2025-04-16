@@ -55,7 +55,7 @@ common common-base
         PatternSynonyms
 
     build-depends:
-        base >= 4.17 && < 4.21,
+        base >= 4.17 && < 4.22,
         data-effects ^>= 0.4,
         heftia ^>= 0.6,
         time >= 1.11.1 && < 1.15,
