@@ -50,11 +50,11 @@ data EntryNotFound = EntryNotFound
     deriving anyclass (Exception)
 
 -- | Aggregate the sizes of all files under the given path
-totalFileSize
+fileSizes
     :: (Choose :> es, Empty :> es, FileSystem :> es, Throw NotADir :> es, Emb IO :> es)
     => FilePath
     -> Eff es (Sum Integer)
-totalFileSize path = do
+fileSizes path = do
     entities :: [FilePath] <- listDirectory path & joinEither
     entity :: FilePath <- choice entities -- Non-deterministically /pick/ one item from the list
     let path' = path </> entity
@@ -66,7 +66,7 @@ totalFileSize path = do
             liftIO $ putStrLn $ " ... " <> show size <> " bytes"
             pure $ Sum size
         Left NotAFile -> do
-            totalFileSize path'
+            fileSizes path'
 
 main :: IO ()
 main = runEff
@@ -74,7 +74,7 @@ main = runEff
     . runThrowIO @NotADir
     . runDummyFS exampleRoot
     $ do
-        total <- runNonDetMonoid pure (totalFileSize ".")
+        total <- runNonDetMonoid pure (fileSizes ".")
         liftIO $ print total
 
 {-
