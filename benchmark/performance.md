@@ -36,25 +36,25 @@ Larger values indicate that `heftia` is faster.
 | nondet, deep          | 0.7x         |
 
 ## Reproduction
-The benchmark code is available at [heftia-effects/bench](https://github.com/sayo-hs/heftia/blob/v0.5.0/heftia-effects/bench).
+The benchmark code is available at [heftia-effects/bench](https://github.com/sayo-hs/heftia/blob/v0.6.0/heftia-effects/bench).
 To run the benchmarks, move your working directory to the root directory of the `heftia` repository and execute
- [`./benchmark/bench.sh`](https://github.com/sayo-hs/heftia/blob/v0.5.0/benchmark/bench.sh).
+ [`./benchmark/bench.sh`](https://github.com/sayo-hs/heftia/blob/v0.6.0/benchmark/bench.sh).
 
 ## Benchmark Results
 
 The code was compiled with GHC 9.8.2 and run on a Ryzen 9 3900XT.
 
 * State Effect Benchmark (Shallow Effect Stack):
-![countdown.shallow](https://github.com/sayo-hs/heftia/blob/v0.5.0/benchmark/bench-result/countdown-shallow.svg)
+![countdown.shallow](https://github.com/sayo-hs/heftia/blob/v0.6.0/benchmark/bench-result/countdown-shallow.svg)
 
 * State Effect Benchmark (Deep Effect Stack):
-![countdown.deep](https://github.com/sayo-hs/heftia/blob/v0.5.0/benchmark/bench-result/countdown-deep.svg)
+![countdown.deep](https://github.com/sayo-hs/heftia/blob/v0.6.0/benchmark/bench-result/countdown-deep.svg)
 
 * Throw/Catch Effect Benchmark (Shallow Effect Stack):
-![catch.shallow](https://github.com/sayo-hs/heftia/blob/v0.5.0/benchmark/bench-result/catch-shallow.svg)
+![catch.shallow](https://github.com/sayo-hs/heftia/blob/v0.6.0/benchmark/bench-result/catch-shallow.svg)
 
 * Throw/Catch Effect Benchmark (Deep Effect Stack):
-![catch.deep](https://github.com/sayo-hs/heftia/blob/v0.5.0/benchmark/bench-result/catch-deep.svg)
+![catch.deep](https://github.com/sayo-hs/heftia/blob/v0.6.0/benchmark/bench-result/catch-deep.svg)
 
 Note: Here, the $5 + (5 - N) + N$ corresponds to the interpretation stack of `catchHeftiaDeepN` represented below:
 
@@ -72,19 +72,19 @@ run = Heftia.runAsk ()
 ```
 
 * Ask/Local Effect Benchmark (Shallow Effect Stack):
-![local.shallow](https://github.com/sayo-hs/heftia/blob/v0.5.0/benchmark/bench-result/local-shallow.svg)
+![local.shallow](https://github.com/sayo-hs/heftia/blob/v0.6.0/benchmark/bench-result/local-shallow.svg)
 
 * Ask/Local Effect Benchmark (Deep Effect Stack):
-![local.deep](https://github.com/sayo-hs/heftia/blob/v0.5.0/benchmark/bench-result/local-deep.svg)
+![local.deep](https://github.com/sayo-hs/heftia/blob/v0.6.0/benchmark/bench-result/local-deep.svg)
 
 * NonDet Effect Benchmark (Shallow Effect Stack):
-![nondet.shallow](https://github.com/sayo-hs/heftia/blob/v0.5.0/benchmark/bench-result/nondet-shallow.svg)
+![nondet.shallow](https://github.com/sayo-hs/heftia/blob/v0.6.0/benchmark/bench-result/nondet-shallow.svg)
 
 * NonDet Effect Benchmark (Deep Effect Stack):
-![nondet.deep](https://github.com/sayo-hs/heftia/blob/v0.5.0/benchmark/bench-result/nondet-deep.svg)
+![nondet.deep](https://github.com/sayo-hs/heftia/blob/v0.6.0/benchmark/bench-result/nondet-deep.svg)
 
 * Coroutine Benchmark (Shallow Effect Stack):
-![coroutine.shallow](https://github.com/sayo-hs/heftia/blob/v0.5.0/benchmark/bench-result/coroutine-shallow.svg)
+![coroutine.shallow](https://github.com/sayo-hs/heftia/blob/v0.6.0/benchmark/bench-result/coroutine-shallow.svg)
 
 * Coroutine Benchmark (Deep Effect Stack):
-![coroutine.deep](https://github.com/sayo-hs/heftia/blob/v0.5.0/benchmark/bench-result/coroutine-deep.svg)
+![coroutine.deep](https://github.com/sayo-hs/heftia/blob/v0.6.0/benchmark/bench-result/coroutine-deep.svg)

@@ -226,7 +226,7 @@ main = runUnliftIO . runTimerIO $ do
             bracket_
                 (liftIO $ putStrLn "Start")
                 (liftIO $ putStrLn "End")
-                (raiseAllH produce)
+                (onlyFOEs produce)
 
     runMachineryIO_ $
         Unit @() @Int do
