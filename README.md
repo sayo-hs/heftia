@@ -175,8 +175,7 @@ to the header of your source file.
 Here, the number 16 should be set to the maximum number of effects you want to stack.
 The default in GHC is 4, which is quite low, so it's a good idea to set it to around 16 globally, rather than specifying the pragma in each file individually.
 
-The supported versions are GHC 9.4.1 and later.
-This library has been tested with GHC 9.4.1, 9.6.6 and 9.8.2.
+The supported versions are GHC 9.6.2 and later.
 
 ## Example
 

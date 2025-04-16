@@ -1,4 +1,4 @@
-cabal-version:      2.4
+cabal-version:      3.0
 name:               heftia-effects
 version:            0.6.0.0
 
@@ -28,10 +28,7 @@ extra-doc-files:
     NOTICE
     README.md
 
-tested-with:
-    GHC == 9.8.2
-    GHC == 9.6.6
-    GHC == 9.4.1
+tested-with: GHC == {9.6.2, 9.8.4, 9.10.1, 9.12.2}
 
 source-repository head
     type: git
