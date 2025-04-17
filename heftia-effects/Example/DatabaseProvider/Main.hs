@@ -57,8 +57,8 @@ main :: IO ()
 main =
     runEff . runDummyDBProvider $
         provide_ "/db1" \_ -> do
-            provide_ "/db2" \outer -> do
-                outer do
+            provide_ "/db2" \detach -> do
+                detach do
                     s1 <- readDB "/a/b/c"
                     liftIO $ putStrLn $ "content: " <> show s1
                     writeDB "/d/e/f" "foobar"
@@ -72,7 +72,7 @@ main =
                 liftIO $ putStrLn "-----"
 
                 transactDB do
-                    outer $ transactDB do
+                    detach $ transactDB do
                         liftIO $ print "hello"
 
 {-
