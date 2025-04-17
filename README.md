@@ -66,7 +66,7 @@ If performance is particularly important, [`effectful`](https://github.com/haske
             * to prevent [resource handles from leaking out of scopes](https://h2.jaguarpaw.co.uk/posts/bluefin-prevents-handles-leaking/)
             * [Control.Monad.Hefty.Concurrent.Subprocess](https://hackage.haskell.org/package/heftia-effects-0.6.0.0/docs/Control-Monad-Hefty-Concurrent-Subprocess.html)
             * [heftia-effects/Example/Subprocess/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.6.0/heftia-effects/Example/Subprocess/Main.hs)
-            * [heftia-effects/Example/FileSystemProvider/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.6.0/heftia-effects/Example/FileSystemProvider/Main.hs)
+            * [heftia-effects/Example/DatabaseProvider/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.6.0.1/heftia-effects/Example/DatabaseProvider/Main.hs)
         * [Applicative-style Parallelism](https://medium.com/@PerrottaFrancisco/learning-cats-effects-parallel-execution-f617f883e390)
             * like `cats-effect` in Scala
             * [Data.Effect.Concurrent.Parallel](https://hackage.haskell.org/package/data-effects-0.3.0.1/docs/Data-Effect-Concurrent-Parallel.html)
