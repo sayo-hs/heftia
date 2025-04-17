@@ -27,11 +27,11 @@ import "Control.Monad.Hefty"
 import Prelude hiding (log, span)
 
 data Log :: t'Effect' where
-    Log :: String -> Log ()
+    Log :: String -> Log f ()
 'makeEffectF' ''Log
 
 data Span :: t'Effect' where
-    Span :: String -> m a -> Span m a
+    Span :: String -> f a -> Span f a
 'makeEffectH' ''Span
 
 runLog :: (@t'Emb'@ 'IO' t'Data.Effect.OpenUnion.:>' es) => 'Eff' (Log ': es) t'Control.Effect.~>' 'Eff' es
