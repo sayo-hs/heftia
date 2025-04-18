@@ -1,4 +1,4 @@
-# Heftia: higher-order algebraic effects done right
+# Heftia: A theory‑backed, ultra type‑safe algebraic effects
 
 [![Hackage](https://img.shields.io/hackage/v/heftia.svg?logo=haskell&label=heftia)](https://hackage.haskell.org/package/heftia)
 [![Hackage](https://img.shields.io/hackage/v/heftia-effects.svg?logo=haskell&label=heftia-effects)](https://hackage.haskell.org/package/heftia-effects)
@@ -6,20 +6,24 @@
 [![Stackage Nightly](https://www.stackage.org/package/heftia-effects/badge/nightly)](https://www.stackage.org/nightly/package/heftia-effects)
 [![Build status](https://img.shields.io/github/actions/workflow/status/sayo-hs/heftia/haskell.yml?branch=master)](https://github.com/sayo-hs/heftia/actions)
 
-Heftia is an extensible effects library for Haskell that generalizes "Algebraic Effects and Handlers" to higher-order effects, providing users with maximum flexibility and delivering standard and reasonable speed.
-In its generalization, the focus is on ensuring predictable results based on simple, consistent semantics, while preserving soundness.
+Heftia is a Haskell library for algebraic effects grounded in solid theoretical foundations.
+
+It is the only library that fully supports higher-order algebraic effects with complete type safety.
+
+Say goodbye to runtime errors and unsound semantics.
+
+This library provides a simple interface, predictable behavior, and maximum flexibility while delivering standard, practical performance.
 
 Please refer to the [Haddock documentation](https://hackage.haskell.org/package/heftia-0.6.0.0/docs/Control-Monad-Hefty.html) for usage and semantics.
 For information on performance, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/v0.6.0/benchmark/performance.md).
 
 This library is inspired by the paper:
-* Casper Bach Poulsen and Cas van der Rest. 2023. Hefty Algebras: Modular
-    Elaboration of Higher-Order Algebraic Effects. Proc. ACM Program. Lang. 7,
-    POPL, Article 62 (January 2023), 31 pages. <https://doi.org/10.1145/3571255>
+* [Hefty Algebras: Modular Elaboration of Higher-Order Algebraic Effects. Casper Bach Poulsen & Cas van der Rest, POPL 2023.](https://doi.org/10.1145/3571255)
 
-The *elaboration* approach proposed in the above paper allows for a straightforward treatment of higher-order effects.
+The elaboration approach proposed in that paper allows for a straightforward treatment of higher-order effects.
 
-Heftia's data structure is an extension of the Freer monad, designed to be theoretically straightforward by eliminating ad-hoc elements.
+Heftia is also grounded in the following theory:
+* [A Framework for Higher-Order Effects & Handlers. Birthe van den Berg & Tom Schrijvers, Sci. Comput. Program. 2024.](https://doi.org/10.1016/j.scico.2024.103086)
 
 ## Why choose this library over others?
 This library is based on algebraic effects. Currently, **none of the practical effect libraries other than this one are "algebraic."** So, why is being *algebraic* important?
@@ -368,7 +372,7 @@ About the internal *elaboration* mechanism: https://sayo-hs.github.io/jekyll/upd
 | `freer-simple`      | ❌                   | Multi-shot             | ✅            | ✅                                | ✅                       | Algebraic Effects                |
 | `polysemy`          | ✅                   | ❌                     | ✅            | ✅                                | ✅                       | Weaving-based (functorial state) |
 | `effectful`         | ✅                   | ❌                     | ✅            | ❌ (based on the `IO` monad)      | ✅                       | IO-fused                         |
-| `bluefin`           | ❌[^7]               | ❌                     | ✅            | ❌ (based on the `IO` monad)      | [^5]                     | IO-fused                         |
+| `bluefin`           | ✅[^7][^10]          | ❌                     | ✅            | ❌ (based on the `IO` monad)      | ✅[^5]                   | IO-fused                         |
 | `eff`               | ✅                   | Multi-shot             | ✅            | ❌ (based on the `IO` monad)      | ✅                       | Algebraic Effects & IO-fused [^6]|
 | `speff`             | ✅                   | Multi-shot (restriction: [^4]) | ✅    | ❌ (based on the `IO` monad)      | ✅                       | Algebraic Effects & IO-fused     |
 | `mtl`               | ✅                   | Multi-shot (`ContT`)   | ✅            | ✅                                | ❌                       | Carrier dependent                |
@@ -383,6 +387,7 @@ About the internal *elaboration* mechanism: https://sayo-hs.github.io/jekyll/upd
 [^5]: https://discourse.haskell.org/t/bluefin-compared-to-effectful-video/10723/27?u=ymdfield
 [^6]: https://github.com/hasura/eff/issues/12
 [^7]: https://discourse.haskell.org/t/what-is-a-higher-order-effect/10744
+[^10]: https://github.com/tomjaguarpaw/bluefin/pull/27
 
 Heftia can simply be described as a higher-order version of `freer-simple`.
 This is indeed true in terms of its internal mechanisms as well.
