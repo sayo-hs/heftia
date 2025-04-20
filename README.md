@@ -15,7 +15,7 @@ Say goodbye to runtime errors and unsound semantics.
 This library provides a simple interface, predictable behavior, and maximum flexibility while delivering standard, practical performance.
 
 Please refer to the [Haddock documentation](https://hackage.haskell.org/package/heftia-0.6.0.0/docs/Control-Monad-Hefty.html) for usage and semantics.
-For information on performance, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/v0.6.0/benchmark/performance.md).
+For information on performance, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/v0.6/benchmark/performance.md).
 
 This library is inspired by the paper:
 * [Hefty Algebras: Modular Elaboration of Higher-Order Algebraic Effects. Casper Bach Poulsen & Cas van der Rest, POPL 2023.](https://doi.org/10.1145/3571255)
@@ -85,7 +85,7 @@ If performance is particularly important, [`effectful`](https://github.com/haske
 
 * **Standard and Reasonable Performance**
 
-    It operates at a speed positioned roughly in the middle between faster libraries (like `effectful` or `eveff`) and relatively slower ones (like `polysemy` or `fused-effects`): [performance.md](https://github.com/sayo-hs/heftia/blob/v0.6.0/benchmark/performance.md).
+    It operates at a speed positioned roughly in the middle between faster libraries (like `effectful` or `eveff`) and relatively slower ones (like `polysemy` or `fused-effects`): [performance.md](https://github.com/sayo-hs/heftia/blob/v0.6/benchmark/performance.md).
 
 * **Type Safety and Purity**
 
