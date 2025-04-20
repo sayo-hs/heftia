@@ -57,7 +57,7 @@ catchHeftiaDeep3 n = Heftia.runPure $ run $ run $ run $ run $ run $ Heftia.runTh
 catchHeftiaDeep4 n = Heftia.runPure $ run $ run $ run $ run $ run $ Heftia.runThrow $ run $ Heftia.runCatch @() $ run $ run $ run $ run $ programHeftia n
 catchHeftiaDeep5 n = Heftia.runPure $ run $ run $ run $ run $ run $ Heftia.runThrow $ Heftia.runCatch @() $ run $ run $ run $ run $ run $ programHeftia n
 
-run :: Heftia.Eff eh (Heftia.Ask () ': ef) a -> Heftia.Eff eh ef a
+run :: Heftia.Eff (Heftia.Ask () ': es) a -> Heftia.Eff es a
 run = Heftia.runAsk ()
 ```
 
