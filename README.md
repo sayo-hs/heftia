@@ -404,10 +404,10 @@ This results in minimal surprise to the mental model of the code reader.
 
 ### Performance
 
-Overall, the performance of this library is positioned roughly in the middle between the fast (`effectful`, `eveff`, etc.) and slow (`polysemy`, `fused-effects`, etc.) libraries, and can be considered average.
-In all benchmarks, the speed is nearly equivalent to `freer-simple`, only slightly slower.
+Overall, the performance of this library is roughly on par with `effectful`, or only slightly slower.
+`heftia` runs significantly faster compared to existing effect systems such as `mtl` and `polysemy`.
 
-For more details, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/v0.6.0/benchmark/performance.md).
+For more details, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/v0.6/benchmark/performance.md).
 
 ### Interoperability with other libraries
 

@@ -8,8 +8,6 @@ import Control.Algebra qualified as F
 import Control.Applicative (Alternative (empty, (<|>)))
 import Control.Carrier.NonDet.Church qualified as F
 import Control.Carrier.Reader qualified as F
-import Control.Ev.Eff qualified as E
-import Control.Ev.Util qualified as E
 import Control.Monad (MonadPlus)
 import Control.Monad.Freer qualified as FS
 import Control.Monad.Freer.NonDet qualified as FS
@@ -21,8 +19,6 @@ import Control.Monad.Hefty.Shift qualified as H
 import Control.Monad.Identity qualified as M
 import Control.Monad.Logic qualified as M
 import Control.Monad.Reader qualified as M
-import Control.Mp.Eff qualified as Mp
-import Control.Mp.Util qualified as Mp
 import Data.List (singleton)
 import "eff" Control.Effect qualified as EF
 
@@ -92,38 +88,6 @@ pythFusedDeep :: Int -> [(Int, Int, Int)]
 pythFusedDeep n = F.run $ run $ run $ run $ run $ run $ F.runNonDetA $ run $ run $ run $ run $ run $ programFused n
   where
     run = F.runReader ()
-
-programEv :: (E.Choose E.:? e) => Int -> E.Eff e (Int, Int, Int)
-programEv upbound = do
-    x <- E.perform E.choose upbound
-    y <- E.perform E.choose upbound
-    z <- E.perform E.choose upbound
-    if x * x + y * y == z * z then return (x, y, z) else E.perform (\r -> E.none r) ()
-{-# NOINLINE programEv #-}
-
-pythEv :: Int -> [(Int, Int, Int)]
-pythEv n = E.runEff $ E.chooseAll $ programEv n
-
-pythEvDeep :: Int -> [(Int, Int, Int)]
-pythEvDeep n = E.runEff $ run $ run $ run $ run $ run $ E.chooseAll $ run $ run $ run $ run $ run $ programEv n
-  where
-    run = E.reader ()
-
-programMp :: (Mp.Choose Mp.:? e) => Int -> Mp.Eff e (Int, Int, Int)
-programMp upbound = do
-    x <- Mp.perform Mp.choose upbound
-    y <- Mp.perform Mp.choose upbound
-    z <- Mp.perform Mp.choose upbound
-    if x * x + y * y == z * z then return (x, y, z) else Mp.perform (\r -> Mp.none r) ()
-{-# NOINLINE programMp #-}
-
-pythMp :: Int -> [(Int, Int, Int)]
-pythMp n = Mp.runEff $ Mp.chooseAll $ programMp n
-
-pythMpDeep :: Int -> [(Int, Int, Int)]
-pythMpDeep n = Mp.runEff $ run $ run $ run $ run $ run $ Mp.chooseAll $ run $ run $ run $ run $ run $ programMp n
-  where
-    run = Mp.reader ()
 
 programEff :: (EF.NonDet EF.:< es) => Int -> EF.Eff es (Int, Int, Int)
 programEff upbound = do
