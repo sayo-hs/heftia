@@ -168,7 +168,7 @@ Let's revisit the definition of @runCatch@:
 
 @
 [runCatch](https://hackage.haskell.org/package/heftia-effects-0.6.0.0/docs/Control-Monad-Hefty-Except.html#v:runCatch) :: (@t'Data.Effect.Except.Throw'@ e `@t'Data.Effect.OpenUnion.In'@` es, 'FOEs' es) => 'Eff' (@t'Data.Effect.Except.Catch'@ e ': es) t'Control.Effect.~>' 'Eff' es
-runCatch = 'interpret' elabCatch
+runCatch = 'interpret' handleCatch
 
 [handleCatch](https://hackage.haskell.org/package/heftia-effects-0.6.0.0/docs/Control-Monad-Hefty-Except.html#v:handleCatch) :: (@t'Data.Effect.Except.Throw'@ e `@t'Data.Effect.OpenUnion.In'@` es, 'FOEs' es) => t'Data.Effect.Except.Catch' e t'Control.Monad.Hefty.~~>' 'Eff' es
 handleCatch (@v'Data.Effect.Except.Catch'@ action hdl) = action & 'interposeWith' \\(@v'Data.Effect.Except.Throw'@ e) _ -> hdl e
