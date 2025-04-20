@@ -11,3 +11,5 @@ cabal run heftia-bench -- --svg ../benchmark/bench-result/local-shallow.svg --pa
 cabal run heftia-bench -- --svg ../benchmark/bench-result/local-deep.svg --pattern '$2 == "local.deep"'
 cabal run heftia-bench -- --svg ../benchmark/bench-result/coroutine-shallow.svg --pattern '$2 == "coroutine.shallow"'
 cabal run heftia-bench -- --svg ../benchmark/bench-result/coroutine-deep.svg --pattern '$2 == "coroutine.deep"'
+cabal run heftia-bench -- --svg ../benchmark/bench-result/filesize-shallow.svg --pattern '$2 == "filesize.shallow"'
+cabal run heftia-bench -- --svg ../benchmark/bench-result/filesize-deep.svg --pattern '$2 == "filesize.deep"'

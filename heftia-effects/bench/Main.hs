@@ -1,5 +1,7 @@
+{-# LANGUAGE CPP #-}
+
 -- SPDX-License-Identifier: BSD-3-Clause
--- (c) 2022 Xy Ren; 2024 Sayo contributors
+-- (c) 2022 Xy Ren; 2021-2022, Andrzej Rybcza; 2024 Sayo contributors
 
 module Main where
 
@@ -10,6 +12,7 @@ import BenchLocal
 import BenchPyth
 import Data.Functor ((<&>))
 import Test.Tasty.Bench
+import BenchFileSizes
 
 main :: IO ()
 main =
@@ -25,7 +28,6 @@ main =
                     , bench "fused" $ nf countdownFused x
                     , bench "effectful" $ nf countdownEffectful x
                     , bench "eff" $ nf countdownEff x
-                    , bench "ev" $ nf countdownEv x
                     , bench "mtl" $ nf countdownMtl x
                     ]
         , bgroup "countdown.deep" $
@@ -39,7 +41,6 @@ main =
                     , bench "fused.5+5" $ nf countdownFusedDeep x
                     , bench "effectful.5+5" $ nf countdownEffectfulDeep x
                     , bench "eff.5+5" $ nf countdownEffDeep x
-                    , bench "ev.5+5" $ nf countdownEvDeep x
                     , bench "mtl.5+5" $ nf countdownMtlDeep x
                     ]
         , bgroup "catch.shallow" $
@@ -103,11 +104,9 @@ main =
                 bgroup
                     (show x)
                     [ bench "heftia" $ nf pythHeftia x
-                    , -- , bench "heftia.shift" $ nf pythHeftiaShift x -- tricky method
+                    , -- , bench "heftia.shift" $ nf pythHeftiaShift x -- tricky, slow method
                       bench "freer" $ nf pythFreer x
                     , bench "fused" $ nf pythFused x
-                    , bench "ev" $ nf pythEv x
-                    , bench "mp" $ nf pythMp x
                     , bench "eff" $ nf pythEff x
                     , bench "mtl-logict" $ nf pythLogict x
                     ] -- Polysemy case is excluded because of incorrect semantics.
@@ -116,11 +115,9 @@ main =
                 bgroup
                     (show x)
                     [ bench "heftia.5+5" $ nf pythHeftiaDeep x
-                    , -- , bench "heftia.shift.5+5" $ nf pythHeftiaShiftDeep x -- tricky method
-                      bench "freer.5+5" $ nf pythFreerDeep x
+                    -- , bench "heftia.shift.5+5" $ nf pythHeftiaShiftDeep x -- tricky, slow method
+                    , bench "freer.5+5" $ nf pythFreerDeep x
                     , bench "fused.5+5" $ nf pythFusedDeep x
-                    , bench "ev.5+5" $ nf pythEvDeep x
-                    , bench "mp.5+5" $ nf pythMpDeep x
                     , bench "eff.5+5" $ nf pythEffDeep x
                     , bench "mtl-logict.5+5" $ nf pythLogictDeep x
                     ]
@@ -131,9 +128,7 @@ main =
                     [ bench "heftia" $ nf coroutineHeftia x
                     , bench "freer" $ nf coroutineFreer x
                     , bench "eff" $ nf coroutineEff x
-                    , bench "mp" $ nf coroutineMp x
-                    -- `mpeff` is O(n^2) slow because of: https://dl.acm.org/doi/10.1145/2633357.2633360
-                    -- `eff` is probably for the same reason.
+                    -- `eff` is O(n^2) slow probably because of: https://dl.acm.org/doi/10.1145/2633357.2633360
                     ] -- add mtl?
         , bgroup "coroutine.deep" $
             [1000] <&> \x ->
@@ -142,6 +137,63 @@ main =
                     [ bench "heftia.5+5" $ nf coroutineHeftiaDeep x
                     , bench "freer.5+5" $ nf coroutineFreerDeep x
                     , bench "eff.5+5" $ nf coroutineEffDeep x
-                    , bench "mp.5+5" $ nf coroutineMpDeep x
                     ]
+        , bgroup "filesize.shallow" $ map filesizeShallow [1000, 2000, 3000]
+        , bgroup "filesize.deep" $ map filesizeDeep [1000, 2000, 3000]
         ]
+
+filesizeShallow :: Int -> Benchmark
+filesizeShallow n = bgroup (show n)
+  [ bench "reference" $ nfAppIO ref_calculateFileSizes (take n files)
+  , bench "heftia" $ nfAppIO heftia_calculateFileSizes (take n files)
+  , bench "effectful" $ nfAppIO effectful_calculateFileSizes (take n files)
+#ifdef VERSION_cleff
+  , bench "cleff" $ nfAppIO cleff_calculateFileSizes (take n files)
+#endif
+#ifdef VERSION_freer_simple
+  , bench "freer-simple" $ nfAppIO fs_calculateFileSizes (take n files)
+#endif
+#ifdef VERSION_eff
+  , bench "eff" $ nfAppIO eff_calculateFileSizes (take n files)
+#endif
+#ifdef VERSION_mtl
+  , bench "mtl" $ nfAppIO mtl_calculateFileSizes (take n files)
+#endif
+#ifdef VERSION_fused_effects
+  , bench "fused-effects" $ nfAppIO fe_calculateFileSizes (take n files)
+#endif
+#ifdef VERSION_polysemy
+  , bench "polysemy" $ nfAppIO poly_calculateFileSizes (take n files)
+#endif
+  ]
+  where
+    files :: [FilePath]
+    files = repeat "heftia-effects.cabal"
+
+filesizeDeep :: Int -> Benchmark
+filesizeDeep n = bgroup (show n)
+  [ bench "reference" $ nfAppIO ref_calculateFileSizes (take n files)
+  , bench "heftia" $ nfAppIO heftia_calculateFileSizesDeep (take n files)
+  , bench "effectful" $ nfAppIO effectful_calculateFileSizesDeep (take n files)
+#ifdef VERSION_cleff
+  , bench "cleff" $ nfAppIO cleff_calculateFileSizesDeep (take n files)
+#endif
+#ifdef VERSION_freer_simple
+  , bench "freer-simple" $ nfAppIO fs_calculateFileSizesDeep (take n files)
+#endif
+#ifdef VERSION_eff
+  , bench "eff" $ nfAppIO eff_calculateFileSizesDeep (take n files)
+#endif
+#ifdef VERSION_mtl
+  , bench "mtl" $ nfAppIO mtl_calculateFileSizesDeep (take n files)
+#endif
+#ifdef VERSION_fused_effects
+  , bench "fused-effects" $ nfAppIO fe_calculateFileSizesDeep (take n files)
+#endif
+#ifdef VERSION_polysemy
+  , bench "polysemy" $ nfAppIO poly_calculateFileSizesDeep (take n files)
+#endif
+  ]
+  where
+    files :: [FilePath]
+    files = repeat "heftia-effects.cabal"

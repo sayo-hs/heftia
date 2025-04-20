@@ -1,11 +1,11 @@
 # Performance
 
-Overall, the performance of this library is positioned roughly in the middle between the fast (`effectful`, `eveff`, etc.) and slow (`polysemy`, `fused-effects`, etc.) libraries, and can be considered average.
-In all benchmarks, the speed is nearly equivalent to `freer-simple`.
+Overall, the performance of this library is roughly on par with `effectful`, or only slightly slower.
+`heftia` runs significantly faster compared to existing effect systems such as `mtl` and `polysemy`.
 
-In the State benchmark, it is about 2-6x faster than `polysemy` and about 2-9x slower than `effectful`.
+In the IO benchmark (which retrieves file sizes. A more down-to-earth benchmark that performs various tasks, including I/O.), it is faster compared to existing extensible effects like `mtl` and `polysemy`, and its performance is nearly on par with high-speed libraries such as `effectful` and `eff`. The State benchmark shows a similar trend.
 
-In the Throw/Catch benchmark, it is slightly faster than `effectful` in the fastest case, and at least 2x as fast as `polysemy` in the other cases.
+In the Throw/Catch benchmark, it is faster than `effectful` in the fastest case, and at least 2x as fast as `polysemy` in the other cases.
 
 In the Ask/Local benchmark, it still outperforms `polysemy` and `fused-effects` in deep effect stack cases.
 
@@ -13,8 +13,8 @@ Non-deterministic computations is comparable to that of other libraries.
 Polysemy does not support non-deterministic computations, and among practical extensible effects libraries, only `fused-effects` currently supports them.
 
 The coroutine performance is on par with `freer-simple`, maintaining similar speed without any noticeable degradation compared to other effects.
-Moreover, the other libraries such as `eff` and `mpeff`, aside from this library and `freer-simple`, likely suffer from the $O(n^2)$ issue mentioned in the "Reflection without Remorse" paper.
-In comparison, these libraries are significantly slower, approximately 50x slower with $n=1000$ (as shown in the measured results) and about 500x slower with $n=10000$.
+Moreover, the `eff`, aside from this library and `freer-simple`, likely suffer from the $O(n^2)$ issue mentioned in the "Reflection without Remorse" paper.
+In comparison, `eff` are significantly slower, approximately 50x slower with $n=1000$ (as shown in the measured results) and about 500x slower with $n=10000$.
 
 Furthermore, since there are differences among libraries in their support for higher-order effects and continuations,
 please note that, for example, in the Throw/Catch benchmark, only libraries that support higher-order effects are included in the comparison.
@@ -26,7 +26,13 @@ To run the benchmarks, move your working directory to the root directory of the 
 
 ## Benchmark Results
 
-The code was compiled with GHC 9.8.2 and run on a Ryzen 9 3900XT.
+The code was compiled with GHC 9.8.4 and run on a Ryzen 9 3900XT.
+
+* IO Benchmark (Shallow Effect Stack):
+![filesize.shallow](https://github.com/sayo-hs/heftia/blob/v0.6.0/benchmark/bench-result/filesize-shallow.svg)
+
+* IO Benchmark (Deep Effect Stack):
+![filesize.deep](https://github.com/sayo-hs/heftia/blob/v0.6.0/benchmark/bench-result/filesize-deep.svg)
 
 * State Effect Benchmark (Shallow Effect Stack):
 ![countdown.shallow](https://github.com/sayo-hs/heftia/blob/v0.6.0/benchmark/bench-result/countdown-shallow.svg)

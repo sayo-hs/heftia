@@ -6,8 +6,6 @@ module BenchCountdown where
 
 import Control.Carrier.Reader qualified as F
 import Control.Carrier.State.Strict qualified as F
-import Control.Ev.Eff qualified as E
-import Control.Ev.Util qualified as E
 import Control.Monad.Freer qualified as FS
 import Control.Monad.Freer.Reader qualified as FS
 import Control.Monad.Freer.State qualified as FS
@@ -140,30 +138,6 @@ countdownEffDeep :: Int -> (Int, Int)
 countdownEffDeep n = EF.run $ runR $ runR $ runR $ runR $ runR $ EF.runState n $ runR $ runR $ runR $ runR $ runR $ programEff
   where
     runR = EF.runReader ()
-
-programEv :: (E.State Int E.:? es) => E.Eff es Int
-programEv = do
-    x <- E.perform (E.get @Int) ()
-    if x == 0
-        then pure x
-        else do
-            E.perform E.put (x - 1)
-            programEv
-{-# NOINLINE programEv #-}
-
-countdownEv :: Int -> (Int, Int)
-countdownEv n = E.runEff $ runStateEv n programEv
-
-countdownEvDeep :: Int -> (Int, Int)
-countdownEvDeep n = E.runEff $ runR $ runR $ runR $ runR $ runR $ runStateEv n $ runR $ runR $ runR $ runR $ runR $ programEv
-  where
-    runR = E.reader ()
-
-runStateEv :: s -> E.Eff (E.State s E.:* es) a -> E.Eff es (s, a)
-runStateEv s0 m = E.state s0 do
-    r <- m
-    s <- E.perform E.get ()
-    pure (s, r)
 
 programMtl :: (M.MonadState Int m) => m Int
 programMtl = do
