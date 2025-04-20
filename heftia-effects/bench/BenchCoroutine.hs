@@ -10,8 +10,6 @@ import Control.Monad.Freer.Reader qualified as FS
 import Control.Monad.Hefty qualified as H
 import Control.Monad.Hefty.Coroutine qualified as H
 import Control.Monad.Hefty.Reader qualified as H
-import Control.Mp.Eff qualified as Mp
-import Control.Mp.Util qualified as Mp
 import "eff" Control.Effect qualified as E
 
 programFreer :: (FS.Member (FS.Yield Int Int) es) => Int -> FS.Eff es [Int]
@@ -71,26 +69,3 @@ coroutineEffDeep :: Int -> [Int]
 coroutineEffDeep n = E.run $ run $ run $ run $ run $ run $ loopStatusEff =<< E.runCoroutine (run $ run $ run $ run $ run $ programEff n)
   where
     run = E.runReader ()
-
-programMp :: (MpYield Int Int Mp.:? e) => Int -> Mp.Eff e [Int]
-programMp n = forM [0 .. n] $ \i -> Mp.perform mpYield i
-{-# NOINLINE programMp #-}
-
-loopStatusMp :: H.Status (Mp.Eff e) Int Int r -> Mp.Eff e r
-loopStatusMp = \case
-    H.Done r -> pure r
-    H.Continue a k -> loopStatusMp =<< k (a + 100)
-{-# NOINLINE loopStatusMp #-}
-
-coroutineMp :: Int -> [Int]
-coroutineMp n = Mp.runEff $ loopStatusMp =<< mpCoroutine @Int @Int (programMp n)
-
-coroutineMpDeep :: Int -> [Int]
-coroutineMpDeep n = Mp.runEff $ run $ run $ run $ run $ run $ loopStatusMp =<< mpCoroutine @Int @Int (run $ run $ run $ run $ run $ programMp n)
-  where
-    run = Mp.reader ()
-
-newtype MpYield a b e ans = MpYield {mpYield :: Mp.Op a b e ans}
-
-mpCoroutine :: Mp.Eff (MpYield a b Mp.:* e) r -> Mp.Eff e (H.Status (Mp.Eff e) a b r)
-mpCoroutine = Mp.handler MpYield {mpYield = Mp.operation $ \a k -> pure $ H.Continue a k} . fmap H.Done
