@@ -85,7 +85,7 @@ If performance is particularly important, [`effectful`](https://github.com/haske
 
 * **Standard and Reasonable Performance**
 
-    It operates at a speed positioned roughly in the middle between faster libraries (like `effectful` or `eveff`) and relatively slower ones (like `polysemy` or `fused-effects`): [performance.md](https://github.com/sayo-hs/heftia/blob/v0.6/benchmark/performance.md).
+    It operates at a speed roughly on par with `effectful` and significantly faster than `mtl` and `polysemy`: [performance.md](https://github.com/sayo-hs/heftia/blob/v0.6/benchmark/performance.md).
 
 * **Type Safety and Purity**
 
