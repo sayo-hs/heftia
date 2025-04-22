@@ -1,7 +1,10 @@
+{-# LANGUAGE CPP #-}
+
 -- SPDX-License-Identifier: BSD-3-Clause
 -- (c) 2022 Xy Ren; 2024 Sayo contributors
 
 -- Benchmarking yield-intensive code
+
 module BenchPyth where
 
 import Control.Algebra qualified as F
@@ -9,9 +12,11 @@ import Control.Applicative (Alternative (empty, (<|>)))
 import Control.Carrier.NonDet.Church qualified as F
 import Control.Carrier.Reader qualified as F
 import Control.Monad (MonadPlus)
+#ifdef VERSION_freer_simple
 import Control.Monad.Freer qualified as FS
 import Control.Monad.Freer.NonDet qualified as FS
 import Control.Monad.Freer.Reader qualified as FS
+#endif
 import Control.Monad.Hefty qualified as H
 import Control.Monad.Hefty.NonDet qualified as H
 import Control.Monad.Hefty.Reader qualified as H
@@ -20,8 +25,11 @@ import Control.Monad.Identity qualified as M
 import Control.Monad.Logic qualified as M
 import Control.Monad.Reader qualified as M
 import Data.List (singleton)
+#ifdef VERSION_eff
 import "eff" Control.Effect qualified as EF
+#endif
 
+#ifdef VERSION_freer_simple
 programFreer :: (FS.Member FS.NonDet es) => Int -> FS.Eff es (Int, Int, Int)
 programFreer upbound = do
     x <- choice upbound
@@ -40,6 +48,7 @@ pythFreerDeep :: Int -> [(Int, Int, Int)]
 pythFreerDeep n = FS.run $ run $ run $ run $ run $ run $ FS.makeChoiceA $ run $ run $ run $ run $ run $ programFreer n
   where
     run = FS.runReader ()
+#endif
 
 programHeftia :: (H.Choose H.:> es, H.Empty H.:> es) => Int -> H.Eff es (Int, Int, Int)
 programHeftia upbound = do
@@ -89,6 +98,7 @@ pythFusedDeep n = F.run $ run $ run $ run $ run $ run $ F.runNonDetA $ run $ run
   where
     run = F.runReader ()
 
+#ifdef VERSION_eff
 programEff :: (EF.NonDet EF.:< es) => Int -> EF.Eff es (Int, Int, Int)
 programEff upbound = do
     x <- choice upbound
@@ -107,6 +117,7 @@ pythEffDeep :: Int -> [(Int, Int, Int)]
 pythEffDeep n = EF.run $ run $ run $ run $ run $ run $ EF.runNonDetAll $ run $ run $ run $ run $ run $ programEff n
   where
     run = EF.runReader ()
+#endif
 
 programMtl :: (MonadPlus m) => Int -> m (Int, Int, Int)
 programMtl upbound = do

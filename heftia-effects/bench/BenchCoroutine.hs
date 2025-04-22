@@ -1,17 +1,24 @@
+{-# LANGUAGE CPP #-}
+
 -- SPDX-License-Identifier: BSD-3-Clause
 -- (c) 2022 Xy Ren; 2024 Sayo contributors
 
 module BenchCoroutine where
 
 import Control.Monad (forM)
+#ifdef VERSION_freer_simple
 import Control.Monad.Freer qualified as FS
 import Control.Monad.Freer.Coroutine qualified as FS
 import Control.Monad.Freer.Reader qualified as FS
+#endif
 import Control.Monad.Hefty qualified as H
 import Control.Monad.Hefty.Coroutine qualified as H
 import Control.Monad.Hefty.Reader qualified as H
+#ifdef VERSION_eff
 import "eff" Control.Effect qualified as E
+#endif
 
+#ifdef VERSION_freer_simple
 programFreer :: (FS.Member (FS.Yield Int Int) es) => Int -> FS.Eff es [Int]
 programFreer upbound =
     forM [1 .. upbound] (`FS.yield` id)
@@ -30,6 +37,7 @@ coroutineFreerDeep :: Int -> [Int]
 coroutineFreerDeep n = FS.run $ run $ run $ run $ run $ run $ loopStatusFreer =<< FS.runC (run $ run $ run $ run $ run $ programFreer n)
   where
     run = FS.runReader ()
+#endif
 
 programHeftia :: (H.Yield Int Int H.:> es) => Int -> H.Eff es [Int]
 programHeftia upbound =
@@ -51,6 +59,7 @@ coroutineHeftiaDeep n = H.runPure $ run $ run $ run $ run $ run $ loopStatusHeft
     run :: H.Eff (H.Ask () ': es) a -> H.Eff es a
     run = H.runAsk ()
 
+#ifdef VERSION_eff
 programEff :: (E.Coroutine Int Int E.:< es) => Int -> E.Eff es [Int]
 programEff upbound =
     forM [1 .. upbound] $ E.yield @Int @Int
@@ -69,3 +78,4 @@ coroutineEffDeep :: Int -> [Int]
 coroutineEffDeep n = E.run $ run $ run $ run $ run $ run $ loopStatusEff =<< E.runCoroutine (run $ run $ run $ run $ run $ programEff n)
   where
     run = E.runReader ()
+#endif

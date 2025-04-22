@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 -- SPDX-License-Identifier: BSD-3-Clause
 -- (c) 2022 Xy Ren; 2024 Sayo contributors
 
@@ -19,7 +21,9 @@ import Effectful.Reader.Dynamic qualified as EL
 import Polysemy qualified as P
 import Polysemy.Error qualified as P
 import Polysemy.Reader qualified as P
+#ifdef VERSION_eff
 import "eff" Control.Effect qualified as E
+#endif
 
 programHeftia :: (H.Throw () H.:> es, H.Catch () H.:> es) => Int -> H.Eff es a
 programHeftia = \case
@@ -84,6 +88,7 @@ catchEffectfulDeep n =
   where
     run = EL.runReader ()
 
+#ifdef VERSION_eff
 programEff :: (E.Error () E.:< es) => Int -> E.Eff es a
 programEff = \case
     0 -> E.throw ()
@@ -97,6 +102,7 @@ catchEffDeep :: Int -> Either () ()
 catchEffDeep n = E.run $ run $ run $ run $ run $ run $ E.runError $ run $ run $ run $ run $ run $ programEff n
   where
     run = E.runReader ()
+#endif
 
 programMtl :: (M.MonadError () m) => Int -> m a
 programMtl = \case

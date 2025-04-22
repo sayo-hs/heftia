@@ -22,12 +22,16 @@ main =
                 bgroup
                     (show x)
                     [ bench "heftia" $ nf countdownHeftia x
-                    , -- , bench "heftia.naive" $ nf countdownHeftiaNaive x -- no optimization
-                      bench "freer" $ nf countdownFreer x
+                    -- , bench "heftia.naive" $ nf countdownHeftiaNaive x -- no optimization
+#ifdef VERSION_freer_simple
+                    , bench "freer" $ nf countdownFreer x
+#endif
                     , bench "polyemy" $ nf countdownSem x
                     , bench "fused" $ nf countdownFused x
                     , bench "effectful" $ nf countdownEffectful x
+#ifdef VERSION_eff
                     , bench "eff" $ nf countdownEff x
+#endif
                     , bench "mtl" $ nf countdownMtl x
                     ]
         , bgroup "countdown.deep" $
@@ -35,12 +39,16 @@ main =
                 bgroup
                     (show x)
                     [ bench "heftia.5+5" $ nf countdownHeftiaDeep x
-                    , -- , bench "heftia.naive.5+5" $ nf countdownHeftiaNaiveDeep x -- no optimization
-                      bench "freer.5+5" $ nf countdownFreerDeep x
+                    -- , bench "heftia.naive.5+5" $ nf countdownHeftiaNaiveDeep x -- no optimization
+#ifdef VERSION_freer_simple
+                    , bench "freer.5+5" $ nf countdownFreerDeep x
+#endif
                     , bench "polysemy.5+5" $ nf countdownSemDeep x
                     , bench "fused.5+5" $ nf countdownFusedDeep x
                     , bench "effectful.5+5" $ nf countdownEffectfulDeep x
+#ifdef VERSION_eff
                     , bench "eff.5+5" $ nf countdownEffDeep x
+#endif
                     , bench "mtl.5+5" $ nf countdownMtlDeep x
                     ]
         , bgroup "catch.shallow" $
@@ -104,10 +112,14 @@ main =
                 bgroup
                     (show x)
                     [ bench "heftia" $ nf pythHeftia x
-                    , -- , bench "heftia.shift" $ nf pythHeftiaShift x -- tricky, slow method
-                      bench "freer" $ nf pythFreer x
+                    -- , bench "heftia.shift" $ nf pythHeftiaShift x -- tricky, slow method
+#ifdef VERSION_freer_simple
+                    , bench "freer" $ nf pythFreer x
+#endif
                     , bench "fused" $ nf pythFused x
+#ifdef VERSION_eff
                     , bench "eff" $ nf pythEff x
+#endif
                     , bench "mtl-logict" $ nf pythLogict x
                     ] -- Polysemy case is excluded because of incorrect semantics.
         , bgroup "nondet.deep" $
@@ -115,10 +127,14 @@ main =
                 bgroup
                     (show x)
                     [ bench "heftia.5+5" $ nf pythHeftiaDeep x
-                    -- , bench "heftia.shift.5+5" $ nf pythHeftiaShiftDeep x -- tricky, slow method
+                    , bench "heftia.shift.5+5" $ nf pythHeftiaShiftDeep x -- tricky, slow method
+#ifdef VERSION_freer_simple
                     , bench "freer.5+5" $ nf pythFreerDeep x
+#endif
                     , bench "fused.5+5" $ nf pythFusedDeep x
+#ifdef VERSION_eff
                     , bench "eff.5+5" $ nf pythEffDeep x
+#endif
                     , bench "mtl-logict.5+5" $ nf pythLogictDeep x
                     ]
         , bgroup "coroutine.shallow" $
@@ -126,8 +142,12 @@ main =
                 bgroup
                     (show x)
                     [ bench "heftia" $ nf coroutineHeftia x
+#ifdef VERSION_freer_simple
                     , bench "freer" $ nf coroutineFreer x
+#endif
+#ifdef VERSION_eff
                     , bench "eff" $ nf coroutineEff x
+#endif
                     -- `eff` is O(n^2) slow probably because of: https://dl.acm.org/doi/10.1145/2633357.2633360
                     ] -- add mtl?
         , bgroup "coroutine.deep" $
@@ -135,8 +155,12 @@ main =
                 bgroup
                     (show x)
                     [ bench "heftia.5+5" $ nf coroutineHeftiaDeep x
+#ifdef VERSION_freer_simple
                     , bench "freer.5+5" $ nf coroutineFreerDeep x
+#endif
+#ifdef VERSION_eff
                     , bench "eff.5+5" $ nf coroutineEffDeep x
+#endif
                     ]
         , bgroup "filesize.shallow" $ map filesizeShallow [1000, 2000, 3000]
         , bgroup "filesize.deep" $ map filesizeDeep [1000, 2000, 3000]

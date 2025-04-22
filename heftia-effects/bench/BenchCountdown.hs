@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 -- SPDX-License-Identifier: BSD-3-Clause
 -- (c) 2022 Xy Ren; 2024 Sayo contributors
 
@@ -6,9 +8,11 @@ module BenchCountdown where
 
 import Control.Carrier.Reader qualified as F
 import Control.Carrier.State.Strict qualified as F
+#ifdef VERSION_freer_simple
 import Control.Monad.Freer qualified as FS
 import Control.Monad.Freer.Reader qualified as FS
 import Control.Monad.Freer.State qualified as FS
+#endif
 import Control.Monad.Hefty qualified as H
 import Control.Monad.Hefty.Reader qualified as H
 import Control.Monad.Hefty.State qualified as H
@@ -21,7 +25,9 @@ import Effectful.State.Dynamic qualified as EL
 import Polysemy qualified as P
 import Polysemy.Reader qualified as P
 import Polysemy.State qualified as P
+#ifdef VERSION_eff
 import "eff" Control.Effect qualified as EF
+#endif
 
 programHeftia :: (H.State Int H.:> es) => H.Eff es Int
 programHeftia = do
@@ -48,6 +54,7 @@ countdownHeftiaNaiveDeep n = H.runPure $ hrunR $ hrunR $ hrunR $ hrunR $ hrunR $
 hrunR :: H.Eff (H.Ask () ': es) a -> H.Eff es a
 hrunR = H.runAsk ()
 
+#ifdef VERSION_freer_simple
 programFreer :: (FS.Member (FS.State Int) es) => FS.Eff es Int
 programFreer = do
     x <- FS.get @Int
@@ -65,6 +72,7 @@ countdownFreerDeep :: Int -> (Int, Int)
 countdownFreerDeep n = FS.run $ runR $ runR $ runR $ runR $ runR $ FS.runState n $ runR $ runR $ runR $ runR $ runR $ programFreer
   where
     runR = FS.runReader ()
+#endif
 
 programSem :: (P.Member (P.State Int) es) => P.Sem es Int
 programSem = do
@@ -121,6 +129,7 @@ countdownEffectfulDeep n =
   where
     runR = EL.runReader ()
 
+#ifdef VERSION_eff
 programEff :: (EF.State Int EF.:< es) => EF.Eff es Int
 programEff = do
     x <- EF.get @Int
@@ -138,6 +147,7 @@ countdownEffDeep :: Int -> (Int, Int)
 countdownEffDeep n = EF.run $ runR $ runR $ runR $ runR $ runR $ EF.runState n $ runR $ runR $ runR $ runR $ runR $ programEff
   where
     runR = EF.runReader ()
+#endif
 
 programMtl :: (M.MonadState Int m) => m Int
 programMtl = do
