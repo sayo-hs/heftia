@@ -305,6 +305,8 @@ module Control.Monad.Hefty (
     type (~>),
     type (~~>),
     FOEs,
+    PolyHFunctor,
+    PolyHFunctors,
     type (:>),
     type In,
     type Has,
@@ -489,7 +491,7 @@ import Control.Monad.Hefty.Types (
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect
 import Data.Effect.HFunctor.TH
-import Data.Effect.OpenUnion (FOEs, Has, In, KnownOrder, RemoveHOEs, Suffix, SuffixUnder, WeakenHOEs, nil, (!++), (!:), (:>), type (++))
+import Data.Effect.OpenUnion (FOEs, Has, In, KnownOrder, PolyHFunctors, RemoveHOEs, Suffix, SuffixUnder, WeakenHOEs, nil, (!++), (!:), (:>), type (++))
 import Data.Effect.TH
 import Data.Effect.Tag
 import Data.Kind (Type)

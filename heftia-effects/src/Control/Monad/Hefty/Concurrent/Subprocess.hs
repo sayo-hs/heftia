@@ -25,17 +25,7 @@ where
 import Control.Applicative ((<|>))
 import Control.Concurrent (forkIO)
 import Control.Monad (liftM2)
-import Control.Monad.Hefty (
-    Eff,
-    Effect,
-    Emb,
-    Freer,
-    interpret,
-    liftIO,
-    makeEffectF,
-    (&),
-    (:>),
- )
+import Control.Monad.Hefty (Eff, Effect, Emb, Freer, PolyHFunctors, interpret, liftIO, makeEffectF, (&), (:>))
 import Control.Monad.Hefty.Provider
 import Control.Monad.Hefty.Unlift (UnliftIO, withRunInIO)
 import Data.ByteString (ByteString, hGet, hGetNonBlocking, hPut)
@@ -76,9 +66,9 @@ data SubprocResult p a where
 deriving stock instance (Show a) => Show (SubprocResult p a)
 deriving stock instance (Eq a) => Eq (SubprocResult p a)
 
-runSubprocIO :: (UnliftIO :> es, Emb IO :> es) => Eff (SubprocProvider es ': es) a -> Eff es a
+runSubprocIO :: (UnliftIO :> es, Emb IO :> es, PolyHFunctors es) => Eff (SubprocProvider es ': es) a -> Eff es a
 runSubprocIO =
-    runScoped \cp@CreateProcess {subprocLifecycle, scopeLifecycle} m ->
+    runRegionScoped \cp@CreateProcess {subprocLifecycle, scopeLifecycle} m ->
         withRunInIO \run -> do
             (hi, ho, he, ph) <- Raw.createProcess (toRawCreateProcess cp) & liftIO
             procStatus <- newEmptyTMVarIO
