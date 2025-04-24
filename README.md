@@ -73,7 +73,7 @@ If performance is particularly important, [`effectful`](https://github.com/haske
             * [heftia-effects/Example/DatabaseProvider/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.7.0.0/heftia-effects/Example/DatabaseProvider/Main.hs)
         * [Applicative-style Parallelism](https://medium.com/@PerrottaFrancisco/learning-cats-effects-parallel-execution-f617f883e390)
             * like `cats-effect` in Scala
-            * [Data.Effect.Concurrent.Parallel](https://hackage.haskell.org/package/data-effects-0.4.1.0/docs/Data-Effect-Concurrent-Parallel.html)
+            * [Data.Effect.Concurrent.Parallel](https://hackage.haskell.org/package/data-effects-0.4.2.0/docs/Data-Effect-Concurrent-Parallel.html)
             * [Control.Monad.Hefty.Concurrent.Parallel](https://hackage.haskell.org/package/heftia-effects-0.7.0.0/docs/Control-Monad-Hefty-Concurrent-Parallel.html)
             * [heftia-effects/test/Test/Concurrent.hs](https://github.com/sayo-hs/heftia/blob/v0.7.0.0/heftia-effects/test/Test/Concurrent.hs)
 
