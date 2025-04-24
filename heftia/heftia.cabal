@@ -79,7 +79,7 @@ library
     -- other-extensions:
     build-depends:
         base                          >= 4.17 && < 4.22,
-        data-effects                  ^>= 0.4.1,
+        data-effects                  ^>= 0.4.2,
         mtl                           >= 2.2.2 && < 2.4,
         unliftio                      ^>= 0.2,
 
