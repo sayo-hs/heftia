@@ -10,18 +10,20 @@ import Control.Monad.Hefty (
     Effect,
     Emb,
     Freer,
-    PolyHFunctors,
+    RemoveExps,
+    UnliftIO,
     interprets,
     liftIO,
     makeEffectF,
     makeEffectH,
     nil,
-    runEff,
     (!:),
     type (:>),
     type (~>),
  )
 import Control.Monad.Hefty.Provider (Provider, provide_, runRegionProvider_)
+import Control.Monad.Hefty.Unlift (runUnliftIO)
+import Data.Effect.OpenUnion (WeakenExps)
 import Data.Functor.Identity (Identity)
 
 data DatabaseF :: Effect where
@@ -35,9 +37,11 @@ makeEffectH ''DatabaseH
 
 type DBProvider es = Provider Freer Identity FilePath '[DatabaseH, DatabaseF] es
 
-runDummyDBProvider :: (Emb IO :> es, PolyHFunctors es) => Eff (DBProvider es ': es) ~> Eff es
+runDummyDBProvider
+    :: (UnliftIO :> es, Emb IO :> es, Emb IO :> RemoveExps es, WeakenExps es)
+    => Eff (DBProvider (RemoveExps es) ': es) ~> Eff es
 runDummyDBProvider =
-    runRegionProvider_ \workDir ->
+    runRegionProvider_ @IO \workDir ->
         interprets $
             ( \(TransactDB m) -> do
                 liftIO $ putStrLn $ "[DUMMY DB " <> workDir <> "] START TRANSACTION"
@@ -56,7 +60,7 @@ runDummyDBProvider =
 
 main :: IO ()
 main =
-    runEff . runDummyDBProvider $
+    runUnliftIO . runDummyDBProvider $
         provide_ "/db1" \_ -> do
             provide_ "/db2" \detach -> do
                 detach do
