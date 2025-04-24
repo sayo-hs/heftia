@@ -27,11 +27,11 @@ import "Control.Monad.Hefty"
 import Prelude hiding (log, span)
 
 data Log :: t'Effect' where
-    Log :: String -> Log ()
+    Log :: String -> Log f ()
 'makeEffectF' ''Log
 
 data Span :: t'Effect' where
-    Span :: String -> m a -> Span m a
+    Span :: String -> f a -> Span f a
 'makeEffectH' ''Span
 
 runLog :: (@t'Emb'@ 'IO' t'Data.Effect.OpenUnion.:>' es) => 'Eff' (Log ': es) t'Control.Effect.~>' 'Eff' es
@@ -78,10 +78,10 @@ It is a function that takes two arguments: an effectful operation and a continua
 By ignoring the continuation argument, it allows for global escapes like the 'Data.Effect.Except.Throw' effect.
 
 @
-[runThrow](https://hackage.haskell.org/package/heftia-effects-0.6.0.0/docs/Control-Monad-Hefty-Except.html#v:runThrow) :: ('FOEs' es) => 'Eff' (@t'Data.Effect.Except.Throw'@ e ': es) a -> 'Eff' es ('Either' e a)
+[runThrow](https://hackage.haskell.org/package/heftia-effects-0.7.0.0/docs/Control-Monad-Hefty-Except.html#v:runThrow) :: ('FOEs' es) => 'Eff' (@t'Data.Effect.Except.Throw'@ e ': es) a -> 'Eff' es ('Either' e a)
 runThrow = 'interpretBy' ('pure' '.' 'Right') handleThrow
 
-[handleThrow](https://hackage.haskell.org/package/heftia-effects-0.6.0.0/docs/Control-Monad-Hefty-Except.html#v:handleThrow) :: 'Applicative' g => 'AlgHandler' (@t'Data.Effect.Except.Throw'@ e) f g ('Either' e a)
+[handleThrow](https://hackage.haskell.org/package/heftia-effects-0.7.0.0/docs/Control-Monad-Hefty-Except.html#v:handleThrow) :: 'Applicative' g => 'AlgHandler' (@t'Data.Effect.Except.Throw'@ e) f g ('Either' e a)
 handleThrow (@v'Data.Effect.Except.Throw'@ e) _ = 'pure' $ 'Left' e
 @
 
@@ -90,7 +90,7 @@ Here, @handleThrow@ is the algebraic handler for the t'Data.Effect.Except.Throw'
 By calling the continuation argument multiple times, it allows for non-deterministic computations like the "Data.Effect.NonDet" effect.
 
 @
-[runNonDet](https://hackage.haskell.org/package/heftia-effects-0.6.0.0/docs/Control-Monad-Hefty-NonDet.html#v:runNonDet)
+[runNonDet](https://hackage.haskell.org/package/heftia-effects-0.7.0.0/docs/Control-Monad-Hefty-NonDet.html#v:runNonDet)
     :: ('Alternative' f)
     => 'Eff' (@t'Data.Effect.NonDet.Choose'@ ': t'Data.Effect.NonDet.Empty' ': es) a
     -> 'Eff' es (f a)
@@ -167,10 +167,10 @@ By properly understanding and becoming familiar with this semantics, users can q
 Let's revisit the definition of @runCatch@:
 
 @
-[runCatch](https://hackage.haskell.org/package/heftia-effects-0.6.0.0/docs/Control-Monad-Hefty-Except.html#v:runCatch) :: (@t'Data.Effect.Except.Throw'@ e `@t'Data.Effect.OpenUnion.In'@` es, 'FOEs' es) => 'Eff' (@t'Data.Effect.Except.Catch'@ e ': es) t'Control.Effect.~>' 'Eff' es
+[runCatch](https://hackage.haskell.org/package/heftia-effects-0.7.0.0/docs/Control-Monad-Hefty-Except.html#v:runCatch) :: (@t'Data.Effect.Except.Throw'@ e `@t'Data.Effect.OpenUnion.In'@` es, 'FOEs' es) => 'Eff' (@t'Data.Effect.Except.Catch'@ e ': es) t'Control.Effect.~>' 'Eff' es
 runCatch = 'interpret' handleCatch
 
-[handleCatch](https://hackage.haskell.org/package/heftia-effects-0.6.0.0/docs/Control-Monad-Hefty-Except.html#v:handleCatch) :: (@t'Data.Effect.Except.Throw'@ e `@t'Data.Effect.OpenUnion.In'@` es, 'FOEs' es) => t'Data.Effect.Except.Catch' e t'Control.Monad.Hefty.~~>' 'Eff' es
+[handleCatch](https://hackage.haskell.org/package/heftia-effects-0.7.0.0/docs/Control-Monad-Hefty-Except.html#v:handleCatch) :: (@t'Data.Effect.Except.Throw'@ e `@t'Data.Effect.OpenUnion.In'@` es, 'FOEs' es) => t'Data.Effect.Except.Catch' e t'Control.Monad.Hefty.~~>' 'Eff' es
 handleCatch (@v'Data.Effect.Except.Catch'@ action hdl) = action & 'interposeWith' \\(@v'Data.Effect.Except.Throw'@ e) _ -> hdl e
 @
 
@@ -305,6 +305,8 @@ module Control.Monad.Hefty (
     type (~>),
     type (~~>),
     FOEs,
+    PolyHFunctor,
+    PolyHFunctors,
     type (:>),
     type In,
     type Has,
@@ -489,7 +491,22 @@ import Control.Monad.Hefty.Types (
 import Control.Monad.IO.Class (liftIO)
 import Data.Effect
 import Data.Effect.HFunctor.TH
-import Data.Effect.OpenUnion (FOEs, Has, In, KnownOrder, RemoveHOEs, Suffix, SuffixUnder, WeakenHOEs, nil, (!++), (!:), (:>), type (++))
+import Data.Effect.OpenUnion (
+    FOEs,
+    Has,
+    In,
+    KnownOrder,
+    PolyHFunctors,
+    RemoveHOEs,
+    Suffix,
+    SuffixUnder,
+    WeakenHOEs,
+    nil,
+    (!++),
+    (!:),
+    (:>),
+    type (++),
+ )
 import Data.Effect.TH
 import Data.Effect.Tag
 import Data.Kind (Type)

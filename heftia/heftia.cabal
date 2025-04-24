@@ -1,6 +1,6 @@
 cabal-version:      3.0
 name:               heftia
-version:            0.6.0.0
+version:            0.7.0.0
 
 -- A short (one-line) description of the package.
 synopsis: higher-order algebraic effects done right
@@ -51,7 +51,7 @@ tested-with: GHC == {9.6.2, 9.8.4, 9.10.1, 9.12.2}
 source-repository head
     type: git
     location: https://github.com/sayo-hs/heftia
-    tag: v0.6.0
+    tag: v0.7.0.0
     subdir: heftia
 
 library
@@ -79,7 +79,7 @@ library
     -- other-extensions:
     build-depends:
         base                          >= 4.17 && < 4.22,
-        data-effects                  ^>= 0.4.0.2,
+        data-effects                  ^>= 0.4.1,
         mtl                           >= 2.2.2 && < 2.4,
         unliftio                      ^>= 0.2,
 

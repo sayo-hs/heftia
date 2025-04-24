@@ -1,3 +1,5 @@
+{-# LANGUAGE CPP #-}
+
 -- SPDX-License-Identifier: BSD-3-Clause
 -- (c) 2022 Xy Ren; 2024 Sayo contributors
 
@@ -13,7 +15,9 @@ import Effectful.Reader.Dynamic qualified as EL
 import Polysemy qualified as P
 import Polysemy.Reader qualified as P
 import "data-effects" Control.Effect.Interpret qualified as HD
+#ifdef VERSION_eff
 import "eff" Control.Effect qualified as E
+#endif
 
 programHeftia :: (H.Ask Int `H.In` es, H.Local Int `H.In` es) => Int -> H.Eff es Int
 programHeftia = \case
@@ -78,6 +82,7 @@ localEffectfulDeep n =
   where
     run = EL.runReader ()
 
+#ifdef VERSION_eff
 programEff :: (E.Reader Int E.:< es) => Int -> E.Eff es Int
 programEff = \case
     0 -> E.ask
@@ -91,6 +96,7 @@ localEffDeep :: Int -> Int
 localEffDeep n = E.run $ run $ run $ run $ run $ run $ E.runReader @Int 0 $ run $ run $ run $ run $ run $ programEff n
   where
     run = E.runReader ()
+#endif
 
 {-
 The MTL case is disabled because of conflicting functional dependencies.

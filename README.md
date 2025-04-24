@@ -14,8 +14,8 @@ Say goodbye to runtime errors and unsound semantics.
 
 This library provides a simple interface, predictable behavior, and maximum flexibility while delivering standard, practical performance.
 
-Please refer to the [Haddock documentation](https://hackage.haskell.org/package/heftia-0.6.0.0/docs/Control-Monad-Hefty.html) for usage and semantics.
-For information on performance, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/v0.6/benchmark/performance.md).
+Please refer to the [Haddock documentation](https://hackage.haskell.org/package/heftia-0.7.0.0/docs/Control-Monad-Hefty.html) for usage and semantics.
+For information on performance, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/v0.7.0.0/benchmark/performance.md).
 
 This library is inspired by the paper:
 * [Hefty Algebras: Modular Elaboration of Higher-Order Algebraic Effects. Casper Bach Poulsen & Cas van der Rest, POPL 2023.](https://doi.org/10.1145/3571255)
@@ -48,7 +48,7 @@ Moreover, Heftia delivers **strong performance**.
 If performance is particularly important, [`effectful`](https://github.com/haskell-effectful/effectful) would be the best alternative to this library.
 
 [^8]: MonadUnliftIO instance allows escape https://github.com/tomjaguarpaw/bluefin/issues/29
-[^9]: [heftia-effects/test/Test/UnliftIO.hs](https://github.com/sayo-hs/heftia/blob/v0.6.0/heftia-effects/test/Test/UnliftIO.hs)
+[^9]: [heftia-effects/test/Test/UnliftIO.hs](https://github.com/sayo-hs/heftia/blob/v0.7.0.0/heftia-effects/test/Test/UnliftIO.hs)
 
 ## Key Features
 
@@ -64,34 +64,34 @@ If performance is particularly important, [`effectful`](https://github.com/haske
     * Higher-order effects
         * [`MonadUnliftIO`](https://hackage.haskell.org/package/unliftio)
             * to prevent resource leaks due to runtime exceptions
-            * [heftia-effects/Example/UnliftIO/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.6.0/heftia-effects/Example/UnliftIO/Main.hs)
-            * [heftia-effects/Example/Stream/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.6.0/heftia-effects/Example/Stream/Main.hs)
+            * [heftia-effects/Example/UnliftIO/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.7.0.0/heftia-effects/Example/UnliftIO/Main.hs)
+            * [heftia-effects/Example/Stream/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.7.0.0/heftia-effects/Example/Stream/Main.hs)
         * [`Provider`](https://hackage.haskell.org/package/effectful-core-2.5.0.0/docs/Effectful-Provider.html) a.k.a. [`Scoped`](https://hackage.haskell.org/package/polysemy-1.9.2.0/docs/Polysemy-Scoped.html)
             * to prevent [resource handles from leaking out of scopes](https://h2.jaguarpaw.co.uk/posts/bluefin-prevents-handles-leaking/)
-            * [Control.Monad.Hefty.Concurrent.Subprocess](https://hackage.haskell.org/package/heftia-effects-0.6.0.0/docs/Control-Monad-Hefty-Concurrent-Subprocess.html)
-            * [heftia-effects/Example/Subprocess/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.6.0/heftia-effects/Example/Subprocess/Main.hs)
-            * [heftia-effects/Example/DatabaseProvider/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.6.0.1/heftia-effects/Example/DatabaseProvider/Main.hs)
+            * [Control.Monad.Hefty.Concurrent.Subprocess](https://hackage.haskell.org/package/heftia-effects-0.7.0.0/docs/Control-Monad-Hefty-Concurrent-Subprocess.html)
+            * [heftia-effects/Example/Subprocess/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.7.0.0/heftia-effects/Example/Subprocess/Main.hs)
+            * [heftia-effects/Example/DatabaseProvider/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.7.0.0/heftia-effects/Example/DatabaseProvider/Main.hs)
         * [Applicative-style Parallelism](https://medium.com/@PerrottaFrancisco/learning-cats-effects-parallel-execution-f617f883e390)
             * like `cats-effect` in Scala
-            * [Data.Effect.Concurrent.Parallel](https://hackage.haskell.org/package/data-effects-0.3.0.1/docs/Data-Effect-Concurrent-Parallel.html)
-            * [Control.Monad.Hefty.Concurrent.Parallel](https://hackage.haskell.org/package/heftia-effects-0.6.0.0/docs/Control-Monad-Hefty-Concurrent-Parallel.html)
-            * [heftia-effects/test/Test/Concurrent.hs](https://github.com/sayo-hs/heftia/blob/v0.6.0/heftia-effects/test/Test/Concurrent.hs)
+            * [Data.Effect.Concurrent.Parallel](https://hackage.haskell.org/package/data-effects-0.4.1.0/docs/Data-Effect-Concurrent-Parallel.html)
+            * [Control.Monad.Hefty.Concurrent.Parallel](https://hackage.haskell.org/package/heftia-effects-0.7.0.0/docs/Control-Monad-Hefty-Concurrent-Parallel.html)
+            * [heftia-effects/test/Test/Concurrent.hs](https://github.com/sayo-hs/heftia/blob/v0.7.0.0/heftia-effects/test/Test/Concurrent.hs)
 
     All of these interact through a simple, consistent, and predictable semantics based on algebraic effects.
 
 * **Easy and Concise Implementation for Custom Effect Interpreters**
 
-    As you can see from the implementations of basic effect interpreters such as [State](https://hackage.haskell.org/package/heftia-effects-0.6.0.0/docs/src/Control.Monad.Hefty.State.html#runState), [Throw/Catch](https://hackage.haskell.org/package/heftia-effects-0.6.0.0/docs/src/Control.Monad.Hefty.Except.html#runThrow), [Writer](https://hackage.haskell.org/package/heftia-effects-0.6.0.0/docs/src/Control.Monad.Hefty.Writer.html#runTell), [NonDet](https://hackage.haskell.org/package/heftia-effects-0.6.0.0/docs/src/Control.Monad.Hefty.NonDet.html#runNonDet), and [Coroutine](https://hackage.haskell.org/package/heftia-effects-0.6.0.0/docs/src/Control.Monad.Hefty.Coroutine.html#runCoroutine), they can be implemented in just a few lines, or even a single line. Even for effects like NonDet and Coroutine, which involve continuations and might seem difficult to implement at first glance, this is exactly how simple it can be. This is the power of algebraic effects. Users can quickly define experimental and innovative custom effects using continuations.
+    As you can see from the implementations of basic effect interpreters such as [State](https://hackage.haskell.org/package/heftia-effects-0.7.0.0/docs/src/Control.Monad.Hefty.State.html#runState), [Throw/Catch](https://hackage.haskell.org/package/heftia-effects-0.7.0.0/docs/src/Control.Monad.Hefty.Except.html#runThrow), [Writer](https://hackage.haskell.org/package/heftia-effects-0.7.0.0/docs/src/Control.Monad.Hefty.Writer.html#runTell), [NonDet](https://hackage.haskell.org/package/heftia-effects-0.7.0.0/docs/src/Control.Monad.Hefty.NonDet.html#runNonDet), and [Coroutine](https://hackage.haskell.org/package/heftia-effects-0.7.0.0/docs/src/Control.Monad.Hefty.Coroutine.html#runCoroutine), they can be implemented in just a few lines, or even a single line. Even for effects like NonDet and Coroutine, which involve continuations and might seem difficult to implement at first glance, this is exactly how simple it can be. This is the power of algebraic effects. Users can quickly define experimental and innovative custom effects using continuations.
 
 * **Standard and Reasonable Performance**
 
-    It operates at a speed roughly on par with `effectful` and significantly faster than `mtl` and `polysemy`: [performance.md](https://github.com/sayo-hs/heftia/blob/v0.6/benchmark/performance.md).
+    It operates at a speed roughly on par with `effectful` and significantly faster than `mtl` and `polysemy`: [performance.md](https://github.com/sayo-hs/heftia/blob/v0.7.0.0/benchmark/performance.md).
 
 * **Type Safety and Purity**
 
     * Does not depend on the IO monad and can use any monad as the base monad.
     * Semantics are isolated from the IO monad, meaning that aspects like asynchronous exceptions and threads do not affect the behavior of effects.
-    * The constructors of the `Eff` monad are [exposed](https://hackage.haskell.org/package/heftia-0.6.0.0/docs/Control-Monad-Hefty.html#t:Eff), and users can manipulate them directly without any safety concerns. Still, the semantics remain intact.
+    * The constructors of the `Eff` monad are [exposed](https://hackage.haskell.org/package/heftia-0.7.0.0/docs/Control-Monad-Hefty.html#t:Eff), and users can manipulate them directly without any safety concerns. Still, the semantics remain intact.
     * These are in contrast to libraries like `effectful` and `eff`, making this library more **Haskell-ish and purely functional**.
     * **This design effectively prevents obscure behaviors and potential runtime errors.**
 
@@ -128,7 +128,7 @@ There may be significant changes and potential bugs.
     ```console
     $ cabal update
     ```
-2. Add `heftia-effects ^>= 0.6` to the build dependencies. Enable the `GHC2021` and the following language extensions as needed:
+2. Add `heftia-effects ^>= 0.7` to the build dependencies. Enable the `GHC2021` and the following language extensions as needed:
 
     * `LambdaCase`
     * `DerivingStrategies`
@@ -146,7 +146,7 @@ Example .cabal:
 ...
     build-depends:
         ...
-        heftia-effects ^>= 0.6,
+        heftia-effects ^>= 0.7,
 
     default-language: GHC2021
 
@@ -269,11 +269,11 @@ End
 
 * `End` is displayed just after the first sequence ends and before the second sequence starts. This demonstrates that the `bracket_` function based on `MonadUnliftIO` for safe resource release works in such a way that resources are released immediately at the correct timing—even if the stream is still in progress—rather than waiting until the entire stream (including the second sequence) has completed. Existing stream libraries like [`pipes`](https://hackage.haskell.org/package/pipes) and [`conduit`](https://hackage.haskell.org/package/conduit) have the issue that immediate resource release like this is not possible. This problem was first addressed by the effect system library [`bluefin`](https://github.com/tomjaguarpaw/bluefin). For more details, please refer to [Bluefin streams finalize promptly](https://h2.jaguarpaw.co.uk/posts/bluefin-streams-finalize-promptly/).
 
-The complete code example can be found at [heftia-effects/Example/Stream/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.6.0/heftia-effects/Example/Stream/Main.hs).
+The complete code example can be found at [heftia-effects/Example/Stream/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.7.0.0/heftia-effects/Example/Stream/Main.hs).
 
 ### Aggregating File Sizes Using Non-Deterministic Computation
 
-The following is an extract of the main parts from an example of non-deterministic computation. For the full code, please refer to [heftia-effects/Example/NonDet/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.6.0/heftia-effects/Example/NonDet/Main.hs).
+The following is an extract of the main parts from an example of non-deterministic computation. For the full code, please refer to [heftia-effects/Example/NonDet/Main.hs](https://github.com/sayo-hs/heftia/blob/v0.7.0.0/heftia-effects/Example/NonDet/Main.hs).
 
 ```haskell
 -- | Aggregate the sizes of all files under the given path
@@ -344,8 +344,8 @@ Sum {getSum = 10000}
 ```
 
 ## Documentation
-A detailed explanation of usage and semantics is available in [Haddock](https://hackage.haskell.org/package/heftia-0.6.0.0/docs/Control-Monad-Hefty.html).
-The example codes are located in the [heftia-effects/Example/](https://github.com/sayo-hs/heftia/tree/v0.6.0/heftia-effects/Example) directory.
+A detailed explanation of usage and semantics is available in [Haddock](https://hackage.haskell.org/package/heftia-0.7.0.0/docs/Control-Monad-Hefty.html).
+The example codes are located in the [heftia-effects/Example/](https://github.com/sayo-hs/heftia/tree/v0.7.0.0/heftia-effects/Example) directory.
 Also, the following *HeftWorld* example (outdated): https://github.com/sayo-hs/HeftWorld
 
 About the internal *elaboration* mechanism: https://sayo-hs.github.io/jekyll/update/2024/09/04/how-the-heftia-extensible-effects-library-works.html
@@ -407,7 +407,7 @@ This results in minimal surprise to the mental model of the code reader.
 Overall, the performance of this library is roughly on par with `effectful`, or only slightly slower.
 `heftia` runs significantly faster compared to existing effect systems such as `mtl` and `polysemy`.
 
-For more details, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/v0.6/benchmark/performance.md).
+For more details, please refer to [performance.md](https://github.com/sayo-hs/heftia/blob/v0.7.0.0/benchmark/performance.md).
 
 ### Interoperability with other libraries
 
@@ -440,13 +440,13 @@ For more details, please refer to [performance.md](https://github.com/sayo-hs/he
 * (Support for [Linear](https://hackage.haskell.org/package/linear-base) effects?)
 
 ## License
-The license is MPL 2.0. Please refer to the [NOTICE](https://github.com/sayo-hs/heftia/blob/v0.6.0/NOTICE).
+The license is MPL 2.0. Please refer to the [NOTICE](https://github.com/sayo-hs/heftia/blob/v0.7.0.0/NOTICE).
 Additionally, the code from `freer-simple` has been modified and used internally within this library.
 Therefore, some modules are licensed under both `MPL-2.0 AND BSD-3-Clause`.
 For details on licenses and copyrights, please refer to the module's Haddock documentation.
 
 ## Your contributions are welcome!
-Please see [CONTRIBUTING.md](https://github.com/sayo-hs/heftia/blob/v0.6.0/CONTRIBUTING.md).
+Please see [CONTRIBUTING.md](https://github.com/sayo-hs/heftia/blob/v0.7.0.0/CONTRIBUTING.md).
 
 ## Acknowledgements, citations, and related work
 The following is a non-exhaustive list of people and works that have had a significant impact, directly or indirectly, on Heftia’s design and implementation:
