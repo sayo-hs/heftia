@@ -8,14 +8,6 @@ source-repository-package
     tag: a6ad3c7d7c62d21cf088af109ceb1d10a56b7125
     subdir: eff
 
-source-repository-package
-    type: git
-    location: https://github.com/sayo-hs/data-effects
-    tag: 6a8e88d7f77160a077243f8886b6795fe9724387
-    subdir: data-effects-core
-    subdir: data-effects-th
-    subdir: data-effects
-
 allow-newer: eff:primitive
 
 benchmarks: True
