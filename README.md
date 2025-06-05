@@ -379,7 +379,7 @@ About the internal *elaboration* mechanism: https://sayo-hs.github.io/jekyll/upd
 | `eff`               | ✅                   | Multi-shot             | ✅            | ❌ (based on the `IO` monad)      | ✅                       | Algebraic Effects & IO-fused [^6]|
 | `speff`             | ✅                   | Multi-shot (restriction: [^4]) | ✅    | ❌ (based on the `IO` monad)      | ✅                       | Algebraic Effects & IO-fused     |
 | `mtl`               | ✅                   | Multi-shot (`ContT`)   | ✅            | ✅                                | ❌                       | Carrier dependent                |
-| `fused-effects`     | ✅                   | ❌?                    | ✅            | ✅                                | ❌                       | Carrier dependent & Weaving-based (functorial state) |
+| `fused-effects`     | ✅                   | ❌?                    | ✅            | ✅                                | ✅[^11]                  | Carrier dependent & Weaving-based (functorial state) |
 | `in-other-words`    | ✅                   | Multi-shot?            | ✅            | ✅                                | ❌?                      | Carrier dependent                |
 | Koka-lang           | ❌                   | Multi-shot             | ✅            | ❌ (language built-in)            | ✅                       | Algebraic Effects                |
 | Eff-lang            | ❌                   | Multi-shot             | ✅            | ❌ (language built-in)            | ✅                       | Algebraic Effects                |
@@ -391,6 +391,7 @@ About the internal *elaboration* mechanism: https://sayo-hs.github.io/jekyll/upd
 [^6]: https://github.com/hasura/eff/issues/12
 [^7]: https://discourse.haskell.org/t/what-is-a-higher-order-effect/10744
 [^10]: https://github.com/tomjaguarpaw/bluefin/pull/27
+[^11]: https://github.com/fused-effects/fused-effects/blob/main/docs/reinterpreting_effects.md
 
 Heftia can simply be described as a higher-order version of `freer-simple`.
 This is indeed true in terms of its internal mechanisms as well.
