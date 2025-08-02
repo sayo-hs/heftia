@@ -116,15 +116,15 @@ For those who have not used an extensible effects library in Haskell before, thi
 Particularly, if you are already somewhat familiar with the semantics of algebraic effects through languages like `koka` or `eff-lang`,
 you likely already have the mental model needed for this library, and everything should go smoothly.
 
-## Status (Update: 2025-05-31)
+## Status (Update: 2025-08-02)
 
 Currently, all of the above-mentioned features have been implemented, and basic usage as an effect system is possible.
 What is mainly lacking now is documentation and the ecosystem.
 
 **I am looking forward to your feedback!**
 
-Also, at present, I am experimentally testing a new approach based on the 'multi-prompt control monad' in a separate repository: https://github.com/sayo-hs/kontrolle.
-If it succeeds, the shortcomings of the current version of `heftia`, such as the limitations on combining higher-order effects and delimited continuations and performance, will be improved, and the interface will change significantly.
+Also, at present, I am experimentally testing a new approach based on the 'multi-prompt control monad' in a separate repository: https://github.com/sayo-hs/eff-research.
+If it succeeds, the performance shortcomings of the current version of `heftia` will be addressed.
 
 ## Getting Started
 1.
